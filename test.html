@@ -1,0 +1,44 @@
+<script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/encoding.js"></script>
+<script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/jszip.min.js"></script>
+<script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/XHRProxy.min.js"></script>
+<script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/WMDescript.js"></script>
+<script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/Nar.js"></script>
+<script src="./node_modules/ikagaka.shell.js/vender/surfaces_txt2yaml.js"></script>
+<script src="./node_modules/ikagaka.shell.js/vender/underscore-min.js"></script>
+<script src="./node_modules/ikagaka.shell.js/vender/js-yaml.min.js"></script>
+<script src="./node_modules/ikagaka.shell.js/vender/zepto.min.js"></script>
+<script src="./node_modules/ikagaka.shell.js/SurfaceUtil.js"></script>
+<script src="./node_modules/ikagaka.shell.js/Surface.js"></script>
+<script src="./node_modules/ikagaka.shell.js/Shell.js"></script>
+<script src="./Scope.js"></script>
+<script src="./Named.js"></script>
+<script>
+nar = new Nar()
+nar.loadFromURL("./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/mobilemaster.nar", function(err){
+  if(!!err) return console.error(err.stack);
+  if(nar.install.type === "ghost"){
+    console.log(nar)
+    var shell = new Shell(nar.tree["shell"]["master"]);
+  }else if(nar.install.type === "shell"){
+    var shell = new Shell(nar.tree);
+  }else{
+    throw new Error("wrong nar file")
+  }
+  shell.load(function(err){
+    if(!!err) return console.error(err.stack);
+
+    var named = new Named(shell);
+
+
+    (function recur(i){
+      named.scope(i%2).surface(i);
+      setTimeout(function(){
+        recur(i+1);
+      }, 1000);
+    }(0));
+
+    $(named.element).appendTo("body");
+  });
+});
+
+</script>

@@ -1,0 +1,17 @@
+{
+  "name":           "ikagaka.named.js",
+  "version":        "0.0.1",
+  "description":    "Named scope manager",
+  "url":            "https://github.com/ikagaka/Named.js",
+  "keywords":       ["ikagaka", "unstable", "ukagaka"],
+  "repository": {
+    "type":         "git",
+    "url":          "https://github.com/ikagaka/Named.js"
+  },
+  "dependencies": {
+    "ikagaka.shell.js": ""
+  },
+  "devDependencies": {
+  },
+  "license":        "MIT"
+}
