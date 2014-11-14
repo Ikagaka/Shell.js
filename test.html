@@ -1,4 +1,4 @@
-<script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/encoding.js"></script>
+<script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/node_modules/encoding-japanese/encoding.js"></script>
 <script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/jszip.min.js"></script>
 <script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/XHRProxy.min.js"></script>
 <script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/WMDescript.js"></script>
@@ -10,35 +10,56 @@
 <script src="./node_modules/ikagaka.shell.js/SurfaceUtil.js"></script>
 <script src="./node_modules/ikagaka.shell.js/Surface.js"></script>
 <script src="./node_modules/ikagaka.shell.js/Shell.js"></script>
+<script src="./node_modules/ikagaka.balloon.js/BalloonSurface.js"></script>
+<script src="./node_modules/ikagaka.balloon.js/Balloon.js"></script>
 <script src="./Scope.js"></script>
 <script src="./Named.js"></script>
 <script>
-nar = new Nar()
-nar.loadFromURL("./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/mobilemaster.nar", function(err){
-  if(!!err) return console.error(err.stack);
-  if(nar.install.type === "ghost"){
-    console.log(nar)
-    var shell = new Shell(nar.tree["shell"]["master"]);
-  }else if(nar.install.type === "shell"){
-    var shell = new Shell(nar.tree);
-  }else{
-    throw new Error("wrong nar file")
-  }
-  shell.load(function(err){
-    if(!!err) return console.error(err.stack);
+Promise.all([
+  new Promise(function(resolve, reject){
+    var nar = new Nar();
+    nar.loadFromURL("./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/mobilemaster.nar", function(err){
+      if(!!err) return reject(err);
+      if(nar.install.type !== "ghost") return reject(new Error("wong nar"));
+      var shellDir = Object.keys(nar.directory)
+        .filter(function(path){ return /shell\/master\//.test(path); })
+        .reduce(function(dir, path, zip){ dir[path.replace(/shell\/master\//, "")] = nar.directory[path]; return dir; }, {})
+      var shell = new Shell(shellDir);
+      shell.load(function(err){
+        if(!!err) return reject(err);
+        resolve(shell);
+      });
+    });
+  }),
+  new Promise(function(resolve, reject){
+    var nar = new Nar();
+    nar.loadFromURL("./node_modules/ikagaka.balloon.js/vender/origin.nar", function(err){
+      if(!!err) return reject(err);
+      var balloon = new Balloon(nar.directory);
+      balloon.load(function(err){
+        if(!!err) return reject(err);
+        resolve(balloon);
+      });
+    });
+  })
+]).then(function(tmp){
+  var shell = tmp[0];
+  var balloon = tmp[1];
+  var named = new Named(shell, balloon);
 
-    var named = new Named(shell);
+  (function recur(i){
+    named.scope(i%2).surface(i)
+    named.scope(i%2).balloon(i/2|0);
+    setTimeout(function(){
+      recur(i+1);
+    }, 1000);
+  }(0));
+  $(named.element).appendTo("body");
+}).catch(function(err){ console.error(err.stack) });
 
 
-    (function recur(i){
-      named.scope(i%2).surface(i);
-      setTimeout(function(){
-        recur(i+1);
-      }, 1000);
-    }(0));
 
-    $(named.element).appendTo("body");
-  });
-});
+
+
 
 </script>

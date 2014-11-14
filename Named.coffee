@@ -4,7 +4,7 @@ class Named
 
   $ = window["Zepto"]
 
-  constructor: (@shell)->
+  constructor: (@shell, @balloon)->
     @$named = $("<div />")
       .addClass("named")
     @$style = $("<style scoped />")
@@ -17,7 +17,7 @@ class Named
   scope: (scopeId)->
     if scopeId isnt undefined
       if !@scopes[scopeId]
-        @scopes[scopeId] = new Scope(scopeId, @shell)
+        @scopes[scopeId] = new Scope(scopeId, @shell, @balloon)
       @currentScope = @scopes[scopeId]
       $(@element).append(@scopes[scopeId].element)
     @currentScope

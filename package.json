@@ -9,7 +9,8 @@
     "url":          "https://github.com/ikagaka/Named.js"
   },
   "dependencies": {
-    "ikagaka.shell.js": ""
+    "ikagaka.shell.js": "",
+    "ikagaka.balloon.js": ""
   },
   "devDependencies": {
   },
