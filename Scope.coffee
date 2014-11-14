@@ -29,7 +29,7 @@ class Scope
       .append(@$style)
     @element = @$scope[0]
     @currentSurface = null
-    @currentBalloon = new Balloon(shell)
+    @currentBalloon = null
 
   surface: (surfaceId)->
     if surfaceId is -1
@@ -41,12 +41,16 @@ class Scope
       @currentSurface = @shell.getSurface(@scopeId, surfaceId)
       @$surface.append(@currentSurface.element) if !!@currentSurface
     @currentSurface
-    
-  balloon: (balloonId)->
+
+  blimp: (balloonId)->
     if balloonId is -1
     then @$balloon.hide()
     else @$balloon.show()
-    @$balloon.append(@currentBalloon.element) if !!@currentBalloon
+    if balloonId isnt undefined
+      @currentBalloon.destructor() if !!@currentBalloon
+      $(@currentBalloon.element).remove() if !!@currentBalloon
+      @currentBalloon = @balloon.getSurface(@scopeId, balloonId)
+      @$balloon.append(@currentBalloon.element) if !!@currentBalloon
     @currentBalloon
 
 

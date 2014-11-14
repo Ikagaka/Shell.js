@@ -47,17 +47,15 @@ Promise.all([
   var balloon = tmp[1];
   var named = new Named(shell, balloon);
 
-  (function recur(i){
-    named.scope(i%2).surface(i)
-    named.scope(i%2).balloon(i/2|0);
-    setTimeout(function(){
-      recur(i+1);
-    }, 1000);
-  }(0));
   $(named.element).appendTo("body");
+
+  named.scope(0).surface(0);
+  named.scope().blimp(0);
+
+  named.scope(1).surface(10);
+  named.scope().blimp(0);
+
 }).catch(function(err){ console.error(err.stack) });
-
-
 
 
 
