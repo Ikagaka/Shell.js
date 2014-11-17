@@ -41,14 +41,14 @@ Promise.all([
   var shell = tmp[0];
   var balloon = tmp[1];
   var named = new Named(shell, balloon);
+  
   console.log(named);
+
   $(named.element).appendTo("body")
   $(named.element).on("IkagakaSurfaceEvent", function(ev){
     console.log(ev.detail);
   });
-  $(named.element).on("IkagakaBalloonEvent", function(ev){
-    console.log(ev.detail);
-  });
+
   named.scope(0)
   named.scope().surface(0);
   named.scope().blimp(0);
