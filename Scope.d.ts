@@ -1,8 +1,12 @@
 
 declare class Scope {
   constructor(scopeId: number, shell: Shell, balloon: Balloon); // unstable
-  surface(scopeId?: number, callback?: () => void)): Surface; // stable
-  balloon(balloonId?: number, callback?: () => void): BalloonSurface; // unstable
+  surface(scopeId?: number, callback?: () => void)): Surface; // unstable
+  blimp(balloonId?: number, callback?: () => void): {
+    talk: (text: string) => void;
+    clear: () => void;
+    br: () => void;
+  }; // unstable
   element: HTMLElement; // stable
   shell: Shell; // unstable
   balloon: Balloon; // unstable

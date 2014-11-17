@@ -18,6 +18,8 @@ class Named
     if scopeId isnt undefined
       if !@scopes[scopeId]
         @scopes[scopeId] = new Scope(scopeId, @shell, @balloon)
+        @scopes[scopeId].$scope.on "click", (ev)=>
+          @$named.append(@scopes[scopeId].$scope)
       @currentScope = @scopes[scopeId]
       $(@element).append(@scopes[scopeId].element)
     @currentScope

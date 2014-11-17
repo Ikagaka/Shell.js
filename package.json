@@ -1,6 +1,6 @@
 {
   "name":           "ikagaka.named.js",
-  "version":        "0.0.1",
+  "version":        "0.1.0",
   "description":    "Named scope manager",
   "url":            "https://github.com/ikagaka/Named.js",
   "keywords":       ["ikagaka", "unstable", "ukagaka"],

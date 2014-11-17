@@ -3,10 +3,9 @@
 <script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/XHRProxy.min.js"></script>
 <script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/WMDescript.js"></script>
 <script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/Nar.js"></script>
-<script src="./node_modules/ikagaka.shell.js/vender/surfaces_txt2yaml.js"></script>
-<script src="./node_modules/ikagaka.shell.js/vender/underscore-min.js"></script>
-<script src="./node_modules/ikagaka.shell.js/vender/js-yaml.min.js"></script>
-<script src="./node_modules/ikagaka.shell.js/vender/zepto.min.js"></script>
+<script src="./node_modules/ikagaka.shell.js/node_modules/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
+<script src="./node_modules/ikagaka.shell.js/node_modules/underscore/underscore-min.js"></script>
+<script src="./node_modules/ikagaka.shell.js/node_modules/zepto/zepto.min.js"></script>
 <script src="./node_modules/ikagaka.shell.js/SurfaceUtil.js"></script>
 <script src="./node_modules/ikagaka.shell.js/Surface.js"></script>
 <script src="./node_modules/ikagaka.shell.js/Shell.js"></script>
@@ -20,11 +19,7 @@ Promise.all([
     var nar = new Nar();
     nar.loadFromURL("./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/mobilemaster.nar", function(err){
       if(!!err) return reject(err);
-      if(nar.install.type !== "ghost") return reject(new Error("wong nar"));
-      var shellDir = Object.keys(nar.directory)
-        .filter(function(path){ return /shell\/master\//.test(path); })
-        .reduce(function(dir, path, zip){ dir[path.replace(/shell\/master\//, "")] = nar.directory[path]; return dir; }, {})
-      var shell = new Shell(shellDir);
+      var shell = new Shell(nar.getDirectory(/shell\/master\//));
       shell.load(function(err){
         if(!!err) return reject(err);
         resolve(shell);
@@ -46,15 +41,26 @@ Promise.all([
   var shell = tmp[0];
   var balloon = tmp[1];
   var named = new Named(shell, balloon);
-
-  $(named.element).appendTo("body");
-
-  named.scope(0).surface(0);
+  console.log(named);
+  $(named.element).appendTo("body")
+  $(named.element).on("IkagakaSurfaceEvent", function(ev){
+    console.log(ev.detail);
+  });
+  $(named.element).on("IkagakaBalloonEvent", function(ev){
+    console.log(ev.detail);
+  });
+  named.scope(0)
+  named.scope().surface(0);
   named.scope().blimp(0);
-
-  named.scope(1).surface(10);
+  named.scope().blimp().talk("rg");
+  named.scope().blimp().br();
+  named.scope().blimp().talk("klzd");
+  named.scope().blimp().br();
+  named.scope(1)
+  named.scope().surface(10);
   named.scope().blimp(0);
-
+  named.scope().blimp().talk("rg");
+  named.scope().blimp().br();
 }).catch(function(err){ console.error(err.stack) });
 
 

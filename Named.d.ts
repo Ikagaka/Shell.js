@@ -3,7 +3,6 @@ declare class Named {
   constructor(shell: Shell, balloon: Balloon); // stable
   scope(scopeId?: number): Scope; // stable
   element: HTMLElement; // stable
-  currentScope: number; // unstable
   scopes: Scope[]; // unstable
   shell: Shell; // unstable
   balloon: Balloon; // unstable

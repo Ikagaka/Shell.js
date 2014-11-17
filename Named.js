@@ -21,6 +21,11 @@ Named = (function() {
     if (scopeId !== void 0) {
       if (!this.scopes[scopeId]) {
         this.scopes[scopeId] = new Scope(scopeId, this.shell, this.balloon);
+        this.scopes[scopeId].$scope.on("click", (function(_this) {
+          return function(ev) {
+            return _this.$named.append(_this.scopes[scopeId].$scope);
+          };
+        })(this));
       }
       this.currentScope = this.scopes[scopeId];
       $(this.element).append(this.scopes[scopeId].element);
