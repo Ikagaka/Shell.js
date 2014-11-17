@@ -36,6 +36,8 @@ Scope = (function() {
         }
       };
     })(this));
+    this.surface(0);
+    this.surface(-1);
     this.blimp(0);
     this.blimp(-1);
   }
