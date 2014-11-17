@@ -79,6 +79,8 @@ class Scope
       if @leftFlag
       then @blimp(0)
       else @blimp(1)
+    @surface(0)
+    @surface(-1)
     @blimp(0)
     @blimp(-1)
 
