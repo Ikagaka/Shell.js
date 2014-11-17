@@ -36,6 +36,8 @@ Scope = (function() {
         }
       };
     })(this));
+    this.blimp(0);
+    this.blimp(-1);
   }
 
   Scope.prototype.surface = function(surfaceId, callback) {
@@ -74,38 +76,41 @@ Scope = (function() {
         this.currentBalloon.destructor();
       }
       this.currentBalloon = this.balloon.attachSurface(this.$blimpCanvas[0], this.scopeId, balloonId);
-      descript = this.currentBalloon.descript;
-      this.$blimp.css({
-        "width": this.$blimpCanvas.width(),
-        "height": this.$blimpCanvas.height()
-      });
-      if (this.leftFlag) {
+      if (!!this.currentBalloon) {
+        descript = this.currentBalloon.descript;
         this.$blimp.css({
-          "top": Number(this.shell.descript["" + type + ".balloon.offsety"] || 0),
-          "left": Number(this.shell.descript["" + type + ".balloon.offsetx"] || 0) + -1 * this.$blimpCanvas.width()
+          "width": this.$blimpCanvas.width(),
+          "height": this.$blimpCanvas.height()
         });
-      } else {
-        this.$blimp.css({
-          "top": Number(this.shell.descript["" + type + ".balloon.offsety"] || 0),
-          "left": Number(this.shell.descript["" + type + ".balloon.offsetx"] || 0) + this.$surfaceCanvas.width()
+        if (this.leftFlag) {
+          this.$blimp.css({
+            "top": Number(this.shell.descript["" + type + ".balloon.offsety"] || 0),
+            "left": Number(this.shell.descript["" + type + ".balloon.offsetx"] || 0) + -1 * this.$blimpCanvas.width()
+          });
+        } else {
+          this.$blimp.css({
+            "top": Number(this.shell.descript["" + type + ".balloon.offsety"] || 0),
+            "left": Number(this.shell.descript["" + type + ".balloon.offsetx"] || 0) + this.$surfaceCanvas.width()
+          });
+        }
+        t = descript["origin.y"] || descript["validrect.top"] || "10";
+        r = descript["validrect.right"] || "10";
+        b = descript["validrect.bottom"] || "10";
+        l = descript["origin.x"] || descript["validrect.left"] || "10";
+        w = this.$blimpCanvas.width();
+        h = this.$blimpCanvas.height();
+        this.$blimpText.css({
+          "top": "" + t + "px",
+          "left": "" + l + "px",
+          "width": "" + (w - (Number(l) + Number(r))) + "px",
+          "height": "" + (h - (Number(t) - Number(b))) + "px"
         });
       }
-      t = descript["origin.y"] || descript["validrect.top"] || "10";
-      r = descript["validrect.right"] || "10";
-      b = descript["validrect.bottom"] || "10";
-      l = descript["origin.x"] || descript["validrect.left"] || "10";
-      w = this.$blimpCanvas.width();
-      h = this.$blimpCanvas.height();
-      this.$blimpText.css({
-        "top": "" + t + "px",
-        "left": "" + l + "px",
-        "width": "" + (w - (Number(l) + Number(r))) + "px",
-        "height": "" + (h - (Number(t) - Number(b))) + "px"
-      });
     }
     return {
       talk: (function(_this) {
         return function(txt) {
+          _this.$blimp.show();
           _this.$blimpText.html(_this.$blimpText.html() + txt);
           _this.$blimpText[0].scrollTop = 999;
           return void 0;
