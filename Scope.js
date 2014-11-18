@@ -7,6 +7,7 @@ Scope = (function() {
   $ = window["Zepto"];
 
   function Scope(scopeId, shell, balloon) {
+    var $blimpStyle, $scopeStyle;
     this.scopeId = scopeId;
     this.shell = shell;
     this.balloon = balloon;
@@ -14,14 +15,14 @@ Scope = (function() {
       "bottom": "0px",
       "right": (this.scopeId * 240) + "px"
     });
-    this.$style = $("<style scoped />").html(".scope {\n  display: inline-block;\n  position: absolute;\n  /*-webkit-user-select: none;*/\n  /*-webkit-tap-highlight-color: transparent;*/\n}\n.surfaceCanvas {\n  display: inline-block;\n}");
+    $scopeStyle = $("<style scoped />").html(".scope {\n  display: inline-block;\n  position: absolute;\n  /*-webkit-user-select: none;*/\n  /*-webkit-tap-highlight-color: transparent;*/\n}\n.surfaceCanvas {\n  display: inline-block;\n}");
     this.$surfaceCanvas = $("<canvas />").addClass("surfaceCanvas");
     this.$surface = $("<div />").addClass("surface").append(this.$surfaceCanvas).hide();
     this.$blimpCanvas = $("<canvas width='0' height='0' />").addClass("blimpCanvas");
-    this.$blimpStyle = $("<style scoped />").html(".blimp {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpCanvas {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpText {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n  overflow-y: scroll;\n  white-space: pre;\n  white-space: pre-wrap;\n  white-space: pre-line;\n  word-wrap: break-word;\n  /*pointer-events: none;*/\n}");
+    $blimpStyle = $("<style scoped />").html(".blimp {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpCanvas {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpText {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n  overflow-y: scroll;\n  white-space: pre;\n  white-space: pre-wrap;\n  white-space: pre-line;\n  word-wrap: break-word;\n  /*pointer-events: none;*/\n}");
     this.$blimpText = $("<div />").addClass("blimpText");
-    this.$blimp = $("<div />").addClass("blimp").append(this.$blimpStyle).append(this.$blimpCanvas).append(this.$blimpText).hide();
-    this.$scope.append(this.$surface).append(this.$blimp).append(this.$style);
+    this.$blimp = $("<div />").addClass("blimp").append($blimpStyle).append(this.$blimpCanvas).append(this.$blimpText).hide();
+    this.$scope.append($scopeStyle).append(this.$surface).append(this.$blimp);
     this.element = this.$scope[0];
     this.currentSurface = null;
     this.currentBalloon = null;
@@ -53,7 +54,7 @@ Scope = (function() {
       if (!!this.currentSurface) {
         this.currentSurface.destructor();
       }
-      this.currentSurface = this.shell.attachSurface(this.$surfaceCanvas[0], this.scopeId, surfaceId);
+      this.currentSurface = this.shell.attachSurface(this.$surfaceCanvas[0], this.scopeId, surfaceId, callback);
     }
     return this.currentSurface;
   };

@@ -7,9 +7,10 @@ class Named
   constructor: (@shell, @balloon)->
     @$named = $("<div />")
       .addClass("named")
-    @$style = $("<style scoped />")
+    $namedStyle = $("<style scoped />")
       .html("")
-    @$named.append(@$style)
+    @$named
+      .append($namedStyle)
     @element = @$named[0]
     @scopes = []
     @currentScope = null

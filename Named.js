@@ -7,11 +7,12 @@ Named = (function() {
   $ = window["Zepto"];
 
   function Named(shell, balloon) {
+    var $namedStyle;
     this.shell = shell;
     this.balloon = balloon;
     this.$named = $("<div />").addClass("named");
-    this.$style = $("<style scoped />").html("");
-    this.$named.append(this.$style);
+    $namedStyle = $("<style scoped />").html("");
+    this.$named.append($namedStyle);
     this.element = this.$named[0];
     this.scopes = [];
     this.currentScope = null;

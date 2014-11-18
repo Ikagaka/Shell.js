@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "ikagaka.shell.js": "",
-    "ikagaka.balloon.js": ""
+    "ikagaka.balloon.js": "",
+    "zepto": ""
   },
   "devDependencies": {
   },

@@ -11,7 +11,7 @@ class Scope
         "bottom": "0px",
         "right": (@scopeId*240)+"px"
       })
-    @$style = $("<style scoped />")
+    $scopeStyle = $("<style scoped />")
       .html("""
         .scope {
           display: inline-block;
@@ -31,7 +31,7 @@ class Scope
       .hide()
     @$blimpCanvas =  $("<canvas width='0' height='0' />")
       .addClass("blimpCanvas")
-    @$blimpStyle = $("<style scoped />")
+    $blimpStyle = $("<style scoped />")
       .html("""
         .blimp {
           display: inline-block;
@@ -62,14 +62,14 @@ class Scope
       .addClass("blimpText")
     @$blimp = $("<div />")
       .addClass("blimp")
-      .append(@$blimpStyle)
+      .append($blimpStyle)
       .append(@$blimpCanvas)
       .append(@$blimpText)
       .hide()
     @$scope
+      .append($scopeStyle)
       .append(@$surface)
       .append(@$blimp)
-      .append(@$style)
     @element = @$scope[0]
     @currentSurface = null
     @currentBalloon = null
@@ -89,7 +89,7 @@ class Scope
       else @$surface.show()
       if !!@currentSurface
       then @currentSurface.destructor()
-      @currentSurface = @shell.attachSurface(@$surfaceCanvas[0], @scopeId, surfaceId)
+      @currentSurface = @shell.attachSurface(@$surfaceCanvas[0], @scopeId, surfaceId, callback)
     @currentSurface
 
   blimp: (balloonId, callback=->)->

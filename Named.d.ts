@@ -4,8 +4,10 @@ declare class Named {
   scope(scopeId?: number): Scope; // stable
   element: HTMLElement; // stable
   scopes: Scope[]; // unstable
+  currentScope: Scope; // unstable
   shell: Shell; // unstable
   balloon: Balloon; // unstable
+  $named: ZeptoCollection; // unstable
 }
 
 declare module Named {

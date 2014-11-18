@@ -10,6 +10,15 @@ declare class Scope {
   element: HTMLElement; // stable
   shell: Shell; // unstable
   balloon: Balloon; // unstable
+  $scope: ZeptoCollection; // unstable
+  $surfaceCanvas: ZeptoCollection; // unstable
+  $surface: ZeptoCollection; // unstable
+  $blimpCanvas: ZeptoCollection; // unstable
+  $blimpText: ZeptoCollection; // unstable
+  $blimp: ZeptoCollection; // unstable
+  currentSurface: Surface // unstable
+  currentBalloon: BalloonSurface // unstable
+  leftFlag: boolean; // unstable
 }
 
 declare module Scope {
