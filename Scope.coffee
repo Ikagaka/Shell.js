@@ -130,6 +130,8 @@ class Scope
           "height": "#{h-(Number(t)-Number(b))}px"
         })
     talk: (txt)=>
+      if !!@currentSurface
+        @currentSurface.talk()
       @$blimp.show()
       @$blimpText.html(@$blimpText.html() + txt)
       @$blimpText[0].scrollTop = 999

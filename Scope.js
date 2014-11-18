@@ -109,6 +109,9 @@ Scope = (function() {
     return {
       talk: (function(_this) {
         return function(txt) {
+          if (!!_this.currentSurface) {
+            _this.currentSurface.talk();
+          }
           _this.$blimp.show();
           _this.$blimpText.html(_this.$blimpText.html() + txt);
           _this.$blimpText[0].scrollTop = 999;

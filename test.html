@@ -49,18 +49,32 @@ Promise.all([
     console.log(ev.detail);
   });
 
-  named.scope(0)
-  named.scope().surface(0);
-  named.scope().blimp(0);
-  named.scope().blimp().talk("rg");
-  named.scope().blimp().br();
-  named.scope().blimp().talk("klzd");
-  named.scope().blimp().br();
-  named.scope(1)
-  named.scope().surface(10);
-  named.scope().blimp(0);
-  named.scope().blimp().talk("rg");
-  named.scope().blimp().br();
+  var text = "HELLO WORLD!"
+  var text2;
+  var i = -1;
+
+  init();
+
+  setTimeout(recur);
+
+  function init(){
+    text2 = text;
+    i += 1;
+    named.scope(i % 2);
+    named.scope().surface(i);
+    named.scope().blimp(0)
+  }
+
+  function recur(){
+    if(text2.length === 0){
+      named.scope(i % 2).blimp(0).br();
+      init();
+    }
+    named.scope().blimp().talk(text2[0]);
+    text2 = text2.slice(1);
+    setTimeout(recur, 100);
+  }
+
 }).catch(function(err){ console.error(err.stack) });
 
 
