@@ -1,6 +1,6 @@
 {
   "name":           "ikagaka.named.js",
-  "version":        "0.1.5",
+  "version":        "0.1.6",
   "description":    "Ikagaka Named DOM Manager ",
   "url":            "https://github.com/ikagaka/Named.js",
   "keywords":       ["ikagaka", "unstable", "ukagaka"],
