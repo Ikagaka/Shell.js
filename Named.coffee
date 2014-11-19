@@ -2,7 +2,7 @@
 
 class Named
 
-  $ = window["Zepto"]
+  $ = window["jQuery"]
 
   constructor: (@shell, @balloon)->
     @$named = $("<div />")

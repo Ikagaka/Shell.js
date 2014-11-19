@@ -2,22 +2,26 @@
 
 class Scope
 
-  $ = window["Zepto"]
+  $ = window["jQuery"]
 
   constructor: (@scopeId, @shell, @balloon)->
     @$scope = $("<div />")
       .addClass("scope")
       .css({
+        "position": "absolute",
         "bottom": "0px",
         "right": (@scopeId*240)+"px"
       })
+      .draggable({})
     $scopeStyle = $("<style scoped />")
       .html("""
         .scope {
           display: inline-block;
           position: absolute;
-          /*-webkit-user-select: none;*/
-          /*-webkit-tap-highlight-color: transparent;*/
+          -webkit-user-select: none;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+          tap-highlight-color: transparent;
         }
         .surfaceCanvas {
           display: inline-block;
@@ -28,7 +32,6 @@ class Scope
     @$surface = $("<div />")
       .addClass("surface")
       .append(@$surfaceCanvas)
-      .hide()
     @$blimpCanvas =  $("<canvas width='0' height='0' />")
       .addClass("blimpCanvas")
     $blimpStyle = $("<style scoped />")
@@ -65,7 +68,10 @@ class Scope
       .append($blimpStyle)
       .append(@$blimpCanvas)
       .append(@$blimpText)
-      .hide()
+      .css({
+        "position": "absolute"
+      })
+      .draggable()
     @$scope
       .append($scopeStyle)
       .append(@$surface)
@@ -74,19 +80,21 @@ class Scope
     @currentSurface = null
     @currentBalloon = null
     @leftFlag = true
+    ###
     @$blimp.on "click", (ev)=>
       @leftFlag = !@leftFlag
       if @leftFlag
       then @blimp(0)
       else @blimp(1)
+    ###
 
 
   surface: (surfaceId, callback=->)->
     type = if @scopeId is 0 then "sakura" else "kero"
     if surfaceId?
       if surfaceId is -1
-      then @$surface.hide()
-      else @$surface.show()
+      then @$surface.css({"visibility": "hidden"})
+      else @$surface.css({"visibility": "visible"})
       if !!@currentSurface
       then @currentSurface.destructor()
       @currentSurface = @shell.attachSurface(@$surfaceCanvas[0], @scopeId, surfaceId, callback)
@@ -116,6 +124,10 @@ class Scope
           @$blimp.css({
             "top":  Number(@shell.descript["#{type}.balloon.offsety"] or 0),
             "left": Number(@shell.descript["#{type}.balloon.offsetx"] or 0) + @$surfaceCanvas.width()
+          })
+        if @$blimp.offset().top - @$blimp.position().top >= $(window).height()
+          @$blimp.css({
+            "top":  -$(@$blimpCanvas).height(),
           })
         t = descript["origin.y"] or descript["validrect.top"] or "10"
         r = descript["validrect.right"] or "10"

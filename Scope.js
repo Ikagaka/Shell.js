@@ -4,7 +4,7 @@ var Scope;
 Scope = (function() {
   var $;
 
-  $ = window["Zepto"];
+  $ = window["jQuery"];
 
   function Scope(scopeId, shell, balloon) {
     var $blimpStyle, $scopeStyle;
@@ -12,31 +12,32 @@ Scope = (function() {
     this.shell = shell;
     this.balloon = balloon;
     this.$scope = $("<div />").addClass("scope").css({
+      "position": "absolute",
       "bottom": "0px",
       "right": (this.scopeId * 240) + "px"
-    });
-    $scopeStyle = $("<style scoped />").html(".scope {\n  display: inline-block;\n  position: absolute;\n  /*-webkit-user-select: none;*/\n  /*-webkit-tap-highlight-color: transparent;*/\n}\n.surfaceCanvas {\n  display: inline-block;\n}");
+    }).draggable({});
+    $scopeStyle = $("<style scoped />").html(".scope {\n  display: inline-block;\n  position: absolute;\n  -webkit-user-select: none;\n  user-select: none;\n  -webkit-tap-highlight-color: transparent;\n  tap-highlight-color: transparent;\n}\n.surfaceCanvas {\n  display: inline-block;\n}");
     this.$surfaceCanvas = $("<canvas />").addClass("surfaceCanvas");
-    this.$surface = $("<div />").addClass("surface").append(this.$surfaceCanvas).hide();
+    this.$surface = $("<div />").addClass("surface").append(this.$surfaceCanvas);
     this.$blimpCanvas = $("<canvas width='0' height='0' />").addClass("blimpCanvas");
     $blimpStyle = $("<style scoped />").html(".blimp {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpCanvas {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpText {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n  overflow-y: scroll;\n  white-space: pre;\n  white-space: pre-wrap;\n  white-space: pre-line;\n  word-wrap: break-word;\n  /*pointer-events: none;*/\n}");
     this.$blimpText = $("<div />").addClass("blimpText");
-    this.$blimp = $("<div />").addClass("blimp").append($blimpStyle).append(this.$blimpCanvas).append(this.$blimpText).hide();
+    this.$blimp = $("<div />").addClass("blimp").append($blimpStyle).append(this.$blimpCanvas).append(this.$blimpText).css({
+      "position": "absolute"
+    }).draggable();
     this.$scope.append($scopeStyle).append(this.$surface).append(this.$blimp);
     this.element = this.$scope[0];
     this.currentSurface = null;
     this.currentBalloon = null;
     this.leftFlag = true;
-    this.$blimp.on("click", (function(_this) {
-      return function(ev) {
-        _this.leftFlag = !_this.leftFlag;
-        if (_this.leftFlag) {
-          return _this.blimp(0);
-        } else {
-          return _this.blimp(1);
-        }
-      };
-    })(this));
+
+    /*
+    @$blimp.on "click", (ev)=>
+      @leftFlag = !@leftFlag
+      if @leftFlag
+      then @blimp(0)
+      else @blimp(1)
+     */
   }
 
   Scope.prototype.surface = function(surfaceId, callback) {
@@ -47,9 +48,13 @@ Scope = (function() {
     type = this.scopeId === 0 ? "sakura" : "kero";
     if (surfaceId != null) {
       if (surfaceId === -1) {
-        this.$surface.hide();
+        this.$surface.css({
+          "visibility": "hidden"
+        });
       } else {
-        this.$surface.show();
+        this.$surface.css({
+          "visibility": "visible"
+        });
       }
       if (!!this.currentSurface) {
         this.currentSurface.destructor();
@@ -90,6 +95,11 @@ Scope = (function() {
           this.$blimp.css({
             "top": Number(this.shell.descript["" + type + ".balloon.offsety"] || 0),
             "left": Number(this.shell.descript["" + type + ".balloon.offsetx"] || 0) + this.$surfaceCanvas.width()
+          });
+        }
+        if (this.$blimp.offset().top - this.$blimp.position().top >= $(window).height()) {
+          this.$blimp.css({
+            "top": -$(this.$blimpCanvas).height()
           });
         }
         t = descript["origin.y"] || descript["validrect.top"] || "10";

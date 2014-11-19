@@ -4,7 +4,7 @@ var Named;
 Named = (function() {
   var $;
 
-  $ = window["Zepto"];
+  $ = window["jQuery"];
 
   function Named(shell, balloon) {
     var $namedStyle;

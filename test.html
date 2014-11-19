@@ -5,12 +5,17 @@
 <script src="./node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/Nar.js"></script>
 <script src="./node_modules/ikagaka.shell.js/node_modules/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
 <script src="./node_modules/ikagaka.shell.js/node_modules/underscore/underscore-min.js"></script>
-<script src="./node_modules/ikagaka.shell.js/node_modules/zepto/zepto.min.js"></script>
+<script src="./node_modules/jquery/dist/jquery.min.js"></script>
 <script src="./node_modules/ikagaka.shell.js/SurfaceUtil.js"></script>
 <script src="./node_modules/ikagaka.shell.js/Surface.js"></script>
 <script src="./node_modules/ikagaka.shell.js/Shell.js"></script>
 <script src="./node_modules/ikagaka.balloon.js/BalloonSurface.js"></script>
 <script src="./node_modules/ikagaka.balloon.js/Balloon.js"></script>
+<script src="./vender/jquery-ui/core.js"></script>
+<script src="./vender/jquery-ui/widget.js"></script>
+<script src="./vender/jquery-ui/mouse.js"></script>
+<script src="./vender/jquery-ui/draggable.js"></script>
+<script src="./vender/jquery.ui.touch-punch.min.js"></script>
 <script src="./Scope.js"></script>
 <script src="./Named.js"></script>
 <script>
@@ -54,7 +59,6 @@ Promise.all([
   var i = -1;
 
   init();
-
   setTimeout(recur);
 
   function init(){
@@ -74,10 +78,5 @@ Promise.all([
     text2 = text2.slice(1);
     setTimeout(recur, 100);
   }
-
 }).catch(function(err){ console.error(err.stack) });
-
-
-
-
 </script>
