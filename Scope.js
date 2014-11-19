@@ -20,12 +20,23 @@ Scope = (function() {
     this.$surfaceCanvas = $("<canvas />").addClass("surfaceCanvas");
     this.$surface = $("<div />").addClass("surface").append(this.$surfaceCanvas);
     this.$blimpCanvas = $("<canvas width='0' height='0' />").addClass("blimpCanvas");
-    $blimpStyle = $("<style scoped />").html(".blimp {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpCanvas {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpText {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n  overflow-y: scroll;\n  white-space: pre;\n  white-space: pre-wrap;\n  white-space: pre-line;\n  word-wrap: break-word;\n  /*pointer-events: none;*/\n}");
+    $blimpStyle = $("<style scoped />").html(".blimp {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpCanvas {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpText {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n  overflow-y: scroll;\n  white-space: pre;\n  white-space: pre-wrap;\n  white-space: pre-line;\n  word-wrap: break-word;\n  /*pointer-events: none;*/\n}\n.blimpText a {\n  text-decoration: underline;\n}\n.blimpText .ikagaka-choice {\n  color: blue;\n  cursor: pointer;\n}\n.blimpText .ikagaka-choice:hover{\n  background-color: yellow;\n}");
     this.$blimpText = $("<div />").addClass("blimpText");
     this.$blimp = $("<div />").addClass("blimp").append($blimpStyle).append(this.$blimpCanvas).append(this.$blimpText).css({
       "position": "absolute"
     }).draggable();
-    this.$scope.append($scopeStyle).append(this.$surface).append(this.$blimp);
+    this.$scope.append($scopeStyle).append(this.$surface).append(this.$blimp).delegate(".ikagaka-choice", "click", (function(_this) {
+      return function(ev) {
+        var detail;
+        detail = {
+          "ID": "OnChoiceSelect",
+          "Reference0": ev.target.dataset["choiceid"]
+        };
+        return _this.$scope.trigger($.Event("IkagakaSurfaceEvent", {
+          detail: detail
+        }));
+      };
+    })(this));
     this.element = this.$scope[0];
     this.currentSurface = null;
     this.currentBalloon = null;
@@ -117,6 +128,14 @@ Scope = (function() {
       }
     }
     return {
+      choice: (function(_this) {
+        return function(text, id) {
+          $("<a />").addClass("ikagaka-choice").attr({
+            "data-choiceid": id
+          }).html(text).appendTo(_this.$blimpText);
+          return void 0;
+        };
+      })(this),
       talk: (function(_this) {
         return function(txt) {
           if (!!_this.currentSurface) {

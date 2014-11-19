@@ -74,8 +74,19 @@ Promise.all([
       named.scope(i % 2).blimp(0).br();
       init();
     }
-    named.scope().blimp().talk(text2[0]);
-    text2 = text2.slice(1);
+    if(i % 7 === 0){
+      named.scope().blimp().choice(text2, "helloworld");
+      text2 = ""
+    }else if(i % 7 === 3){
+      named.scope().blimp().clear()
+      text2 = ""
+    }else if(i % 7 === 5){
+      named.scope().blimp().br()
+      text2 = ""
+    }else{
+      named.scope().blimp().talk(text2[0])
+      text2 = text2.slice(1);
+    }
     setTimeout(recur, 100);
   }
 }).catch(function(err){ console.error(err.stack) });

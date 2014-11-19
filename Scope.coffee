@@ -60,6 +60,16 @@ class Scope
           word-wrap: break-word;
           /*pointer-events: none;*/
         }
+        .blimpText a {
+          text-decoration: underline;
+        }
+        .blimpText .ikagaka-choice {
+          color: blue;
+          cursor: pointer;
+        }
+        .blimpText .ikagaka-choice:hover{
+          background-color: yellow;
+        }
       """)
     @$blimpText = $("<div />")
       .addClass("blimpText")
@@ -76,6 +86,11 @@ class Scope
       .append($scopeStyle)
       .append(@$surface)
       .append(@$blimp)
+      .delegate ".ikagaka-choice", "click", (ev)=>
+        detail =
+          "ID": "OnChoiceSelect"
+          "Reference0": ev.target.dataset["choiceid"]
+        @$scope.trigger($.Event("IkagakaSurfaceEvent", {detail}))
     @element = @$scope[0]
     @currentSurface = null
     @currentBalloon = null
@@ -141,6 +156,13 @@ class Scope
           "width": "#{w-(Number(l)+Number(r))}px",
           "height": "#{h-(Number(t)-Number(b))}px"
         })
+    choice: (text, id)=>
+      $("<a />")
+        .addClass("ikagaka-choice")
+        .attr("data-choiceid": id)
+        .html(text)
+        .appendTo(@$blimpText)
+      undefined
     talk: (txt)=>
       if !!@currentSurface
         @currentSurface.talk()

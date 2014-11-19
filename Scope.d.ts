@@ -6,6 +6,7 @@ declare class Scope {
     talk: (text: string) => void;
     clear: () => void;
     br: () => void;
+    choice: (text: string, id: string) => void;
   }; // unstable
   element: HTMLElement; // stable
   shell: Shell; // unstable
