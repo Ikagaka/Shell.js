@@ -24,7 +24,9 @@ Scope = (function() {
     this.$blimpText = $("<div />").addClass("blimpText");
     this.$blimp = $("<div />").addClass("blimp").append($blimpStyle).append(this.$blimpCanvas).append(this.$blimpText).css({
       "position": "absolute"
-    }).draggable();
+    }).draggable().click((function(_this) {
+      return function(ev) {};
+    })(this));
     this.$scope.append($scopeStyle).append(this.$surface).append(this.$blimp).delegate(".ikagaka-choice", "click", (function(_this) {
       return function(ev) {
         var detail;
@@ -130,25 +132,30 @@ Scope = (function() {
     return {
       choice: (function(_this) {
         return function(text, id) {
+          var escaped, escapedId;
+          escaped = $(document.createElement("div")).text(text).html();
+          escapedId = $(document.createElement("div")).text(id).html();
           $("<a />").addClass("ikagaka-choice").attr({
-            "data-choiceid": id
-          }).html(text).appendTo(_this.$blimpText);
+            "data-choiceid": escapedId
+          }).html(escaped).appendTo(_this.$blimpText);
           return void 0;
         };
       })(this),
       talk: (function(_this) {
-        return function(txt) {
+        return function(text) {
+          var escaped;
+          escaped = $(document.createElement("div")).text(text).html();
           if (!!_this.currentSurface) {
             _this.currentSurface.talk();
           }
           _this.$blimp.show();
-          _this.$blimpText.html(_this.$blimpText.html() + txt);
+          _this.$blimpText.html(_this.$blimpText.html() + escaped);
           _this.$blimpText[0].scrollTop = 999;
           return void 0;
         };
       })(this),
       clear: (function(_this) {
-        return function(txt) {
+        return function() {
           _this.$blimpText.html("");
           return void 0;
         };

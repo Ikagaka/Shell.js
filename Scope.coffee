@@ -82,6 +82,7 @@ class Scope
         "position": "absolute"
       })
       .draggable()
+      .click (ev)=>
     @$scope
       .append($scopeStyle)
       .append(@$surface)
@@ -157,20 +158,23 @@ class Scope
           "height": "#{h-(Number(t)-Number(b))}px"
         })
     choice: (text, id)=>
+      escaped = $(document.createElement("div")).text(text).html()
+      escapedId = $(document.createElement("div")).text(id).html()
       $("<a />")
         .addClass("ikagaka-choice")
-        .attr("data-choiceid": id)
-        .html(text)
+        .attr("data-choiceid": escapedId)
+        .html(escaped)
         .appendTo(@$blimpText)
       undefined
-    talk: (txt)=>
+    talk: (text)=>
+      escaped = $(document.createElement("div")).text(text).html()
       if !!@currentSurface
         @currentSurface.talk()
       @$blimp.show()
-      @$blimpText.html(@$blimpText.html() + txt)
+      @$blimpText.html(@$blimpText.html() + escaped)
       @$blimpText[0].scrollTop = 999
       undefined
-    clear: (txt)=>
+    clear: =>
       @$blimpText.html("")
       undefined
     br: =>

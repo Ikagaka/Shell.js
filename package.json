@@ -8,6 +8,9 @@
     "type":         "git",
     "url":          "https://github.com/ikagaka/Named.js"
   },
+  "scripts": {
+    "watch": "coffee -cwb ./*.coffee"
+  },
   "dependencies": {
     "ikagaka.shell.js": "",
     "ikagaka.balloon.js": "",

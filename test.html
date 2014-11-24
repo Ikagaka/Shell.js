@@ -54,40 +54,10 @@ Promise.all([
     console.log(ev.detail);
   });
 
-  var text = "HELLO WORLD!"
-  var text2;
-  var i = -1;
+  var text = "HELLO WORLD!<"+"script>alert(1)<"+"/script>";
 
-  init();
-  setTimeout(recur);
+  named.scope(0).surface(0)
+  named.scope(0).blimp(0).talk(text);
 
-  function init(){
-    text2 = text;
-    i += 1;
-    named.scope(i % 2);
-    named.scope().surface(i);
-    named.scope().blimp(0)
-  }
-
-  function recur(){
-    if(text2.length === 0){
-      named.scope(i % 2).blimp(0).br();
-      init();
-    }
-    if(i % 7 === 0){
-      named.scope().blimp().choice(text2, "helloworld");
-      text2 = ""
-    }else if(i % 7 === 3){
-      named.scope().blimp().clear()
-      text2 = ""
-    }else if(i % 7 === 5){
-      named.scope().blimp().br()
-      text2 = ""
-    }else{
-      named.scope().blimp().talk(text2[0])
-      text2 = text2.slice(1);
-    }
-    setTimeout(recur, 100);
-  }
 }).catch(function(err){ console.error(err.stack) });
 </script>
