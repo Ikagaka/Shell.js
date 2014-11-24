@@ -4,7 +4,7 @@ class Named
 
   $ = window["jQuery"]
 
-  Scope = window["Scope"] || window["Ikagaka"]["Scope"]
+  Scope = window["Scope"] || window["Ikagaka"]["Scope"] || require("./Scope.js")
 
   constructor: (@shell, @balloon)->
     @$named = $("<div />")

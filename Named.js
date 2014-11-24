@@ -6,7 +6,7 @@ Named = (function() {
 
   $ = window["jQuery"];
 
-  Scope = window["Scope"] || window["Ikagaka"]["Scope"];
+  Scope = window["Scope"] || window["Ikagaka"]["Scope"] || require("./Scope.js");
 
   function Named(shell, balloon) {
     var $namedStyle;
