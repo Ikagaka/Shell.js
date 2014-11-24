@@ -4,6 +4,8 @@ class Named
 
   $ = window["jQuery"]
 
+  Scope = window["Scope"] || window["Ikagaka"]["Scope"]
+
   constructor: (@shell, @balloon)->
     @$named = $("<div />")
       .addClass("named")

@@ -2,9 +2,11 @@
 var Named;
 
 Named = (function() {
-  var $;
+  var $, Scope;
 
   $ = window["jQuery"];
+
+  Scope = window["Scope"] || window["Ikagaka"]["Scope"];
 
   function Named(shell, balloon) {
     var $namedStyle;
