@@ -203,3 +203,10 @@ class Scope
     br: =>
       @insertPoint.html(@insertPoint.html() + "<br />")
       undefined
+
+
+if module?.exports?
+  module.exports = Scope
+
+if window["Ikagaka"]?
+  window["Ikagaka"]["Scope"] = Scope

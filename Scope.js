@@ -201,3 +201,11 @@ Scope = (function() {
   return Scope;
 
 })();
+
+if ((typeof module !== "undefined" && module !== null ? module.exports : void 0) != null) {
+  module.exports = Scope;
+}
+
+if (window["Ikagaka"] != null) {
+  window["Ikagaka"]["Scope"] = Scope;
+}

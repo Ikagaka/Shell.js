@@ -9,7 +9,8 @@
     "url":          "https://github.com/ikagaka/Named.js"
   },
   "scripts": {
-    "watch": "coffee -cwb ./*.coffee"
+    "watch": "node node_modules/uupaa.watch.js --verbose --action build ./*.coffee",
+    "build": "coffee -cb ./*.coffee"
   },
   "dependencies": {
     "ikagaka.shell.js": "",
@@ -18,6 +19,10 @@
     "jquery-ui": ""
   },
   "devDependencies": {
+    "uupaa.watch.js": ""
   },
-  "license":        "MIT"
+  "main":           "./Shell.js",
+  "author":         "duxca",
+  "license":        "MIT",
+  "contributors":   []
 }

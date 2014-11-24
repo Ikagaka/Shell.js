@@ -24,3 +24,9 @@ class Named
       @currentScope = @scopes[scopeId]
       $(@element).append(@scopes[scopeId].element)
     @currentScope
+
+if module?.exports?
+  module.exports = Named
+
+if window["Ikagaka"]?
+  window["Ikagaka"]["Named"] = Named
