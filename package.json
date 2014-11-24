@@ -21,7 +21,7 @@
   "devDependencies": {
     "uupaa.watch.js": ""
   },
-  "main":           "./Shell.js",
+  "main":           "./Named.js",
   "author":         "duxca",
   "license":        "MIT",
   "contributors":   []
