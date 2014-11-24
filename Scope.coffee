@@ -197,6 +197,7 @@ class Scope
       @$blimpText[0].scrollTop = 999
       undefined
     clear: =>
+      @insertPoint = @$blimpText
       @$blimpText.html("")
       undefined
     br: =>

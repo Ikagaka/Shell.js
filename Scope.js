@@ -184,6 +184,7 @@ Scope = (function() {
       })(this),
       clear: (function(_this) {
         return function() {
+          _this.insertPoint = _this.$blimpText;
           _this.$blimpText.html("");
           return void 0;
         };
