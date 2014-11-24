@@ -67,9 +67,15 @@ class Scope
           color: blue;
           cursor: pointer;
         }
-        .blimpText .ikagaka-choice:hover{
+        .blimpText .ikagaka-anchor {
+          color: red;
+          cursor: pointer;
+        }
+        .blimpText .ikagaka-choice:hover,
+        .blimpText .ikagaka-anchor:hover{
           background-color: yellow;
         }
+
       """)
     @$blimpText = $("<div />")
       .addClass("blimpText")
@@ -87,15 +93,21 @@ class Scope
       .append($scopeStyle)
       .append(@$surface)
       .append(@$blimp)
-      .delegate ".ikagaka-choice", "click", (ev)=>
+      .delegate(".ikagaka-choice", "click", (ev)=>
         detail =
           "ID": "OnChoiceSelect"
           "Reference0": ev.target.dataset["choiceid"]
+        @$scope.trigger($.Event("IkagakaSurfaceEvent", {detail})))
+      .delegate ".ikagaka-anchor", "click", (ev)=>
+        detail =
+          "ID": "OnAnchorSelect"
+          "Reference0": ev.target.dataset["anchorid"]
         @$scope.trigger($.Event("IkagakaSurfaceEvent", {detail}))
     @element = @$scope[0]
     @currentSurface = null
     @currentBalloon = null
     @leftFlag = true
+    @insertPoint = @$blimpText
     ###
     @$blimp.on "click", (ev)=>
       @leftFlag = !@leftFlag
@@ -157,26 +169,36 @@ class Scope
           "width": "#{w-(Number(l)+Number(r))}px",
           "height": "#{h-(Number(t)-Number(b))}px"
         })
-    choice: (text, id)=>
-      escaped = $(document.createElement("div")).text(text).html()
-      escapedId = $(document.createElement("div")).text(id).html()
-      $("<a />")
-        .addClass("ikagaka-choice")
-        .attr("data-choiceid": escapedId)
-        .html(escaped)
+    anchorStart: (id)=>
+      _id = $(document.createElement("div")).text(id).html()
+      @insertPoint = $("<a />")
+      .addClass("ikagaka-anchor")
+        .attr("data-anchorid": _id)
         .appendTo(@$blimpText)
       undefined
+    anchorStop: =>
+      @insertPoint = @$blimpText
+      undefined
+    choice: (text, id)=>
+      _text = $(document.createElement("div")).text(text).html()
+      _id = $(document.createElement("div")).text(id).html()
+      $("<a />")
+        .addClass("ikagaka-choice")
+        .attr("data-choiceid": _id)
+        .html(_text)
+        .appendTo(@insertPoint)
+      undefined
     talk: (text)=>
-      escaped = $(document.createElement("div")).text(text).html()
+      _text = $(document.createElement("div")).text(text).html()
       if !!@currentSurface
         @currentSurface.talk()
       @$blimp.show()
-      @$blimpText.html(@$blimpText.html() + escaped)
+      @insertPoint.html(@insertPoint.html() + _text)
       @$blimpText[0].scrollTop = 999
       undefined
     clear: =>
       @$blimpText.html("")
       undefined
     br: =>
-      @$blimpText.html(@$blimpText.html() + "<br />")
+      @insertPoint.html(@insertPoint.html() + "<br />")
       undefined

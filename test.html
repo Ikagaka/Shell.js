@@ -54,10 +54,16 @@ Promise.all([
     console.log(ev.detail);
   });
 
-  var text = "HELLO WORLD!<"+"script>alert(1)<"+"/script>";
 
-  named.scope(0).surface(0)
-  named.scope(0).blimp(0).talk(text);
+  named.scope(0).surface(0);
+  named.scope(0).blimp(0).talk("HELLO WORLD!");
+  named.scope(0).blimp(0).anchorStart("AnchorID");
+  named.scope(0).blimp(0).talk("anchor");
+  named.scope(0).blimp(0).anchorStop();
+  named.scope(0).blimp(0).br();
+  named.scope(0).blimp(0).talk("<"+"script>alert(1);<"+"/script>");
+  named.scope(0).blimp(0).br();
+  named.scope(0).blimp(0).choice("choice", "ChoceID");
 
 }).catch(function(err){ console.error(err.stack) });
 </script>
