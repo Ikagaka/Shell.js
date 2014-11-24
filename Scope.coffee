@@ -169,14 +169,14 @@ class Scope
           "width": "#{w-(Number(l)+Number(r))}px",
           "height": "#{h-(Number(t)-Number(b))}px"
         })
-    anchorStart: (id)=>
+    anchorBegin: (id)=>
       _id = $(document.createElement("div")).text(id).html()
       @insertPoint = $("<a />")
       .addClass("ikagaka-anchor")
         .attr("data-anchorid": _id)
         .appendTo(@$blimpText)
       undefined
-    anchorStop: =>
+    anchorEnd: =>
       @insertPoint = @$blimpText
       undefined
     choice: (text, id)=>

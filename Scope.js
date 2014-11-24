@@ -142,7 +142,7 @@ Scope = (function() {
       }
     }
     return {
-      anchorStart: (function(_this) {
+      anchorBegin: (function(_this) {
         return function(id) {
           var _id;
           _id = $(document.createElement("div")).text(id).html();
@@ -152,7 +152,7 @@ Scope = (function() {
           return void 0;
         };
       })(this),
-      anchorStop: (function(_this) {
+      anchorEnd: (function(_this) {
         return function() {
           _this.insertPoint = _this.$blimpText;
           return void 0;
