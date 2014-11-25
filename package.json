@@ -20,7 +20,7 @@
   "devDependencies": {
   },
   "main":           "./Named.js",
-  "author":         "duxca",
+  "author":         "Ikagaka",
   "license":        "MIT",
-  "contributors":   []
+  "contributors":   ["legokichi"]
 }
