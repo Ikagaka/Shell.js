@@ -7,62 +7,34 @@ Scope = (function() {
   $ = window["jQuery"];
 
   function Scope(scopeId, shell, balloon) {
-    var $blimpStyle, $scopeStyle;
+    var $style;
     this.scopeId = scopeId;
     this.shell = shell;
     this.balloon = balloon;
-    this.$scope = $("<div />").addClass("scope").css({
-      "position": "absolute",
-      "bottom": "0px",
-      "right": (this.scopeId * 240) + "px"
-    }).draggable({});
-    $scopeStyle = $("<style scoped />").html(".scope {\n  display: inline-block;\n  position: absolute;\n  -webkit-user-select: none;\n  user-select: none;\n  -webkit-tap-highlight-color: transparent;\n  tap-highlight-color: transparent;\n}\n.surfaceCanvas {\n  display: inline-block;\n}");
+    this.$scope = $("<div />").addClass("scope");
+    $style = $("<style scoped />").html(this.style);
+    this.$surface = $("<div />").addClass("surface");
     this.$surfaceCanvas = $("<canvas />").addClass("surfaceCanvas");
-    this.$surface = $("<div />").addClass("surface").append(this.$surfaceCanvas);
+    this.$blimp = $("<div />").addClass("blimp");
     this.$blimpCanvas = $("<canvas width='0' height='0' />").addClass("blimpCanvas");
-    $blimpStyle = $("<style scoped />").html(".blimp {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpCanvas {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpText {\n  display: inline-block;\n  position: absolute;\n  top: 0px;\n  left: 0px;\n  overflow-y: scroll;\n  white-space: pre;\n  white-space: pre-wrap;\n  white-space: pre-line;\n  word-wrap: break-word;\n  /*pointer-events: none;*/\n}\n.blimpText a {\n  text-decoration: underline;\n}\n.blimpText .ikagaka-choice {\n  color: blue;\n  cursor: pointer;\n}\n.blimpText .ikagaka-anchor {\n  color: red;\n  cursor: pointer;\n}\n.blimpText .ikagaka-choice:hover,\n.blimpText .ikagaka-anchor:hover{\n  background-color: yellow;\n}\n");
     this.$blimpText = $("<div />").addClass("blimpText");
-    this.$blimp = $("<div />").addClass("blimp").append($blimpStyle).append(this.$blimpCanvas).append(this.$blimpText).css({
-      "position": "absolute"
-    }).draggable().click((function(_this) {
-      return function(ev) {};
-    })(this));
-    this.$scope.append($scopeStyle).append(this.$surface).append(this.$blimp).delegate(".ikagaka-choice", "click", (function(_this) {
-      return function(ev) {
-        var detail;
-        detail = {
-          "ID": "OnChoiceSelect",
-          "Reference0": ev.target.dataset["choiceid"]
-        };
-        return _this.$scope.trigger($.Event("IkagakaSurfaceEvent", {
-          detail: detail
-        }));
-      };
-    })(this)).delegate(".ikagaka-anchor", "click", (function(_this) {
-      return function(ev) {
-        var detail;
-        detail = {
-          "ID": "OnAnchorSelect",
-          "Reference0": ev.target.dataset["anchorid"]
-        };
-        return _this.$scope.trigger($.Event("IkagakaSurfaceEvent", {
-          detail: detail
-        }));
-      };
-    })(this));
+    this.$surface.append(this.$surfaceCanvas);
+    this.$blimp.append(this.$blimpCanvas);
+    this.$blimp.append(this.$blimpText);
+    this.$scope.append($style);
+    this.$scope.append(this.$surface);
+    this.$scope.append(this.$blimp);
     this.element = this.$scope[0];
+    this.destructors = [];
     this.currentSurface = null;
     this.currentBalloon = null;
-    this.leftFlag = true;
+    this.isBalloonLeft = true;
+    this.talkInsertPointStack = [this.$blimpText];
     this.insertPoint = this.$blimpText;
-
-    /*
-    @$blimp.on "click", (ev)=>
-      @leftFlag = !@leftFlag
-      if @leftFlag
-      then @blimp(0)
-      else @blimp(1)
-     */
+    this.$scope.css({
+      "bottom": "0px",
+      "right": (this.scopeId * 240) + "px"
+    });
   }
 
   Scope.prototype.surface = function(surfaceId, callback) {
@@ -85,6 +57,8 @@ Scope = (function() {
         this.currentSurface.destructor();
       }
       this.currentSurface = this.shell.attachSurface(this.$surfaceCanvas[0], this.scopeId, surfaceId, callback);
+      this.$scope.width(this.$surfaceCanvas.width());
+      this.$scope.height(this.$surfaceCanvas.height());
     }
     return this.currentSurface;
   };
@@ -111,7 +85,7 @@ Scope = (function() {
           "width": this.$blimpCanvas.width(),
           "height": this.$blimpCanvas.height()
         });
-        if (this.leftFlag) {
+        if (this.isBalloonLeft) {
           this.$blimp.css({
             "top": Number(this.shell.descript["" + type + ".balloon.offsety"] || 0),
             "left": Number(this.shell.descript["" + type + ".balloon.offsetx"] || 0) + -1 * this.$blimpCanvas.width()
@@ -197,6 +171,8 @@ Scope = (function() {
       })(this)
     };
   };
+
+  Scope.prototype.style = ".scope {\n  position: absolute;\n  pointer-events: none;\n  user-select: none;\n  -webkit-tap-highlight-color: transparent;\n}\n.surface {}\n.surfaceCanvas {\n  pointer-events: auto;\n}\n.blimp {\n  position: absolute;\n  top: 0px;\n  left: 0px;\n  pointer-events: auto;\n}\n.blimpCanvas {\n  position: absolute;\n  top: 0px;\n  left: 0px;\n}\n.blimpText {\n  position: absolute;\n  top: 0px;\n  left: 0px;\n  overflow-y: scroll;\n  white-space: pre;\n  white-space: pre-wrap;\n  white-space: pre-line;\n  word-wrap: break-word;\n}\n.blimpText a {\n  text-decoration: underline;\n  cursor: pointer;\n}\n.blimpText a:hover { background-color: yellow; }\n.blimpText a.ikagaka-choice { color: blue; }\n.blimpText a.ikagaka-anchor { color: red; }";
 
   return Scope;
 

@@ -12,15 +12,6 @@
 <script src="./node_modules/ikagaka.shell.js/Shell.js"></script>
 <script src="./node_modules/ikagaka.balloon.js/BalloonSurface.js"></script>
 <script src="./node_modules/ikagaka.balloon.js/Balloon.js"></script>
-<script src="./vender/jquery-ui/core.js"></script>
-<script src="./vender/jquery-ui/widget.js"></script>
-<script src="./vender/jquery-ui/mouse.js"></script>
-<script src="./vender/jquery-ui/draggable.js"></script>
-<script src="./vender/jquery-ui/resizable.js"></script>
-<script src="./vender/jquery-ui/position.js"></script>
-<script src="./vender/jquery-ui/button.js"></script>
-<script src="./vender/jquery-ui/dialog.js"></script>
-<script src="./vender/jquery.ui.touch-punch.min.js"></script>
 <script src="./Scope.js"></script>
 <script src="./Named.js"></script>
 <script>
@@ -61,14 +52,16 @@ Promise.all([
 
 
   named.scope(0).surface(0);
-  named.scope(0).blimp(0).talk("HELLO WORLD!");
-  named.scope(0).blimp(0).anchorBegin("AnchorID");
-  named.scope(0).blimp(0).talk("anchor");
-  named.scope(0).blimp(0).anchorEnd();
-  named.scope(0).blimp(0).br();
-  named.scope(0).blimp(0).talk("<"+"script>alert(1);<"+"/script>");
-  named.scope(0).blimp(0).br();
-  named.scope(0).blimp(0).choice("choice", "ChoceID");
+  named.scope().blimp(0).talk("HELLO WORLD!");
+  named.scope().blimp().anchorBegin("AnchorID");
+  named.scope().blimp().talk("anchor");
+  named.scope().blimp().anchorEnd();
+  named.scope().blimp().br();
+  named.scope().blimp().talk("<"+"script>alert(1);<"+"/script>");
+  named.scope().blimp().br();
+  named.scope().blimp().choice("choice", "ChoceID");
+  named.scope(1).surface(10);
+  named.scope().blimp(0).talk("HELLO UKAGAKA!");
   named.openInputBox("hoge", "huga")
   named.openCommunicateBox()
 
