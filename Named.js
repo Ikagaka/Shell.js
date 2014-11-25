@@ -20,6 +20,13 @@ Named = (function() {
     this.currentScope = null;
   }
 
+  Named.prototype.destructor = function() {
+    this.scopes.forEach(function(scope) {
+      return $(scope.element).remove();
+    });
+    return this.$named.remove();
+  };
+
   Named.prototype.scope = function(scopeId) {
     if (scopeId !== void 0) {
       if (!this.scopes[scopeId]) {
@@ -34,6 +41,63 @@ Named = (function() {
       $(this.element).append(this.scopes[scopeId].element);
     }
     return this.currentScope;
+  };
+
+  Named.prototype.openInputBox = function(id, text) {
+    var $dialog, $input;
+    if (text == null) {
+      text = "";
+    }
+    $input = $("<input type='text' />").val(text);
+    $dialog = $("<div />").attr({
+      "title": "input box"
+    }).dialog({
+      "autoOpen": false
+    }).append($input).append($("<input type='button' />").val("send").click((function(_this) {
+      return function(ev) {
+        var detail;
+        detail = {
+          "ID": "OnUserInput",
+          "Reference0": id,
+          "Reference1": $input.val()
+        };
+        _this.$named.trigger($.Event("IkagakaSurfaceEvent", {
+          detail: detail
+        }));
+        return $dialog.dialog("destroy").remove();
+      };
+    })(this))).dialog("open");
+    return setTimeout((function() {
+      return $dialog.dialog("destroy").remove();
+    }), 30000);
+  };
+
+  Named.prototype.openCommunicateBox = function(text) {
+    var $dialog, $input;
+    if (text == null) {
+      text = "";
+    }
+    $input = $("<input type='text' />").val(text);
+    $dialog = $("<div />").attr({
+      "title": "communicate box"
+    }).dialog({
+      "autoOpen": false
+    }).append($input).append($("<input type='button' />").val("send").click((function(_this) {
+      return function(ev) {
+        var detail;
+        detail = {
+          "ID": "OnCommunicate",
+          "Reference0": "user",
+          "Reference1": $input.val()
+        };
+        return _this.$named.trigger($.Event("IkagakaSurfaceEvent", {
+          detail: detail
+        }));
+      };
+    })(this))).dialog("open");
+    return setTimeout((function() {
+      return $dialog.dialog("destroy").remove();
+    }), 60000);
   };
 
   return Named;

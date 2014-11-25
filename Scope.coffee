@@ -32,7 +32,7 @@ class Scope
     @$surface = $("<div />")
       .addClass("surface")
       .append(@$surfaceCanvas)
-    @$blimpCanvas =  $("<canvas width='0' height='0' />")
+    @$blimpCanvas = $("<canvas width='0' height='0' />")
       .addClass("blimpCanvas")
     $blimpStyle = $("<style scoped />")
       .html("""
