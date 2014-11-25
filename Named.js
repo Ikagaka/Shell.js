@@ -53,7 +53,6 @@ Named = (function() {
             relLeft = ev.pageX - left;
             relTop = ev.pageY - top;
             return setTimeout((function() {
-              console.log("forcused", _target[0]);
               return _this.$named.append(_target);
             }), 100);
           }
@@ -80,9 +79,7 @@ Named = (function() {
     (function(_this) {
       return (function() {
         var onblimpclick;
-        onblimpclick = function(ev) {
-          return console.log("onblimpclick");
-        };
+        onblimpclick = function(ev) {};
         _this.$named.on("click", ".blimp", onblimpclick);
         return _this.destructors.push(function() {
           return _this.$named.off("click", ".blimp", onblimpclick);

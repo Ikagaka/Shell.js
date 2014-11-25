@@ -41,7 +41,6 @@ class Named
           relLeft = ev.pageX - left
           relTop  = ev.pageY - top
           setTimeout((=>
-            console.log "forcused", _target[0]
             @$named.append(_target) ), 100)
       onmousemove = (ev)=>
         if !!$target
@@ -58,7 +57,6 @@ class Named
         $body.off("mousemove", onmousemove)
     do =>
       onblimpclick = (ev)=>
-        console.log "onblimpclick"
       @$named.on("click", ".blimp", onblimpclick)
       @destructors.push =>
         @$named.off("click", ".blimp", onblimpclick)
