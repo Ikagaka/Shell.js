@@ -29,19 +29,21 @@ class Named
               $target = null
       onmousedown = (ev)=>
         if $(ev.target).hasClass("blimpText") || $(ev.target).hasClass("blimpCanvas")
-          $target = $(ev.target).parent()
-          {top, left} = $target.offset()
-          offsetY = parseInt($target.css("left"), 10)
-          offsetX = parseInt($target.css("top"), 10)
-          relLeft = ev.pageX - offsetY
-          relTop  = ev.pageY - offsetX
+          if $(ev.target).parent().parent()[0] is @element
+            $target = $(ev.target).parent()
+            {top, left} = $target.offset()
+            offsetY = parseInt($target.css("left"), 10)
+            offsetX = parseInt($target.css("top"), 10)
+            relLeft = ev.pageX - offsetY
+            relTop  = ev.pageY - offsetX
         if $(ev.target).hasClass("surfaceCanvas")
-          _target = $target = $(ev.target).parent().parent()
-          {top, left} = $target.offset()
-          relLeft = ev.pageX - left
-          relTop  = ev.pageY - top
-          setTimeout((=>
-            @$named.append(_target) ), 100)
+          if $(ev.target).parent().parent().parent()[0] is @element
+            _target = $target = $(ev.target).parent().parent()
+            {top, left} = $target.offset()
+            relLeft = ev.pageX - left
+            relTop  = ev.pageY - top
+            setTimeout((=>
+              @$named.append(_target) ), 100)
       onmousemove = (ev)=>
         if !!$target
           $target.css

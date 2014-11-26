@@ -40,21 +40,25 @@ Named = (function() {
         onmousedown = function(ev) {
           var left, offsetX, offsetY, top, _ref1, _ref2, _target;
           if ($(ev.target).hasClass("blimpText") || $(ev.target).hasClass("blimpCanvas")) {
-            $target = $(ev.target).parent();
-            _ref1 = $target.offset(), top = _ref1.top, left = _ref1.left;
-            offsetY = parseInt($target.css("left"), 10);
-            offsetX = parseInt($target.css("top"), 10);
-            relLeft = ev.pageX - offsetY;
-            relTop = ev.pageY - offsetX;
+            if ($(ev.target).parent().parent()[0] === _this.element) {
+              $target = $(ev.target).parent();
+              _ref1 = $target.offset(), top = _ref1.top, left = _ref1.left;
+              offsetY = parseInt($target.css("left"), 10);
+              offsetX = parseInt($target.css("top"), 10);
+              relLeft = ev.pageX - offsetY;
+              relTop = ev.pageY - offsetX;
+            }
           }
           if ($(ev.target).hasClass("surfaceCanvas")) {
-            _target = $target = $(ev.target).parent().parent();
-            _ref2 = $target.offset(), top = _ref2.top, left = _ref2.left;
-            relLeft = ev.pageX - left;
-            relTop = ev.pageY - top;
-            return setTimeout((function() {
-              return _this.$named.append(_target);
-            }), 100);
+            if ($(ev.target).parent().parent().parent()[0] === _this.element) {
+              _target = $target = $(ev.target).parent().parent();
+              _ref2 = $target.offset(), top = _ref2.top, left = _ref2.left;
+              relLeft = ev.pageX - left;
+              relTop = ev.pageY - top;
+              return setTimeout((function() {
+                return _this.$named.append(_target);
+              }), 100);
+            }
           }
         };
         onmousemove = function(ev) {
