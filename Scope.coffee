@@ -2,7 +2,7 @@
 
 class Scope
 
-  $ = window["jQuery"]
+  $ = window["Zepto"]
 
   constructor: (@scopeId, @shell, @balloon)->
     @$scope = $("<div />").addClass("scope")

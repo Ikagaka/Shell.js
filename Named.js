@@ -4,7 +4,7 @@ var Named;
 Named = (function() {
   var $, Scope, prompt, _ref;
 
-  $ = window["jQuery"];
+  $ = window["Zepto"];
 
   Scope = window["Scope"] || ((_ref = window["Ikagaka"]) != null ? _ref["Scope"] : void 0) || require("./Scope.js");
 

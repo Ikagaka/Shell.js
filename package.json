@@ -1,6 +1,6 @@
 {
   "name":           "ikagaka.named.js",
-  "version":        "1.2.2",
+  "version":        "1.2.3",
   "description":    "Ikagaka Named DOM Manager ",
   "url":            "https://github.com/ikagaka/Named.js",
   "keywords":       ["ikagaka", "unstable", "ukagaka"],
@@ -15,7 +15,7 @@
   "dependencies": {
     "ikagaka.shell.js": "",
     "ikagaka.balloon.js": "",
-    "jquery": ""
+    "zepto": ""
   },
   "devDependencies": {
   },

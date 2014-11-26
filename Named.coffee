@@ -2,7 +2,7 @@
 
 class Named
 
-  $ = window["jQuery"]
+  $ = window["Zepto"]
 
   Scope = window["Scope"] || window["Ikagaka"]?["Scope"] || require("./Scope.js")
 

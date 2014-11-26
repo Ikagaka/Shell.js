@@ -4,7 +4,7 @@ var Scope;
 Scope = (function() {
   var $;
 
-  $ = window["jQuery"];
+  $ = window["Zepto"];
 
   function Scope(scopeId, shell, balloon) {
     var $style;
