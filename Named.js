@@ -25,38 +25,42 @@ Named = (function() {
         $target = null;
         relLeft = relTop = 0;
         onmouseup = function(ev) {
+          var _ref1, _ref2;
           if (!!$target) {
             if ($(ev.target).hasClass("blimpText") || $(ev.target).hasClass("blimpCanvas")) {
-              if ($target[0] === $(ev.target).parent()[0]) {
+              if ($target[0] === ((_ref1 = $(ev.target).parent()) != null ? _ref1[0] : void 0)) {
                 return $target = null;
               }
             } else if ($(ev.target).hasClass("surfaceCanvas")) {
-              if ($target[0] === $(ev.target).parent().parent()[0]) {
+              if ($target[0] === ((_ref2 = $(ev.target).parent().parent()) != null ? _ref2[0] : void 0)) {
                 return $target = null;
               }
             }
           }
         };
         onmousedown = function(ev) {
-          var left, offsetX, offsetY, top, _ref1, _ref2, _target;
+          var $scope, left, offsetX, offsetY, top, _ref1, _ref2, _ref3, _ref4;
           if ($(ev.target).hasClass("blimpText") || $(ev.target).hasClass("blimpCanvas")) {
-            if ($(ev.target).parent().parent()[0] === _this.element) {
+            if (((_ref1 = $(ev.target).parent().parent().parent()) != null ? _ref1[0] : void 0) === _this.element) {
               $target = $(ev.target).parent();
-              _ref1 = $target.offset(), top = _ref1.top, left = _ref1.left;
+              $scope = $target.parent();
+              _ref2 = $target.offset(), top = _ref2.top, left = _ref2.left;
               offsetY = parseInt($target.css("left"), 10);
               offsetX = parseInt($target.css("top"), 10);
               relLeft = ev.pageX - offsetY;
               relTop = ev.pageY - offsetX;
+              return setTimeout((function() {
+                return _this.$named.append($scope);
+              }), 100);
             }
-          }
-          if ($(ev.target).hasClass("surfaceCanvas")) {
-            if ($(ev.target).parent().parent().parent()[0] === _this.element) {
-              _target = $target = $(ev.target).parent().parent();
-              _ref2 = $target.offset(), top = _ref2.top, left = _ref2.left;
+          } else if ($(ev.target).hasClass("surfaceCanvas")) {
+            if (((_ref3 = $(ev.target).parent().parent().parent()) != null ? _ref3[0] : void 0) === _this.element) {
+              $scope = $target = $(ev.target).parent().parent();
+              _ref4 = $target.offset(), top = _ref4.top, left = _ref4.left;
               relLeft = ev.pageX - left;
               relTop = ev.pageY - top;
               return setTimeout((function() {
-                return _this.$named.append(_target);
+                return _this.$named.append($scope);
               }), 100);
             }
           }
