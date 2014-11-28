@@ -124,13 +124,11 @@
             _this.insertPoint = $("<a />").addClass("ikagaka-anchor").attr({
               "data-anchorid": _id
             }).appendTo(_this.$blimpText);
-            return void 0;
           };
         })(this),
         anchorEnd: (function(_this) {
           return function() {
             _this.insertPoint = _this.$blimpText;
-            return void 0;
           };
         })(this),
         choice: (function(_this) {
@@ -141,7 +139,6 @@
             $("<a />").addClass("ikagaka-choice").attr({
               "data-choiceid": _id
             }).html(_text).appendTo(_this.insertPoint);
-            return void 0;
           };
         })(this),
         talk: (function(_this) {
@@ -154,20 +151,17 @@
             _this.$blimp.show();
             _this.insertPoint.html(_this.insertPoint.html() + _text);
             _this.$blimpText[0].scrollTop = 999;
-            return void 0;
           };
         })(this),
         clear: (function(_this) {
           return function() {
             _this.insertPoint = _this.$blimpText;
             _this.$blimpText.html("");
-            return void 0;
           };
         })(this),
         br: (function(_this) {
           return function() {
             _this.insertPoint.html(_this.insertPoint.html() + "<br />");
-            return void 0;
           };
         })(this)
       };

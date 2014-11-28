@@ -2,7 +2,7 @@
 Scope = window["Named"] || window["Ikagaka"]?["Named"] || require("./Named.js")
 
 class NamedManager
-  constructor: ()->
+  constructor: ->
     @$namedMgr = $("<div />").addClass("namedMgr")
     @element = @$namedMgr[0]
     @namedies = []

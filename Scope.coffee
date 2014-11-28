@@ -28,7 +28,7 @@ class Scope
 
     @$surface.hide()
     @$blimp.hide()
-    
+
     # set default position
     @$scope.css
       "bottom": "0px",
@@ -46,7 +46,7 @@ class Scope
       if !!tmp then @currentSurface = tmp
       @$scope.width(@$surfaceCanvas.width())
       @$scope.height(@$surfaceCanvas.height())
-    @currentSurface
+    return @currentSurface
 
   blimp: (balloonId, callback=->)->
     type = if @scopeId is 0 then "sakura" else "kero"
@@ -95,10 +95,10 @@ class Scope
       .addClass("ikagaka-anchor")
         .attr("data-anchorid": _id)
         .appendTo(@$blimpText)
-      undefined
+      return
     anchorEnd: =>
       @insertPoint = @$blimpText
-      undefined
+      return
     choice: (text, id)=>
       _text = $(document.createElement("div")).text(text).html()
       _id = $(document.createElement("div")).text(id).html()
@@ -107,7 +107,7 @@ class Scope
         .attr("data-choiceid": _id)
         .html(_text)
         .appendTo(@insertPoint)
-      undefined
+      return
     talk: (text)=>
       _text = $(document.createElement("div")).text(text).html()
       if !!@currentSurface
@@ -115,14 +115,14 @@ class Scope
       @$blimp.show()
       @insertPoint.html(@insertPoint.html() + _text)
       @$blimpText[0].scrollTop = 999
-      undefined
+      return
     clear: =>
       @insertPoint = @$blimpText
       @$blimpText.html("")
-      undefined
+      return
     br: =>
       @insertPoint.html(@insertPoint.html() + "<br />")
-      undefined
+      return
   style: """
     .scope {
       position: absolute;

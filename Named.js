@@ -141,7 +141,7 @@
       this.destructors.forEach(function(destructor) {
         return destructor();
       });
-      return this.$named.remove();
+      this.$named.remove();
     };
 
     Named.prototype.scope = function(scopeId) {
@@ -166,7 +166,7 @@
         "Reference0": id,
         "Reference1": prompt("UserInput", text) || ""
       };
-      return this.$named.trigger($.Event("IkagakaSurfaceEvent", {
+      this.$named.trigger($.Event("IkagakaSurfaceEvent", {
         detail: detail
       }));
     };
@@ -181,7 +181,7 @@
         "Reference0": "user",
         "Reference1": prompt("Communicate", text) || ""
       };
-      return this.$named.trigger($.Event("IkagakaSurfaceEvent", {
+      this.$named.trigger($.Event("IkagakaSurfaceEvent", {
         detail: detail
       }));
     };

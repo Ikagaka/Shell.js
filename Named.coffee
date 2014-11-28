@@ -89,6 +89,7 @@ class Named
     @scopes.forEach (scope)-> $(scope.element).remove()
     @destructors.forEach (destructor)-> destructor()
     @$named.remove()
+    return
 
   scope: (scopeId)->
     if !isFinite(scopeId) then return @currentScope
@@ -96,7 +97,7 @@ class Named
       @scopes[scopeId] = new Scope(scopeId, @shell, @balloon)
     @currentScope = @scopes[scopeId]
     @$named.append(@scopes[scopeId].element)
-    @currentScope
+    return @currentScope
 
   openInputBox: (id, text="")->
     detail =
@@ -104,6 +105,7 @@ class Named
       "Reference0": id
       "Reference1": prompt("UserInput", text) || ""
     @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+    return
 
   openCommunicateBox: (text="")->
     detail =
@@ -111,6 +113,7 @@ class Named
       "Reference0": "user"
       "Reference1": prompt("Communicate", text) || ""
     @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+    return
 
 
 if module?.exports?

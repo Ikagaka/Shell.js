@@ -1,22 +1,11 @@
 
 declare class Named {
-  constructor(shell: Shell, balloon: Balloon); // stable
-  scope(scopeId?: number): Scope; // stable
-  element: HTMLElement; // stable
-  scopes: Scope[]; // unstable
-  currentScope: Scope; // unstable
-  shell: Shell; // unstable
-  balloon: Balloon; // unstable
-  $named: ZeptoCollection; // unstable
-}
+  constructor(shell: Shell, balloon: Balloon);
+  destructor(): void;
+  scope(scopeId?: number): Scope;
+  openInputBox(id: string, placeHolder?: string): void;
+  openCommunicateBox(placeHolder?: string): void;
 
-declare module Named {
-}
-
-declare module 'named' {
-  var foo: typeof Named;
-  module rsvp {
-    export var Named: typeof foo;
-  }
-  export = rsvp;
+  element: HTMLElement;
+  scopes: Scope[];
 }
