@@ -1,18 +1,17 @@
+$ = window["Zepto"]
+
+Scope = window["Scope"] || window["Ikagaka"]?["Scope"] || require("./Scope.js")
+
+prompt = window["prompt"]
 
 
 class Named
-
-  $ = window["Zepto"]
-
-  Scope = window["Scope"] || window["Ikagaka"]?["Scope"] || require("./Scope.js")
-
-  prompt = window["prompt"]
 
   constructor: (@shell, @balloon)->
     @$named = $("<div />").addClass("named")
     @element = @$named[0]
     @scopes = []
-    @scopes[0] = new Scope(0, @shell, @balloon)
+    @scopes[0] = @scope(0)
     @currentScope = @scopes[0]
     @destructors = []
 
@@ -61,10 +60,13 @@ class Named
         $body.off("mousedown", onmousedown)
         $body.off("mousemove", onmousemove)
     do =>
-      onblimpclick = (ev)=>
-      @$named.on("click", ".blimp", onblimpclick)
-      @destructors.push =>
-        @$named.off("click", ".blimp", onblimpclick)
+      onblimpdblclick = (ev)=>
+        detail =
+          "ID": "OnBalloonDoubleClick"
+        @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+      @$named.on("dblclick", ".blimp", onblimpdblclick)
+      @destructors.push ->
+        @$named.off("dblclick", ".blimp", onblimpdblclick)
     do =>
       onanchorclick = (ev)=>
         detail =
@@ -110,8 +112,10 @@ class Named
       "Reference1": prompt("Communicate", text) || ""
     @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
 
+
 if module?.exports?
   module.exports = Named
-
-if window["Ikagaka"]?
-  window["Ikagaka"]["Named"] = Named
+else if @Ikagaka?
+  @Ikagaka.Named = Named
+else
+  @Named = Named
