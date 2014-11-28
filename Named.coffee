@@ -99,7 +99,7 @@ class Named
   openInputBox: (id, text="")->
     detail =
       "ID": "OnUserInput"
-      "Reference1": id
+      "Reference0": id
       "Reference1": ""+prompt("UserInput", text)
     @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
 
