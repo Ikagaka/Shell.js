@@ -100,14 +100,14 @@ class Named
     detail =
       "ID": "OnUserInput"
       "Reference0": id
-      "Reference1": ""+prompt("UserInput", text)
+      "Reference1": prompt("UserInput", text) || ""
     @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
 
   openCommunicateBox: (text="")->
     detail =
       "ID": "OnCommunicate"
       "Reference0": "user"
-      "Reference1": ""+prompt("Communicate", text)
+      "Reference1": prompt("Communicate", text) || ""
     @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
 
 if module?.exports?
