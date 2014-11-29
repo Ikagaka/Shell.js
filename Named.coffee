@@ -71,7 +71,6 @@ class Named
       onchoiceclick = (ev)=>
         id = ev.target.dataset["id"]
         argc = Number ev.target.dataset["argc"]
-        console.log argc, argc == 0
         if /^On/.test(id) # On
           detail = {}
           detail.ID = id

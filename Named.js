@@ -108,7 +108,6 @@
             var argc, detail, i, id, _i, _j;
             id = ev.target.dataset["id"];
             argc = Number(ev.target.dataset["argc"]);
-            console.log(argc, argc === 0);
             if (/^On/.test(id)) {
               detail = {};
               detail.ID = id;
