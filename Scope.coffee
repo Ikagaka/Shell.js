@@ -1,8 +1,6 @@
-
+$ = window["Zepto"]
 
 class Scope
-
-  $ = window["Zepto"]
 
   constructor: (@scopeId, @shell, @balloon)->
     @$scope = $("<div />").addClass("scope")
@@ -22,11 +20,14 @@ class Scope
 
     @element = @$scope[0]
     @destructors = []
-    @currentSurface = null
-    @currentBalloon = null
+    @currentSurface = @shell.attachSurface(@$surfaceCanvas[0], @scopeId, 0)
+    @currentBalloon = @balloon.attachSurface(@$blimpCanvas[0], @scopeId, 0)
     @isBalloonLeft = true
     @talkInsertPointStack = [@$blimpText]
     @insertPoint = @$blimpText
+
+    @$surface.hide()
+    @$blimp.hide()
 
     # set default position
     @$scope.css
@@ -37,14 +38,15 @@ class Scope
     type = if @scopeId is 0 then "sakura" else "kero"
     if surfaceId?
       if surfaceId is -1
-      then @$surface.css({"visibility": "hidden"})
-      else @$surface.css({"visibility": "visible"})
+      then @$surface.hide()
+      else @$surface.show()
       if !!@currentSurface
       then @currentSurface.destructor()
-      @currentSurface = @shell.attachSurface(@$surfaceCanvas[0], @scopeId, surfaceId, callback)
+      tmp = @shell.attachSurface(@$surfaceCanvas[0], @scopeId, surfaceId, callback)
+      if !!tmp then @currentSurface = tmp
       @$scope.width(@$surfaceCanvas.width())
       @$scope.height(@$surfaceCanvas.height())
-    @currentSurface
+    return @currentSurface
 
   blimp: (balloonId, callback=->)->
     type = if @scopeId is 0 then "sakura" else "kero"
@@ -54,49 +56,49 @@ class Scope
       else @$blimp.show()
       if !!@currentBalloon
       then @currentBalloon.destructor()
-      @currentBalloon = @balloon.attachSurface(@$blimpCanvas[0], @scopeId, balloonId)
-      if !!@currentBalloon
-        descript = @currentBalloon.descript
+      tmp = @balloon.attachSurface(@$blimpCanvas[0], @scopeId, balloonId)
+      if !!tmp then @currentBalloon = tmp
+      descript = @currentBalloon.descript
+      @$blimp.css({
+        "width": @$blimpCanvas.width(),
+        "height": @$blimpCanvas.height()
+      })
+      if @isBalloonLeft
         @$blimp.css({
-          "width": @$blimpCanvas.width(),
-          "height": @$blimpCanvas.height()
+          "top":  Number(@shell.descript["#{type}.balloon.offsety"] or 0),
+          "left": Number(@shell.descript["#{type}.balloon.offsetx"] or 0) + -1 * @$blimpCanvas.width()
         })
-        if @isBalloonLeft
-          @$blimp.css({
-            "top":  Number(@shell.descript["#{type}.balloon.offsety"] or 0),
-            "left": Number(@shell.descript["#{type}.balloon.offsetx"] or 0) + -1 * @$blimpCanvas.width()
-          })
-        else
-          @$blimp.css({
-            "top":  Number(@shell.descript["#{type}.balloon.offsety"] or 0),
-            "left": Number(@shell.descript["#{type}.balloon.offsetx"] or 0) + @$surfaceCanvas.width()
-          })
-        if @$blimp.offset().top - @$blimp.position().top >= $(window).height()
-          @$blimp.css({
-            "top":  -$(@$blimpCanvas).height(),
-          })
-        t = descript["origin.y"] or descript["validrect.top"] or "10"
-        r = descript["validrect.right"] or "10"
-        b = descript["validrect.bottom"] or "10"
-        l = descript["origin.x"] or descript["validrect.left"] or "10"
-        w = @$blimpCanvas.width()
-        h = @$blimpCanvas.height()
-        @$blimpText.css({
-          "top": "#{t}px",
-          "left": "#{l}px",
-          "width": "#{w-(Number(l)+Number(r))}px",
-          "height": "#{h-(Number(t)-Number(b))}px"
+      else
+        @$blimp.css({
+          "top":  Number(@shell.descript["#{type}.balloon.offsety"] or 0),
+          "left": Number(@shell.descript["#{type}.balloon.offsetx"] or 0) + @$surfaceCanvas.width()
         })
+      if @$blimp.offset().top - @$blimp.position().top >= $(window).height()
+        @$blimp.css({
+          "top":  -$(@$blimpCanvas).height(),
+        })
+      t = descript["origin.y"] or descript["validrect.top"] or "10"
+      r = descript["validrect.right"] or "10"
+      b = descript["validrect.bottom"] or "10"
+      l = descript["origin.x"] or descript["validrect.left"] or "10"
+      w = @$blimpCanvas.width()
+      h = @$blimpCanvas.height()
+      @$blimpText.css({
+        "top": "#{t}px",
+        "left": "#{l}px",
+        "width": "#{w-(Number(l)+Number(r))}px",
+        "height": "#{h-(Number(t)-Number(b))}px"
+      })
     anchorBegin: (id)=>
       _id = $(document.createElement("div")).text(id).html()
       @insertPoint = $("<a />")
       .addClass("ikagaka-anchor")
         .attr("data-anchorid": _id)
         .appendTo(@$blimpText)
-      undefined
+      return
     anchorEnd: =>
       @insertPoint = @$blimpText
-      undefined
+      return
     choice: (text, id)=>
       _text = $(document.createElement("div")).text(text).html()
       _id = $(document.createElement("div")).text(id).html()
@@ -105,7 +107,7 @@ class Scope
         .attr("data-choiceid": _id)
         .html(_text)
         .appendTo(@insertPoint)
-      undefined
+      return
     talk: (text)=>
       _text = $(document.createElement("div")).text(text).html()
       if !!@currentSurface
@@ -113,14 +115,14 @@ class Scope
       @$blimp.show()
       @insertPoint.html(@insertPoint.html() + _text)
       @$blimpText[0].scrollTop = 999
-      undefined
+      return
     clear: =>
       @insertPoint = @$blimpText
       @$blimpText.html("")
-      undefined
+      return
     br: =>
       @insertPoint.html(@insertPoint.html() + "<br />")
-      undefined
+      return
   style: """
     .scope {
       position: absolute;
@@ -164,6 +166,7 @@ class Scope
 
 if module?.exports?
   module.exports = Scope
-
-if window["Ikagaka"]?
-  window["Ikagaka"]["Scope"] = Scope
+else if @Ikagaka?
+  @Ikagaka.Scope = Scope
+else
+  @Scope = Scope
