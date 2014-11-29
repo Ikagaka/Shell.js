@@ -1,0 +1,26 @@
+{
+	"name": "ikagaka.named.js",
+	"description": "Ikagaka Named DOM Manager",
+	"dependencies": {
+		"ikagaka.shell.js": "Ikagaka/Shell.js",
+		"ikagaka.balloon.js": "Ikagaka/Balloon.js",
+		"zepto": ">= 1.1.4"
+	},
+	"main": ["NamedManager.js", "Named.js", "Scope.js"],
+	"ignore": [
+		"**/.*",
+		"bower_components",
+		"node_modules",
+		"npm-debug.log",
+		"coverage",
+		"vender"
+	],
+	"exportsOverride": {
+		"ikagaka.shell.js": {
+			"js": ["Shell.js", "Surface.js", "SurfaceUtil.js"]
+		},
+		"ikagaka.balloon.js": {
+			"js": ["Balloon.js", "BalloonSurface.js"]
+		}
+	}
+}
