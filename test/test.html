@@ -29,7 +29,7 @@ Promise.all([
   }),
   new Promise(function(resolve, reject){
     var loader = new Nar.Loader();
-    loader.loadFromURL("../node_modules/ikagaka.balloon.js/vender/origin.nar", function(err, nar){
+    loader.loadFromURL("../node_modules/ikagaka.balloon.js/vendor/origin.nar", function(err, nar){
       if(!!err) return reject(err);
       var balloon = new Balloon(nar.directory);
       balloon.load(function(err){
@@ -42,36 +42,60 @@ Promise.all([
   var shell = tmp[0];
   var balloon = tmp[1];
   var nmgr = new NamedManager();
-  var nid = nmgr.materialize(shell, balloon);console.log(nmgr, nid)
-  var nid2 = nmgr.materialize(shell, balloon);console.log(nmgr, nid)
+  var nid = nmgr.materialize(shell, balloon);
+  //var nid2 = nmgr.materialize(shell, balloon);
   var named = nmgr.named(nid);
-  var named2 = nmgr.named(nid2);
+  //var named2 = nmgr.named(nid2);
 
-  console.log(named);
+  console.log(nmgr);
 
   $(nmgr.element).appendTo("body")
   $(nmgr.element).on("IkagakaSurfaceEvent", function(ev){
     console.log(ev.detail);
   });
 
-  play(named)
-  play(named2)
+  play(named);
+  //play(named2);
 
 }).catch(function(err){ console.error(err.stack) });
 
 function play(named){
-  named.scope().surface(0);
-  named.scope().blimp(0);
-  named.scope().blimp().talk("HELLO WORLD!");
-  named.scope().blimp().anchorBegin("AnchorID");
-  named.scope().blimp().talk("anchor");
-  named.scope().blimp().anchorEnd();
-  named.scope().blimp().br();
-  named.scope().blimp().talk("<"+"script>alert(1);<"+"/script>");
-  named.scope().blimp().br();
-  named.scope().blimp().choice("choice", "ChoceID");
-  named.scope(1).surface(10);
-  named.openInputBox("hoge", "huga");
-  named.openCommunicateBox();
+  named.scope(0);
+  setTimeout(function(){
+    named.scope().surface(0);
+    setTimeout(function(){
+      named.scope().blimp().talk("HELLO WORLD!");
+      setTimeout(function(){
+        named.scope().blimp().anchorBegin("AnchorID");
+        setTimeout(function(){
+          named.scope().blimp().talk("anchor");
+          setTimeout(function(){
+            named.scope().blimp().anchorEnd();
+            setTimeout(function(){
+              named.scope().blimp().br();
+              setTimeout(function(){
+                named.scope().blimp().talk("<"+"script>alert(1);<"+"/script>");
+                setTimeout(function(){
+                  named.scope().blimp().br();
+                  setTimeout(function(){
+                    named.scope().blimp().choice("choice", "ChoceID");
+                    setTimeout(function(){
+                      named.scope(1)
+                      setTimeout(function(){
+                        named.scope().surface(10)
+                        setTimeout(function(){
+                          named.scope().blimp().talk("unok")
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
 }
 </script>
