@@ -1,7 +1,7 @@
 <script src="../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/node_modules/encoding-japanese/encoding.js"></script>
-<script src="../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/jszip.min.js"></script>
-<script src="../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/XHRProxy.min.js"></script>
-<script src="../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/WMDescript.js"></script>
+<script src="../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vendor/jszip.min.js"></script>
+<script src="../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vendor/XHRProxy.min.js"></script>
+<script src="../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vendor/WMDescript.js"></script>
 <script src="../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/Nar.js"></script>
 <script src="../node_modules/ikagaka.shell.js/node_modules/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
 <script src="../node_modules/ikagaka.shell.js/node_modules/underscore/underscore-min.js"></script>
@@ -17,8 +17,8 @@
 <script>
 Promise.all([
   new Promise(function(resolve, reject){
-    var loader = new NarLoader();
-    loader.loadFromURL("../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vender/mobilemaster.nar", function(err, nar){
+    var loader = new Nar.Loader();
+    loader.loadFromURL("../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vendor/mobilemaster.nar", function(err, nar){
       if(!!err) return reject(err);
       var shell = new Shell(nar.getDirectory(/shell\/master\//));
       shell.load(function(err){
@@ -28,7 +28,7 @@ Promise.all([
     });
   }),
   new Promise(function(resolve, reject){
-    var loader = new NarLoader();
+    var loader = new Nar.Loader();
     loader.loadFromURL("../node_modules/ikagaka.balloon.js/vender/origin.nar", function(err, nar){
       if(!!err) return reject(err);
       var balloon = new Balloon(nar.directory);
