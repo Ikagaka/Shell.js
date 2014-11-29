@@ -68,21 +68,56 @@ class Named
       @destructors.push ->
         @$named.off("dblclick", ".blimp", onblimpdblclick)
     do =>
-      onanchorclick = (ev)=>
-        detail =
-          "ID": "OnChoiceSelect"
-          "Reference0": ev.target.dataset["choiceid"]
-        @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
       onchoiceclick = (ev)=>
-        detail =
-          "ID": "OnAnchorSelect"
-          "Reference0": ev.target.dataset["anchorid"]
-        @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
-      @$named.on("click", ".ikagaka-choice", onanchorclick)
-      @$named.on("click", ".ikagaka-anchor", onchoiceclick)
+        id = ev.target.dataset["id"]
+        argc = Number ev.target.dataset["argc"]
+        console.log argc, argc == 0
+        if /^On/.test(id) # On
+          detail = {}
+          detail.ID = id
+          for i in [0 ... argc]
+            detail["Reference"+i] = ev.target.dataset["argv"+i]
+          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+        else if argc # Ex
+          detail = {}
+          detail.ID = "OnChoiceSelectEx"
+          detail.Reference0 = ev.target.textContent
+          detail.Reference1 = id
+          for i in [0 ... argc]
+            detail["Reference"+i+2] = ev.target.dataset["argv"+i]
+          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+        else # normal
+          detail = {}
+          detail.ID = "OnChoiceSelect"
+          detail.Reference0 = id
+          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+      onanchorclick = (ev)=>
+        id = ev.target.dataset["id"]
+        argc = Number ev.target.dataset["argc"]
+        if /^On/.test(id) # On
+          detail = {}
+          detail.ID = id
+          for i in [0 ... argc]
+            detail["Reference"+i] = ev.target.dataset["argv"+i]
+          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+        else if argc # Ex
+          detail = {}
+          detail.ID = "OnAnchorSelectEx"
+          detail.Reference0 = ev.target.textContent
+          detail.Reference1 = id
+          for i in [0 ... argc]
+            detail["Reference"+i+2] = ev.target.dataset["argv"+i]
+          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+        else # normal
+          detail = {}
+          detail.ID = "OnAnchorSelect"
+          detail.Reference0 = id
+          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+      @$named.on("click", ".ikagaka-choice", onchoiceclick)
+      @$named.on("click", ".ikagaka-anchor", onanchorclick)
       @destructors.push =>
-        @$named.off("click", ".ikagaka-choice", onanchorclick)
-        @$named.off("click", ".ikagaka-anchor", onchoiceclick)
+        @$named.off("click", ".ikagaka-choice", onchoiceclick)
+        @$named.off("click", ".ikagaka-anchor", onanchorclick)
 
 
   destructor: ->

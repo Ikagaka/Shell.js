@@ -85,24 +85,43 @@ class Scope
           "width": "#{w-(Number(l)+Number(r))}px",
           "height": "#{h-(Number(t)-Number(b))}px"
         })
-    anchorBegin: (id)=>
+    anchorBegin: (id, args...)=>
       _id = $(document.createElement("div")).text(id).html()
-      @insertPoint = $("<a />")
-      .addClass("ikagaka-anchor")
-        .attr("data-anchorid": _id)
-        .appendTo(@$blimpText)
+      a = $("<a />")
+        .addClass("ikagaka-anchor")
+        .attr("data-id", _id)
+        .attr("data-argc", args.length)
+      for argv, index in args
+        a.attr("data-argv#{index}", argv)
+      @insertPoint = a.appendTo(@$blimpText)
       return
     anchorEnd: =>
       @insertPoint = @$blimpText
       return
-    choice: (text, id)=>
+    choice: (text, id, args...)=>
       _text = $(document.createElement("div")).text(text).html()
       _id = $(document.createElement("div")).text(id).html()
-      $("<a />")
+      a = $("<a />")
         .addClass("ikagaka-choice")
-        .attr("data-choiceid": _id)
         .html(_text)
-        .appendTo(@insertPoint)
+        .attr("data-id", _id)
+        .attr("data-argc", args.length)
+      for argv, index in args
+        a.attr("data-argv#{index}", argv)
+      a.appendTo(@insertPoint)
+      return
+    choiceBegin: (id, args...)=>
+      _id = $(document.createElement("div")).text(id).html()
+      a = $("<a />")
+        .addClass("ikagaka-choice")
+        .attr("data-id", _id)
+        .attr("data-argc", args.length)
+      for argv, index in args
+        a.attr("data-argv#{index}", argv)
+      @insertPoint = a.appendTo(@$blimpText)
+      return
+    choiceEnd: =>
+      @insertPoint = @$blimpText
       return
     talk: (text)=>
       _text = $(document.createElement("div")).text(text).html()
