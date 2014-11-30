@@ -42,21 +42,24 @@ Promise.all([
   var shell = tmp[0];
   var balloon = tmp[1];
   var nmgr = new NamedManager();
-  var nid = nmgr.materialize(shell, balloon);
-  //var nid2 = nmgr.materialize(shell, balloon);
-  var named = nmgr.named(nid);
-  //var named2 = nmgr.named(nid2);
-
+  $(nmgr.element).appendTo("body");
   console.log(nmgr);
-
-  $(nmgr.element).appendTo("body")
-  $(nmgr.element).on("IkagakaSurfaceEvent", function(ev){
-    console.log(ev.detail);
+  var nid = nmgr.materialize(shell, balloon);
+  var named = nmgr.named(nid);
+  var nid2 = nmgr.materialize(shell, balloon);
+  var named2 = nmgr.named(nid2);
+  named.load(function(){
+    named.listener = function(ev){
+      console.log(ev);
+    };
+    play(named);
+    named2.load(function(){
+      named2.listener = function(ev){
+        console.log(ev);
+      };
+      play(named2);
+    });
   });
-
-  play(named);
-  //play(named2);
-
 }).catch(function(err){ console.error(err.stack) });
 
 function play(named){

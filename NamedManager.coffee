@@ -4,6 +4,8 @@ Scope = window["Named"] || window["Ikagaka"]?["Named"] || require("./Named.js")
 class NamedManager
   constructor: ->
     @$namedMgr = $("<div />").addClass("namedMgr")
+    $style = $("<style scoped />").html(@style)
+    @$namedMgr.append($style)
     @element = @$namedMgr[0]
     @namedies = []
     @destructors = []
@@ -39,6 +41,48 @@ class NamedManager
   named: (namedId)->
     if !@namedies[namedId]? then throw new Error("namedId " + namedId + " is not used yet")
     return @namedies[namedId]
+
+  style: """
+    .scope {
+      position: absolute;
+      pointer-events: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .surface {
+    }
+    .surfaceCanvas {
+      pointer-events: auto;
+    }
+    .blimp {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      pointer-events: auto;
+    }
+    .blimpCanvas {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+    }
+    .blimpText {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      overflow-y: scroll;
+      white-space: pre;
+      white-space: pre-wrap;
+      white-space: pre-line;
+      word-wrap: break-word;
+    }
+    .blimpText a {
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .blimpText a:hover { background-color: yellow; }
+    .blimpText a.ikagaka-choice { color: blue; }
+    .blimpText a.ikagaka-anchor { color: red; }
+  """
 
 if module?.exports?
   module.exports = NamedManager

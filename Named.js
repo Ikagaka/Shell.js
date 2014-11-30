@@ -15,9 +15,14 @@
       this.$named = $("<div />").addClass("named");
       this.element = this.$named[0];
       this.scopes = [];
+      this.currentScope = null;
+      this.destructors = [];
+      this.listener = function() {};
+    }
+
+    Named.prototype.load = function(callback) {
       this.scopes[0] = this.scope(0);
       this.currentScope = this.scopes[0];
-      this.destructors = [];
       (function(_this) {
         return (function() {
           var $body, $target, onmousedown, onmousemove, onmouseup, relLeft, relTop;
@@ -178,7 +183,20 @@
           });
         });
       })(this)();
-    }
+      (function(_this) {
+        return (function() {
+          var onevent;
+          onevent = function(ev) {
+            return _this.listener(ev.detail);
+          };
+          _this.$named.on("IkagakaSurfaceEvent", onevent);
+          return _this.destructors.push(function() {
+            return _this.$named.on("IkagakaSurfaceEvent", onevent);
+          });
+        });
+      })(this)();
+      setTimeout(callback);
+    };
 
     Named.prototype.destructor = function() {
       this.scopes.forEach(function(scope) {

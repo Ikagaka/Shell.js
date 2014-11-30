@@ -11,10 +11,13 @@ class Named
     @$named = $("<div />").addClass("named")
     @element = @$named[0]
     @scopes = []
+    @currentScope = null
+    @destructors = []
+    @listener = ->
+
+  load: (callback)->
     @scopes[0] = @scope(0)
     @currentScope = @scopes[0]
-    @destructors = []
-
     do =>
       $target = null
       relLeft = relTop = 0
@@ -117,7 +120,14 @@ class Named
       @destructors.push =>
         @$named.off("click", ".ikagaka-choice", onchoiceclick)
         @$named.off("click", ".ikagaka-anchor", onanchorclick)
-
+    do =>
+      onevent = (ev)=>
+        @listener(ev.detail)
+      @$named.on("IkagakaSurfaceEvent", onevent)
+      @destructors.push =>
+        @$named.on("IkagakaSurfaceEvent", onevent)
+    setTimeout(callback)
+    return
 
   destructor: ->
     @scopes.forEach (scope)-> $(scope.element).remove()
