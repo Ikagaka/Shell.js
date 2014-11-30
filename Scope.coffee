@@ -86,6 +86,7 @@ class Scope
           "height": "#{h-(Number(t)-Number(b))}px"
         })
     anchorBegin: (id, args...)=>
+      @$blimp.show()
       _id = $(document.createElement("div")).text(id).html()
       a = $("<a />")
         .addClass("ikagaka-anchor")
@@ -99,6 +100,7 @@ class Scope
       @insertPoint = @$blimpText
       return
     choice: (text, id, args...)=>
+      @$blimp.show()
       _text = $(document.createElement("div")).text(text).html()
       _id = $(document.createElement("div")).text(id).html()
       a = $("<a />")
@@ -111,6 +113,7 @@ class Scope
       a.appendTo(@insertPoint)
       return
     choiceBegin: (id, args...)=>
+      @$blimp.show()
       _id = $(document.createElement("div")).text(id).html()
       a = $("<a />")
         .addClass("ikagaka-choice")
