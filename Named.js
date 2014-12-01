@@ -17,7 +17,6 @@
       this.scopes = [];
       this.currentScope = null;
       this.destructors = [];
-      this.listener = function() {};
     }
 
     Named.prototype.load = function(callback) {
@@ -90,7 +89,16 @@
       })(this)();
       (function(_this) {
         return (function() {
-          var onblimpdblclick;
+          var onblimpclick, onblimpdblclick;
+          onblimpclick = function(ev) {
+            var detail;
+            detail = {
+              "ID": "OnBalloonClick"
+            };
+            return _this.$named.trigger($.Event("IkagakaSurfaceEvent", {
+              detail: detail
+            }));
+          };
           onblimpdblclick = function(ev) {
             var detail;
             detail = {
@@ -100,8 +108,10 @@
               detail: detail
             }));
           };
+          _this.$named.on("click", ".blimp", onblimpclick);
           _this.$named.on("dblclick", ".blimp", onblimpdblclick);
           return _this.destructors.push(function() {
+            this.$named.off("click", ".blimp", onblimpclick);
             return this.$named.off("dblclick", ".blimp", onblimpdblclick);
           });
         });
@@ -180,18 +190,6 @@
           return _this.destructors.push(function() {
             _this.$named.off("click", ".ikagaka-choice", onchoiceclick);
             return _this.$named.off("click", ".ikagaka-anchor", onanchorclick);
-          });
-        });
-      })(this)();
-      (function(_this) {
-        return (function() {
-          var onevent;
-          onevent = function(ev) {
-            return _this.listener(ev.detail);
-          };
-          _this.$named.on("IkagakaSurfaceEvent", onevent);
-          return _this.destructors.push(function() {
-            return _this.$named.on("IkagakaSurfaceEvent", onevent);
           });
         });
       })(this)();

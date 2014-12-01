@@ -49,14 +49,10 @@ Promise.all([
   var nid2 = nmgr.materialize(shell, balloon);
   var named2 = nmgr.named(nid2);
   named.load(function(){
-    named.listener = function(ev){
-      console.log(ev);
-    };
+    $(named.element).on("IkagakaSurfaceEvent", function(ev){ console.log(ev.detail); });
     play(named);
     named2.load(function(){
-      named2.listener = function(ev){
-        console.log(ev);
-      };
+      $(named2.element).on("IkagakaSurfaceEvent", function(ev){ console.log(ev.detail); });
       play(named2);
     });
   });

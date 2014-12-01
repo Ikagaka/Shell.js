@@ -13,7 +13,7 @@ class Named
     @scopes = []
     @currentScope = null
     @destructors = []
-    @listener = ->
+
 
   load: (callback)->
     @scopes[0] = @scope(0)
@@ -63,12 +63,18 @@ class Named
         $body.off("mousedown", onmousedown)
         $body.off("mousemove", onmousemove)
     do =>
+      onblimpclick = (ev)=>
+        detail =
+          "ID": "OnBalloonClick"
+        @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
       onblimpdblclick = (ev)=>
         detail =
           "ID": "OnBalloonDoubleClick"
         @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+      @$named.on("click",    ".blimp", onblimpclick)
       @$named.on("dblclick", ".blimp", onblimpdblclick)
       @destructors.push ->
+        @$named.off("click",    ".blimp", onblimpclick)
         @$named.off("dblclick", ".blimp", onblimpdblclick)
     do =>
       onchoiceclick = (ev)=>
@@ -120,12 +126,6 @@ class Named
       @destructors.push =>
         @$named.off("click", ".ikagaka-choice", onchoiceclick)
         @$named.off("click", ".ikagaka-anchor", onanchorclick)
-    do =>
-      onevent = (ev)=>
-        @listener(ev.detail)
-      @$named.on("IkagakaSurfaceEvent", onevent)
-      @destructors.push =>
-        @$named.on("IkagakaSurfaceEvent", onevent)
     setTimeout(callback)
     return
 
