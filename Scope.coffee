@@ -47,35 +47,37 @@ class Scope
     return @currentSurface
 
   blimp: (balloonId)->
-    if Number(balloonId) < 0 then @$blimp.hide(); return @currentBalloon
-    if balloonId?
-      @currentBalloon.destructor()
-      tmp = @balloon.attachSurface(@$blimpCanvas[0], @scopeId, balloonId)
-      @currentBalloon = tmp
-      @$blimp.show()
-      descript = @currentBalloon.descript
-      type = if @scopeId is 0 then "sakura" else "kero"
-      @$blimp.css({ "top": Number(@shell.descript["#{type}.balloon.offsety"] ||0) })
-      if @isBalloonLeft
-        @$blimp.css({
-          "left": Number(@shell.descript["#{type}.balloon.offsetx"] or 0) + -1 * @$blimpCanvas[0].width
+    if Number(balloonId) < 0
+      @$blimp.hide()
+    else
+      if balloonId?
+        @currentBalloon.destructor()
+        tmp = @balloon.attachSurface(@$blimpCanvas[0], @scopeId, balloonId)
+        @currentBalloon = tmp
+        @$blimp.show()
+        descript = @currentBalloon.descript
+        type = if @scopeId is 0 then "sakura" else "kero"
+        @$blimp.css({ "top": Number(@shell.descript["#{type}.balloon.offsety"] ||0) })
+        if @isBalloonLeft
+          @$blimp.css({
+            "left": Number(@shell.descript["#{type}.balloon.offsetx"] or 0) + -1 * @$blimpCanvas[0].width
+          })
+        else
+          @$blimp.css({
+            "left": Number(@shell.descript["#{type}.balloon.offsetx"] or 0) + @$surfaceCanvas[0].width
+          })
+        t = descript["origin.y"] or descript["validrect.top"] or "10"
+        r = descript["validrect.right"] or "10"
+        b = descript["validrect.bottom"] or "10"
+        l = descript["origin.x"] or descript["validrect.left"] or "10"
+        w = @$blimpCanvas[0].width
+        h = @$blimpCanvas[0].height
+        @$blimpText.css({
+          "top": "#{t}px",
+          "left": "#{l}px",
+          "width": "#{w-(Number(l)+Number(r))}px",
+          "height": "#{h-(Number(t)-Number(b))}px"
         })
-      else
-        @$blimp.css({
-          "left": Number(@shell.descript["#{type}.balloon.offsetx"] or 0) + @$surfaceCanvas[0].width
-        })
-      t = descript["origin.y"] or descript["validrect.top"] or "10"
-      r = descript["validrect.right"] or "10"
-      b = descript["validrect.bottom"] or "10"
-      l = descript["origin.x"] or descript["validrect.left"] or "10"
-      w = @$blimpCanvas[0].width
-      h = @$blimpCanvas[0].height
-      @$blimpText.css({
-        "top": "#{t}px",
-        "left": "#{l}px",
-        "width": "#{w-(Number(l)+Number(r))}px",
-        "height": "#{h-(Number(t)-Number(b))}px"
-      })
 
     anchorBegin: (id, args...)=>
       @$blimp.show()

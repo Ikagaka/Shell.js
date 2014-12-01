@@ -61,39 +61,39 @@
       var b, descript, h, l, r, t, tmp, type, w;
       if (Number(balloonId) < 0) {
         this.$blimp.hide();
-        return this.currentBalloon;
-      }
-      if (balloonId != null) {
-        this.currentBalloon.destructor();
-        tmp = this.balloon.attachSurface(this.$blimpCanvas[0], this.scopeId, balloonId);
-        this.currentBalloon = tmp;
-        this.$blimp.show();
-        descript = this.currentBalloon.descript;
-        type = this.scopeId === 0 ? "sakura" : "kero";
-        this.$blimp.css({
-          "top": Number(this.shell.descript["" + type + ".balloon.offsety"] || 0)
-        });
-        if (this.isBalloonLeft) {
+      } else {
+        if (balloonId != null) {
+          this.currentBalloon.destructor();
+          tmp = this.balloon.attachSurface(this.$blimpCanvas[0], this.scopeId, balloonId);
+          this.currentBalloon = tmp;
+          this.$blimp.show();
+          descript = this.currentBalloon.descript;
+          type = this.scopeId === 0 ? "sakura" : "kero";
           this.$blimp.css({
-            "left": Number(this.shell.descript["" + type + ".balloon.offsetx"] || 0) + -1 * this.$blimpCanvas[0].width
+            "top": Number(this.shell.descript["" + type + ".balloon.offsety"] || 0)
           });
-        } else {
-          this.$blimp.css({
-            "left": Number(this.shell.descript["" + type + ".balloon.offsetx"] || 0) + this.$surfaceCanvas[0].width
+          if (this.isBalloonLeft) {
+            this.$blimp.css({
+              "left": Number(this.shell.descript["" + type + ".balloon.offsetx"] || 0) + -1 * this.$blimpCanvas[0].width
+            });
+          } else {
+            this.$blimp.css({
+              "left": Number(this.shell.descript["" + type + ".balloon.offsetx"] || 0) + this.$surfaceCanvas[0].width
+            });
+          }
+          t = descript["origin.y"] || descript["validrect.top"] || "10";
+          r = descript["validrect.right"] || "10";
+          b = descript["validrect.bottom"] || "10";
+          l = descript["origin.x"] || descript["validrect.left"] || "10";
+          w = this.$blimpCanvas[0].width;
+          h = this.$blimpCanvas[0].height;
+          this.$blimpText.css({
+            "top": "" + t + "px",
+            "left": "" + l + "px",
+            "width": "" + (w - (Number(l) + Number(r))) + "px",
+            "height": "" + (h - (Number(t) - Number(b))) + "px"
           });
         }
-        t = descript["origin.y"] || descript["validrect.top"] || "10";
-        r = descript["validrect.right"] || "10";
-        b = descript["validrect.bottom"] || "10";
-        l = descript["origin.x"] || descript["validrect.left"] || "10";
-        w = this.$blimpCanvas[0].width;
-        h = this.$blimpCanvas[0].height;
-        this.$blimpText.css({
-          "top": "" + t + "px",
-          "left": "" + l + "px",
-          "width": "" + (w - (Number(l) + Number(r))) + "px",
-          "height": "" + (h - (Number(t) - Number(b))) + "px"
-        });
       }
       return {
         anchorBegin: (function(_this) {
