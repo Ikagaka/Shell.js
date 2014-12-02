@@ -43,6 +43,8 @@ class Scope
       tmp = @shell.attachSurface(@$surfaceCanvas[0], @scopeId, surfaceId)
       tmp = @shell.attachSurface(@$surfaceCanvas[0], @scopeId, prevSrfId) if !tmp
       @currentSurface = tmp
+      @$scope.width @$surfaceCanvas[0].width
+      @$scope.height @$surfaceCanvas[0].height
       @$surface.show()
     return @currentSurface
 

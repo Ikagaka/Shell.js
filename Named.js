@@ -42,7 +42,7 @@
             }
           };
           onmousedown = function(ev) {
-            var $scope, left, offsetX, offsetY, top, _ref1, _ref2, _ref3, _ref4;
+            var $scope, left, offsetX, offsetY, pageX, pageY, top, _ref1, _ref2, _ref3, _ref4;
             if ($(ev.target).hasClass("blimpText") || $(ev.target).hasClass("blimpCanvas")) {
               if (((_ref1 = $(ev.target).parent().parent().parent()) != null ? _ref1[0] : void 0) === _this.element) {
                 $target = $(ev.target).parent();
@@ -50,8 +50,15 @@
                 _ref2 = $target.offset(), top = _ref2.top, left = _ref2.left;
                 offsetY = parseInt($target.css("left"), 10);
                 offsetX = parseInt($target.css("top"), 10);
-                relLeft = ev.pageX - offsetY;
-                relTop = ev.pageY - offsetX;
+                if (/^touch/.test(ev.type)) {
+                  pageX = ev.touches[0].pageX;
+                  pageY = ev.touches[0].pageY;
+                } else {
+                  pageX = ev.pageX;
+                  pageY = ev.pageY;
+                }
+                relLeft = pageX - offsetY;
+                relTop = pageY - offsetX;
                 return setTimeout((function() {
                   return _this.$named.append($scope);
                 }), 100);
@@ -60,8 +67,15 @@
               if (((_ref3 = $(ev.target).parent().parent().parent()) != null ? _ref3[0] : void 0) === _this.element) {
                 $scope = $target = $(ev.target).parent().parent();
                 _ref4 = $target.offset(), top = _ref4.top, left = _ref4.left;
-                relLeft = ev.pageX - left;
-                relTop = ev.pageY - top;
+                if (/^touch/.test(ev.type)) {
+                  pageX = ev.touches[0].pageX;
+                  pageY = ev.touches[0].pageY;
+                } else {
+                  pageX = ev.pageX;
+                  pageY = ev.pageY;
+                }
+                relLeft = pageX - left;
+                relTop = pageY - top;
                 return setTimeout((function() {
                   return _this.$named.append($scope);
                 }), 100);
@@ -69,21 +83,35 @@
             }
           };
           onmousemove = function(ev) {
+            var pageX, pageY;
             if (!!$target) {
+              if (/^touch/.test(ev.type)) {
+                pageX = ev.touches[0].pageX;
+                pageY = ev.touches[0].pageY;
+              } else {
+                pageX = ev.pageX;
+                pageY = ev.pageY;
+              }
               return $target.css({
-                left: ev.pageX - relLeft,
-                top: ev.pageY - relTop
+                left: pageX - relLeft,
+                top: pageY - relTop
               });
             }
           };
           $body = $("body");
-          $body.on("mouseup", onmouseup);
           $body.on("mousedown", onmousedown);
           $body.on("mousemove", onmousemove);
+          $body.on("mouseup", onmouseup);
+          $body.on("touchstart", onmousedown);
+          $body.on("touchmove", onmousemove);
+          $body.on("touchend", onmouseup);
           return _this.destructors.push(function() {
-            $body.off("mouseup", onmouseup);
             $body.off("mousedown", onmousedown);
-            return $body.off("mousemove", onmousemove);
+            $body.off("mousemove", onmousemove);
+            $body.off("mouseup", onmouseup);
+            $body.off("touchstart", onmousedown);
+            $body.off("touchmove", onmousemove);
+            return $body.off("touchend", onmouseup);
           });
         });
       })(this)();

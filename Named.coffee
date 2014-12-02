@@ -37,31 +37,55 @@ class Named
             {top, left} = $target.offset()
             offsetY = parseInt($target.css("left"), 10)
             offsetX = parseInt($target.css("top"), 10)
-            relLeft = ev.pageX - offsetY
-            relTop  = ev.pageY - offsetX
+            if /^touch/.test(ev.type)
+              pageX = ev.touches[0].pageX
+              pageY = ev.touches[0].pageY
+            else
+              pageX = ev.pageX
+              pageY = ev.pageY
+            relLeft = pageX - offsetY
+            relTop  = pageY - offsetX
             setTimeout((=>
               @$named.append($scope) ), 100)
         else if $(ev.target).hasClass("surfaceCanvas")
           if $(ev.target).parent().parent().parent()?[0] is @element
             $scope = $target = $(ev.target).parent().parent() # .scope
             {top, left} = $target.offset()
-            relLeft = ev.pageX - left
-            relTop  = ev.pageY - top
+            if /^touch/.test(ev.type)
+              pageX = ev.touches[0].pageX
+              pageY = ev.touches[0].pageY
+            else
+              pageX = ev.pageX
+              pageY = ev.pageY
+            relLeft = pageX - left
+            relTop  = pageY - top
             setTimeout((=>
               @$named.append($scope) ), 100)
       onmousemove = (ev)=>
         if !!$target
+          if /^touch/.test(ev.type)
+            pageX = ev.touches[0].pageX
+            pageY = ev.touches[0].pageY
+          else
+            pageX = ev.pageX
+            pageY = ev.pageY
           $target.css
-            left: ev.pageX - relLeft
-            top:  ev.pageY - relTop
+            left: pageX - relLeft
+            top:  pageY - relTop
       $body = $("body")
-      $body.on("mouseup",   onmouseup)
       $body.on("mousedown", onmousedown)
       $body.on("mousemove", onmousemove)
+      $body.on("mouseup",   onmouseup)
+      $body.on("touchstart", onmousedown)
+      $body.on("touchmove",  onmousemove)
+      $body.on("touchend",   onmouseup)
       @destructors.push ->
-        $body.off("mouseup",   onmouseup)
         $body.off("mousedown", onmousedown)
         $body.off("mousemove", onmousemove)
+        $body.off("mouseup",   onmouseup)
+        $body.off("touchstart", onmousedown)
+        $body.off("touchmove",  onmousemove)
+        $body.off("touchend",   onmouseup)
     do =>
       onblimpclick = (ev)=>
         detail =

@@ -52,6 +52,8 @@
           tmp = this.shell.attachSurface(this.$surfaceCanvas[0], this.scopeId, prevSrfId);
         }
         this.currentSurface = tmp;
+        this.$scope.width(this.$surfaceCanvas[0].width);
+        this.$scope.height(this.$surfaceCanvas[0].height);
         this.$surface.show();
       }
       return this.currentSurface;

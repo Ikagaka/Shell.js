@@ -22,8 +22,10 @@
             }), 100);
           };
           _this.$namedMgr.on("mousedown", ".named", onmousedown);
+          _this.$namedMgr.on("touchstart", ".named", onmousedown);
           return _this.destructors.push(function() {
-            return _this.$namedMgr.off("mousedown", ".named", onmousedown);
+            _this.$namedMgr.off("mousedown", ".named", onmousedown);
+            return _this.$namedMgr.off("touchstart", ".named", onmousedown);
           });
         });
       })(this)();

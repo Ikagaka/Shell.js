@@ -15,8 +15,10 @@ class NamedManager
         setTimeout((=>
           @$namedMgr.append(ev.currentTarget) ), 100)
       @$namedMgr.on("mousedown", ".named", onmousedown)
+      @$namedMgr.on("touchstart", ".named", onmousedown)
       @destructors.push =>
         @$namedMgr.off("mousedown", ".named", onmousedown)
+        @$namedMgr.off("touchstart", ".named", onmousedown)
 
   destructor: ->
     @namedies
