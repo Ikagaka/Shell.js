@@ -13,7 +13,7 @@ class NamedManager
     do =>
       onmousedown = (ev)=>
         setTimeout((=>
-          @$namedMgr.append(ev.currentTarget) ), 100)
+          @$namedMgr.append(ev.currentTarget) ), 300)
       @$namedMgr.on("mousedown", ".named", onmousedown)
       @$namedMgr.on("touchstart", ".named", onmousedown)
       @destructors.push =>
@@ -84,6 +84,13 @@ class NamedManager
     .blimpText a:hover { background-color: yellow; }
     .blimpText a.ikagaka-choice { color: blue; }
     .blimpText a.ikagaka-anchor { color: red; }
+
+    @keyframes blink {
+      75% { opacity: 0.0; }
+    }
+    .blink {
+      animation: blink 1s step-end infinite;
+    }
   """
 
 if module?.exports?
