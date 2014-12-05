@@ -21,7 +21,7 @@
       this.listener = {};
     }
 
-    Named.prototype.load = function(callback) {
+    Named.prototype.load = function() {
       this.scopes[0] = this.scope(0);
       this.currentScope = this.scopes[0];
       $(this.element).on("IkagakaDOMEvent", (function(_this) {
@@ -226,7 +226,7 @@
           });
         });
       })(this)();
-      setTimeout(callback);
+      return Promise.resolve(this);
     };
 
     Named.prototype.destructor = function() {

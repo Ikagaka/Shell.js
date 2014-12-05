@@ -15,7 +15,7 @@ class Named
     @destructors = []
     @listener = {}
 
-  load: (callback)->
+  load: ->
     @scopes[0] = @scope(0)
     @currentScope = @scopes[0]
     $(@element).on "IkagakaDOMEvent", ({detail: event})=>
@@ -159,8 +159,8 @@ class Named
       @destructors.push =>
         @$named.off("click", ".ikagaka-choice", onchoiceclick)
         @$named.off("click", ".ikagaka-anchor", onanchorclick)
-    setTimeout(callback)
-    return
+
+    Promise.resolve(@)
 
   destructor: ->
     @scopes.forEach (scope)-> $(scope.element).remove()

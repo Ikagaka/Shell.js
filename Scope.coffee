@@ -56,6 +56,8 @@ class Scope
         @currentBalloon.destructor()
         tmp = @balloon.attachSurface(@$blimpCanvas[0], @scopeId, balloonId)
         @currentBalloon = tmp
+        @$blimp.width @$blimpCanvas[0].width
+        @$blimp.height @$blimpCanvas[0].height
         @$blimp.show()
         descript = @currentBalloon.descript
         type = if @scopeId is 0 then "sakura" else "kero"
@@ -82,6 +84,7 @@ class Scope
         })
 
     anchorBegin: (id, args...)=>
+      @$blimpText.find(".blink").hide()
       @$blimp.show()
       _id = $(document.createElement("div")).text(id).html()
       $a = $("<a />")
@@ -96,6 +99,7 @@ class Scope
       @insertPoint = @$blimpText
       return
     choice: (text, id, args...)=>
+      @$blimpText.find(".blink").hide()
       @$blimp.show()
       _text = $(document.createElement("div")).text(text).html()
       _id = $(document.createElement("div")).text(id).html()
@@ -109,6 +113,7 @@ class Scope
       $a.appendTo(@insertPoint)
       return
     choiceBegin: (id, args...)=>
+      @$blimpText.find(".blink").hide()
       @$blimp.show()
       _id = $(document.createElement("div")).text(id).html()
       $a = $("<a />")
@@ -123,11 +128,12 @@ class Scope
       @insertPoint = @$blimpText
       return
     talk: (text)=>
+      @$blimpText.find(".blink").hide()
       _text = $(document.createElement("div")).text(text).html()
       if !!@currentSurface
         @currentSurface.talk()
       @$blimp.show()
-      @insertPoint.html(@insertPoint.html() + _text)
+      @insertPoint.append(_text)
       @$blimpText[0].scrollTop = 999
       return
     clear: =>
@@ -135,7 +141,10 @@ class Scope
       @$blimpText.html("")
       return
     br: =>
-      @insertPoint.html(@insertPoint.html() + "<br />")
+      @insertPoint.append("<br />")
+      return
+    showWait: =>
+      @$blimpText.append("<br /><br />").append("<div class='blink'>...</div>")
       return
 
 

@@ -16,70 +16,83 @@
 <script src="../Named.js"></script>
 <script src="../NamedManager.js"></script>
 <script>
+function loadNar(src){
+  return function(){
+    return new Promise(function(resolve, reject){
+      var loader = new Nar.Loader();
+      loader.loadFromURL(src, function(err, nar){
+        if(!!err) return reject(err);
+        resolve(nar);
+      });
+    });
+  }
+}
+
+function getDir(reg){
+  return function(nar){
+    return new Promise(function(resolve, reject){
+      var dic = nar.getDirectory(reg);
+      var dir = Object.keys(dic).reduce(function(_dic, path){
+        _dic[path] = dic[path].asArrayBuffer();
+        return _dic;
+      }, {});
+      resolve(dir);
+    });
+  };
+}
+
 Promise.all([
-  new Promise(function(resolve, reject){
-    var loader = new Nar.Loader();
-    loader.loadFromURL("../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vendor/mobilemaster.nar", function(err, nar){
-      if(!!err) return reject(err);
-      var shell = new Shell(nar.getDirectory(/shell\/master\//));
-      shell.load(function(err){
-        if(!!err) return reject(err);
-        resolve(shell);
-      });
-    });
-  }),
-  new Promise(function(resolve, reject){
-    var loader = new Nar.Loader();
-    loader.loadFromURL("../node_modules/ikagaka.balloon.js/vendor/origin.nar", function(err, nar){
-      if(!!err) return reject(err);
-      var balloon = new Balloon(nar.directory);
-      balloon.load(function(err){
-        if(!!err) return reject(err);
-        resolve(balloon);
-      });
-    });
-  })
+  Promise.resolve()
+    .then(loadNar("../node_modules/ikagaka.shell.js/node_modules/ikagaka.nar.js/vendor/mobilemaster.nar"))
+    .then(getDir(/shell\/master\//))
+    .then(function(dir){ return new Shell(dir).load(); }),
+  Promise.resolve()
+    .then(loadNar("../node_modules/ikagaka.balloon.js/vendor/origin.nar"))
+    .then(getDir(/^/))
+    .then(function(dir){ return new Balloon(dir).load(); })
 ]).then(function(tmp){
+  console.log(tmp);
   var shell = tmp[0];
   var balloon = tmp[1];
+
   var nmgr = new NamedManager();
   $(nmgr.element).appendTo("body");
-  console.log(nmgr);
+
   var nid = nmgr.materialize(shell, balloon);
   var named = nmgr.named(nid);
+
   var nid2 = nmgr.materialize(shell, balloon);
   var named2 = nmgr.named(nid2);
-  named.load(function(){
-    named.on("mousedown", function(ev){ console.log(ev); });
-    named.on("mousemove", function(ev){ console.log(ev); });
-    named.on("mouseup", function(ev){ console.log(ev); });
-    named.on("mouseclick", function(ev){ console.log(ev); });
-    named.on("mousedblclick", function(ev){ console.log(ev); });
-    named.on("balloonclick", function(ev){ console.log(ev); });
-    named.on("balloondblclick", function(ev){ console.log(ev); });
-    named.on("anchorselect", function(ev){ console.log(ev); });
-    named.on("anchorselectex", function(ev){ console.log(ev); });
-    named.on("raise", function(ev){ console.log(ev); });
-    named.on("choiceselectex", function(ev){ console.log(ev); });
-    named.on("choiceselect", function(ev){ console.log(ev); });
-    play(named);
-    named2.load(function(){
-      named2.on("mousedown", function(ev){ console.log(ev); });
-      named2.on("mousemove", function(ev){ console.log(ev); });
-      named2.on("mouseup", function(ev){ console.log(ev); });
-      named2.on("mouseclick", function(ev){ console.log(ev); });
-      named2.on("mousedblclick", function(ev){ console.log(ev); });
-      named2.on("balloonclick", function(ev){ console.log(ev); });
-      named2.on("balloondblclick", function(ev){ console.log(ev); });
-      named2.on("anchorselect", function(ev){ console.log(ev); });
-      named2.on("anchorselectex", function(ev){ console.log(ev); });
-      named2.on("raise", function(ev){ console.log(ev); });
-      named2.on("choiceselectex", function(ev){ console.log(ev); });
-      named2.on("choiceselect", function(ev){ console.log(ev); });
-      play(named2);
-    });
-  });
+
+  addListener(named);
+  addListener(named2);
+
+  return Promise.all([
+    named.load(),
+    named2.load()
+  ]);
+}).then(function(tmp){
+  console.log(tmp);
+  var named = tmp[0];
+  var named2 = tmp[1];
+  play(named);
+  play(named2);
 }).catch(function(err){ console.error(err.stack) });
+
+function addListener(named){
+  named.on("mousedown",       function(ev){ console.log(ev); });
+  named.on("mousemove",       function(ev){ console.log(ev); });
+  named.on("mouseup",         function(ev){ console.log(ev); });
+  named.on("mouseclick",      function(ev){ console.log(ev); });
+  named.on("mousedblclick",   function(ev){ console.log(ev); });
+  named.on("balloonclick",    function(ev){ console.log(ev); });
+  named.on("balloondblclick", function(ev){ console.log(ev); });
+  named.on("anchorselect",    function(ev){ console.log(ev); });
+  named.on("anchorselectex",  function(ev){ console.log(ev); });
+  named.on("raise",           function(ev){ console.log(ev); });
+  named.on("choiceselectex",  function(ev){ console.log(ev); });
+  named.on("choiceselect",    function(ev){ console.log(ev); });
+}
 
 function play(named){
   named.scope(0);
@@ -107,6 +120,12 @@ function play(named){
                         named.scope().surface(10)
                         setTimeout(function(){
                           named.scope().blimp().talk("unok")
+                          setTimeout(function(){
+                            named.scope().blimp().showWait()
+                            setTimeout(function(){
+                              named.scope().blimp().talk("stop wait")
+                            }, 3000);
+                          });
                         });
                       });
                     });
@@ -120,4 +139,6 @@ function play(named){
     });
   });
 }
+
+
 </script>

@@ -84,6 +84,13 @@ class NamedManager
     .blimpText a:hover { background-color: yellow; }
     .blimpText a.ikagaka-choice { color: blue; }
     .blimpText a.ikagaka-anchor { color: red; }
+
+    @keyframes blink {
+      75% { opacity: 0.0; }
+    }
+    .blink {
+      animation: blink 1s step-end infinite;
+    }
   """
 
 if module?.exports?
