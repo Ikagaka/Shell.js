@@ -13,7 +13,7 @@ class NamedManager
     do =>
       onmousedown = (ev)=>
         setTimeout((=>
-          @$namedMgr.append(ev.currentTarget) ), 100)
+          @$namedMgr.append(ev.currentTarget) ), 300)
       @$namedMgr.on("mousedown", ".named", onmousedown)
       @$namedMgr.on("touchstart", ".named", onmousedown)
       @destructors.push =>

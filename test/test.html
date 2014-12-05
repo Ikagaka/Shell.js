@@ -50,10 +50,32 @@ Promise.all([
   var nid2 = nmgr.materialize(shell, balloon);
   var named2 = nmgr.named(nid2);
   named.load(function(){
-    $(named.element).on("IkagakaSurfaceEvent", function(ev){ console.log(ev.detail); });
+    named.on("mousedown", function(ev){ console.log(ev); });
+    named.on("mousemove", function(ev){ console.log(ev); });
+    named.on("mouseup", function(ev){ console.log(ev); });
+    named.on("mouseclick", function(ev){ console.log(ev); });
+    named.on("mousedblclick", function(ev){ console.log(ev); });
+    named.on("balloonclick", function(ev){ console.log(ev); });
+    named.on("balloondblclick", function(ev){ console.log(ev); });
+    named.on("anchorselect", function(ev){ console.log(ev); });
+    named.on("anchorselectex", function(ev){ console.log(ev); });
+    named.on("raise", function(ev){ console.log(ev); });
+    named.on("choiceselectex", function(ev){ console.log(ev); });
+    named.on("choiceselect", function(ev){ console.log(ev); });
     play(named);
     named2.load(function(){
-      $(named2.element).on("IkagakaSurfaceEvent", function(ev){ console.log(ev.detail); });
+      named2.on("mousedown", function(ev){ console.log(ev); });
+      named2.on("mousemove", function(ev){ console.log(ev); });
+      named2.on("mouseup", function(ev){ console.log(ev); });
+      named2.on("mouseclick", function(ev){ console.log(ev); });
+      named2.on("mousedblclick", function(ev){ console.log(ev); });
+      named2.on("balloonclick", function(ev){ console.log(ev); });
+      named2.on("balloondblclick", function(ev){ console.log(ev); });
+      named2.on("anchorselect", function(ev){ console.log(ev); });
+      named2.on("anchorselectex", function(ev){ console.log(ev); });
+      named2.on("raise", function(ev){ console.log(ev); });
+      named2.on("choiceselectex", function(ev){ console.log(ev); });
+      named2.on("choiceselect", function(ev){ console.log(ev); });
       play(named2);
     });
   });

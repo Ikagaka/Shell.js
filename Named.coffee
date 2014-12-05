@@ -13,11 +13,14 @@ class Named
     @scopes = []
     @currentScope = null
     @destructors = []
-
+    @listener = {}
 
   load: (callback)->
     @scopes[0] = @scope(0)
     @currentScope = @scopes[0]
+    $(@element).on "IkagakaDOMEvent", ({detail: event})=>
+      @trigger(event.type, event)
+
     do =>
       $target = null
       relLeft = relTop = 0
@@ -46,7 +49,7 @@ class Named
             relLeft = pageX - offsetY
             relTop  = pageY - offsetX
             setTimeout((=>
-              @$named.append($scope) ), 100)
+              @$named.append($scope) ), 200)
         else if $(ev.target).hasClass("surfaceCanvas")
           if $(ev.target).parent().parent().parent()?[0] is @element
             $scope = $target = $(ev.target).parent().parent() # .scope
@@ -60,7 +63,7 @@ class Named
             relLeft = pageX - left
             relTop  = pageY - top
             setTimeout((=>
-              @$named.append($scope) ), 100)
+              @$named.append($scope) ), 200)
       onmousemove = (ev)=>
         if !!$target
           if /^touch/.test(ev.type)
@@ -88,13 +91,13 @@ class Named
         $body.off("touchend",   onmouseup)
     do =>
       onblimpclick = (ev)=>
-        detail =
-          "ID": "OnBalloonClick"
-        @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+        event =
+          type: "balloonclick"
+        @trigger(event.type, event)
       onblimpdblclick = (ev)=>
-        detail =
-          "ID": "OnBalloonDoubleClick"
-        @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+        event =
+          type: "balloondblclick"
+        @trigger(event.type, event)
       @$named.on("click",    ".blimp", onblimpclick)
       @$named.on("dblclick", ".blimp", onblimpdblclick)
       @destructors.push ->
@@ -105,46 +108,52 @@ class Named
         id = ev.target.dataset["id"]
         argc = Number ev.target.dataset["argc"]
         if /^On/.test(id) # On
-          detail = {}
-          detail.ID = id
+          event =
+            type: "raise"
+            id: id
+            args: []
           for i in [0 ... argc]
-            detail["Reference"+i] = ev.target.dataset["argv"+i]
-          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+            event.args.push(ev.target.dataset["argv"+i])
+          @trigger(event.type, event)
         else if argc # Ex
-          detail = {}
-          detail.ID = "OnChoiceSelectEx"
-          detail.Reference0 = ev.target.textContent
-          detail.Reference1 = id
+          event =
+            type: "choiceselectex"
+            text: ev.target.textContent
+            id: id
+            args: []
           for i in [0 ... argc]
-            detail["Reference"+i+2] = ev.target.dataset["argv"+i]
-          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+            event.args.push(ev.target.dataset["argv"+i])
+          @trigger(event.type, event)
         else # normal
-          detail = {}
-          detail.ID = "OnChoiceSelect"
-          detail.Reference0 = id
-          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+          event =
+            type: "choiceselect"
+            id: id
+          @trigger(event.type, event)
       onanchorclick = (ev)=>
         id = ev.target.dataset["id"]
         argc = Number ev.target.dataset["argc"]
         if /^On/.test(id) # On
-          detail = {}
-          detail.ID = id
+          event =
+            type: "raise"
+            id: id
+            args: []
           for i in [0 ... argc]
-            detail["Reference"+i] = ev.target.dataset["argv"+i]
-          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+            event.args.push(ev.target.dataset["argv"+i])
+          @trigger(event.type, event)
         else if argc # Ex
-          detail = {}
-          detail.ID = "OnAnchorSelectEx"
-          detail.Reference0 = ev.target.textContent
-          detail.Reference1 = id
+          event =
+            type: "anchorselectex"
+            text: ev.target.textContent
+            id: id
+            args: []
           for i in [0 ... argc]
-            detail["Reference"+i+2] = ev.target.dataset["argv"+i]
-          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+            event.args.push(ev.target.dataset["argv"+i])
+          @trigger(event.type, event)
         else # normal
-          detail = {}
-          detail.ID = "OnAnchorSelect"
-          detail.Reference0 = id
-          @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+          event =
+            type: "anchorselect"
+            id: id
+          @trigger(event.type, event)
       @$named.on("click", ".ikagaka-choice", onchoiceclick)
       @$named.on("click", ".ikagaka-anchor", onanchorclick)
       @destructors.push =>
@@ -168,20 +177,53 @@ class Named
     return @currentScope
 
   openInputBox: (id, text="")->
-    detail =
-      "ID": "OnUserInput"
-      "Reference0": id
-      "Reference1": prompt("UserInput", text) || ""
+    event =
+      "type": "userinput"
+      "id": id
+      "content": prompt("UserInput", text) || ""
     @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
     return
 
   openCommunicateBox: (text="")->
-    detail =
-      "ID": "OnCommunicate"
-      "Reference0": "user"
-      "Reference1": prompt("Communicate", text) || ""
-    @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+    event =
+      "type": "communicate"
+      "sender": "user"
+      "content": prompt("Communicate", text) || ""
+    @trigger(event.type, event)
     return
+
+  on: (event, callback) ->
+    unless event? and callback? then throw Error 'on() event and callback required'
+    unless @listener?
+      @listener = {}
+    unless @listener[event]?
+      @listener[event] = []
+    if -1 == @listener[event].indexOf(callback)
+      @listener[event].push(callback)
+    @
+
+  off: (event, callback) -> # undefined means any
+    if event? and callback?
+      if @listener[event]?
+        index = @listener[event].indexOf(callback)
+        if index != -1
+          @listener[event].splice(index, 1)
+    else if event?
+      delete @listener[event]
+    else if callback?
+      for event of @listener
+        index = @listener[event].indexOf(callback)
+        if index != -1
+          @listener[event].splice(index, 1)
+    else
+      delete @listener
+    @
+
+  trigger: (event, args...) ->
+    if @listener?[event]?
+      for callback in @listener[event]
+        setTimeout (-> callback.apply(@, args)), 0
+    @
 
 
 if module?.exports?

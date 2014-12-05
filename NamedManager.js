@@ -19,7 +19,7 @@
           onmousedown = function(ev) {
             return setTimeout((function() {
               return _this.$namedMgr.append(ev.currentTarget);
-            }), 100);
+            }), 300);
           };
           _this.$namedMgr.on("mousedown", ".named", onmousedown);
           _this.$namedMgr.on("touchstart", ".named", onmousedown);
