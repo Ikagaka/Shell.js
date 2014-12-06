@@ -230,7 +230,7 @@
         text = "";
       }
       event = {
-        "type": "communicate",
+        "type": "communicateinput",
         "sender": "user",
         "content": prompt("Communicate", text)
       };
