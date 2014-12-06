@@ -219,7 +219,7 @@
       event = {
         "type": "userinput",
         "id": id,
-        "content": prompt("UserInput", text) || ""
+        "content": prompt("UserInput", text)
       };
       this.trigger(event.type, event);
     };
@@ -232,7 +232,7 @@
       event = {
         "type": "communicate",
         "sender": "user",
-        "content": prompt("Communicate", text) || ""
+        "content": prompt("Communicate", text)
       };
       this.trigger(event.type, event);
     };

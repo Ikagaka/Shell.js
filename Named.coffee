@@ -150,7 +150,7 @@ class Named
     event =
       "type": "userinput"
       "id": id
-      "content": prompt("UserInput", text) || ""
+      "content": prompt("UserInput", text)
     @trigger(event.type, event)
     return
 
@@ -158,7 +158,7 @@ class Named
     event =
       "type": "communicate"
       "sender": "user"
-      "content": prompt("Communicate", text) || ""
+      "content": prompt("Communicate", text)
     @trigger(event.type, event)
     return
 
