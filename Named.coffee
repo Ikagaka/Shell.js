@@ -151,7 +151,7 @@ class Named
       "type": "userinput"
       "id": id
       "content": prompt("UserInput", text) || ""
-    @$named.trigger($.Event("IkagakaSurfaceEvent", {detail}))
+    @trigger(event.type, event)
     return
 
   openCommunicateBox: (text="")->

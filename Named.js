@@ -221,9 +221,7 @@
         "id": id,
         "content": prompt("UserInput", text) || ""
       };
-      this.$named.trigger($.Event("IkagakaSurfaceEvent", {
-        detail: detail
-      }));
+      this.trigger(event.type, event);
     };
 
     Named.prototype.openCommunicateBox = function(text) {
