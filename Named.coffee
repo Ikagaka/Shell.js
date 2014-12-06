@@ -105,55 +105,25 @@ class Named
         @$named.off("dblclick", ".blimp", onblimpdblclick)
     do =>
       onchoiceclick = (ev)=>
-        id = ev.target.dataset["id"]
+        event = {}
+        event.type = "choiceselect"
+        event.id = ev.target.dataset["id"]
+        event.args = []
+        event.text = ev.target.textContent
         argc = Number ev.target.dataset["argc"]
-        if /^On/.test(id) # On
-          event =
-            type: "raise"
-            id: id
-            args: []
-          for i in [0 ... argc]
-            event.args.push(ev.target.dataset["argv"+i])
-          @trigger(event.type, event)
-        else if argc # Ex
-          event =
-            type: "choiceselectex"
-            text: ev.target.textContent
-            id: id
-            args: []
-          for i in [0 ... argc]
-            event.args.push(ev.target.dataset["argv"+i])
-          @trigger(event.type, event)
-        else # normal
-          event =
-            type: "choiceselect"
-            id: id
-          @trigger(event.type, event)
+        for i in [0 ... argc]
+          event.args.push(ev.target.dataset["argv"+i])
+        @trigger(event.type, event)
       onanchorclick = (ev)=>
-        id = ev.target.dataset["id"]
+        event = {}
+        event.type = "anchorselect"
+        event.id = ev.target.dataset["id"]
+        event.args = []
+        event.text = ev.target.textContent
         argc = Number ev.target.dataset["argc"]
-        if /^On/.test(id) # On
-          event =
-            type: "raise"
-            id: id
-            args: []
-          for i in [0 ... argc]
-            event.args.push(ev.target.dataset["argv"+i])
-          @trigger(event.type, event)
-        else if argc # Ex
-          event =
-            type: "anchorselectex"
-            text: ev.target.textContent
-            id: id
-            args: []
-          for i in [0 ... argc]
-            event.args.push(ev.target.dataset["argv"+i])
-          @trigger(event.type, event)
-        else # normal
-          event =
-            type: "anchorselect"
-            id: id
-          @trigger(event.type, event)
+        for i in [0 ... argc]
+          event.args.push(ev.target.dataset["argv"+i])
+        @trigger(event.type, event)
       @$named.on("click", ".ikagaka-choice", onchoiceclick)
       @$named.on("click", ".ikagaka-anchor", onanchorclick)
       @destructors.push =>

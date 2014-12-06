@@ -153,70 +153,30 @@
         return (function() {
           var onanchorclick, onchoiceclick;
           onchoiceclick = function(ev) {
-            var argc, event, i, id, _i, _j;
-            id = ev.target.dataset["id"];
+            var argc, event, i, _i;
+            event = {};
+            event.type = "choiceselect";
+            event.id = ev.target.dataset["id"];
+            event.args = [];
+            event.text = ev.target.textContent;
             argc = Number(ev.target.dataset["argc"]);
-            if (/^On/.test(id)) {
-              event = {
-                type: "raise",
-                id: id,
-                args: []
-              };
-              for (i = _i = 0; 0 <= argc ? _i < argc : _i > argc; i = 0 <= argc ? ++_i : --_i) {
-                event.args.push(ev.target.dataset["argv" + i]);
-              }
-              return _this.trigger(event.type, event);
-            } else if (argc) {
-              event = {
-                type: "choiceselectex",
-                text: ev.target.textContent,
-                id: id,
-                args: []
-              };
-              for (i = _j = 0; 0 <= argc ? _j < argc : _j > argc; i = 0 <= argc ? ++_j : --_j) {
-                event.args.push(ev.target.dataset["argv" + i]);
-              }
-              return _this.trigger(event.type, event);
-            } else {
-              event = {
-                type: "choiceselect",
-                id: id
-              };
-              return _this.trigger(event.type, event);
+            for (i = _i = 0; 0 <= argc ? _i < argc : _i > argc; i = 0 <= argc ? ++_i : --_i) {
+              event.args.push(ev.target.dataset["argv" + i]);
             }
+            return _this.trigger(event.type, event);
           };
           onanchorclick = function(ev) {
-            var argc, event, i, id, _i, _j;
-            id = ev.target.dataset["id"];
+            var argc, event, i, _i;
+            event = {};
+            event.type = "anchorselect";
+            event.id = ev.target.dataset["id"];
+            event.args = [];
+            event.text = ev.target.textContent;
             argc = Number(ev.target.dataset["argc"]);
-            if (/^On/.test(id)) {
-              event = {
-                type: "raise",
-                id: id,
-                args: []
-              };
-              for (i = _i = 0; 0 <= argc ? _i < argc : _i > argc; i = 0 <= argc ? ++_i : --_i) {
-                event.args.push(ev.target.dataset["argv" + i]);
-              }
-              return _this.trigger(event.type, event);
-            } else if (argc) {
-              event = {
-                type: "anchorselectex",
-                text: ev.target.textContent,
-                id: id,
-                args: []
-              };
-              for (i = _j = 0; 0 <= argc ? _j < argc : _j > argc; i = 0 <= argc ? ++_j : --_j) {
-                event.args.push(ev.target.dataset["argv" + i]);
-              }
-              return _this.trigger(event.type, event);
-            } else {
-              event = {
-                type: "anchorselect",
-                id: id
-              };
-              return _this.trigger(event.type, event);
+            for (i = _i = 0; 0 <= argc ? _i < argc : _i > argc; i = 0 <= argc ? ++_i : --_i) {
+              event.args.push(ev.target.dataset["argv" + i]);
             }
+            return _this.trigger(event.type, event);
           };
           _this.$named.on("click", ".ikagaka-choice", onchoiceclick);
           _this.$named.on("click", ".ikagaka-anchor", onanchorclick);
