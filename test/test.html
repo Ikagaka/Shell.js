@@ -67,6 +67,10 @@ Promise.all([
   addListener(named);
   addListener(named2);
 
+  /*setTimeout(function(){
+    nmgr.vanish(nid2);
+  }, 10000);*/
+
   return Promise.all([
     named.load(),
     named2.load()

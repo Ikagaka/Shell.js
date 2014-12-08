@@ -100,7 +100,7 @@ class Named
         @trigger(event.type, event)
       @$named.on("click",    ".blimp", onblimpclick)
       @$named.on("dblclick", ".blimp", onblimpdblclick)
-      @destructors.push ->
+      @destructors.push =>
         @$named.off("click",    ".blimp", onblimpclick)
         @$named.off("dblclick", ".blimp", onblimpdblclick)
     do =>
