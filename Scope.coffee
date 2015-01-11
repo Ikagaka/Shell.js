@@ -188,7 +188,11 @@ class Scope
       @_initializeCurrentStyle()
       @$blimpText.html("")
       return
-    br: =>
+    br: (ratio) =>
+      if ratio?
+        $newimp = $('<span />').css('position': 'relative', 'top': (ratio - 1) + 'em')
+        @insertPoint = $newimp.appendTo(@insertPoint)
+        @insertPoint.css(@_blimpTextCSS(@_current_text_style))
       @insertPoint.append("<br />")
       return
     showWait: =>
