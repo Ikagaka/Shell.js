@@ -179,6 +179,16 @@
             _this.$blimpText[0].scrollTop = 999;
           };
         })(this),
+        marker: (function(_this) {
+          return function() {
+            var _text;
+            _this.$blimpText.find(".blink").hide();
+            _text = $(document.createElement("div")).text("・").html();
+            _this.$blimp.show();
+            _this.insertPoint.append(_text);
+            _this.$blimpText[0].scrollTop = 999;
+          };
+        })(this),
         clear: (function(_this) {
           return function() {
             _this.insertPoint = _this.$blimpText;

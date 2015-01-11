@@ -136,6 +136,13 @@ class Scope
       @insertPoint.append(_text)
       @$blimpText[0].scrollTop = 999
       return
+    marker: =>
+      @$blimpText.find(".blink").hide()
+      _text = $(document.createElement("div")).text("・").html()
+      @$blimp.show()
+      @insertPoint.append(_text)
+      @$blimpText[0].scrollTop = 999
+      return
     clear: =>
       @insertPoint = @$blimpText
       @$blimpText.html("")
