@@ -192,7 +192,7 @@
         })(this),
         showWait: (function(_this) {
           return function() {
-            _this.$blimpText.append("<br /><br />").append("<div class='blink'>...</div>");
+            _this.$blimpText.append("<br /><br />").append("<div class='blink'>▼</div>");
             _this.$blimpText[0].scrollTop = 999;
           };
         })(this)
