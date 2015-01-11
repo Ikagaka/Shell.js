@@ -76,11 +76,23 @@ class Scope
         l = descript["origin.x"] or descript["validrect.left"] or "10"
         w = @$blimpCanvas[0].width
         h = @$blimpCanvas[0].height
+        fh = descript["font.height"] or "12"
+        fontcolor = (r,g,b) ->
+          if (isNaN(r) or r < 0) and (isNaN(g) or g < 0) and (isNaN(b) or b < 0)
+            return
+          else
+            return ("000000" + ((if r > 0 then r else 0) * 65536 + (if g > 0 then g else 0) * 256 + (if b > 0 then b else 0) * 1).toString(16)).slice(-6)
+        fc = fontcolor(descript["font.color.r"], descript["font.color.g"], descript["font.color.b"])
+        fsc = fontcolor(descript["font.shadowcolor.r"], descript["font.shadowcolor.g"], descript["font.shadowcolor.b"])
+        fsh = if fsc then "1px 1px 0 ##{fsc}" else "none"
         @$blimpText.css({
           "top": "#{t}px",
           "left": "#{l}px",
           "width": "#{w-(Number(l)+Number(r))}px",
-          "height": "#{h-(Number(t)-Number(b))}px"
+          "height": "#{h-(Number(t)-Number(b))}px",
+          "font-size": "#{fh}px"
+          "color": "##{fc}"
+          "text-shadow": fsh
         })
 
     anchorBegin: (id, args...)=>
