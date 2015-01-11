@@ -10,6 +10,56 @@ class Scope
     @$blimpCanvas = $("<canvas width='0' height='0' />").addClass("blimpCanvas")
     @$blimpText = $("<div />").addClass("blimpText")
 
+    descript = @balloon.descript
+    cursor = descript["cursor"] || ''
+    font_name = (descript["font.name"] or "MS Gothic").split(/,/).map((name) -> '"'+name+'"').join(',')
+    font_height = descript["font.height"] or "12"
+    getfontcolor = (r,g,b,can_ignore) ->
+      if can_ignore and (isNaN(r) or r < 0) and (isNaN(g) or g < 0) and (isNaN(b) or b < 0)
+        return
+      else
+        return ("000000" + ((if r > 0 then r else 0) * 65536 + (if g > 0 then g else 0) * 256 + (if b > 0 then b else 0) * 1).toString(16)).slice(-6)
+    font_color = getfontcolor(descript["font.color.r"], descript["font.color.g"], descript["font.color.b"])
+    font_shadowcolor = getfontcolor(descript["font.shadowcolor.r"], descript["font.shadowcolor.g"], descript["font.shadowcolor.b"], true)
+    font_bold = descript["font.bold"]
+    font_italic = descript["font.italic"]
+    text_decoration = []
+    if descript["font.strike"] then text_decoration.push 'line-through'
+    if descript["font.underline"] then text_decoration.push 'underline'
+    @_style =
+      "cursor": cursor
+      "font-family": font_name
+      "font-size": "#{font_height}px"
+      "color": "##{font_color}"
+      "background": "none"
+      "outline": "none"
+      "border": "none"
+      "text-shadow": if font_shadowcolor then "1px 1px 0 ##{font_shadowcolor}" else "none"
+      "font-weight": if font_bold then "bold" else "normal"
+      "font-style": if font_italic then "italic" else "normal"
+      "text-decoration": if text_decoration.length then text_decoration.join(' ') else "none"
+    @$blimpText.css(@_style)
+    clickable_element_style = (prefix, style_default) ->
+      style = if {square: true, underline: true, 'square+underline': true}[descript["#{prefix}.style"]] then descript["#{prefix}.style"] else style_default
+      font_color = getfontcolor(descript["#{prefix}.font.color.r"], descript["#{prefix}.font.color.g"], descript["#{prefix}.font.color.b"])
+      pen_color = getfontcolor(descript["#{prefix}.pen.color.r"], descript["#{prefix}.pen.color.g"], descript["#{prefix}.pen.color.b"])
+      brush_color = getfontcolor(descript["#{prefix}.brush.color.r"], descript["#{prefix}.brush.color.g"], descript["#{prefix}.brush.color.b"])
+      switch style
+        when "square"
+          color: "##{font_color}"
+          outline: "solid 1px ##{pen_color}"
+          background: "##{brush_color}"
+        when "underline"
+          color: "##{font_color}"
+          'border-bottom': "solid 1px ##{pen_color}"
+        when "square+underline"
+          color: "##{font_color}"
+          outline: "solid 1px ##{pen_color}"
+          background: "##{brush_color}"
+          'border-bottom': "solid 1px ##{pen_color}"
+    @_choice_style = clickable_element_style("cursor", "square")
+    @_anchor_style = clickable_element_style("anchor", "underline")
+
     @element = @$scope[0]
     @destructors = []
     @currentSurface = @shell.attachSurface(@$surfaceCanvas[0], @scopeId, 0)
@@ -76,25 +126,11 @@ class Scope
         l = descript["origin.x"] or descript["validrect.left"] or "10"
         w = @$blimpCanvas[0].width
         h = @$blimpCanvas[0].height
-        ff = (descript["font.name"] or "MS Gothic").split(/,/).map((name) -> '"'+name+'"').join(',')
-        fh = descript["font.height"] or "12"
-        fontcolor = (r,g,b) ->
-          if (isNaN(r) or r < 0) and (isNaN(g) or g < 0) and (isNaN(b) or b < 0)
-            return
-          else
-            return ("000000" + ((if r > 0 then r else 0) * 65536 + (if g > 0 then g else 0) * 256 + (if b > 0 then b else 0) * 1).toString(16)).slice(-6)
-        fc = fontcolor(descript["font.color.r"], descript["font.color.g"], descript["font.color.b"])
-        fsc = fontcolor(descript["font.shadowcolor.r"], descript["font.shadowcolor.g"], descript["font.shadowcolor.b"])
-        fsh = if fsc then "1px 1px 0 ##{fsc}" else "none"
         @$blimpText.css({
           "top": "#{t}px",
           "left": "#{l}px",
           "width": "#{w-(Number(l)+Number(r))}px",
-          "height": "#{h-(Number(t)-Number(b))}px",
-          "font-family": ff
-          "font-size": "#{fh}px"
-          "color": "##{fc}"
-          "text-shadow": fsh
+          "height": "#{h-(Number(t)-Number(b))}px"
         })
 
     anchorBegin: (id, args...)=>
@@ -103,6 +139,9 @@ class Scope
       _id = $(document.createElement("div")).text(id).html()
       $a = $("<a />")
       $a.addClass("ikagaka-anchor")
+      $a.css(@_style)
+      $a.mouseover(=> $a.css(@_anchor_style))
+      $a.mouseout(=> $a.css(@_style))
       $a.attr("data-id", _id)
       $a.attr("data-argc", args.length)
       for argv, index in args
@@ -120,6 +159,9 @@ class Scope
       _id = $(document.createElement("div")).text(id).html()
       $a = $("<a />")
       $a.addClass("ikagaka-choice")
+      $a.css(@_style)
+      $a.mouseover(=> $a.css(@_choice_style))
+      $a.mouseout(=> $a.css(@_style))
       $a.html(_text)
       $a.attr("data-id", _id)
       $a.attr("data-argc", args.length)
@@ -133,6 +175,9 @@ class Scope
       _id = $(document.createElement("div")).text(id).html()
       $a = $("<a />")
       $a.addClass("ikagaka-choice")
+      $a.css(@_style)
+      $a.mouseover(=> $a.css(@_choice_style))
+      $a.mouseout(=> $a.css(@_style))
       $a.attr("data-id", _id)
       $a.attr("data-argc", args.length)
       for argv, index in args
