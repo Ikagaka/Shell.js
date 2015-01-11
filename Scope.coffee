@@ -11,60 +11,33 @@ class Scope
     @$blimpText = $("<div />").addClass("blimpText")
 
     descript = @balloon.descript
-    cursor = descript["cursor"] || ''
-    font_name = (descript["font.name"] or "MS Gothic").split(/,/).map((name) -> '"'+name+'"').join(',')
-    font_height = descript["font.height"] or "12"
+    styles = {}
+    styles["cursor"] = descript["cursor"] || ''
+    styles["font.name"] = (descript["font.name"] or "MS Gothic").split(/,/).map((name) -> '"'+name+'"').join(',')
+    styles["font.height"] = descript["font.height"] or "12"
     getfontcolor = (r,g,b,can_ignore) ->
       if can_ignore and (isNaN(r) or r < 0) and (isNaN(g) or g < 0) and (isNaN(b) or b < 0)
         return
       else
         return ("000000" + ((if r > 0 then r else 0) * 65536 + (if g > 0 then g else 0) * 256 + (if b > 0 then b else 0) * 1).toString(16)).slice(-6)
-    font_color = getfontcolor(descript["font.color.r"], descript["font.color.g"], descript["font.color.b"])
-    font_shadowcolor = getfontcolor(descript["font.shadowcolor.r"], descript["font.shadowcolor.g"], descript["font.shadowcolor.b"], true)
-    font_bold = descript["font.bold"]
-    font_italic = descript["font.italic"]
-    text_decoration = []
-    if descript["font.strike"] then text_decoration.push 'line-through'
-    if descript["font.underline"] then text_decoration.push 'underline'
-    @_style =
-      "cursor": cursor
-      "font-family": font_name
-      "font-size": "#{font_height}px"
-      "color": "##{font_color}"
-      "background": "none"
-      "outline": "none"
-      "border": "none"
-      "text-shadow": if font_shadowcolor then "1px 1px 0 ##{font_shadowcolor}" else "none"
-      "font-weight": if font_bold then "bold" else "normal"
-      "font-style": if font_italic then "italic" else "normal"
-      "text-decoration": if text_decoration.length then text_decoration.join(' ') else "none"
-    @$blimpText.css(@_style)
+    styles["font.color"] = getfontcolor(descript["font.color.r"], descript["font.color.g"], descript["font.color.b"])
+    styles["font.shadowcolor"] = getfontcolor(descript["font.shadowcolor.r"], descript["font.shadowcolor.g"], descript["font.shadowcolor.b"], true)
+    styles["font.bold"] = descript["font.bold"]
+    styles["font.italic"] = descript["font.italic"]
+    styles["font.strike"] = descript["font.strike"]
+    styles["font.underline"] = descript["font.underline"]
+    @_text_style = styles
     clickable_element_style = (prefix, style_default) ->
-      style = if {square: true, underline: true, 'square+underline': true}[descript["#{prefix}.style"]] then descript["#{prefix}.style"] else style_default
-      font_color = getfontcolor(descript["#{prefix}.font.color.r"], descript["#{prefix}.font.color.g"], descript["#{prefix}.font.color.b"])
-      pen_color = getfontcolor(descript["#{prefix}.pen.color.r"], descript["#{prefix}.pen.color.g"], descript["#{prefix}.pen.color.b"])
-      brush_color = getfontcolor(descript["#{prefix}.brush.color.r"], descript["#{prefix}.brush.color.g"], descript["#{prefix}.brush.color.b"])
-      switch style
-        when "square"
-          base:
-            color: "##{font_color}"
-          over:
-            outline: "solid 1px ##{pen_color}"
-            background: "##{brush_color}"
-        when "underline"
-          base:
-            color: "##{font_color}"
-          over:
-            'border-bottom': "solid 1px ##{pen_color}"
-        when "square+underline"
-          base:
-            color: "##{font_color}"
-          over:
-            outline: "solid 1px ##{pen_color}"
-            background: "##{brush_color}"
-            'border-bottom': "solid 1px ##{pen_color}"
+      styles = {}
+      styles["style"] = if {square: true, underline: true, 'square+underline': true, none: true}[descript["#{prefix}.style"]] then descript["#{prefix}.style"] else style_default
+      styles["font.color"] = getfontcolor(descript["#{prefix}.font.color.r"], descript["#{prefix}.font.color.g"], descript["#{prefix}.font.color.b"])
+      styles["pen.color"] = getfontcolor(descript["#{prefix}.pen.color.r"], descript["#{prefix}.pen.color.g"], descript["#{prefix}.pen.color.b"])
+      styles["brush.color"] = getfontcolor(descript["#{prefix}.brush.color.r"], descript["#{prefix}.brush.color.g"], descript["#{prefix}.brush.color.b"])
+      styles
     @_choice_style = clickable_element_style("cursor", "square")
     @_anchor_style = clickable_element_style("anchor", "underline")
+    @$blimpText.css(@_blimpTextCSS(@_text_style))
+    @_initializeCurrentStyle()
 
     @element = @$scope[0]
     @destructors = []
@@ -145,9 +118,9 @@ class Scope
       _id = $(document.createElement("div")).text(id).html()
       $a = $("<a />")
       $a.addClass("ikagaka-anchor")
-      $a.css(@_style).css(@_anchor_style.base)
-      $a.mouseover(=> $a.css(@_anchor_style.over))
-      $a.mouseout(=> $a.css(@_style).css(@_anchor_style.base))
+      $a.css(@_blimpTextCSS(@_current_text_style)).css(@_blimpClickableTextCSS(@_current_anchor_style).base)
+      $a.mouseover(=> $a.css(@_blimpClickableTextCSS(@_current_anchor_style).over))
+      $a.mouseout(=> $a.css(@_blimpTextCSS(@_current_text_style)).css(@_blimpClickableTextCSS(@_current_anchor_style).base))
       $a.attr("data-id", _id)
       $a.attr("data-argc", args.length)
       for argv, index in args
@@ -165,9 +138,9 @@ class Scope
       _id = $(document.createElement("div")).text(id).html()
       $a = $("<a />")
       $a.addClass("ikagaka-choice")
-      $a.css(@_style)
-      $a.mouseover(=> $a.css(@_choice_style.base).css(@_choice_style.over))
-      $a.mouseout(=> $a.css(@_style))
+      $a.css(@_blimpTextCSS(@_current_text_style))
+      $a.mouseover(=> $a.css(@_blimpClickableTextCSS(@_current_choice_style).base).css(@_blimpClickableTextCSS(@_current_choice_style).over))
+      $a.mouseout(=> $a.css(@_blimpTextCSS(@_current_text_style)))
       $a.html(_text)
       $a.attr("data-id", _id)
       $a.attr("data-argc", args.length)
@@ -181,9 +154,9 @@ class Scope
       _id = $(document.createElement("div")).text(id).html()
       $a = $("<a />")
       $a.addClass("ikagaka-choice")
-      $a.css(@_style)
-      $a.mouseover(=> $a.css(@_choice_style.base).css(@_choice_style.over))
-      $a.mouseout(=> $a.css(@_style))
+      $a.css(@_blimpTextCSS(@_current_text_style))
+      $a.mouseover(=> $a.css(@_blimpClickableTextCSS(@_current_choice_style).base).css(@_blimpClickableTextCSS(@_current_choice_style).over))
+      $a.mouseout(=> $a.css(@_blimpTextCSS(@_current_text_style)))
       $a.attr("data-id", _id)
       $a.attr("data-argc", args.length)
       for argv, index in args
@@ -212,6 +185,7 @@ class Scope
       return
     clear: =>
       @insertPoint = @$blimpText
+      @_initializeCurrentStyle()
       @$blimpText.html("")
       return
     br: =>
@@ -222,6 +196,56 @@ class Scope
       @$blimpText[0].scrollTop = 999
       return
 
+  _blimpTextCSS: (styles) ->
+    css = {}
+    css["cursor"] = styles["cursor"]
+    css["font-family"] = styles["font.name"]
+    css["font-size"] = "#{styles["font.height"]}px"
+    css["color"] = "##{styles["font.color"]}"
+    css["background"] = "none"
+    css["outline"] = "none"
+    css["border"] = "none"
+    css["text-shadow"] = if styles["font.shadowcolor"] then "1px 1px 0 ##{styles["font.shadowcolor"]}" else "none"
+    css["font-weight"] = if styles["font.bold"] then "bold" else "normal"
+    css["font-style"] = if styles["font.italic"] then "italic" else "normal"
+    text_decoration = []
+    if styles["font.strike"] then text_decoration.push 'line-through'
+    if styles["font.underline"] then text_decoration.push 'underline'
+    css["text-decoration"] = if text_decoration.length then text_decoration.join(' ') else "none"
+    css
+  _blimpClickableTextCSS: (styles) ->
+    switch styles["style"]
+      when "square"
+        base:
+          color: "##{styles["font.color"]}"
+        over:
+          outline: "solid 1px ##{styles["pen.color"]}"
+          background: "##{styles["brush.color"]}"
+      when "underline"
+        base:
+          color: "##{styles["font.color"]}"
+        over:
+          'border-bottom': "solid 1px ##{styles["pen.color"]}"
+      when "square+underline"
+        base:
+          color: "##{styles["font.color"]}"
+        over:
+          outline: "solid 1px ##{styles["pen.color"]}"
+          background: "##{styles["brush.color"]}"
+          'border-bottom': "solid 1px ##{styles["pen.color"]}"
+      when "none"
+        base:
+          color: "##{font_color}"
+  _initializeCurrentStyle: ->
+    @_current_text_style = {}
+    for name, value of @_text_style
+      @_current_text_style[name] = value
+    @_current_choice_style = {}
+    for name, value of @_choice_style
+      @_current_choice_style[name] = value
+    @_current_anchor_style = {}
+    for name, value of @_anchor_style
+      @_current_anchor_style[name] = value
 
 if module?.exports?
   module.exports = Scope
