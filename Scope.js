@@ -195,7 +195,7 @@
             $a.addClass("ikagaka-anchor");
             $a.css(_this._style).css(_this._anchor_style.base);
             $a.mouseover(function() {
-              return $a.css(_this._anchor_style.hover);
+              return $a.css(_this._anchor_style.over);
             });
             $a.mouseout(function() {
               return $a.css(_this._style).css(_this._anchor_style.base);

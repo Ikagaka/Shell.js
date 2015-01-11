@@ -146,7 +146,7 @@ class Scope
       $a = $("<a />")
       $a.addClass("ikagaka-anchor")
       $a.css(@_style).css(@_anchor_style.base)
-      $a.mouseover(=> $a.css(@_anchor_style.hover))
+      $a.mouseover(=> $a.css(@_anchor_style.over))
       $a.mouseout(=> $a.css(@_style).css(@_anchor_style.base))
       $a.attr("data-id", _id)
       $a.attr("data-argc", args.length)
