@@ -60,7 +60,7 @@
     };
 
     Scope.prototype.blimp = function(balloonId) {
-      var b, descript, fc, fh, fontcolor, fsc, fsh, h, l, r, t, tmp, type, w;
+      var b, descript, fc, ff, fh, fontcolor, fsc, fsh, h, l, r, t, tmp, type, w;
       if (Number(balloonId) < 0) {
         this.$blimp.hide();
       } else {
@@ -91,6 +91,9 @@
           l = descript["origin.x"] || descript["validrect.left"] || "10";
           w = this.$blimpCanvas[0].width;
           h = this.$blimpCanvas[0].height;
+          ff = (descript["font.name"] || "MS Gothic").split(/,/).map(function(name) {
+            return '"' + name + '"';
+          }).join(',');
           fh = descript["font.height"] || "12";
           fontcolor = function(r, g, b) {
             if ((isNaN(r) || r < 0) && (isNaN(g) || g < 0) && (isNaN(b) || b < 0)) {
@@ -107,6 +110,7 @@
             "left": "" + l + "px",
             "width": "" + (w - (Number(l) + Number(r))) + "px",
             "height": "" + (h - (Number(t) - Number(b))) + "px",
+            "font-family": ff,
             "font-size": "" + fh + "px",
             "color": "#" + fc,
             "text-shadow": fsh

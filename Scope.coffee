@@ -76,6 +76,7 @@ class Scope
         l = descript["origin.x"] or descript["validrect.left"] or "10"
         w = @$blimpCanvas[0].width
         h = @$blimpCanvas[0].height
+        ff = (descript["font.name"] or "MS Gothic").split(/,/).map((name) -> '"'+name+'"').join(',')
         fh = descript["font.height"] or "12"
         fontcolor = (r,g,b) ->
           if (isNaN(r) or r < 0) and (isNaN(g) or g < 0) and (isNaN(b) or b < 0)
@@ -90,6 +91,7 @@ class Scope
           "left": "#{l}px",
           "width": "#{w-(Number(l)+Number(r))}px",
           "height": "#{h-(Number(t)-Number(b))}px",
+          "font-family": ff
           "font-size": "#{fh}px"
           "color": "##{fc}"
           "text-shadow": fsh
