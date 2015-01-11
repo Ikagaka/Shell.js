@@ -268,6 +268,88 @@
             _this.$blimpText.append("<br /><br />").append("<div class='blink'>▼</div>");
             _this.$blimpText[0].scrollTop = 999;
           };
+        })(this),
+        location: (function(_this) {
+          return function(x, y) {
+            var $imp_position_checker, $newimp, $newimp_container, baseoffset, offset, offsetx, offsety, re, toparam, xp, yp;
+            re = /^(?:(@)?(-?\d*\.?\d*e?\d*)(em|%)?)?$/;
+            toparam = function(r) {
+              var rp, unit, value;
+              if (r == null) {
+                return {
+                  relative: true,
+                  value: 0
+                };
+              }
+              rp = r.match(re);
+              if (!rp) {
+                return;
+              }
+              if (!rp[2].length) {
+                return {
+                  relative: true,
+                  value: 0
+                };
+              }
+              if (isNaN(rp[2])) {
+                return;
+              }
+              if (rp[3] === '%') {
+                value = rp[2] / 100;
+                unit = 'em';
+              } else {
+                value = Number(rp[2]);
+                unit = rp[3] || 'px';
+              }
+              return {
+                relative: !!rp[1],
+                value: value + unit
+              };
+            };
+            xp = toparam(x);
+            yp = toparam(y);
+            if (!((xp != null) && (yp != null))) {
+              return;
+            }
+            if (xp.relative && yp.relative) {
+              $newimp = $('<span />').css({
+                'position': 'relative',
+                'margin-left': xp.value,
+                'top': yp.value
+              });
+              _this.insertPoint = $newimp.appendTo(_this.insertPoint);
+            } else {
+              if (xp.relative || yp.relative) {
+                $imp_position_checker = $('<span>.</span>');
+                _this.insertPoint.append($imp_position_checker);
+                offset = $imp_position_checker.offset();
+                baseoffset = _this.$blimpText.offset();
+                offsetx = offset.left - baseoffset.left;
+                offsety = offset.top - baseoffset.top;
+                $imp_position_checker.remove();
+              }
+              if (!xp.relative) {
+                offsetx = 0;
+              }
+              if (!yp.relative) {
+                offsety = 0;
+              }
+              $newimp_container = $('<div />').css({
+                'position': 'absolute',
+                'pointer-events': 'none',
+                'text-indent': offsetx + 'px',
+                'top': offsety + 'px'
+              });
+              $newimp = $('<span />').css({
+                'position': 'relative',
+                'pointer-events': 'auto',
+                'margin-left': xp.value,
+                'top': yp.value
+              });
+              _this.insertPoint = $newimp.appendTo($newimp_container.appendTo(_this.$blimpText));
+            }
+            return _this.insertPoint.css(_this._blimpTextCSS(_this._current_text_style));
+          };
         })(this)
       };
     };
