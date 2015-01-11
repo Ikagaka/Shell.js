@@ -107,10 +107,11 @@ class Scope
       $a.attr("data-argc", args.length)
       for argv, index in args
         $a.attr("data-argv#{index}", argv)
-      @insertPoint = $a.appendTo(@$blimpText)
+      @originalInsertPoint = @insertPoint
+      @insertPoint = $a.appendTo(@insertPoint)
       return
     anchorEnd: =>
-      @insertPoint = @$blimpText
+      @insertPoint = @originalInsertPoint
       return
     choice: (text, id, args...)=>
       @$blimpText.find(".blink").hide()
@@ -136,10 +137,11 @@ class Scope
       $a.attr("data-argc", args.length)
       for argv, index in args
         $a.attr("data-argv#{index}", argv)
-      @insertPoint = $a.appendTo(@$blimpText)
+      @originalInsertPoint = @insertPoint
+      @insertPoint = $a.appendTo(@insertPoint)
       return
     choiceEnd: =>
-      @insertPoint = @$blimpText
+      @insertPoint = @originalInsertPoint
       return
     talk: (text)=>
       @$blimpText.find(".blink").hide()

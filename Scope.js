@@ -133,12 +133,13 @@
               argv = args[index];
               $a.attr("data-argv" + index, argv);
             }
-            _this.insertPoint = $a.appendTo(_this.$blimpText);
+            _this.originalInsertPoint = _this.insertPoint;
+            _this.insertPoint = $a.appendTo(_this.insertPoint);
           };
         })(this),
         anchorEnd: (function(_this) {
           return function() {
-            _this.insertPoint = _this.$blimpText;
+            _this.insertPoint = _this.originalInsertPoint;
           };
         })(this),
         choice: (function(_this) {
@@ -176,12 +177,13 @@
               argv = args[index];
               $a.attr("data-argv" + index, argv);
             }
-            _this.insertPoint = $a.appendTo(_this.$blimpText);
+            _this.originalInsertPoint = _this.insertPoint;
+            _this.insertPoint = $a.appendTo(_this.insertPoint);
           };
         })(this),
         choiceEnd: (function(_this) {
           return function() {
-            _this.insertPoint = _this.$blimpText;
+            _this.insertPoint = _this.originalInsertPoint;
           };
         })(this),
         talk: (function(_this) {
