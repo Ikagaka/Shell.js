@@ -46,17 +46,23 @@ class Scope
       brush_color = getfontcolor(descript["#{prefix}.brush.color.r"], descript["#{prefix}.brush.color.g"], descript["#{prefix}.brush.color.b"])
       switch style
         when "square"
-          color: "##{font_color}"
-          outline: "solid 1px ##{pen_color}"
-          background: "##{brush_color}"
+          base:
+            color: "##{font_color}"
+          over:
+            outline: "solid 1px ##{pen_color}"
+            background: "##{brush_color}"
         when "underline"
-          color: "##{font_color}"
-          'border-bottom': "solid 1px ##{pen_color}"
+          base:
+            color: "##{font_color}"
+          over:
+            'border-bottom': "solid 1px ##{pen_color}"
         when "square+underline"
-          color: "##{font_color}"
-          outline: "solid 1px ##{pen_color}"
-          background: "##{brush_color}"
-          'border-bottom': "solid 1px ##{pen_color}"
+          base:
+            color: "##{font_color}"
+          over:
+            outline: "solid 1px ##{pen_color}"
+            background: "##{brush_color}"
+            'border-bottom': "solid 1px ##{pen_color}"
     @_choice_style = clickable_element_style("cursor", "square")
     @_anchor_style = clickable_element_style("anchor", "underline")
 
@@ -139,9 +145,9 @@ class Scope
       _id = $(document.createElement("div")).text(id).html()
       $a = $("<a />")
       $a.addClass("ikagaka-anchor")
-      $a.css(@_style)
-      $a.mouseover(=> $a.css(@_anchor_style))
-      $a.mouseout(=> $a.css(@_style))
+      $a.css(@_style).css(@_anchor_style.base)
+      $a.mouseover(=> $a.css(@_anchor_style.hover))
+      $a.mouseout(=> $a.css(@_style).css(@_anchor_style.base))
       $a.attr("data-id", _id)
       $a.attr("data-argc", args.length)
       for argv, index in args
@@ -160,7 +166,7 @@ class Scope
       $a = $("<a />")
       $a.addClass("ikagaka-choice")
       $a.css(@_style)
-      $a.mouseover(=> $a.css(@_choice_style))
+      $a.mouseover(=> $a.css(@_choice_style.base).css(@_choice_style.over))
       $a.mouseout(=> $a.css(@_style))
       $a.html(_text)
       $a.attr("data-id", _id)
@@ -176,7 +182,7 @@ class Scope
       $a = $("<a />")
       $a.addClass("ikagaka-choice")
       $a.css(@_style)
-      $a.mouseover(=> $a.css(@_choice_style))
+      $a.mouseover(=> $a.css(@_choice_style.base).css(@_choice_style.over))
       $a.mouseout(=> $a.css(@_style))
       $a.attr("data-id", _id)
       $a.attr("data-argc", args.length)
