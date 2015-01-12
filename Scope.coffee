@@ -200,14 +200,12 @@ class Scope
       @$blimpText[0].scrollTop = 999
       return
     location: (x, y) =>
-      re = /^(?:(@)?(-?\d*\.?\d*e?\d*)(em|%)?)?$/
+      re = /^(@)?(-?\d*\.?\d*e?\d*)(em|%)?$/
       toparam = (r) =>
-        unless r?
+        unless r? and r.length
           return relative: true, value: 0
         rp = r.match(re)
         unless rp then return
-        unless rp[2].length
-          return relative: true, value: 0
         if isNaN(rp[2]) then return
         if rp[3] == '%'
           value = rp[2] / 100
