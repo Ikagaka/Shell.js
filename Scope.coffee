@@ -216,6 +216,14 @@ class Scope
       @insertPoint.append(_text)
       @$blimpText[0].scrollTop = 999
       return
+    talkraw: (text)=>
+      @$blimpText.find(".blink").hide()
+      if !!@currentSurface
+        @currentSurface.talk()
+      @$blimp.show()
+      @insertPoint.append(text)
+      @$blimpText[0].scrollTop = 999
+      return
     marker: =>
       @$blimpText.find(".blink").hide()
       _text = $(document.createElement("div")).text("・").html()
