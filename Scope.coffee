@@ -112,6 +112,40 @@ class Scope
           "height": "#{h-(Number(t)-Number(b))}px"
         })
 
+    location = (x, y) =>
+      re = /^(@)?(-?\d*\.?\d*e?\d*)(em|%)?$/
+      toparam = (r) =>
+        unless r? and r.length
+          return relative: true, value: 0
+        rp = r.match(re)
+        unless rp then return
+        if isNaN(rp[2]) then return
+        if rp[3] == '%'
+          value = rp[2] / 100
+          unit = 'em'
+        else
+          value = Number rp[2]
+          unit = rp[3] || 'px'
+        relative: !!rp[1]
+        value: value + unit
+      xp = toparam x
+      yp = toparam y
+      unless xp? and yp? then return
+      if xp.relative or yp.relative
+        $imp_position_checker = $('<span>.</span>')
+        @insertPoint.append($imp_position_checker)
+        offset = $imp_position_checker.offset()
+        baseoffset = @$blimpText.offset()
+        offsetx = offset.left - baseoffset.left
+        offsety = offset.top - baseoffset.top + @$blimpText.scrollTop()
+        $imp_position_checker.remove()
+      unless xp.relative then offsetx = 0
+      unless yp.relative then offsety = 0
+      $newimp_container_top = $('<div />').css('position': 'absolute', 'pointer-events': 'none', 'top': yp.value)
+      $newimp_container = $('<div />').css('position': 'absolute', 'pointer-events': 'none', 'text-indent': offsetx + 'px', 'top': offsety + 'px', 'width': @$blimpText[0].clientWidth)
+      $newimp = $('<span />').css('pointer-events': 'auto', 'margin-left': xp.value)
+      @insertPoint = $newimp.appendTo($newimp_container.appendTo($newimp_container_top.appendTo(@$blimpText)))
+      @insertPoint.css(@_blimpTextCSS(@_current_text_style))
     anchorBegin: (id, args...)=>
       @$blimpText.find(".blink").hide()
       @$blimp.show()
@@ -184,58 +218,21 @@ class Scope
       @$blimpText[0].scrollTop = 999
       return
     clear: =>
+      @$blimpText.html("")
       @insertPoint = @$blimpText
       @_initializeCurrentStyle()
-      @$blimpText.html("")
       return
     br: (ratio) =>
       if ratio?
-        $newimp = $('<span />').css('position': 'relative', 'top': (ratio - 1) + 'em')
-        @insertPoint = $newimp.appendTo(@insertPoint)
-        @insertPoint.css(@_blimpTextCSS(@_current_text_style))
-      @insertPoint.append("<br />")
+        location('0', '@' + ratio + 'em')
+      else
+        @insertPoint.append("<br />")
       return
     showWait: =>
       @$blimpText.append("<br /><br />").append("<div class='blink'>▼</div>")
       @$blimpText[0].scrollTop = 999
       return
-    location: (x, y) =>
-      re = /^(@)?(-?\d*\.?\d*e?\d*)(em|%)?$/
-      toparam = (r) =>
-        unless r? and r.length
-          return relative: true, value: 0
-        rp = r.match(re)
-        unless rp then return
-        if isNaN(rp[2]) then return
-        if rp[3] == '%'
-          value = rp[2] / 100
-          unit = 'em'
-        else
-          value = Number rp[2]
-          unit = rp[3] || 'px'
-        relative: !!rp[1]
-        value: value + unit
-      xp = toparam x
-      yp = toparam y
-      unless xp? and yp? then return
-      if xp.relative and yp.relative
-        $newimp = $('<span />').css('position': 'relative', 'margin-left': xp.value, 'top': yp.value)
-        @insertPoint = $newimp.appendTo(@insertPoint)
-      else
-        if xp.relative or yp.relative
-          $imp_position_checker = $('<span>.</span>')
-          @insertPoint.append($imp_position_checker)
-          offset = $imp_position_checker.offset()
-          baseoffset = @$blimpText.offset()
-          offsetx = offset.left - baseoffset.left
-          offsety = offset.top - baseoffset.top
-          $imp_position_checker.remove()
-        unless xp.relative then offsetx = 0
-        unless yp.relative then offsety = 0
-        $newimp_container = $('<div />').css('position': 'absolute', 'pointer-events': 'none', 'text-indent': offsetx + 'px', 'top': offsety + 'px')
-        $newimp = $('<span />').css('position': 'relative', 'pointer-events': 'auto', 'margin-left': xp.value, 'top': yp.value)
-        @insertPoint = $newimp.appendTo($newimp_container.appendTo(@$blimpText))
-      @insertPoint.css(@_blimpTextCSS(@_current_text_style))
+    location: location
 
 
   _blimpTextCSS: (styles) ->
@@ -254,6 +251,7 @@ class Scope
     if styles["font.strike"] then text_decoration.push 'line-through'
     if styles["font.underline"] then text_decoration.push 'underline'
     css["text-decoration"] = if text_decoration.length then text_decoration.join(' ') else "none"
+    css["line-height"] = "1.2em"
     css
   _blimpClickableTextCSS: (styles) ->
     switch styles["style"]

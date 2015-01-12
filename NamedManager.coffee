@@ -72,18 +72,12 @@ class NamedManager
       top: 0px;
       left: 0px;
       overflow-y: scroll;
-      white-space: pre;
       white-space: pre-wrap;
-      white-space: pre-line;
-      word-wrap: break-word;
+      word-wrap: break-all;
     }
     .blimpText a {
-      text-decoration: underline;
       cursor: pointer;
     }
-    .blimpText a:hover { background-color: yellow; }
-    .blimpText a.ikagaka-choice { color: blue; }
-    .blimpText a.ikagaka-anchor { color: red; }
 
     @keyframes blink {
       75% { opacity: 0.0; }
