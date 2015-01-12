@@ -30,9 +30,9 @@ class Scope
       styles["brush.color"] = @_getFontColor(descript["#{prefix}.brush.color.r"], descript["#{prefix}.brush.color.g"], descript["#{prefix}.brush.color.b"], can_ignore)
       styles
     @_choice_style = clickable_element_style("cursor", "square", descript)
-    @_choice_notselect_style = clickable_element_style("cursor.notselect", undefined, descript)
+    @_choice_notselect_style = clickable_element_style("cursor.notselect", undefined, descript, true)
     @_anchor_style = clickable_element_style("anchor", "underline", descript)
-    @_anchor_notselect_style = clickable_element_style("anchor.notselect", undefined, descript)
+    @_anchor_notselect_style = clickable_element_style("anchor.notselect", undefined, descript, true)
     @$blimpText.css(@_blimpTextCSS(@_text_style))
     @_initializeCurrentStyle()
 
@@ -174,7 +174,7 @@ class Scope
       $a.addClass("ikagaka-choice")
       text_css = @_blimpTextCSS(@_current_text_style)
       choice_css = @_blimpClickableTextCSS(@_current_choice_style)
-      choice_notselect_css = @_blimpClickableTextCSS(@_current_choice_notselect_style, @_current_choice_style)
+      choice_notselect_css = @_blimpClickableTextCSS(@_current_choice_notselect_style, @_current_text_style)
       $a.css(text_css).css(choice_notselect_css.base).css(choice_notselect_css.over)
       $a.mouseover(=> $a.css(choice_css.base).css(choice_css.over))
       $a.mouseout(=> $a.css(text_css).css(choice_notselect_css.base).css(choice_notselect_css.over))
@@ -193,7 +193,7 @@ class Scope
       $a.addClass("ikagaka-choice")
       text_css = @_blimpTextCSS(@_current_text_style)
       choice_css = @_blimpClickableTextCSS(@_current_choice_style)
-      choice_notselect_css = @_blimpClickableTextCSS(@_current_choice_notselect_style, @_current_choice_style)
+      choice_notselect_css = @_blimpClickableTextCSS(@_current_choice_notselect_style, @_current_text_style)
       $a.css(text_css).css(choice_notselect_css.base).css(choice_notselect_css.over)
       $a.mouseover(=> $a.css(choice_css.base).css(choice_css.over))
       $a.mouseout(=> $a.css(text_css).css(choice_notselect_css.base).css(choice_notselect_css.over))
@@ -358,31 +358,35 @@ class Scope
     css["line-height"] = "1.2em"
     css
   _blimpClickableTextCSS: (styles, default_styles={}) ->
+    color = styles["font.color"] || default_styles["font.color"]
+    outline = if styles["pen.color"] then "solid 1px #{styles["pen.color"]}" else if default_styles["pen.color"] then "solid 1px #{default_styles["pen.color"]}" else "solid 1px #{default_styles["font.color"]}"
+    background = styles["brush.color"] || default_styles["brush.color"] || default_styles["font.color"]
+    border_bottom = if styles["pen.color"] then "solid 1px #{styles["pen.color"]}" else if default_styles["pen.color"] then "solid 1px #{default_styles["pen.color"]}" else "solid 1px #{default_styles["font.color"]}"
     switch styles["style"]
       when "square"
         base:
-          color: styles["font.color"] || default_styles["font.color"]
+          color: color
         over:
-          outline: if styles["pen.color"] then "solid 1px #{styles["pen.color"]}" else "solid 1px #{default_styles["pen.color"]}"
-          background: styles["brush.color"] || default_styles["brush.color"]
+          outline: outline
+          background: background
           "border-bottom": "none"
       when "underline"
         base:
-          color: styles["font.color"] || default_styles["font.color"]
+          color: color
         over:
           outline: "none"
           background: "none"
-          'border-bottom': if styles["pen.color"] then "solid 1px #{styles["pen.color"]}" else "solid 1px #{default_styles["pen.color"]}"
+          'border-bottom': border_bottom
       when "square+underline"
         base:
-          color: styles["font.color"] || default_styles["font.color"]
+          color: color
         over:
-          outline: if styles["pen.color"] then "solid 1px #{styles["pen.color"]}" else "solid 1px #{default_styles["pen.color"]}"
-          background: styles["brush.color"] || default_styles["brush.color"]
-          'border-bottom': if styles["pen.color"] then "solid 1px #{styles["pen.color"]}" else "solid 1px #{default_styles["pen.color"]}"
+          outline: outline
+          background: background
+          'border-bottom': border_bottom
       when "none"
         base:
-          color: styles["font.color"] || default_styles["font.color"]
+          color: color
         over:
           outline: "none"
           background: "none"
