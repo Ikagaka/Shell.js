@@ -1,3 +1,5 @@
+this library was merged into [cuttlebone](https://github.com/Ikagaka/cuttlebone)
+
 # Shell.js
 
 ![screenshot](https://raw.githubusercontent.com/Ikagaka/Shell.js/master/screenshot.png )
