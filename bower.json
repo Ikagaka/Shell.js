@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
-  "authors": ["legokichi"],
   "dependencies": {
     "surfaces_txt2yaml": "Narazaka/surfaces_txt2yaml",
     "lodash": "*",
@@ -13,15 +12,11 @@
   "devDependencies": {
     "qunit": "*"
   },
-  "main": [
-    "release/cuttlebone.js",
-  ],
+  "main": "release/cuttlebone.js",
   "ignore": [
     "**/.*",
     "bower_components",
     "node_modules",
     "nar"
-  ],
-  "exportsOverride": {
-  }
+  ]
 }
