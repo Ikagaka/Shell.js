@@ -1,0 +1,28 @@
+{
+    "version": "1.6.2",
+    "compilerOptions": {
+        "target": "es6",
+        "declaration": true,
+        "noImplicitAny": true,
+        "noEmitOnError": true,
+        "removeComments": false,
+        "noLib": false,
+        "preserveConstEnums": true,
+        "suppressImplicitAnyIndexErrors": true,
+        "outDir": "../lib",
+        "rootDir": "../"
+    },
+    "filesGlob": [
+        "./**/*.ts",
+        "!./node_modules/**/*.ts"
+    ],
+    "files": [
+        "PNG.ts",
+        "PNGReader.ts",
+        "Shell.ts",
+        "Surface.ts",
+        "SurfaceRender.ts",
+        "SurfaceUtil.ts"
+    ],
+    "exclude": []
+}

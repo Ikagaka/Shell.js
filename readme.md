@@ -9,12 +9,19 @@ Ukagaka Shell Renderer for Web Browser
 * [wiki](https://github.com/Ikagaka/cuttlebone/wiki/)
 
 
-# Document
-* 以下のライブラリに依存しています。
-  * surfaces_txt2yaml
-  * jQuery
-  * lodash
+# Dependence
+* surfaces_txt2yaml
+* jQuery
+* lodash
 
+# Development
+```sh
+npm install -g bower dtsm typescript babel browserify
+npm install init
+```
+
+# Classes
+* 型はTypeScriptで、サンプルコードはCoffeeScriptで書かれています。
 
 ## Shell Class
 * `Shell/master/` 以下のファイルを扱います。
@@ -35,7 +42,7 @@ shell.load().then ->
 * `Shell/master/` 以下のファイル一覧とそのArrayBufferを持つObjectを渡してください。
 * ArrayBufferはnarファイルをzip解凍や、
   ネットワーク更新用の`updates2.dau`をXHRして入手してください。
-* ファイルパスは UNIXと同じ`/`を使ってください。
+* ディレクトリ区切りは UNIXと同じ`/`を使ってください。
   windowsの`\`は対応していません。
 * このファイルパスと値のkey-value形式で渡す引数は、
   メモリを多く消費するため、将来的に変更される可能性があります。

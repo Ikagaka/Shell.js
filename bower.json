@@ -6,7 +6,8 @@
   "dependencies": {
     "surfaces_txt2yaml": "Narazaka/surfaces_txt2yaml",
     "lodash": "*",
-    "jquery": "*"
+    "jquery": "*",
+    "text-encoding": "~0.5.3"
   },
   "devDependencies": {
     "qunit": "*",

@@ -6,23 +6,24 @@
   "url": "https://github.com/ikagaka/Shell.js",
   "keywords": ["ikagaka", "ukagaka"],
   "scripts": {
-    "test": "npm run test-playground",
-    "test-playground": "open tests/playground.html",
-    "build": "npm run build-src; npm run build-test",
-    "build-src": "coffee -cm --join release/cuttlebone.js -- src/header.coffee src/*.coffee src/footer.coffee",
-    "build-test": "coffee -cm tests/*.coffee",
-    "init": "npm update; bower update; npm run build; npm run test"
+    "init": "npm run update; npm run build",
+    "update": "npm update; bower update; dtsm update --save",
+    "clean": "rm -f es6/* lib/* dist/* ",
+    "build": "npm run clean; npm run build-ts; npm run build-babel; npm run build-browserify",
+    "build-ts": "tsc --target es6 --noImplicitAny --rootDir src --outdir es6 --declaration src/*.ts",
+    "build-babel": "babel es6 --extensions .js --modules common --out-dir lib",
+    "build-browserify": "browserify lib/Shell.js --outfile dist/Shell.js --standalone Shell"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ikagaka/ikagaka/Shell.js"
+    "url": "https://github.com/ikagaka/ikagaka/Shell.js.git"
   },
   "dependencies": {
   },
   "devDependencies": {
   },
-  "bugs":           {"url": "https://github.com/Ikagaka/cuttlebone/issues"},
-  "main":           "./Shell.js",
+  "bugs":           {"url": "https://github.com/Ikagaka/Shell.js/issues"},
+  "main":           "./lib/Shell.js",
   "author":         "Ikagaka",
   "license":        "MIT",
   "contributors":   ["legokichi"]
