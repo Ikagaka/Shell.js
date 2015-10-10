@@ -10,9 +10,12 @@
     "update": "npm update; bower update; dtsm update --save",
     "clean": "rm -f es6/* lib/* dist/* ",
     "build": "npm run clean; npm run build-ts; npm run build-babel; npm run build-browserify",
-    "build-ts": "tsc --target es6 --noImplicitAny --rootDir src --outdir es6 --declaration src/*.ts",
+    "build-ts": "tsc --target es6 --noEmitOnError --noImplicitAny --rootDir src --outdir es6 --declaration src/*.ts",
     "build-babel": "babel es6 --extensions .js --modules common --out-dir lib",
-    "build-browserify": "browserify lib/Shell.js --outfile dist/Shell.js --standalone Shell"
+    "build-browserify": "browserify lib/Shell.js --outfile dist/Shell.js --standalone ikagaka",
+    "build-test": "rm -f test/*.js; npm run build-test-ts; npm run build-test-espower",
+    "build-test-ts": "tsc --target test --module commonjs --noEmitOnError --noImplicitAny --rootDir test --outdir test --declaration src/*.ts",
+    "build-test-espower": "for i in `find test -name test*.js`; do node node_modules/espower-cli/bin/cmd.js $i > $i.js; done"
   },
   "repository": {
     "type": "git",
@@ -21,6 +24,7 @@
   "dependencies": {
   },
   "devDependencies": {
+    "espower-cli": ""
   },
   "bugs":           {"url": "https://github.com/Ikagaka/Shell.js/issues"},
   "main":           "./lib/Shell.js",

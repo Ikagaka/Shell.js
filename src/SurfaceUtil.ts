@@ -1,8 +1,6 @@
 import {PNGReader} from "./PNG";
 
 
-
-
 export var enablePNGjs = true;
 
 export function choice<T>(arr: T[]): T {

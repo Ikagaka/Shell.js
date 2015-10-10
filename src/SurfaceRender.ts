@@ -1,14 +1,14 @@
 
 import * as SurfaceUtil from "./SurfaceUtil";
 
-interface SurfaceLayerObject {
+export interface SurfaceLayerObject {
   canvas: HTMLCanvasElement;
   type: string;
   x: number;
   y: number;
 }
 
-class SurfaceRender {
+export class SurfaceRender {
 
   cnv: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;

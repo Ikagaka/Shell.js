@@ -1,3 +1,18 @@
-<script src="../bower_components/text-encoding/lib/encoding-indexes.js"></script>
-<script src="../bower_components/text-encoding/lib/encoding.js"></script>
-<script src="../bower_components/jquery/dist/jquery.js"></script>
+
+<script src="../bower_components/encoding-japanese/encoding.min.js"></script>
+<script src="../bower_components/jszip/dist/jszip.min.js"></script>
+<script src="../bower_components/narloader/NarLoader.js"></script>
+<script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
+<script src="../dist/Shell.js"></script>
+<script>
+NarLoader.loadFromURL("../nar/mobilemaster.nar").then(function (nanikaDir){
+  var shellDir = nanikaDir.getDirectory("shell/master").asArrayBuffer();
+  console.log(shellDir);
+  var shell = new ikagaka.Shell(shellDir);
+  shell.load().then(function(shell){
+    var cnv = document.createElement("canvas")
+    var srf = shell.attachSurface(cnv, 0, 0);
+    document.body.appendChild(cnv);
+  });
+}).catch(function(err){console.error(err, err.message)});
+</script>

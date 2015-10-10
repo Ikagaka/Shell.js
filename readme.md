@@ -11,8 +11,6 @@ Ukagaka Shell Renderer for Web Browser
 
 # Dependence
 * surfaces_txt2yaml
-* jQuery
-* lodash
 
 # Development
 ```sh
@@ -32,8 +30,6 @@ npm install init
 shell = new Shell(shellDir)
 shell.load().then ->
   cnv = document.createElement("canvas")
-  scopeId = 0
-  surfaceId = 0
   srf = shell.attachSurface(cnv, 0, 0)
   # \0\s[0] 相当のサーフェスをcanvasに描画します。
 ```

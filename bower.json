@@ -7,7 +7,8 @@
     "surfaces_txt2yaml": "Narazaka/surfaces_txt2yaml",
     "lodash": "*",
     "jquery": "*",
-    "text-encoding": "~0.5.3"
+    "text-encoding": "~0.5.3",
+    "jszip": "*"
   },
   "devDependencies": {
     "qunit": "*",
