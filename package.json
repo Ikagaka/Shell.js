@@ -1,31 +1,27 @@
 {
   "name": "ikagaka.shell.js",
-  "version": "3.0.14",
-  "description": "Ukagaka Shell Surface Player",
+  "version": "4.0.0",
+  "description": "Ukagaka Shell Renderer for Web Browser",
+  "license": "MIT",
   "url": "https://github.com/ikagaka/Shell.js",
-  "keywords": [
-    "nar",
-    "ikagaka",
-    "unstable",
-    "ukagaka"
-  ],
+  "keywords": ["ikagaka", "ukagaka"],
   "scripts": {
-    "watch": "coffee -cw ./*.coffee",
-    "build": "coffee -c ./*.coffee"
+    "test": "npm run test-playground",
+    "test-playground": "open tests/playground.html",
+    "build": "npm run build-src; npm run build-test",
+    "build-src": "coffee -cm --join release/cuttlebone.js -- src/header.coffee src/*.coffee src/footer.coffee",
+    "build-test": "coffee -cm tests/*.coffee",
+    "init": "npm update; bower update; npm run build; npm run test"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ikagaka/Shell.js"
+    "url": "https://github.com/ikagaka/ikagaka/Shell.js"
   },
   "dependencies": {
-    "ikagaka.nar.js": "",
-    "surfaces_txt2yaml": "",
-    "underscore": "",
-    "zepto": "",
-    "es6-shim": ""
   },
   "devDependencies": {
   },
+  "bugs":           {"url": "https://github.com/Ikagaka/cuttlebone/issues"},
   "main":           "./Shell.js",
   "author":         "Ikagaka",
   "license":        "MIT",

@@ -1,28 +1,22 @@
 {
   "name": "ikagaka.shell.js",
-  "description": "Ukagaka Shell Surface Player",
+  "version": "4.0.0",
+  "description": "Ukagaka Shell Renderer for Web Browser",
+  "license": "MIT",
   "dependencies": {
-    "ikagaka.nar.js": "Ikagaka/Nar.js",
     "surfaces_txt2yaml": "Narazaka/surfaces_txt2yaml",
-    "underscore": "~1.7.0",
-    "zepto": "~1.1.4",
-    "es6-shim": "~0.21.1"
+    "lodash": "*",
+    "jquery": "*"
   },
-  "main": [
-    "Shell.js",
-    "Surface.js",
-    "SurfaceUtil.js"
-  ],
+  "devDependencies": {
+    "qunit": "*",
+    "narloader": "*"
+  },
+  "main": "./Shell.js",
   "ignore": [
     "**/.*",
     "bower_components",
-    "node_modules"
-  ],
-  "exportsOverride": {
-    "ikagaka.nar.js": {
-      "js": [
-        "Nar.js"
-      ]
-    }
-  }
+    "node_modules",
+    "nar"
+  ]
 }

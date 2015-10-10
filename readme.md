@@ -1,92 +1,208 @@
-this library was merged into [cuttlebone](https://github.com/Ikagaka/cuttlebone)
-
 # Shell.js
+Ukagaka Shell Renderer for Web Browser
 
-![screenshot](https://raw.githubusercontent.com/Ikagaka/Shell.js/master/screenshot.png )
+![screenshot](https://raw.githubusercontent.com/Ikagaka/cuttlebone/master/screenshot1.png )
 
-+ [demo](https://ikagaka.github.io/Shell.demo/node_modules/ikagaka.shell.js/test/test.html)
-+ [wiki](https://github.com/Ikagaka/Shell.js/wiki/Shell.js )
+![screenshot](https://raw.githubusercontent.com/Ikagaka/cuttlebone/master/screenshot2.gif )
+
+* [demo](https://ikagaka.github.io/cuttlebone.demo/tests/index.html)
+* [wiki](https://github.com/Ikagaka/cuttlebone/wiki/)
 
 
-```html
-<script src="./node_modules/ikagaka.nar.js/node_modules/encoding-japanese/encoding.js"></script>
-<script src="./node_modules/ikagaka.nar.js/vendor/jszip.min.js"></script>
-<script src="./node_modules/ikagaka.nar.js/vendor/XHRProxy.min.js"></script>
-<script src="./node_modules/ikagaka.nar.js/vendor/WMDescript.js"></script>
-<script src="./node_modules/ikagaka.nar.js/Nar.js"></script>
-<script src="./node_modules/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
-<script src="./node_modules/underscore/underscore-min.js"></script>
-<script src="./node_modules/zepto/zepto.min.js"></script>
-<script src="./node_modules/es6-shim/es6-shim.min.js"></script>
-<script src="./SurfaceUtil.js"></script>
-<script src="./Surface.js"></script>
-<script src="./Shell.js"></script>
-<canvas id="surface"></canvas>
-<script>
-var loader = new Nar.Loader();
-loader.loadFromURL("./node_modules/ikagaka.nar.js/vendor/mobilemaster.nar", function (err, nar){
-  if(!!err) return console.error(err.stack);
+# Document
+* 以下のライブラリに依存しています。
+  * surfaces_txt2yaml
+  * jQuery
+  * lodash
 
-  if(nar.install["type"] === "ghost"){
-    var shellDir = nar.getDirectory(/shell\/master\//);
-    var shell = new Shell(shellDir);
 
-  }else if(nar.install["type"] === "shell"){
-    var shell = new Shell(nar.directory);
+## Shell Class
+* `Shell/master/` 以下のファイルを扱います。
+* surfaces.txtなどをパースして情報をまとめて保持します。
+* canvas要素にSurfaceクラスを割り当てるためのクラスです。
 
-  }else{
-    throw new Error("non support nar file type");
-
-  }
-
-  shell.load().then(function(){
-    console.log(shell);
-
-    var surface = shell.attachSurface($("#surface")[0], 0, 7);
-
-    surface.bind(30);
-    surface.bind(31);
-    surface.bind(32);
-    surface.bind(50);
-
-    console.log(surface);
-  });
-});
-</script>
+```coffeescript
+shell = new Shell(shellDir)
+shell.load().then ->
+  cnv = document.createElement("canvas")
+  scopeId = 0
+  surfaceId = 0
+  srf = shell.attachSurface(cnv, 0, 0)
+  # \0\s[0] 相当のサーフェスをcanvasに描画します。
 ```
 
-## SERIKO
+### constructor(directory: { [path: string]: ArrayBuffer; }): Shell
+* `Shell/master/` 以下のファイル一覧とそのArrayBufferを持つObjectを渡してください。
+* ArrayBufferはnarファイルをzip解凍や、
+  ネットワーク更新用の`updates2.dau`をXHRして入手してください。
+* ファイルパスは UNIXと同じ`/`を使ってください。
+  windowsの`\`は対応していません。
+* このファイルパスと値のkey-value形式で渡す引数は、
+  メモリを多く消費するため、将来的に変更される可能性があります。
 
-### Compose Method
-+ base
-+ overlay
-+ overlayfast
-+ replace
-+ add
-+ bind
-+ interpolate
-+ move
-+ start
-+ stop
-+ alternativestart
-+ alternativestop
+```coffeescript
+shellDir =
+  "descript.txt": new ArrayBuffer()
+  "surface0.png": new ArrayBuffer()
+  "elements/element0.png": new ArrayBuffer()
+  "surfaces.txt": new ArrayBuffer()
 
-### Interval
-+ sometimes
-+ rarely
-+ random
-+ periodic
-+ always
-+ runonce
-+ never
-+ bind
-+ yen-e
-+ talk
+shell = new Shell(shellDir)
+```
 
-## SHIORI Event
+### Shell.descript: { [key: string]: string; }
+* descript.txtの中身をkey-value形式で持っています。
 
-+ OnMouseClick
-+ OnMouseDoubleClick
-+ OnMouseMove
-+ OnMouseUp
-+ OnMouseDown
+### Shell.prototype.load(): Promise<Shell>
+* construtorに渡されたdirectoryを読み込みます。
+* descript.txtやsurfaces.txt、surface.png、surface.pnaファイルを非同期で読み込みます。
+
+```coffeescript
+shell.load().then (shell)->
+  console.log(shell)
+```
+
+### Shell.prototype.attatchSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number|string): Surface|null
+* 指定したcanvasへscopeIdのsurfaceIdのサーフェスの描画を行います。
+  * SakuraScriptでなら`\0\s[0]`に該当します。
+* surfaceIdはサーフェスエイリアスが考慮されます。
+  * 該当するサーフェスが存在しなかった場合、nullが返ります。
+  * `new Sufrace(cnv, scodeId, surfaceId, shell)` との違いは、
+    サーフェスエイリアスが考慮される点です。
+
+```coffeescript
+cnv = document.createElement("canvas")
+srf = shell.attachSurface(cnv, 0, 0) # \0\s[0]
+document.body.appendChild(cnv)
+cnv2 = document.createElement("canvas")
+srf2 = shell.attachSurface(cnv, 0, "びっくり") # \0\s[びっくり]
+document.body.appendChild(cnv2)
+```
+
+## Surface Class
+* canvas要素にサーフェスを描画します。
+  * SERIKOアニメーションを再生します。
+  * マウスイベントを捕捉します。
+
+### constructor(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number, shell: Shell): Surface
+* canvas要素にサーフェスを描画します。
+* このコンストラクタが呼ばれた時からアニメーションが開始されます。
+* surfaceIdはサーフェスエイリアスが考慮されません。
+  * `Shell.prototype.attatchSurface`を使って下さい。
+```coffeescript
+srf = new Sufrace(cnv, 0, 0, shell) # \0\s[0]
+```
+### Surface.prototype.destructor(): void
+* canvasへのサーフェスの描画を終了します。
+* canvasへのあらゆるイベントハンドラを解除します。
+* サーフェスを変更する前に必ず呼び出してください。
+
+### Surface.prototype.render(): void
+* サーフェスを再描画します。
+
+### Surface.prototype.play(animationId: number, callback?: () => void): void
+* animationIdのアニメーションを再生します。
+  * アニメーション再生後にcallbackが1度だけ呼ばれます。
+
+### Surface.prototype.stop(animationId: number): void
+* animationIdのアニメーションを停止します。
+
+### Surface.prototype.bind(animationId: number): void
+* animationIdの着せ替えを着せます。
+
+### Surface.prototype.unbind(animationId: number): void
+* animationIdの着せ替えを脱がせます。
+
+### Surface.prototype.yenE(): void
+* yen-eタイミングのアニメーションを再生します。
+
+### Surface.prototype.talk(): void
+* talkタイミングのカウンタを進め、
+  指定回数呼び出されるとtalkタイミングのアニメーションを再生します。
+### Surface.prototype.on(eventName: string, callback: (event: Event)=> void): void
+* マウスイベントのイベントリスナーです。
+* イベントの詳細については以下の通りです。
+
+#### Surface.prototype.on("mousedown", callback: (event: MousedownEvent)=> void): void
+
+```typescript
+interface MousedownEvent{
+  button: number; // マウスのボタン
+  offsetX: number; // canvas左上からのx座標
+  offsetY: number; // canvas左上からのy座標
+  region: string; // collisionの名前
+  scopeId: number; // このサーフェスのスコープ番号
+  wheel: number; // 0
+  type: string; // "mousedown"
+}
+```
+
+#### Surface.prototype.on("mousemove", callback: (event: MousemoveEvent)=> void): void
+
+```typescript
+interface MousemoveEvent{
+  button: number; // マウスのボタン
+  offsetX: number; // canvas左上からのx座標
+  offsetY: number; // canvas左上からのy座標
+  region: string; // collisionの名前
+  scopeId: number; // このサーフェスのスコープ番号
+  wheel: number; // 0
+  type: string; // "mousemove"
+}
+```
+
+#### Surface.prototype.on("mouseup", callback: (event: MouseupEvent)=> void): void
+
+```typescript
+interface MouseupEvent{
+  button: number; // マウスのボタン
+  offsetX: number; // canvas左上からのx座標
+  offsetY: number; // canvas左上からのy座標
+  region: string; // collisionの名前
+  scopeId: number; // このサーフェスのスコープ番号
+  wheel: number; // 0
+  type: string; // "mouseup"
+}
+```
+
+#### Surface.prototype.on("mouseclick", callback: (event: MouseclickEvent)=> void): void
+
+```typescript
+interface MouseclickEvent{
+  button: number; // マウスのボタン
+  offsetX: number; // canvas左上からのx座標
+  offsetY: number; // canvas左上からのy座標
+  region: string; // collisionの名前
+  scopeId: number; // このサーフェスのスコープ番号
+  wheel: number; // 0
+  type: string; // "mouseclick"
+}
+```
+
+#### Surface.prototype.on("mousedblclick", callback: (event: MousedbllickEvent)=> void): void
+
+```typescript
+interface MousedbllickEvent{
+  button: number; // マウスのボタン
+  offsetX: number; // canvas左上からのx座標
+  offsetY: number; // canvas左上からのy座標
+  region: string; // collisionの名前
+  scopeId: number; // このサーフェスのスコープ番号
+  wheel: number; // 0
+  type: string; // "mousedblclick"
+}
+```
+
+#### Surface.prototype.on("mousewheel", callback: (event: MousewheelEvent)=> void): void
+
+```typescript
+interface MousewheelEvent{
+  button: number; // マウスのボタン
+  offsetX: number; // canvas左上からのx座標
+  offsetY: number; // canvas左上からのy座標
+  region: string; // collisionの名前
+  scopeId: number; // このサーフェスのスコープ番号
+  wheel: number; // 0
+  type: string; // "mousewheel"
+}
+```
