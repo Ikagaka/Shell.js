@@ -1,0 +1,43 @@
+{
+  "repos": [
+    {
+      "url": "https://github.com/borisyankov/DefinitelyTyped.git",
+      "ref": "master"
+    },
+    {
+      "url": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "master"
+    }
+  ],
+  "path": "typings",
+  "bundle": "typings/tsd.d.ts",
+  "link": {
+    "npm": {
+      "include": true
+    }
+  },
+  "dependencies": {
+    "jquery/jquery.d.ts": {
+      "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
+    },
+    "lodash/lodash.d.ts": {
+      "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
+    },
+    "text-encoding/text-encoding.d.ts": {
+      "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
+    },
+    "encoding-japanese/encoding.d.ts": {
+      "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "39471d9f831b90cf34a7de451dff253e0c0bcb0d",
+      "path": "encoding.d.ts"
+    },
+    "surfaces_yaml/surfaces_yaml.d.ts": {
+      "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "39471d9f831b90cf34a7de451dff253e0c0bcb0d",
+      "path": "surfaces_yaml.d.ts"
+    },
+    "jszip/jszip.d.ts": {
+      "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
+    }
+  }
+}
