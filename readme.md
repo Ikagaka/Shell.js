@@ -1,3 +1,5 @@
+***THIS REPOSITORY IS UNSTABLE***
+
 # Shell.js
 Ukagaka Shell Renderer for Web Browser
 
@@ -5,20 +7,19 @@ Ukagaka Shell Renderer for Web Browser
 
 ![screenshot](https://raw.githubusercontent.com/Ikagaka/cuttlebone/master/screenshot2.gif )
 
-* [demo](https://ikagaka.github.io/cuttlebone.demo/tests/index.html)
-* [wiki](https://github.com/Ikagaka/cuttlebone/wiki/)
-
-
 # Dependence
 * surfaces_txt2yaml
+* EventEmitter2
+* jszip
 
 # Development
 ```sh
-npm install -g bower dtsm typescript babel browserify
-npm install init
+npm install -g bower dtsm glup typescript babel browserify
+npm run init
+npm run build
 ```
 
-# Classes
+# Document
 * 型はTypeScriptで、サンプルコードはCoffeeScriptで書かれています。
 
 ## Shell Class

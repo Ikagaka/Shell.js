@@ -5,10 +5,10 @@
   "license": "MIT",
   "dependencies": {
     "surfaces_txt2yaml": "Narazaka/surfaces_txt2yaml",
-    "lodash": "*",
-    "jquery": "*",
     "text-encoding": "~0.5.3",
-    "jszip": "*"
+    "jszip": "*",
+    "eventemitter2": "~0.4.14",
+    "jquery": "*"
   },
   "devDependencies": {
     "qunit": "*",

@@ -17,6 +17,8 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
+        "BlobWorker.ts",
+        "Mouse.ts",
         "PNG.ts",
         "PNGReader.ts",
         "Shell.ts",

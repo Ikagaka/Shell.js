@@ -17,12 +17,6 @@
     }
   },
   "dependencies": {
-    "jquery/jquery.d.ts": {
-      "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
-    },
-    "lodash/lodash.d.ts": {
-      "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
-    },
     "text-encoding/text-encoding.d.ts": {
       "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
     },
@@ -37,6 +31,12 @@
       "path": "surfaces_yaml.d.ts"
     },
     "jszip/jszip.d.ts": {
+      "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
+    },
+    "eventemitter2/eventemitter2.d.ts": {
+      "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
+    },
+    "jquery/jquery.d.ts": {
       "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
     }
   }
