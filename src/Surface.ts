@@ -138,7 +138,7 @@ export class Surface extends EventBinder{
     this.bufRender.init(srfNode.base);
     this.bufRender.composeElements(srfNode.elements);
     this.bufRender.composeElements(renderLayers);
-    if (this.shell.enableRegionVisible) {
+    if (this.shell.enableRegionDraw) {
       this.bufRender.ctx.fillText(""+this.surfaceId, 5, 10);
       this.bufRender.drawRegions(srfNode.collisions);
     }

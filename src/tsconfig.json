@@ -34,6 +34,7 @@
     "files": [
         "EventBinder.ts",
         "Shell.ts",
+        "ShellLoader.ts",
         "Surface.ts",
         "SurfaceRender.ts",
         "SurfaceUtil.ts"

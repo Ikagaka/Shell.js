@@ -58,7 +58,7 @@ npm run build
 * surfaces.txtなどをパースして情報をまとめて保持します。
 * canvas要素にSurfaceクラスを割り当てるためのクラスです。
 
-### constructor(directory: { [path: string]: ArrayBuffer; }): Shell
+### Shell.prototype.load(directory: { [path: string]: ArrayBuffer; }): Promise<Shell>
 * `Shell/master/` 以下のファイル一覧とそのArrayBufferを持つObjectを渡してください。
 * ArrayBufferはnarファイルをzip解凍や、
   ネットワーク更新用の`updates2.dau`をXHRして入手してください。

@@ -4,67 +4,6 @@ import {Surface} from './Surface';
 import {SurfaceRender, SurfaceLayerObject} from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
 
-/**
- * extend deep like jQuery $.extend(true, target, source)
- */
-function extend(target: any, source: any): void {
-  for(var key in source){
-    if (typeof source[key] === "object" && Object.getPrototypeOf(source[key]) === Object.prototype) {
-      target[key] = target[key] || {};
-      extend(target[key], source[key]);
-    } else if (Array.isArray(source[key])) {
-      target[key] = target[key] || [];
-      extend(target[key], source[key]);
-    } else if (source[key] !== undefined) {
-      target[key] = source[key];
-    }
-  }
-}
-
-/**
- * "hoge.huga, foo, bar\n" to {"hoge.huga": "foo, bar"}
- */
-function parseDescript(text: string): {[key:string]:string}{
-  text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
-  while(true){// remove commentout
-    var match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["",""])[0];
-    if(match.length === 0) break;
-    text = text.replace(match, "");
-  }
-  var lines = text.split("\n");
-  lines = lines.filter(function(line){ return line.length !== 0; }); // remove no content line
-  var dic = lines.reduce<{[key:string]:string}>(function(dic, line){
-    var tmp = line.split(",");
-    var key = tmp[0];
-    var vals = tmp.slice(1);
-    key = key.trim();
-    var val = vals.join(",").trim();
-    dic[key] = val;
-    return dic;
-  }, {});
-  return dic;
-}
-
-
-/**
- * convert some encoding txt file arraybuffer to js string
- */
-function convert(buffer: ArrayBuffer):string{
-  //return new TextDecoder('shift_jis').decode(buffer);
-  return Encoding.codeToString(Encoding.convert(new Uint8Array(buffer), 'UNICODE', 'AUTO'));
-}
-
-/**
- * find filename that matches arg "filename" from arg "paths"
- */
-function find(paths: string[], filename: string): string[] {
-  filename = filename.split("\\").join("/");
-  if(filename.slice(0,2) === "./") filename = filename.slice(2);
-  var reg =new RegExp("^"+filename.replace(".", "\.")+"$", "i");
-  var hits = paths.filter((key)=> reg.test(key));
-  return hits;
-}
-
 export interface SurfaceTreeNode {
   base:  HTMLCanvasElement,
   elements: SurfaceLayerObject[],
@@ -73,38 +12,24 @@ export interface SurfaceTreeNode {
 }
 
 export class Shell {
-
-  directory: { [path: string]: ArrayBuffer; };
+  //public
+  directory: { [filepath: string]: ArrayBuffer; }
   descript: { [key: string]: string; };
-  surfaces: [HTMLCanvasElement, Surface][];
+  attachedSurface: { canvas: HTMLCanvasElement, surface: Surface }[];
   surfacesTxt: SurfacesTxt;
   surfaceTree: SurfaceTreeNode[];
-  canvasCache: { [key: string]: HTMLCanvasElement; };
-  /**
-   *
-   */
-  bindgroup: boolean[];
-  /**
-   * draw collision area
-   */
-  enableRegionVisible: boolean;
-  /**
-   * use pngjs PNG decoder.
-   * if this false or pngjs decode failed, use BlobURL and Image constrictor
-   * default: true
-   */
-  enablePNGDecoder: boolean;
+  cacheCanvas: { [key: string]: HTMLCanvasElement; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
+  bindgroup: {[key: number]: boolean}; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
+  enableRegionDraw: boolean;
 
   constructor(directory: { [filepath: string]: ArrayBuffer; }) {
     this.directory = directory;
-    this.descript = {};
-    this.surfaces = [];
+    this.attachedSurface = [];
     this.surfacesTxt = <SurfacesTxt>{};
     this.surfaceTree = [];
-    this.canvasCache = {};
+    this.cacheCanvas = {};
     this.bindgroup = [];
-    this.enableRegionVisible = false;
-    this.enablePNGDecoder = false;
+    this.enableRegionDraw = false;
   }
 
   load(): Promise<Shell> {
@@ -123,23 +48,34 @@ export class Shell {
     });
   }
 
-  // load descript
+  // load descript and assign to this.descript
   loadDescript(): Promise<Shell> {
-    var descript_name = Object.keys(this.directory).filter((name)=> /^descript\.txt$/i.test(name))[0] || "";
+    var dir = this.directory;
+    var getName = (dic: {[key: string]: any}, reg: RegExp)=>
+      Object.keys(dic).filter((name)=> reg.test(name))[0] || "";
+    var descript_name = getName(dir, /^descript\.txt$/i);
     if (descript_name === "") {
       console.warn("descript.txt is not found");
     } else {
-      this.descript = parseDescript(convert(this.directory[descript_name]));
+      this.descript = SurfaceUtil.parseDescript(SurfaceUtil.convert(dir[descript_name]));
     }
     return Promise.resolve(this);
   }
 
+  // load bindgroup and assign to this.bindgroup
   loadBindGroup(): Promise<Shell> {
-    // load bindgroup
+    var descript = this.descript;
+    var grep = (dic:{[key:string]:any}, reg: RegExp)=>
+      Object.keys(dic).filter((key)=> reg.test(key))
     var reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)\.default/;
-    Object.keys(this.descript).filter((key)=> reg.test(key)).forEach((key)=>{
+    grep(descript, reg).forEach((key)=>{
       var [_, charId, bindgroupId, type] = reg.exec(key);
-      this.bindgroup[Number(bindgroupId)] = this.descript[key] === "1";
+      var maybeNum = Number(bindgroupId)
+      if(isFinite(maybeNum)){
+        this.bindgroup[maybeNum] = this.descript[key] === "1" ? true : false;
+      }else{
+        console.warn(bindgroupId + " is not numer");
+      }
     });
     return Promise.resolve(this);
   }
@@ -151,16 +87,16 @@ export class Shell {
       console.info("surfaces.txt is not found");
     } else {
       surfaces_text_names.forEach((filename)=> {
-        var text = convert(this.directory[filename]);
+        var text = SurfaceUtil.convert(this.directory[filename]);
         var srfs = SurfacesTxt2Yaml.txt_to_data(text, {compatible: 'ssp-lazy'});
-        extend(this.surfacesTxt, srfs);
+        SurfaceUtil.extend(this.surfacesTxt, srfs);
       });
       //{ expand inherit and remove
       Object.keys(this.surfacesTxt.surfaces).forEach((name)=>{
         if(typeof this.surfacesTxt.surfaces[name].is === "number"
            && Array.isArray(this.surfacesTxt.surfaces[name].base)){
           this.surfacesTxt.surfaces[name].base.forEach((key)=>{
-            extend(this.surfacesTxt.surfaces[name], this.surfacesTxt.surfaces[key]);
+            SurfaceUtil.extend(this.surfacesTxt.surfaces[name], this.surfacesTxt.surfaces[key]);
           });
           delete this.surfacesTxt.surfaces[name].base;
         }
@@ -181,7 +117,7 @@ export class Shell {
     if(surfacetable_name === ""){
       console.info("surfacetable.txt is not found.")
     }else{
-      var txt = convert(this.directory[surfacetable_name]);
+      var txt = SurfaceUtil.convert(this.directory[surfacetable_name]);
       // TODO
     }
     return Promise.resolve(this);
@@ -290,13 +226,13 @@ export class Shell {
   }
 
   hasFile(filename: string): boolean {
-    return find(Object.keys(this.directory), filename).length > 0;
+    return SurfaceUtil.find(Object.keys(this.directory), filename).length > 0;
   }
 
   getPNGFromDirectory(filename: string): Promise<HTMLCanvasElement> {
-    var cached_filename = find(Object.keys(this.canvasCache), filename)[0] || "";
+    var cached_filename = SurfaceUtil.find(Object.keys(this.cacheCanvas), filename)[0] || "";
     if(cached_filename !== ""){
-      return Promise.resolve(this.canvasCache[cached_filename]);
+      return Promise.resolve(this.cacheCanvas[cached_filename]);
     }
     if(!this.hasFile(filename)){
       filename += ".png";
@@ -305,53 +241,26 @@ export class Shell {
       }
       console.warn("element file " + filename + " need '.png' extension");
     }
-    var _filename = find(Object.keys(this.directory), filename)[0];
+    var _filename = SurfaceUtil.find(Object.keys(this.directory), filename)[0];
     var pnafilename = _filename.replace(/\.png$/i, ".pna");
-    var _pnafilename = find(Object.keys(this.directory), pnafilename)[0] || "";
+    var _pnafilename = SurfaceUtil.find(Object.keys(this.directory), pnafilename)[0] || "";
     var pngbuf = this.directory[_filename];
     var pnabuf = this.directory[_pnafilename];
     var render = new SurfaceRender(SurfaceUtil.createCanvas());
 
-
-
-    var planB = ()=>{
-      // pngjs way
-      return SurfaceUtil.fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf, pnabuf).then((pngdata)=>{
-        render.initImageData(pngdata.width, pngdata.height, pngdata.data);
-        this.canvasCache[_filename] = render.cnv;
+    return SurfaceUtil.fetchImageFromArrayBuffer(pngbuf).then((img)=>{
+      render.init(img);
+      if(_pnafilename === ""){
+        render.chromakey();
+        this.cacheCanvas[_filename] = render.cnv;
+        return render.cnv;
+      }
+      return SurfaceUtil.fetchImageFromArrayBuffer(pnabuf).then((pnaimg)=>{
+        render.pna(SurfaceUtil.copy(pnaimg));
+        this.cacheCanvas[_filename] = render.cnv;
         return render.cnv;
       });
-    }
-
-    var planC = ()=>{
-      // basic way
-      return SurfaceUtil.fetchImageFromArrayBuffer(pngbuf).then((img)=>{
-        render.init(img);
-        if(_pnafilename === ""){
-          render.chromakey();
-          this.canvasCache[_filename] = render.cnv;
-          return render.cnv;
-        }
-        return SurfaceUtil.fetchImageFromArrayBuffer(pnabuf).then((pnaimg)=>{
-          render.pna(SurfaceUtil.copy(pnaimg));
-          this.canvasCache[_filename] = render.cnv;
-          return render.cnv;
-        });
-      });
-    }
-
-    if(false && this.enablePNGDecoder){
-      return planB().catch((err)=>{
-        console.warn("getPNGFromDirectory("+filename+", pngjs) > ", err);
-        return planC();
-      }).catch((err)=>{
-        return Promise.reject("getPNGFromDirectory("+filename+") > "+err);
-      });
-    }else{
-      return planC().catch((err)=>{
-        return Promise.reject("getPNGFromDirectory("+filename+") > "+err);
-      });
-    }
+    });
   }
 
   attachSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number|string): Surface {
@@ -363,18 +272,18 @@ export class Shell {
     }else if(typeof surfaceId === "number"){
       var _surfaceId = surfaceId;
     }else throw new Error("TypeError: surfaceId: number|string is not match " + typeof surfaceId);
-    var tuple = this.surfaces.filter((tuple)=> tuple[0] === canvas)[0];
+    var tuple = this.attachedSurface.filter((tuple)=> tuple[0] === canvas)[0];
     if(!!tuple) throw new Error("ReferenceError: this HTMLCanvasElement is already attached");
     var srf = new Surface(canvas, scopeId, _surfaceId, this);
-    this.surfaces.push([canvas, srf]);
+    this.attachedSurface.push({canvas, surface:srf});
     return srf;
   }
 
   detachSurface(canvas: HTMLCanvasElement): void {
-    var tuple = this.surfaces.filter((tuple)=> tuple[0] === canvas)[0];
+    var tuple = this.attachedSurface.filter((tuple)=> tuple[0] === canvas)[0];
     if(!tuple) return;
     tuple[1].destructor();
-    this.surfaces.splice(this.surfaces.indexOf(tuple), 1);
+    this.attachedSurface.splice(this.attachedSurface.indexOf(tuple), 1);
   }
 
   hasSurface(scopeId: number, surfaceId: number|string): boolean {
@@ -393,23 +302,20 @@ export class Shell {
 
   bind(animationId: number): void {
     this.bindgroup[animationId] = true;
-    this.surfaces.forEach((tuple)=>{
-      var [_, srf] = tuple;
+    this.attachedSurface.forEach(({surface:srf, canvas})=>{
       srf.updateBind();
     });
   }
 
   unbind(animationId: number): void {
     this.bindgroup[animationId] = false;
-    this.surfaces.forEach((tuple)=>{
-      var [_, srf] = tuple;
+    this.attachedSurface.forEach(({surface:srf, canvas})=>{
       srf.updateBind();
     });
   }
 
   render(): void {
-    this.surfaces.forEach((tuple)=>{
-      var [_, srf] = tuple;
+    this.attachedSurface.forEach(({surface:srf, canvas})=>{
       srf.render();
     });
   }

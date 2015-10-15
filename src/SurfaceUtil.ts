@@ -1,3 +1,64 @@
+/**
+ * extend deep like jQuery $.extend(true, target, source)
+ */
+export function extend(target: any, source: any): void {
+  for(var key in source){
+    if (typeof source[key] === "object" && Object.getPrototypeOf(source[key]) === Object.prototype) {
+      target[key] = target[key] || {};
+      extend(target[key], source[key]);
+    } else if (Array.isArray(source[key])) {
+      target[key] = target[key] || [];
+      extend(target[key], source[key]);
+    } else if (source[key] !== undefined) {
+      target[key] = source[key];
+    }
+  }
+}
+
+/**
+ * "hoge.huga, foo, bar\n" to {"hoge.huga": "foo, bar"}
+ */
+export function parseDescript(text: string): {[key:string]:string}{
+  text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
+  while(true){// remove commentout
+    var match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["",""])[0];
+    if(match.length === 0) break;
+    text = text.replace(match, "");
+  }
+  var lines = text.split("\n");
+  lines = lines.filter(function(line){ return line.length !== 0; }); // remove no content line
+  var dic = lines.reduce<{[key:string]:string}>(function(dic, line){
+    var tmp = line.split(",");
+    var key = tmp[0];
+    var vals = tmp.slice(1);
+    key = key.trim();
+    var val = vals.join(",").trim();
+    dic[key] = val;
+    return dic;
+  }, {});
+  return dic;
+}
+
+
+/**
+ * convert some encoding txt file arraybuffer to js string
+ */
+export function convert(buffer: ArrayBuffer):string{
+  //return new TextDecoder('shift_jis').decode(buffer);
+  return Encoding.codeToString(Encoding.convert(new Uint8Array(buffer), 'UNICODE', 'AUTO'));
+}
+
+/**
+ * find filename that matches arg "filename" from arg "paths"
+ */
+export function find(paths: string[], filename: string): string[] {
+  filename = filename.split("\\").join("/");
+  if(filename.slice(0,2) === "./") filename = filename.slice(2);
+  var reg =new RegExp("^"+filename.replace(".", "\.")+"$", "i");
+  var hits = paths.filter((key)=> reg.test(key));
+  return hits;
+}
+
 
 export function choice<T>(arr: T[]): T {
   return arr[Math.round(Math.random()*(arr.length-1))];
