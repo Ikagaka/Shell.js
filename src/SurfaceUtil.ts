@@ -1,7 +1,3 @@
-import {PNGReader} from "./PNG";
-
-
-export var enablePNGjs = true;
 
 export function choice<T>(arr: T[]): T {
   return arr[Math.round(Math.random()*(arr.length-1))];
@@ -17,7 +13,7 @@ export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement
 }
 
 export function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf: ArrayBuffer, pnabuf?: ArrayBuffer): Promise<{width:number, height:number, data:Uint8ClampedArray}> {
-  return new Promise((resolve,reject)=>{
+  return new Promise((resolve,reject)=>{/*
     var reader = new PNGReader(pngbuf);
     var png = reader.parse();
     var dataA = png.getUint8ClampedArray();
@@ -48,6 +44,7 @@ export function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf: ArrayBuffer, pn
       j += 4;
     }
     return resolve(Promise.resolve({width: png.width, height: png.height, data: dataA}));
+    */
   }).catch((err)=>{
     return Promise.reject("fetchPNGUint8ClampedArrayFromArrayBuffer msg:"+err+", reason: "+err.stack);
   });

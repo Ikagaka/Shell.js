@@ -1,29 +1,23 @@
-/// <reference path="../typings/bluebird/bluebird.d.ts"/>
-/// <reference path="../typings/qunit/qunit.d.ts"/>
-/// <reference path="../typings/zepto/zepto.d.ts"/>
-/// <reference path="../tsd/NarLoader/NarLoader.d.ts"/>
-/// <reference path="../src/Surface.ts"/>
-/// <reference path="../src/Shell.ts"/>
 
 var prmNar = NarLoader.loadFromURL("../nar/mobilemaster.nar");
 
-prmNar.then((nanikaDir)=>{
+prmNar.then(function(nanikaDir){
 
-  QUnit.module("cuttlebone.Shell");
+  QUnit.module("Shell");
 
   var shellDir = nanikaDir.getDirectory("shell/master").asArrayBuffer();
   console.dir(shellDir);
 
-  var shell = new cuttlebone.Shell(shellDir);
+  var shell = new Shell.Shell(shellDir);
 
-  QUnit.test("shell#load", (assert)=> {
+  QUnit.test("shell#load", function(assert) {
     var done = assert.async();
     //shell.enablePNGdecoder = false;
-    return shell.load().then((shell)=>{
+    return shell.load().then(function(shell){
       assert.ok(true);
       console.log(shell);
 
-      setInterval(()=>{
+      setInterval(function(){
         shell.unbind(20);
         shell.unbind(30);
         shell.unbind(31);
@@ -31,7 +25,7 @@ prmNar.then((nanikaDir)=>{
         shell.unbind(50);
         shell.enableRegionVisible = true;
         shell.render();
-        setTimeout(()=>{
+        setTimeout(function(){
           shell.bind(20);
           shell.bind(30);
           shell.bind(31);
@@ -43,7 +37,7 @@ prmNar.then((nanikaDir)=>{
       }, 6000);
 
       done();
-    }).catch((err)=>{
+    }).catch(function(err){
       console.error(err, err.stack, shell);
       assert.ok(false);
       done();
@@ -51,7 +45,7 @@ prmNar.then((nanikaDir)=>{
   });
 
 
-  QUnit.test("shell#hasFile", (assert)=> {
+  QUnit.test("shell#hasFile", function(assert) {
     console.log(2)
     assert.ok(shell.hasFile("surface0.png"));
     assert.ok(shell.hasFile("surface0.PNG"));
@@ -61,25 +55,25 @@ prmNar.then((nanikaDir)=>{
     assert.ok(!shell.hasFile("/surface0/png"));
   });
 
-  QUnit.test("shell.descript", (assert)=> {
+  QUnit.test("shell.descript", function(assert) {
     assert.ok(shell.descript["kero.bindgroup20.name"] === "装備,飛行装備");
   });
 
-  QUnit.test("shell.surfacesTxt", (assert)=> {
+  QUnit.test("shell.surfacesTxt", function(assert) {
     assert.ok(shell.surfacesTxt.charset === "Shift_JIS");
     assert.ok(shell.surfacesTxt.descript.version === 1);
   });
 
-  QUnit.test("shell#attachSurface (periodic)", (assert)=> {
+  QUnit.test("shell#attachSurface (periodic)", function(assert) {
     var cnv = document.createElement("canvas");
     var srf = shell.attachSurface(cnv, 0, 0);
     srf.render();
     assert.ok(srf.surfaceId === 0);
-    setInterval(()=>{srf.talk()}, 80);
+    setInterval(function(){srf.talk()}, 80);
     setPictureFrame(srf, "※\s[0]。periodic,5瞬き、talk,4口パク。");
   });
 
-  QUnit.test("shell#attachSurface (basic element and animation)", (assert)=> {
+  QUnit.test("shell#attachSurface (basic element and animation)", function(assert) {
     var cnv = document.createElement("canvas");
     var srf = shell.attachSurface(cnv, 0, 3);
     console.log(srf)
@@ -89,11 +83,11 @@ prmNar.then((nanikaDir)=>{
     assert.ok(srf.element.width === 182);
     assert.ok(srf.surfaceTreeNode.collisions[0].name === "Head");
     assert.ok(srf.surfaceTreeNode.animations[0].interval === "sometimes");
-    setInterval(()=>{srf.talk()}, 80);
+    setInterval(function(){srf.talk()}, 80);
     setPictureFrame(srf, "※胸を腕で覆っている。sometimes瞬き、random,6目そらし、talk,4口パク。");
   });
 
-  QUnit.test("shell#attachSurface (animation always)", (assert)=> {
+  QUnit.test("shell#attachSurface (animation always)", function(assert) {
     var cnv = document.createElement("canvas");
     var srf = shell.attachSurface(cnv, 0, 7);
     assert.ok(srf.surfaceId === 7);
@@ -101,11 +95,11 @@ prmNar.then((nanikaDir)=>{
     assert.ok(srf.element.height === 445);
     assert.ok(srf.element.width === 182);
     assert.ok(srf.surfaceTreeNode.collisions[0].name === "Head");
-    setInterval(()=>{srf.talk()}, 80);
+    setInterval(function(){srf.talk()}, 80);
     setPictureFrame(srf, "※腕組み。瞬き、always怒り、口パク。");
   });
 
-  QUnit.test("shell#attachSurface (runonce)", (assert)=> {
+  QUnit.test("shell#attachSurface (runonce)", function(assert) {
     var cnv = document.createElement("canvas");
     var srf = shell.attachSurface(cnv, 0, 401);
     assert.ok(srf.surfaceId === 401);
@@ -115,7 +109,7 @@ prmNar.then((nanikaDir)=>{
     setPictureFrame(srf, "※寝ぼけ。runonce口に手を当ててから直ぐ離し目パチ。");
   });
 
-  QUnit.test("shell#attachSurface ", (assert)=> {
+  QUnit.test("shell#attachSurface ", function(assert) {
     var cnv = document.createElement("canvas");
     var srf = shell.attachSurface(cnv, 0, 11);
     console.log(srf)
@@ -124,11 +118,11 @@ prmNar.then((nanikaDir)=>{
     assert.ok(srf.element.height === 210);
     assert.ok(srf.element.width === 230);
     assert.ok(srf.surfaceTreeNode.collisions[0].name === "Screen");
-    setInterval(()=>{srf.talk()}, 80);
+    setInterval(function(){srf.talk()}, 80);
     setPictureFrame(srf, "CRTゅう");
   });
 
-  QUnit.test("shell#attachSurface (srf.play())", (assert)=> {
+  QUnit.test("shell#attachSurface (srf.play())", function(assert) {
     var cnv = document.createElement("canvas");
     var srf = shell.attachSurface(cnv, 0, 5000);
     srf.play(100);
@@ -136,7 +130,7 @@ prmNar.then((nanikaDir)=>{
     setPictureFrame(srf, "※１回のみ爆発アニメ。");
   });
 
-  QUnit.test("shell#attachSurface (error filepath handle)", (assert)=> {
+  QUnit.test("shell#attachSurface (error filepath handle)", function(assert) {
     var cnv = document.createElement("canvas");
     var srf = shell.attachSurface(cnv, 0, 5001);
     srf.render();
@@ -148,7 +142,7 @@ prmNar.then((nanikaDir)=>{
   });
 
 
-  function setPictureFrame(srf: cuttlebone.Surface, description?: string): void {
+  function setPictureFrame(srf, description) {
     var fieldset = document.createElement("fieldset");
     var legend = document.createElement("legend");
     var p = document.createElement("p");
@@ -160,9 +154,12 @@ prmNar.then((nanikaDir)=>{
     fieldset.style.display = "inline-block";
     fieldset.style.width = "310px";
     document.body.appendChild(fieldset);
-    srf.element.addEventListener("mousemove", (ev)=>{
-      var {pageX, pageY} = ev;
-      var {left, top} = $(ev.target).offset();
+    srf.element.addEventListener("mousemove", function(ev){
+      var pageX = ev.pageX,
+          pageY = ev.pageY;
+      var tmp = $(ev.target).offset();
+      var left = tmp.left,
+          top = tmp.top;
       var offsetX = pageX - left;
       var offsetY = pageY - top;
       var hit = srf.getRegion(offsetX, offsetY);

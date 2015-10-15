@@ -12,15 +12,27 @@
         "outDir": "../lib",
         "rootDir": "../"
     },
+    "compileOnSave": false,
+    "formatCodeOptions": {
+        "indentSize": 2,
+        "tabSize": 2,
+        "newLineCharacter": "\n",
+        "convertTabsToSpaces": true,
+        "insertSpaceAfterCommaDelimiter": true,
+        "insertSpaceAfterSemicolonInForStatements": true,
+        "insertSpaceBeforeAndAfterBinaryOperators": true,
+        "insertSpaceAfterKeywordsInControlFlowStatements": true,
+        "insertSpaceAfterFunctionKeywordForAnonymousFunctions": true,
+        "insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis": false,
+        "placeOpenBraceOnNewLineForFunctions": true,
+        "placeOpenBraceOnNewLineForControlBlocks": true
+    },
     "filesGlob": [
         "./**/*.ts",
         "!./node_modules/**/*.ts"
     ],
     "files": [
-        "BlobWorker.ts",
         "Mouse.ts",
-        "PNG.ts",
-        "PNGReader.ts",
         "Shell.ts",
         "Surface.ts",
         "SurfaceRender.ts",

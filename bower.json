@@ -5,6 +5,7 @@
   "license": "MIT",
   "dependencies": {
     "surfaces_txt2yaml": "Narazaka/surfaces_txt2yaml",
+    "encoding-japanese": "~1.0.23",
     "text-encoding": "~0.5.3",
     "jszip": "*",
     "eventemitter2": "~0.4.14",
@@ -12,9 +13,12 @@
   },
   "devDependencies": {
     "qunit": "*",
-    "narloader": "*"
+    "narloader": "*",
+    "qunit-tap": "*",
+    "empower": "*",
+    "power-assert-formatter": "*"
   },
-  "main": "./Shell.js",
+  "main": "./dist/Shell.js",
   "ignore": [
     "**/.*",
     "bower_components",

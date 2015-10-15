@@ -38,6 +38,14 @@
     },
     "jquery/jquery.d.ts": {
       "ref": "3fc1377ce29dd9670975cb68615edf1b819fc4a5"
+    },
+    "NarLoader/NarLoader.d.ts": {
+      "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "6300974eab5d6f02719f505d45d4bcf9fee36c5c",
+      "path": "NarLoader.d.ts"
+    },
+    "qunit/qunit.d.ts": {
+      "ref": "3a6e1b8988eba0ba74fe4db20c950242552857e2"
     }
   }
 }

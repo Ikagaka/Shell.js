@@ -1,4 +1,4 @@
-***THIS REPOSITORY IS UNSTABLE***
+__developping now__
 
 # Shell.js
 Ukagaka Shell Renderer for Web Browser
@@ -7,33 +7,67 @@ Ukagaka Shell Renderer for Web Browser
 
 ![screenshot](https://raw.githubusercontent.com/Ikagaka/cuttlebone/master/screenshot2.gif )
 
-# Dependence
+
+## Dependence
 * surfaces_txt2yaml
 * EventEmitter2
 * jszip
+* NarLoader
 
-# Development
+
+## Usage
+```html
+<script src="../bower_components/jszip/dist/jszip.min.js"></script>
+<script src="../bower_components/narloader/NarLoader.js"></script>
+<script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
+<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
+<script src="../bower_components/jquery/dist/jquery.min.js"></script>
+<script src="../dist/Shell.js"></script>
+<script>
+NarLoader
+.loadFromURL("../nar/mobilemaster.nar")
+.then(function(dir){
+  return ShellLoader.loadFromPath(dir, "shell/master");
+}).then(function(shell){
+  var cnv = document.createElement("canvas");
+  var srf = shell.attachSurface(cnv, 0, 0);
+  srf.on("mouseclick", function(ev){ console.log(ev); });
+  document.body.appendChild(cnv);
+}).catch(function(err){
+  console.error(err, err.message);
+});
+</script>
+```
+
+
+## Development
 ```sh
-npm install -g bower dtsm glup typescript babel browserify
+npm install -g bower dtsm
 npm run init
 npm run build
 ```
 
-# Document
+
+## Document
 * 型はTypeScriptで、サンプルコードはCoffeeScriptで書かれています。
+
+### ShellLoader Class
+
+#### ShellLoader.loadFromPath(dir: NanikaDirectory, path: string): Promise&lt;Shell&gt;
+* 渡されたdirectoryを読み込みます。
+* descript.txtやsurfaces.txt、
+  surface.png、surface.pnaファイルを非同期で読み込みます。
+```coffeescript
+ShellLoader.load(dir, "shell/master").then (shell)->
+  cnv = document.createElement("canvas")
+  srf = shell.attachSurface(cnv, 0, 0)
+  # \0\s[0] 相当のサーフェスをcanvasに描画します。
+```
 
 ## Shell Class
 * `Shell/master/` 以下のファイルを扱います。
 * surfaces.txtなどをパースして情報をまとめて保持します。
 * canvas要素にSurfaceクラスを割り当てるためのクラスです。
-
-```coffeescript
-shell = new Shell(shellDir)
-shell.load().then ->
-  cnv = document.createElement("canvas")
-  srf = shell.attachSurface(cnv, 0, 0)
-  # \0\s[0] 相当のサーフェスをcanvasに描画します。
-```
 
 ### constructor(directory: { [path: string]: ArrayBuffer; }): Shell
 * `Shell/master/` 以下のファイル一覧とそのArrayBufferを持つObjectを渡してください。
@@ -57,9 +91,7 @@ shell = new Shell(shellDir)
 ### Shell.descript: { [key: string]: string; }
 * descript.txtの中身をkey-value形式で持っています。
 
-### Shell.prototype.load(): Promise<Shell>
-* construtorに渡されたdirectoryを読み込みます。
-* descript.txtやsurfaces.txt、surface.png、surface.pnaファイルを非同期で読み込みます。
+
 
 ```coffeescript
 shell.load().then (shell)->
