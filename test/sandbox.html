@@ -1,16 +1,27 @@
-
-<script src="../bower_components/encoding-japanese/encoding.min.js"></script>
+<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
+<script src="../bower_components/jquery/dist/jquery.min.js"></script>
+<script src="../bower_components/encoding-japanese/encoding.js"></script>
 <script src="../bower_components/jszip/dist/jszip.min.js"></script>
 <script src="../bower_components/narloader/NarLoader.js"></script>
 <script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
 <script src="../dist/Shell.js"></script>
-<script>window.Shell = ikagaka.Shell</script>
-<script src="../lib/ShellLoader.js"></script>
 <script>
 NarLoader
 .loadFromURL("../nar/mobilemaster.nar")
-.then(function(dir){ return ShellLoader.loadFromPath(dir, "shell/master"); })
-.then(function(shell){
-  console.log(shell);
-}).catch(function(err){console.error(err, err.message)});
+.then(function(nanikaDir){
+  var shellDir = nanikaDir.getDirectory("shell/master").asArrayBuffer();
+  var shell = new Shell.Shell(shellDir);
+  return shell.load();
+}).then(function(shell){
+  var cnv = document.createElement("canvas");
+  var srf = shell.attachSurface(cnv, 0, 0);
+  console.log(srf)
+  srf.on("mouseclick", function(ev){ console.log(ev); });
+  document.body.appendChild(cnv);
+  setTimeout(function(){
+    srf.emit("mouseclick", {hoge:"huga"})
+  }, 1000)
+}).catch(function(err){
+  console.error(err, err.stack);
+});
 </script>

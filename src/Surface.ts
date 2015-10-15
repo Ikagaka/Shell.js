@@ -9,8 +9,7 @@ function randomRange(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
 }
 
-export class Surface {
-
+export class Surface extends EventEmitter2{
   element: HTMLCanvasElement;
   scopeId: number;
   surfaceId: number;
@@ -28,7 +27,8 @@ export class Surface {
   talkCounts: { [key: string]: number };
 
   constructor(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number, shell: Shell) {
-
+    super();
+    EventEmitter2.call(this);
     this.element = canvas;
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
@@ -249,5 +249,4 @@ export class Surface {
       return {isHit:false, name:""};
     }
   }
-
 }

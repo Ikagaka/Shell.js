@@ -27,14 +27,16 @@ Ukagaka Shell Renderer for Web Browser
 NarLoader
 .loadFromURL("../nar/mobilemaster.nar")
 .then(function(dir){
-  return ShellLoader.loadFromPath(dir, "shell/master");
+  var shellDir = nanikaDir.getDirectory("shell/master").asArrayBuffer();
+  var shell = new Shell.Shell(shellDir);
+  return shell.load();
 }).then(function(shell){
   var cnv = document.createElement("canvas");
   var srf = shell.attachSurface(cnv, 0, 0);
   srf.on("mouseclick", function(ev){ console.log(ev); });
   document.body.appendChild(cnv);
 }).catch(function(err){
-  console.error(err, err.message);
+  console.error(err, err.stack);
 });
 </script>
 ```
@@ -50,19 +52,6 @@ npm run build
 
 ## Document
 * 型はTypeScriptで、サンプルコードはCoffeeScriptで書かれています。
-
-### ShellLoader Class
-
-#### ShellLoader.loadFromPath(dir: NanikaDirectory, path: string): Promise&lt;Shell&gt;
-* 渡されたdirectoryを読み込みます。
-* descript.txtやsurfaces.txt、
-  surface.png、surface.pnaファイルを非同期で読み込みます。
-```coffeescript
-ShellLoader.load(dir, "shell/master").then (shell)->
-  cnv = document.createElement("canvas")
-  srf = shell.attachSurface(cnv, 0, 0)
-  # \0\s[0] 相当のサーフェスをcanvasに描画します。
-```
 
 ## Shell Class
 * `Shell/master/` 以下のファイルを扱います。
@@ -95,7 +84,7 @@ shell = new Shell(shellDir)
 
 ```coffeescript
 shell.load().then (shell)->
-  console.log(shell)
+  console.log(shell.descript)
 ```
 
 ### Shell.prototype.attatchSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number|string): Surface|null
