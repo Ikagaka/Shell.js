@@ -15,6 +15,7 @@
     "start": "http-server -p 8000 &",
     "stop": "killall -- node */http-server -p 8000",
     "watch": "watchify lib/Shell.js  --standalone Shell -o dist/Shell.js -v& gulp watch;",
+    "watchoff": "killall -- node */watchify",
     "build": "npm run clean; gulp build; browserify lib/Shell.js --outfile dist/Shell.js --standalone Shell",
     "dtsm-fetch": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git fetch",
     "dtsm-search": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline search",

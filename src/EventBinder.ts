@@ -1,10 +1,19 @@
 /// <reference path="../typings/tsd.d.ts"/>
-"use strict";
 
-function huga() {
-  hoge: "";
-  return "";
+import {Surface} from "./Surface";
+export class EventBinder extends EventEmitter2 {
+  constructor(elm: HTMLElement){
+    super();
+    EventEmitter2.call(this);
+
+    var $elm = jQuery(elm)
+    $elm.on("click", (ev)=>{
+      console.log(ev);
+      this.emit("mouseclick", ev);
+    });
+  }
 }
+
 /*
 @isPointerEventsShimed = false
 @lastEventType = ""

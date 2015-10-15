@@ -27,4 +27,4 @@ gulp.task 'watch:ts', ->
 
 gulp.task('default', ['build']);
 gulp.task('build', ['build:ts', "build:test"]);
-gulp.task('watch', ['watch:ts']);
+gulp.task('watch', ["build", 'watch:ts']);

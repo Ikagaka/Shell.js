@@ -15,12 +15,8 @@ NarLoader
 }).then(function(shell){
   var cnv = document.createElement("canvas");
   var srf = shell.attachSurface(cnv, 0, 0);
-  console.log(srf)
   srf.on("mouseclick", function(ev){ console.log(ev); });
   document.body.appendChild(cnv);
-  setTimeout(function(){
-    srf.emit("mouseclick", {hoge:"huga"})
-  }, 1000)
 }).catch(function(err){
   console.error(err, err.stack);
 });

@@ -179,3 +179,8 @@ export function elementFromPointWithout (element: HTMLElement, pageX: number, pa
   element.style.display = tmp;
   return null;
 }
+
+
+export function randomRange(min: number, max: number): number {
+  return min + Math.floor(Math.random() * (max - min + 1));
+}

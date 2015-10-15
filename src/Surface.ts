@@ -3,38 +3,36 @@
 import {SurfaceRender, SurfaceLayerObject} from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
 import {Shell, SurfaceTreeNode} from "./Shell";
+import {EventBinder} from "./EventBinder"
 
-
-function randomRange(min: number, max: number): number {
-  return min + Math.floor(Math.random() * (max - min + 1));
-}
-
-export class Surface extends EventEmitter2{
+export class Surface extends EventBinder{
+  // public
   element: HTMLCanvasElement;
   scopeId: number;
   surfaceId: number;
   shell: Shell;
-
-  surfaceTreeNode: SurfaceTreeNode;
-  bufferCanvas: HTMLCanvasElement;
-  bufRender: SurfaceRender;
-  elmRender: SurfaceRender;
-
   destructed: boolean;
-  layers: { [is: number]: SurfaceAnimationPattern; };
-  stopFlags: { [key: string]: boolean; };
+
+  // private
+  surfaceResources: SurfaceTreeNode; //{base, elements, collisions, animations}
+  bufferCanvas: HTMLCanvasElement; //チラツキを抑えるためのバッファ
+  bufRender: SurfaceRender;//バッファのためのレンダラ
+  elmRender: SurfaceRender;//実際のDOMTreeにあるcanvasへのレンダラ
+
+  layers: { [is: number]: SurfaceAnimationPattern; };//baseサーフェスの上に書き込まれていくバッファ
+  stopFlags: { [key: string]: boolean; };//keyがfalseのアニメーションの再生を停止する
   talkCount: number;
-  talkCounts: { [key: string]: number };
+  talkCounts: { [key: string]: number };//key:タイミングがtalkのアニメーションid、number:talkCountの閾値
 
   constructor(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number, shell: Shell) {
-    super();
-    EventEmitter2.call(this);
+    super(canvas);
+
     this.element = canvas;
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
     this.shell = shell;
 
-    this.surfaceTreeNode = shell.surfaceTree[surfaceId];
+    this.surfaceResources = shell.surfaceTree[surfaceId];
     this.bufferCanvas = SurfaceUtil.createCanvas();
     this.bufRender = new SurfaceRender(this.bufferCanvas);
     this.elmRender = new SurfaceRender(this.element);
@@ -50,7 +48,7 @@ export class Surface extends EventEmitter2{
   }
 
   initAnimations(): void {
-    this.surfaceTreeNode.animations.forEach((anim)=>{
+    this.surfaceResources.animations.forEach((anim)=>{
       this.initAnimation(anim);
     });
   }
@@ -86,7 +84,7 @@ export class Surface extends EventEmitter2{
   }
 
   updateBind(): void {
-    this.surfaceTreeNode.animations.forEach((anim)=>{
+    this.surfaceResources.animations.forEach((anim)=>{
       var {is, interval, patterns} = anim;
       if(/^bind/.test(interval)){
         this.initBind(anim);
@@ -136,7 +134,7 @@ export class Surface extends EventEmitter2{
         canvas: rndr.cnv
       });
     }), []);
-    var srfNode = this.surfaceTreeNode;
+    var srfNode = this.surfaceResources;
     this.bufRender.init(srfNode.base);
     this.bufRender.composeElements(srfNode.elements);
     this.bufRender.composeElements(renderLayers);
@@ -148,8 +146,8 @@ export class Surface extends EventEmitter2{
   }
 
   play(animationId: number, callback?: () => void): void {
-    var anims = this.surfaceTreeNode.animations;
-    var anim = this.surfaceTreeNode.animations[animationId];
+    var anims = this.surfaceResources.animations;
+    var anim = this.surfaceResources.animations[animationId];
     if(!anim) return void setTimeout(callback);
     // lazyPromises: [()=> Promise<void>, ()=> Promise<void>, ...]
     var lazyPromises = anim.patterns.map((pattern)=> ()=> new Promise<void>((resolve, reject)=> {
@@ -164,7 +162,7 @@ export class Surface extends EventEmitter2{
       this.render();
       var [__, a, b] = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]);
       var _wait = isFinite(Number(b))
-                ? randomRange(Number(a), Number(b))
+                ? SurfaceUtil.randomRange(Number(a), Number(b))
                 : Number(a);
       setTimeout((()=>{
         if(this.destructed){// stop pattern animation.
@@ -185,7 +183,7 @@ export class Surface extends EventEmitter2{
   }
 
   talk(): void {
-    var animations = this.surfaceTreeNode.animations;
+    var animations = this.surfaceResources.animations;
     this.talkCount++;
     var hits = animations.filter((anim)=>
         /^talk/.test(anim.interval) && this.talkCount % this.talkCounts[anim.is] === 0);
@@ -195,7 +193,7 @@ export class Surface extends EventEmitter2{
   }
 
   yenE(): void {
-    var animations = this.surfaceTreeNode.animations;
+    var animations = this.surfaceResources.animations;
     var hits = animations.filter((anim)=>
     anim.interval === "yen-e" && this.talkCount % this.talkCounts[anim.is] === 0);
     hits.forEach((anim)=>{
@@ -205,7 +203,7 @@ export class Surface extends EventEmitter2{
 
   getRegion(offsetX: number, offsetY: number): {isHit:boolean, name:string} {
     if(SurfaceUtil.isHit(this.element, offsetX, offsetY)){
-      var hitCols = this.surfaceTreeNode.collisions.filter((collision, colId)=>{
+      var hitCols = this.surfaceResources.collisions.filter((collision, colId)=>{
         var {type, name, left, top, right, bottom, coordinates, radius, center_x, center_y} = collision;
         switch(type){
           case "rect":
