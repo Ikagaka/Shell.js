@@ -58,7 +58,7 @@ npm run build
 * surfaces.txtなどをパースして情報をまとめて保持します。
 * canvas要素にSurfaceクラスを割り当てるためのクラスです。
 
-### Shell.prototype.load(directory: { [path: string]: ArrayBuffer; }): Promise<Shell>
+### load(directory: { [path: string]: ArrayBuffer; }): Promise<Shell>
 * `Shell/master/` 以下のファイル一覧とそのArrayBufferを持つObjectを渡してください。
 * ArrayBufferはnarファイルをzip解凍や、
   ネットワーク更新用の`updates2.dau`をXHRして入手してください。
@@ -77,17 +77,15 @@ shellDir =
 shell = new Shell(shellDir)
 ```
 
-### Shell.descript: { [key: string]: string; }
+### descript: { [key: string]: string; }
 * descript.txtの中身をkey-value形式で持っています。
-
-
 
 ```coffeescript
 shell.load().then (shell)->
   console.log(shell.descript)
 ```
 
-### Shell.prototype.attatchSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number|string): Surface|null
+### attatchSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number|string): Surface|null
 * 指定したcanvasへscopeIdのsurfaceIdのサーフェスの描画を行います。
   * SakuraScriptでなら`\0\s[0]`に該当します。
 * surfaceIdはサーフェスエイリアスが考慮されます。
@@ -113,42 +111,42 @@ document.body.appendChild(cnv2)
 * canvas要素にサーフェスを描画します。
 * このコンストラクタが呼ばれた時からアニメーションが開始されます。
 * surfaceIdはサーフェスエイリアスが考慮されません。
-  * `Shell.prototype.attatchSurface`を使って下さい。
+  * `attatchSurface`を使って下さい。
 ```coffeescript
 srf = new Sufrace(cnv, 0, 0, shell) # \0\s[0]
 ```
-### Surface.prototype.destructor(): void
+### destructor(): void
 * canvasへのサーフェスの描画を終了します。
 * canvasへのあらゆるイベントハンドラを解除します。
 * サーフェスを変更する前に必ず呼び出してください。
 
-### Surface.prototype.render(): void
+### render(): void
 * サーフェスを再描画します。
 
-### Surface.prototype.play(animationId: number, callback?: () => void): void
+### play(animationId: number, callback?: () => void): void
 * animationIdのアニメーションを再生します。
   * アニメーション再生後にcallbackが1度だけ呼ばれます。
 
-### Surface.prototype.stop(animationId: number): void
+### stop(animationId: number): void
 * animationIdのアニメーションを停止します。
 
-### Surface.prototype.bind(animationId: number): void
+### bind(animationId: number): void
 * animationIdの着せ替えを着せます。
 
-### Surface.prototype.unbind(animationId: number): void
+### unbind(animationId: number): void
 * animationIdの着せ替えを脱がせます。
 
-### Surface.prototype.yenE(): void
+### yenE(): void
 * yen-eタイミングのアニメーションを再生します。
 
-### Surface.prototype.talk(): void
+### talk(): void
 * talkタイミングのカウンタを進め、
   指定回数呼び出されるとtalkタイミングのアニメーションを再生します。
-### Surface.prototype.on(eventName: string, callback: (event: Event)=> void): void
+### on(eventName: string, callback: (event: Event)=> void): void
 * マウスイベントのイベントリスナーです。
 * イベントの詳細については以下の通りです。
 
-#### Surface.prototype.on("mousedown", callback: (event: MousedownEvent)=> void): void
+#### on("mousedown", callback: (event: MousedownEvent)=> void): void
 
 ```typescript
 interface MousedownEvent{
@@ -162,7 +160,7 @@ interface MousedownEvent{
 }
 ```
 
-#### Surface.prototype.on("mousemove", callback: (event: MousemoveEvent)=> void): void
+#### on("mousemove", callback: (event: MousemoveEvent)=> void): void
 
 ```typescript
 interface MousemoveEvent{
@@ -176,7 +174,7 @@ interface MousemoveEvent{
 }
 ```
 
-#### Surface.prototype.on("mouseup", callback: (event: MouseupEvent)=> void): void
+#### on("mouseup", callback: (event: MouseupEvent)=> void): void
 
 ```typescript
 interface MouseupEvent{
@@ -190,7 +188,7 @@ interface MouseupEvent{
 }
 ```
 
-#### Surface.prototype.on("mouseclick", callback: (event: MouseclickEvent)=> void): void
+#### on("mouseclick", callback: (event: MouseclickEvent)=> void): void
 
 ```typescript
 interface MouseclickEvent{
@@ -204,7 +202,7 @@ interface MouseclickEvent{
 }
 ```
 
-#### Surface.prototype.on("mousedblclick", callback: (event: MousedbllickEvent)=> void): void
+#### on("mousedblclick", callback: (event: MousedbllickEvent)=> void): void
 
 ```typescript
 interface MousedbllickEvent{
@@ -218,7 +216,7 @@ interface MousedbllickEvent{
 }
 ```
 
-#### Surface.prototype.on("mousewheel", callback: (event: MousewheelEvent)=> void): void
+#### on("mousewheel", callback: (event: MousewheelEvent)=> void): void
 
 ```typescript
 interface MousewheelEvent{
