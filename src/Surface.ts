@@ -3,9 +3,10 @@
 import {SurfaceRender, SurfaceLayerObject} from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
 import {Shell, SurfaceTreeNode} from "./Shell";
-import {EventBinder} from "./EventBinder"
 
-export class Surface extends EventBinder{
+var $ = jQuery;
+
+export class Surface extends EventEmitter2{
   // public
   element: HTMLCanvasElement;
   scopeId: number;
@@ -25,7 +26,35 @@ export class Surface extends EventBinder{
   talkCounts: { [key: string]: number };//key:タイミングがtalkのアニメーションid、number:talkCountの閾値
 
   constructor(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number, shell: Shell) {
-    super(canvas);
+    super();
+    EventEmitter2.call(this);
+
+    var $elm = $(canvas);
+    $elm.on("contextmenu",(ev)=> processMouseEvent(ev, "mouseclick", this, false, ""));
+    $elm.on("click",      (ev)=> processMouseEvent(ev, "mouseclick", this, false, ""));
+    $elm.on("dblclick",   (ev)=> processMouseEvent(ev, "mousedblclick", this, false, ""));
+    $elm.on("mousedown",  (ev)=> processMouseEvent(ev, "mousedown", this, false, ""));
+    $elm.on("mousemove",  (ev)=> processMouseEvent(ev, "mousemove", this, false, ""));
+    $elm.on("mouseup",    (ev)=> processMouseEvent(ev, "mouseup", this, false, ""));
+
+    var tid = 0
+    var touchCount = 0
+    var touchStartTime = 0
+    $elm.on("touchmove",  (ev)=> processMouseEvent(ev, "mousemove", this, false, ""));
+    $elm.on("touchend",   (ev)=>{
+      processMouseEvent(ev, "mouseup", this, false, "");
+      processMouseEvent(ev, "mouseclick", this, false, "");
+      if (Date.now() - touchStartTime < 500 && touchCount%2 === 0){
+        processMouseEvent(ev, "mousedblclick", this, false, "");
+      }
+    });
+    $elm.on("touchstart", (ev)=>{
+      touchCount++;
+      touchStartTime = Date.now();
+      processMouseEvent(ev, "mousedown", this, false, "");
+      clearTimeout(tid);
+      tid = setTimeout(()=> touchCount = 0, 500)
+    });
 
     this.element = canvas;
     this.scopeId = scopeId;
@@ -245,6 +274,114 @@ export class Surface extends EventBinder{
       return {isHit:true, name:""};
     }else{
       return {isHit:false, name:""};
+    }
+  }
+}
+
+function processMouseEvent(ev:JQueryEventObject, type:string, srf:Surface, isPointerEventsShimed:boolean, lastEventType:string): void{
+  $(ev.target).css({"cursor": "default"});
+
+  if(isPointerEventsShimed && ev.type === lastEventType){//無限ループ避ける？
+    lastEventType = "";
+    isPointerEventsShimed = false;
+    ev.stopPropagation();
+    ev.preventDefault();
+    return;
+  }
+
+  if (/^touch/.test(ev.type)) {
+    var changedTouches = <{pageX:number, pageY:number}[]>ev["changedTouches"];
+    var {pageX, pageY} = changedTouches[0];
+  } else {
+    var {pageX, pageY} = ev;
+  }
+  var {left, top} = $(ev.target).offset();
+  var offsetX = pageX - left;
+  var offsetY = pageY - top;
+  var hit = srf.getRegion(offsetX, offsetY);
+
+  if(hit.isHit){
+    ev.preventDefault();
+    var detail ={
+      "type": type,
+      "offsetX": offsetX|0,
+      "offsetY": offsetY|0,
+      "wheel": 0,
+      "scope": srf.scopeId,
+      "region": hit.name,
+      "button": ev.button === 2 ? 1 : 0
+    };
+    if(hit.name.length > 0){
+      if(/^touch/.test(ev.type)){
+        ev.stopPropagation(); // 当たり判定をゆびで撫でてる時はサーフェスのドラッグをできないようにする
+      }
+      $(ev.target).css({"cursor": "pointer"}); //当たり判定でマウスポインタを指に
+    }
+    srf.emit(type, $.Event('type', {detail, bubbles: true }));
+  }else{
+    // pointer-events shim
+    // canvasの透明領域のマウスイベントを真下の要素に投げる
+    var elm = SurfaceUtil.elementFromPointWithout(<HTMLElement>ev.target, ev.pageX, ev.pageY);
+    if(!elm) return;
+    if(/^mouse/.test(ev.type)){
+      isPointerEventsShimed = true;
+      lastEventType = ev.type;
+      ev.preventDefault();
+      ev.stopPropagation();
+      var _ev = document.createEvent("MouseEvent");
+      !!_ev.initMouseEvent && _ev.initMouseEvent(
+        ev.type,
+        ev.bubbles,
+        ev.cancelable,
+        ev.view,
+        ev.detail,
+        ev.screenX,
+        ev.screenY,
+        ev.clientX,
+        ev.clientY,
+        ev.ctrlKey,
+        ev.altKey,
+        ev.shiftKey,
+        ev.metaKey,
+        ev.button,
+        ev.relatedTarget);
+      elm.dispatchEvent(_ev);
+    }else if( /^touch/.test(ev.type) && !!document.createTouchList){
+      isPointerEventsShimed = true;
+      lastEventType = ev.type
+      ev.preventDefault();
+      ev.stopPropagation();
+      var touches = document.createTouchList();
+      touches[0] = document.createTouch(
+        document.body,
+        ev.target,
+        0, //identifier
+        ev.pageX,
+        ev.pageY,
+        ev.screenX,
+        ev.screenY,
+        ev.clientX,
+        ev.clientY,
+        1, //radiusX
+        1, //radiusY
+        0, //rotationAngle
+        1.0); //force
+      var _ev = document.createEvent("TouchEvent");
+      _ev.initTouchEvent(
+        touches, //TouchList* touches,
+        touches, //TouchList* targetTouches,
+        touches, //TouchList* changedTouches,
+        ev.type,
+        ev.view, //PassRefPtr<AbstractView> view,
+        ev.screenX,
+        ev.screenY,
+        ev.clientX,
+        ev.clientY,
+        ev.ctrlKey,
+        ev.altKey,
+        ev.shiftKey,
+        ev.metaKey);
+      elm.dispatchEvent(_ev);
     }
   }
 }

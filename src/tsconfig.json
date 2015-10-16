@@ -4,7 +4,7 @@
         "target": "es6",
         "declaration": true,
         "noImplicitAny": true,
-        "noEmitOnError": true,
+        "noEmitOnError": false,
         "removeComments": false,
         "noLib": false,
         "preserveConstEnums": true,
