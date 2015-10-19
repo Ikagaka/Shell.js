@@ -21,7 +21,7 @@ export class Shell {
   cacheCanvas: { [key: string]: HTMLCanvasElement; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
   bindgroup: {[key: number]: boolean}; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
   enableRegionDraw: boolean;
-  
+
 
   constructor(directory: { [filepath: string]: ArrayBuffer; }) {
     this.directory = directory;
@@ -129,7 +129,7 @@ export class Shell {
     var surface_names = Object.keys(this.directory).filter((filename)=> /^surface(\d+)\.png$/i.test(filename));
     var prms = surface_names.map((filename)=>{
       var n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
-      this.getPNGFromDirectory(filename).then((cnv)=>{
+      return this.getPNGFromDirectory(filename).then((cnv)=>{
         if(!this.surfaceTree[n]){
           this.surfaceTree[n] = {
             base: cnv,
