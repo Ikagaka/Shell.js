@@ -102,6 +102,12 @@ srf2 = shell.attachSurface(cnv, 0, "びっくり") # \0\s[びっくり]
 document.body.appendChild(cnv2)
 ```
 
+### bind(animationId: number): void
+* animationIdの着せ替えを着せます。
+
+### unbind(animationId: number): void
+* animationIdの着せ替えを脱がせます。
+
 ## Surface Class
 * canvas要素にサーフェスを描画します。
   * SERIKOアニメーションを再生します。
@@ -118,7 +124,7 @@ srf = new Sufrace(cnv, 0, 0, shell) # \0\s[0]
 ### destructor(): void
 * canvasへのサーフェスの描画を終了します。
 * canvasへのあらゆるイベントハンドラを解除します。
-* サーフェスを変更する前に必ず呼び出してください。
+* ___サーフェスを変更する前に必ず呼び出してください___
 
 ### render(): void
 * サーフェスを再描画します。
@@ -130,102 +136,32 @@ srf = new Sufrace(cnv, 0, 0, shell) # \0\s[0]
 ### stop(animationId: number): void
 * animationIdのアニメーションを停止します。
 
-### bind(animationId: number): void
-* animationIdの着せ替えを着せます。
-
-### unbind(animationId: number): void
-* animationIdの着せ替えを脱がせます。
-
 ### yenE(): void
 * yen-eタイミングのアニメーションを再生します。
 
 ### talk(): void
 * talkタイミングのカウンタを進め、
   指定回数呼び出されるとtalkタイミングのアニメーションを再生します。
-### on(eventName: string, callback: (event: Event)=> void): void
+
+### on(type: string, callback: (event: SurfaceMouseEvent)=> void): void
 * マウスイベントのイベントリスナーです。
-* イベントの詳細については以下の通りです。
-
-#### on("mousedown", callback: (event: MousedownEvent)=> void): void
+* 対応しているイベントは以下の通りです。
+  * `mousedown|mousemove|mouseup|mouseclick|mousedblclick`
+  * タッチイベントとマウスイベントの区別は現状していません。
+  * mousewheelまだー？
+* 透明領域のマウスイベントにも反応します。 `ev.transparency` で判定してください、。
+  * これはsurface canvasレイヤが重なった時のマウスイベントの透過処理のためのフラグです。
+  * 複数レイヤ間の重なりの上下順番を管理するNamedMgr.jsなどが使います。
 
 ```typescript
-interface MousedownEvent{
+interface SurfaceMouseEvent {
   button: number; // マウスのボタン
   offsetX: number; // canvas左上からのx座標
   offsetY: number; // canvas左上からのy座標
   region: string; // collisionの名前
-  scopeId: number; // このサーフェスのスコープ番号
-  wheel: number; // 0
-  type: string; // "mousedown"
-}
-```
-
-#### on("mousemove", callback: (event: MousemoveEvent)=> void): void
-
-```typescript
-interface MousemoveEvent{
-  button: number; // マウスのボタン
-  offsetX: number; // canvas左上からのx座標
-  offsetY: number; // canvas左上からのy座標
-  region: string; // collisionの名前
-  scopeId: number; // このサーフェスのスコープ番号
-  wheel: number; // 0
-  type: string; // "mousemove"
-}
-```
-
-#### on("mouseup", callback: (event: MouseupEvent)=> void): void
-
-```typescript
-interface MouseupEvent{
-  button: number; // マウスのボタン
-  offsetX: number; // canvas左上からのx座標
-  offsetY: number; // canvas左上からのy座標
-  region: string; // collisionの名前
-  scopeId: number; // このサーフェスのスコープ番号
-  wheel: number; // 0
-  type: string; // "mouseup"
-}
-```
-
-#### on("mouseclick", callback: (event: MouseclickEvent)=> void): void
-
-```typescript
-interface MouseclickEvent{
-  button: number; // マウスのボタン
-  offsetX: number; // canvas左上からのx座標
-  offsetY: number; // canvas左上からのy座標
-  region: string; // collisionの名前
-  scopeId: number; // このサーフェスのスコープ番号
-  wheel: number; // 0
-  type: string; // "mouseclick"
-}
-```
-
-#### on("mousedblclick", callback: (event: MousedbllickEvent)=> void): void
-
-```typescript
-interface MousedbllickEvent{
-  button: number; // マウスのボタン
-  offsetX: number; // canvas左上からのx座標
-  offsetY: number; // canvas左上からのy座標
-  region: string; // collisionの名前
-  scopeId: number; // このサーフェスのスコープ番号
-  wheel: number; // 0
-  type: string; // "mousedblclick"
-}
-```
-
-#### on("mousewheel", callback: (event: MousewheelEvent)=> void): void
-
-```typescript
-interface MousewheelEvent{
-  button: number; // マウスのボタン
-  offsetX: number; // canvas左上からのx座標
-  offsetY: number; // canvas左上からのy座標
-  region: string; // collisionの名前
-  scopeId: number; // このサーフェスのスコープ番号
-  wheel: number; // 0
-  type: string; // "mousewheel"
+  scope: number; // このサーフェスのスコープ番号
+  wheel: number; // mousewheel実装したら使われるかも
+  type: string; // "Bust","Head","Face"など、collisionのアレ
+  transparency: boolean; // 透明領域ならtrue
 }
 ```

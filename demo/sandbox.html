@@ -1,0 +1,41 @@
+<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
+<script src="../bower_components/jquery/dist/jquery.min.js"></script>
+<script src="../bower_components/encoding-japanese/encoding.js"></script>
+<script src="../bower_components/jszip/dist/jszip.min.js"></script>
+<script src="../bower_components/narloader/NarLoader.js"></script>
+<script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
+<script src="../dist/Shell.js"></script>
+<script>
+NarLoader
+.loadFromURL("../nar/mobilemaster.nar")
+.then(function(nanikaDir){
+  var shellDir = nanikaDir.getDirectory("shell/master").asArrayBuffer();
+  var shell = new Shell.Shell(shellDir);
+  return shell.load();
+}).then(function(shell){
+  var cnv = document.createElement("canvas");
+  var srf = shell.attachSurface(cnv, 0, 0);
+  console.dir(srf);
+  srf.on("mouseclick", function(ev){ console.log(ev); });
+  document.body.appendChild(cnv);
+}).catch(function(err){
+  console.error(err, err.stack);
+});
+
+/*getBuffer("mobilemaster/shell/master/surface0.png")
+.then(function(buffer){
+  console.log(buffer);
+});*/
+
+function getBuffer(url){
+  return new Promise(function(resolve, reject){
+    var xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.responseType = 'arraybuffer';
+      xhr.onload = function(e) {
+        resolve(this.response);
+      };
+      xhr.send();
+  });
+}
+</script>
