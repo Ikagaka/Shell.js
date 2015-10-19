@@ -208,6 +208,11 @@ var _charId = charId === "sakura" ? 0
   _elm = Surface.isHitBubble(elm, pageX, pageY)
   $(element).show(); return _elm
 */
+
+// ↑この死にコードなんだよ
+
+/*
+以下Named.jsから呼ばれなくなった死にコード
 export function elementFromPointWithout (element: HTMLElement, pageX: number, pageY: number): Element {
   var tmp = element.style.display;
   element.style.display = "none";
@@ -240,7 +245,7 @@ export function elementFromPointWithout (element: HTMLElement, pageX: number, pa
   element.style.display = tmp;
   return null;
 }
-
+*/
 
 export function randomRange(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));

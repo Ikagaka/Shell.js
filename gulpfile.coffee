@@ -18,9 +18,9 @@ gulp.task 'build:ts', ->
     .pipe gulp.dest 'lib'
 
 gulp.task 'build:test', ->
-  gulp.src(["test/original/testShell.js"])
+  gulp.src(["demo/original/testShell.js"])
     .pipe espower()
-    .pipe gulp.dest 'test'
+    .pipe gulp.dest 'demo'
 
 gulp.task 'watch:ts', ->
   gulp.watch 'src/**/*.ts', ['build:ts']

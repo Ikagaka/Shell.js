@@ -21,6 +21,7 @@ export class Shell {
   cacheCanvas: { [key: string]: HTMLCanvasElement; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
   bindgroup: {[key: number]: boolean}; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
   enableRegionDraw: boolean;
+  
 
   constructor(directory: { [filepath: string]: ArrayBuffer; }) {
     this.directory = directory;
@@ -34,7 +35,7 @@ export class Shell {
 
   load(): Promise<Shell> {
     return Promise.resolve(this)
-    .then(()=> this.loadDescript()) // 1st
+    .then(()=> this.loadDescript()) // 1st // ←なにこれ（自問自答
     .then(()=> this.loadBindGroup()) // 2nd
     .then(()=> this.loadSurfacesTxt()) // 1st
     .then(()=> this.loadSurfaceTable()) // 1st

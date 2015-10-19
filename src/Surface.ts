@@ -30,28 +30,28 @@ export class Surface extends EventEmitter2{
     EventEmitter2.call(this);
 
     var $elm = $(canvas);
-    $elm.on("contextmenu",(ev)=> processMouseEvent(ev, "mouseclick", this, false, ""));
-    $elm.on("click",      (ev)=> processMouseEvent(ev, "mouseclick", this, false, ""));
-    $elm.on("dblclick",   (ev)=> processMouseEvent(ev, "mousedblclick", this, false, ""));
-    $elm.on("mousedown",  (ev)=> processMouseEvent(ev, "mousedown", this, false, ""));
-    $elm.on("mousemove",  (ev)=> processMouseEvent(ev, "mousemove", this, false, ""));
-    $elm.on("mouseup",    (ev)=> processMouseEvent(ev, "mouseup", this, false, ""));
+    $elm.on("contextmenu",(ev)=> processMouseEvent(ev, "mouseclick", this));
+    $elm.on("click",      (ev)=> processMouseEvent(ev, "mouseclick", this));
+    $elm.on("dblclick",   (ev)=> processMouseEvent(ev, "mousedblclick", this));
+    $elm.on("mousedown",  (ev)=> processMouseEvent(ev, "mousedown", this));
+    $elm.on("mousemove",  (ev)=> processMouseEvent(ev, "mousemove", this));
+    $elm.on("mouseup",    (ev)=> processMouseEvent(ev, "mouseup", this));
 
     var tid = 0
     var touchCount = 0
     var touchStartTime = 0
-    $elm.on("touchmove",  (ev)=> processMouseEvent(ev, "mousemove", this, false, ""));
+    $elm.on("touchmove",  (ev)=> processMouseEvent(ev, "mousemove", this));
     $elm.on("touchend",   (ev)=>{
-      processMouseEvent(ev, "mouseup", this, false, "");
-      processMouseEvent(ev, "mouseclick", this, false, "");
+      processMouseEvent(ev, "mouseup", this);
+      processMouseEvent(ev, "mouseclick", this);
       if (Date.now() - touchStartTime < 500 && touchCount%2 === 0){
-        processMouseEvent(ev, "mousedblclick", this, false, "");
+        processMouseEvent(ev, "mousedblclick", this);
       }
     });
     $elm.on("touchstart", (ev)=>{
       touchCount++;
       touchStartTime = Date.now();
-      processMouseEvent(ev, "mousedown", this, false, "");
+      processMouseEvent(ev, "mousedown", this);
       clearTimeout(tid);
       tid = setTimeout(()=> touchCount = 0, 500)
     });
@@ -278,110 +278,150 @@ export class Surface extends EventEmitter2{
   }
 }
 
-function processMouseEvent(ev:JQueryEventObject, type:string, srf:Surface, isPointerEventsShimed:boolean, lastEventType:string): void{
+function processMouseEvent(ev:JQueryEventObject, type:string, srf:Surface): void{
   $(ev.target).css({"cursor": "default"});
 
-  if(isPointerEventsShimed && ev.type === lastEventType){//無限ループ避ける？
-    lastEventType = "";
-    isPointerEventsShimed = false;
-    ev.stopPropagation();
-    ev.preventDefault();
-    return;
-  }
-
-  if (/^touch/.test(ev.type)) {
-    var changedTouches = <{pageX:number, pageY:number}[]>ev["changedTouches"];
+  if (/^touch/.test(ev.type)) {//もしタッチ
+    var changedTouches = <{pageX:number, pageY:number}[]>ev["changedTouches"]; //そういうプロパティがあるんです（おこ
     var {pageX, pageY} = changedTouches[0];
-  } else {
+  } else {//もしマウス
     var {pageX, pageY} = ev;
   }
   var {left, top} = $(ev.target).offset();
-  var offsetX = pageX - left;
-  var offsetY = pageY - top;
-  var hit = srf.getRegion(offsetX, offsetY);
+  var offsetX = pageX - left;//canvas左上からのx座標
+  var offsetY = pageY - top;//canvas左上からのy座標
+  var hit = srf.getRegion(offsetX, offsetY);//透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
 
   if(hit.isHit){
     ev.preventDefault();
     var detail ={
       "type": type,
-      "offsetX": offsetX|0,
-      "offsetY": offsetY|0,
+      "offsetX": offsetX|0,//float->int
+      "offsetY": offsetY|0,//float->int
       "wheel": 0,
       "scope": srf.scopeId,
       "region": hit.name,
       "button": ev.button === 2 ? 1 : 0
     };
-    if(hit.name.length > 0){
+    if(hit.name !== ""){//もし当たり判定
       if(/^touch/.test(ev.type)){
-        ev.stopPropagation(); // 当たり判定をゆびで撫でてる時はサーフェスのドラッグをできないようにする
+        ev.stopPropagation();
+        // 当たり判定をゆびで撫でてる時はサーフェスのドラッグをできないようにする
+        // ために親要素にイベント伝えない
       }
       $(ev.target).css({"cursor": "pointer"}); //当たり判定でマウスポインタを指に
     }
     srf.emit(type, $.Event('type', {detail, bubbles: true }));
-  }else{
-    // pointer-events shim
-    // canvasの透明領域のマウスイベントを真下の要素に投げる
-    var elm = SurfaceUtil.elementFromPointWithout(<HTMLElement>ev.target, ev.pageX, ev.pageY);
-    if(!elm) return;
-    if(/^mouse/.test(ev.type)){
-      isPointerEventsShimed = true;
-      lastEventType = ev.type;
-      ev.preventDefault();
-      ev.stopPropagation();
-      var _ev = document.createEvent("MouseEvent");
-      !!_ev.initMouseEvent && _ev.initMouseEvent(
-        ev.type,
-        ev.bubbles,
-        ev.cancelable,
-        ev.view,
-        ev.detail,
-        ev.screenX,
-        ev.screenY,
-        ev.clientX,
-        ev.clientY,
-        ev.ctrlKey,
-        ev.altKey,
-        ev.shiftKey,
-        ev.metaKey,
-        ev.button,
-        ev.relatedTarget);
-      elm.dispatchEvent(_ev);
-    }else if( /^touch/.test(ev.type) && !!document.createTouchList){
-      isPointerEventsShimed = true;
-      lastEventType = ev.type
-      ev.preventDefault();
-      ev.stopPropagation();
-      var touches = document.createTouchList();
-      touches[0] = document.createTouch(
-        document.body,
-        ev.target,
-        0, //identifier
-        ev.pageX,
-        ev.pageY,
-        ev.screenX,
-        ev.screenY,
-        ev.clientX,
-        ev.clientY,
-        1, //radiusX
-        1, //radiusY
-        0, //rotationAngle
-        1.0); //force
-      var _ev = document.createEvent("TouchEvent");
-      _ev.initTouchEvent(
-        touches, //TouchList* touches,
-        touches, //TouchList* targetTouches,
-        touches, //TouchList* changedTouches,
-        ev.type,
-        ev.view, //PassRefPtr<AbstractView> view,
-        ev.screenX,
-        ev.screenY,
-        ev.clientX,
-        ev.clientY,
-        ev.ctrlKey,
-        ev.altKey,
-        ev.shiftKey,
-        ev.metaKey);
-      elm.dispatchEvent(_ev);
+    return;
+  }
+
+  // 以後透明領域のマウスイベント透過処理
+  // pointer-events shim
+  // canvasの透明領域のマウスイベントを真下の要素に投げる
+  var cnv = <HTMLElement>ev.target; // Element、お前は今日からHTMLElementだ(ていうかcanvas)
+  var tmpDisp = cnv.style.display;
+  cnv.style.display = "none";　// 非表示にして直下の要素を調べるハック
+  var under = document.elementFromPoint(ev.pageX, ev.pageY);
+  if (! (under instanceof Element) ){ // under == null, 下には何もなかった（そんな馬鹿な
+    cnv.style.display = tmpDisp; // もとの設定に戻す
+    return;
+  }
+  // under は何らかの要素だった
+  if(/^mouse/.test(ev.type)){ // 直下要素へイベント作りなおして伝播
+    ev.preventDefault();
+    ev.stopPropagation();
+    // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/MouseEvent
+    var mev = new MouseEvent(ev.type, {
+      screenX: ev.screenX,
+      screenY: ev.screenY,
+      clientX: ev.clientX,
+      clientY: ev.clientY,
+      ctrlKey: ev.ctrlKey,
+      altKey: ev.altKey,
+      shiftKey: ev.shiftKey,
+      metaKey: ev.metaKey,
+      button: ev.button,
+      buttons: <number>ev["buttons"],
+      relatedTarget: ev.relatedTarget,
+      view: <Window>ev["view"],
+      detail: <number>ev["detail"]
+    });
+    under.dispatchEvent(mev);
+    return;
+  }
+  if( /^touch/.test(ev.type) && !!document.createTouchList){
+    ev.preventDefault();
+    ev.stopPropagation();
+    var tev = document.createEvent("TouchEvent");
+    // https://developer.mozilla.org/en/docs/Web/API/Document/createTouch
+    // http://stackoverflow.com/questions/31079014/how-to-create-a-touchevent-in-chrome
+    var touch = <Touch>document.createTouch(
+      <Window>ev["view"],
+      ev.target,
+      0, //identifier
+      ev.pageX,
+      ev.pageY,
+      ev.screenX,
+      ev.screenY); //force
+    var touches = document.createTouchList(touch);
+    // http://qiita.com/damele0n/items/dc312bbf66da1d46dd6f
+    var initTouchEvent = <Function>TouchEvent.prototype["initTouchEvent"];
+    var args: [any];
+    if(true){// Chrome, Opera
+      args = [
+        touches,             // {TouchList} touches
+        touches,             // {TouchList} targetTouches
+        touches,             // {TouchList} changedTouches
+        ev.type,             // {String}    type
+        <Window>ev["view"],  // {Window}    view
+        ev.screenX,          // {Number}    screenX
+        ev.screenY,          // {Number}    screenY
+        ev.clientX,          // {Number}    clientX
+        ev.clientY,          // {Number}    clientY
+        ev.ctrlKey,          // {Boolean}   ctrlKey
+        ev.altKey,           // {Boolean}   alrKey
+        ev.shiftKey,         // {Boolean}   shiftKey
+        ev.metaKey           // {Boolean}   metaKey
+      ];
+    }else if (false){// Safari
+      args = [
+        ev.type,              // {String}    type
+        ev.cancelBubble,      // {Boolean}   canBubble
+        ev.cancelable,        // {Boolean}   cancelable
+        <Window>ev["view"],   // {Window}    view
+        <number>ev["detail"], // {Number}    detail
+        ev.screenX,           // {Number}    screenX
+        ev.screenY,           // {Number}    screenY
+        ev.clientX,           // {Number}    clientX
+        ev.clientY,           // {Number}    clientY
+        ev.ctrlKey,           // {Boolean}   ctrlKey
+        ev.altKey,            // {Boolean}   alrKey
+        ev.shiftKey,          // {Boolean}   shiftKey
+        ev.metaKey,           // {Boolean}   metaKey
+        touches,              // {TouchList} touches
+        touches,              // {TouchList} targetTouches
+        touches,              // {TouchList} changedTouches
+        0,                    // {Number}    scale(0 - 1)
+        0                     // {Number}    rotation
+      ];
+    }else if (false){// Firefox
+      args = [
+        ev.type,              // {String} type
+        ev.cancelBubble,      // {Boolean} canBubble
+        ev.cancelable,        // {Boolean} cancelable
+        <Window>ev["view"],   // {Window} view
+        <number>ev["detail"], // {Number} detail
+        ev.ctrlKey,           // {Boolean} ctrlKey
+        ev.altKey,            // {Boolean} altKey
+        ev.shiftKey,          // {Boolean} shiftKey
+        ev.metaKey,           // {Boolean} metaKey
+        touches,              // {TouchList} touches
+        touches,              // {TouchList} targetTouches
+        touches               // {TouchList} changedTouches
+      ];
     }
+    initTouchEvent.apply(tev, args);
+    under.dispatchEvent(tev);
+    return;
   }
 }
