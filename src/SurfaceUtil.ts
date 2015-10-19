@@ -136,14 +136,15 @@ export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
   });
 }
 
-export function random(callback: (callback: () => void) => void, probability: number): void {
+export function random(callback: (nextTick: () => void) => void, probability: number): void {
   var ms = 1;
   while (Math.round(Math.random() * 1000) > 1000 / probability) {
     ms++;
   }
-  setTimeout((() =>
-    callback(() => random(callback, probability))
-  ), ms * 1000);
+  setTimeout((() =>{
+    var nextTick = () => random(callback, probability);
+    callback(nextTick);
+  }), ms * 1000);
 }
 
 export function periodic(callback: (callback: () => void) => void, sec: number): void {
