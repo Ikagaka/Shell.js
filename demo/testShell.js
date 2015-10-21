@@ -10,20 +10,20 @@ prmNar.then(function (nanikaDir) {
             assert.ok(true);
             console.log(shell);
             setInterval(function () {
-                shell.unbind(20);
-                shell.unbind(30);
-                shell.unbind(31);
-                shell.unbind(32);
-                shell.unbind(50);
-                shell.enableRegionVisible = true;
+                shell.unbind(0, 20);
+                shell.unbind(0, 30);
+                shell.unbind(0, 31);
+                shell.unbind(0, 32);
+                shell.unbind(0, 50);
+                shell.enableRegionDraw = true;
                 shell.render();
                 setTimeout(function () {
-                    shell.bind(20);
-                    shell.bind(30);
-                    shell.bind(31);
-                    shell.bind(32);
-                    shell.bind(50);
-                    shell.enableRegionVisible = false;
+                    shell.bind(0, 20);
+                    shell.bind(0, 30);
+                    shell.bind(0, 31);
+                    shell.bind(0, 32);
+                    shell.bind(0, 50);
+                    shell.enableRegionDraw = false;
                     shell.render();
                 }, 3000);
             }, 6000);
@@ -124,13 +124,13 @@ prmNar.then(function (nanikaDir) {
             filepath: 'demo/original/testShell.js',
             line: 83
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceTreeNode, 'arguments/0/left/object/object/object').collisions, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').name, 'arguments/0/left') === 'Head', 'arguments/0'), {
-            content: 'assert.ok(srf.surfaceTreeNode.collisions[0].name === "Head")',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceResources, 'arguments/0/left/object/object/object').collisions, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').name, 'arguments/0/left') === 'Head', 'arguments/0'), {
+            content: 'assert.ok(srf.surfaceResources.collisions[0].name === "Head")',
             filepath: 'demo/original/testShell.js',
             line: 84
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceTreeNode, 'arguments/0/left/object/object/object').animations, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').interval, 'arguments/0/left') === 'sometimes', 'arguments/0'), {
-            content: 'assert.ok(srf.surfaceTreeNode.animations[0].interval === "sometimes")',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceResources, 'arguments/0/left/object/object/object').animations, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').interval, 'arguments/0/left') === 'sometimes', 'arguments/0'), {
+            content: 'assert.ok(srf.surfaceResources.animations[0].interval === "sometimes")',
             filepath: 'demo/original/testShell.js',
             line: 85
         }));
@@ -162,8 +162,8 @@ prmNar.then(function (nanikaDir) {
             filepath: 'demo/original/testShell.js',
             line: 96
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceTreeNode, 'arguments/0/left/object/object/object').collisions, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').name, 'arguments/0/left') === 'Head', 'arguments/0'), {
-            content: 'assert.ok(srf.surfaceTreeNode.collisions[0].name === "Head")',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceResources, 'arguments/0/left/object/object/object').collisions, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').name, 'arguments/0/left') === 'Head', 'arguments/0'), {
+            content: 'assert.ok(srf.surfaceResources.collisions[0].name === "Head")',
             filepath: 'demo/original/testShell.js',
             line: 97
         }));
@@ -221,8 +221,8 @@ prmNar.then(function (nanikaDir) {
             filepath: 'demo/original/testShell.js',
             line: 119
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceTreeNode, 'arguments/0/left/object/object/object').collisions, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').name, 'arguments/0/left') === 'Screen', 'arguments/0'), {
-            content: 'assert.ok(srf.surfaceTreeNode.collisions[0].name === "Screen")',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceResources, 'arguments/0/left/object/object/object').collisions, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').name, 'arguments/0/left') === 'Screen', 'arguments/0'), {
+            content: 'assert.ok(srf.surfaceResources.collisions[0].name === "Screen")',
             filepath: 'demo/original/testShell.js',
             line: 120
         }));

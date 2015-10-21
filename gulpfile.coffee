@@ -24,7 +24,10 @@ gulp.task 'build:test', ->
 
 gulp.task 'watch:ts', ->
   gulp.watch 'src/**/*.ts', ['build:ts']
+  
+gulp.task 'watch:test', ->
+  gulp.watch 'demo/original/*.js', ['build:test']
 
 gulp.task('default', ['build']);
 gulp.task('build', ['build:ts', "build:test"]);
-gulp.task('watch', ["build", 'watch:ts']);
+gulp.task('watch', ["build", 'watch:ts', "watch:test"]);

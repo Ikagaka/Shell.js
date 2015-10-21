@@ -17,6 +17,7 @@ Ukagaka Shell Renderer for Web Browser
 
 ## Usage
 ```html
+
 <script src="../bower_components/jszip/dist/jszip.min.js"></script>
 <script src="../bower_components/narloader/NarLoader.js"></script>
 <script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
@@ -68,6 +69,7 @@ npm run build
   メモリを多く消費するため、将来的に変更される可能性があります。
 
 ```coffeescript
+
 shellDir =
   "descript.txt": new ArrayBuffer()
   "surface0.png": new ArrayBuffer()
@@ -94,6 +96,7 @@ shell.load().then (shell)->
     サーフェスエイリアスが考慮される点です。
 
 ```coffeescript
+
 cnv = document.createElement("canvas")
 srf = shell.attachSurface(cnv, 0, 0) # \0\s[0]
 document.body.appendChild(cnv)
@@ -155,6 +158,7 @@ srf = new Sufrace(cnv, 0, 0, shell) # \0\s[0]
   * 複数レイヤ間の重なりの上下順番を管理するNamedMgr.jsなどが使います。
 
 ```typescript
+
 interface SurfaceMouseEvent {
   button: number; // マウスのボタン
   offsetX: number; // canvas左上からのx座標

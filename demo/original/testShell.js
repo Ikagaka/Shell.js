@@ -12,26 +12,26 @@ prmNar.then(function(nanikaDir){
 
   QUnit.test("shell#load", function(assert) {
     var done = assert.async();
-    //shell.enablePNGdecoder = false;
+
     return shell.load().then(function(shell){
       assert.ok(true);
       console.log(shell);
 
       setInterval(function(){
-        shell.unbind(20);
-        shell.unbind(30);
-        shell.unbind(31);
-        shell.unbind(32);
-        shell.unbind(50);
-        shell.enableRegionVisible = true;
+        shell.unbind(0, 20);
+        shell.unbind(0, 30);
+        shell.unbind(0, 31);
+        shell.unbind(0, 32);
+        shell.unbind(0, 50);
+        shell.enableRegionDraw = true;
         shell.render();
         setTimeout(function(){
-          shell.bind(20);
-          shell.bind(30);
-          shell.bind(31);
-          shell.bind(32);
-          shell.bind(50);
-          shell.enableRegionVisible = false;
+          shell.bind(0, 20);
+          shell.bind(0, 30);
+          shell.bind(0, 31);
+          shell.bind(0, 32);
+          shell.bind(0, 50);
+          shell.enableRegionDraw = false;
           shell.render();
         }, 3000);
       }, 6000);
@@ -81,8 +81,8 @@ prmNar.then(function(nanikaDir){
     assert.ok(srf.element instanceof HTMLCanvasElement);
     assert.ok(srf.element.height === 445);
     assert.ok(srf.element.width === 182);
-    assert.ok(srf.surfaceTreeNode.collisions[0].name === "Head");
-    assert.ok(srf.surfaceTreeNode.animations[0].interval === "sometimes");
+    assert.ok(srf.surfaceResources.collisions[0].name === "Head");
+    assert.ok(srf.surfaceResources.animations[0].interval === "sometimes");
     setInterval(function(){srf.talk()}, 80);
     setPictureFrame(srf, "※胸を腕で覆っている。sometimes瞬き、random,6目そらし、talk,4口パク。");
   });
@@ -94,7 +94,7 @@ prmNar.then(function(nanikaDir){
     assert.ok(srf.element instanceof HTMLCanvasElement);
     assert.ok(srf.element.height === 445);
     assert.ok(srf.element.width === 182);
-    assert.ok(srf.surfaceTreeNode.collisions[0].name === "Head");
+    assert.ok(srf.surfaceResources.collisions[0].name === "Head");
     setInterval(function(){srf.talk()}, 80);
     setPictureFrame(srf, "※腕組み。瞬き、always怒り、口パク。");
   });
@@ -117,7 +117,7 @@ prmNar.then(function(nanikaDir){
     assert.ok(srf.element instanceof HTMLCanvasElement);
     assert.ok(srf.element.height === 210);
     assert.ok(srf.element.width === 230);
-    assert.ok(srf.surfaceTreeNode.collisions[0].name === "Screen");
+    assert.ok(srf.surfaceResources.collisions[0].name === "Screen");
     setInterval(function(){srf.talk()}, 80);
     setPictureFrame(srf, "CRTゅう");
   });
