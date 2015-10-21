@@ -1,5 +1,3 @@
-__developping now__
-
 # Shell.js
 Ukagaka Shell Renderer for Web Browser
 
@@ -18,22 +16,24 @@ Ukagaka Shell Renderer for Web Browser
 ## Usage
 ```html
 
+<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
+<script src="../bower_components/jquery/dist/jquery.min.js"></script>
+<script src="../bower_components/encoding-japanese/encoding.js"></script>
 <script src="../bower_components/jszip/dist/jszip.min.js"></script>
 <script src="../bower_components/narloader/NarLoader.js"></script>
 <script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
-<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
-<script src="../bower_components/jquery/dist/jquery.min.js"></script>
 <script src="../dist/Shell.js"></script>
 <script>
 NarLoader
 .loadFromURL("../nar/mobilemaster.nar")
-.then(function(dir){
+.then(function(nanikaDir){
   var shellDir = nanikaDir.getDirectory("shell/master").asArrayBuffer();
   var shell = new Shell.Shell(shellDir);
   return shell.load();
 }).then(function(shell){
   var cnv = document.createElement("canvas");
   var srf = shell.attachSurface(cnv, 0, 0);
+  console.dir(srf);
   srf.on("mouseclick", function(ev){ console.log(ev); });
   document.body.appendChild(cnv);
 }).catch(function(err){
@@ -45,7 +45,7 @@ NarLoader
 
 ## Development
 ```sh
-npm install -g bower dtsm
+npm install -g bower dtsm http-server
 npm run init
 npm run build
 ```

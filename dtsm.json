@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "text-encoding/text-encoding.d.ts": {
-      "ref": "43f4fc592a99e2f0f8f4ee3ae26a3a8e2f5ca3ae"
+      "ref": "68548c2daab053869f323d475419c693478bbb73"
     },
     "encoding-japanese/encoding.d.ts": {
       "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
@@ -31,13 +31,13 @@
       "path": "surfaces_yaml.d.ts"
     },
     "jszip/jszip.d.ts": {
-      "ref": "43f4fc592a99e2f0f8f4ee3ae26a3a8e2f5ca3ae"
+      "ref": "68548c2daab053869f323d475419c693478bbb73"
     },
     "eventemitter2/eventemitter2.d.ts": {
-      "ref": "43f4fc592a99e2f0f8f4ee3ae26a3a8e2f5ca3ae"
+      "ref": "68548c2daab053869f323d475419c693478bbb73"
     },
     "jquery/jquery.d.ts": {
-      "ref": "43f4fc592a99e2f0f8f4ee3ae26a3a8e2f5ca3ae"
+      "ref": "68548c2daab053869f323d475419c693478bbb73"
     },
     "NarLoader/NarLoader.d.ts": {
       "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
@@ -45,7 +45,7 @@
       "path": "NarLoader.d.ts"
     },
     "qunit/qunit.d.ts": {
-      "ref": "43f4fc592a99e2f0f8f4ee3ae26a3a8e2f5ca3ae"
+      "ref": "68548c2daab053869f323d475419c693478bbb73"
     }
   }
 }
