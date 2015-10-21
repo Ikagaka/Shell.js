@@ -5,13 +5,17 @@ Ukagaka Shell Renderer for Web Browser
 
 ![screenshot](https://raw.githubusercontent.com/Ikagaka/cuttlebone/master/screenshot2.gif )
 
+## About
+Shell.js is a `Ukagaka`  compatible Shell renderer for HTML canvas.
+
 
 ## Dependence
-* surfaces_txt2yaml
-* EventEmitter2
-* jszip
-* NarLoader
-
+* [Narazaka/surfaces_txt2yaml](https://github.com/Narazaka/surfaces_txt2yaml)
+* [asyncly/EventEmitter2](https://github.com/asyncly/EventEmitter2)
+* [Stuk/jszip](https://github.com/Stuk/jszip)
+* [Ikagaka/NarLoader](https://github.com/Ikagaka/NarLoader/)
+* [polygonplanet/encoding.js](https://github.com/polygonplanet/encoding.js)
+* [jquery/jquery](https://github.com/jquery/jquery)
 
 ## Usage
 ```html
