@@ -19,7 +19,7 @@ export class Shell {
   surfacesTxt: SurfacesTxt;
   surfaceTree: SurfaceTreeNode[];
   cacheCanvas: { [key: string]: HTMLCanvasElement; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
-  bindgroup: {[key: number]: boolean}; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
+  bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
   enableRegionDraw: boolean;
 
 
@@ -70,12 +70,18 @@ export class Shell {
       Object.keys(dic).filter((key)=> reg.test(key))
     var reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)\.default/;
     grep(descript, reg).forEach((key)=>{
-      var [_, charId, bindgroupId, type] = reg.exec(key);
-      var maybeNum = Number(bindgroupId)
-      if(isFinite(maybeNum)){
-        this.bindgroup[maybeNum] = this.descript[key] === "1" ? true : false;
+      var [_, charId, bindgroupId] = reg.exec(key);
+      var _charId = charId === "sakura" ? "0" :
+                               "kero"   ? "1" :
+                               (/char(\d+)/.exec(charId)||["", Number.NaN])[1];
+      var maybeNumCharId = Number(_charId);
+      var maybeNumBindgroupId = Number(bindgroupId);
+      var maybeNumBool = Number(descript[key]);
+      if(isFinite(maybeNumCharId) && isFinite(maybeNumBindgroupId)){
+        this.bindgroup[maybeNumCharId] = this.bindgroup[maybeNumCharId] || [];
+        this.bindgroup[maybeNumCharId][maybeNumBindgroupId] = maybeNumBool === 1 ? true : false;
       }else{
-        console.warn(bindgroupId + " is not numer");
+        console.warn("CharId: "+ _charId + " or bindgroupId: " + bindgroupId + " is not number");
       }
     });
     return Promise.resolve(this);
@@ -301,15 +307,23 @@ export class Shell {
     return this.surfaceTree[_surfaceId] != null;
   }
 
-  bind(animationId: number): void {
-    this.bindgroup[animationId] = true;
+  bind(scopeId: number, bindgroupId: number): void {
+    if(this.bindgroup[scopeId] == null){
+      console.warn("Shell#bind > bindgroup", "scopeId:",scopeId, "bindgroupId:",bindgroupId, "is not defined")
+      return;
+    }
+    this.bindgroup[scopeId][bindgroupId] = true;
     this.attachedSurface.forEach(({surface:srf, canvas})=>{
       srf.updateBind();
     });
   }
 
-  unbind(animationId: number): void {
-    this.bindgroup[animationId] = false;
+  unbind(scopeId: number, bindgroupId: number): void {
+    if(this.bindgroup[scopeId] == null){
+      console.warn("Shell#unbind > bindgroup", "scopeId:",scopeId, "bindgroupId:",bindgroupId, "is not defined")
+      return;
+    }
+    this.bindgroup[scopeId][bindgroupId] = false;
     this.attachedSurface.forEach(({surface:srf, canvas})=>{
       srf.updateBind();
     });

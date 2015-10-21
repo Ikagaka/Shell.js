@@ -249,6 +249,7 @@ export class Surface extends EventEmitter2{
   public updateBind(): void {
     // Shell.tsから呼ばれるためpublic
     // Shell#bind,Shell#unbindで発動
+    // shell.bindgroup[scopeId][bindgroupId] が変更された時に呼ばれるようだ
     this.surfaceResources.animations.forEach((anim)=>{
       var {is, interval, patterns} = anim;
       if(/^bind/.test(interval)){
@@ -258,17 +259,20 @@ export class Surface extends EventEmitter2{
   }
 
   private initBind(anim: SurfaceAnimation): void {
+    // kyuu ni nihongo utenaku natta.
+    // initAnimation calls this method for animation interval type "bind".
+    // updateBind calls this method.
     var {is, interval, patterns, option} = anim;
-    if(!this.shell.bindgroup[is]){
+    if(!this.shell.bindgroup[this.scopeId][is]){
       delete this.layers[is];
       this.stop(is);
       return;
     }
     var [_bind, ...intervals] = interval.split("+");
+    if(intervals.length > 0) return;
     intervals.forEach((itvl)=>{
       this.initAnimation({interval: itvl, is, patterns, option});
     });
-    if(intervals.length > 0) return;
     this.layers[is] = patterns[patterns.length-1];
     this.render();
   }
@@ -360,123 +364,3 @@ export class Surface extends EventEmitter2{
     this.emit(type, custom, ev); // 第三引数のjQueryEventは非公式です。
   }
 }
-
-
-
-
-/*
-以後のコードは複数surface canvas layer間の重なりの判定になるのでNamedMgrが持つべきコードである。
-解決策としてsrf.on(type, {transparent})
-// 以後透明領域のマウスイベント透過処理
-// pointer-events shim
-// canvasの透明領域のマウスイベントを真下の要素に投げる
-var cnv = <HTMLElement>ev.target; // Element、お前は今日からHTMLElementだ(ていうかcanvas)
-var tmpDisp = cnv.style.display;
-cnv.style.display = "none";　// 非表示にして直下の要素を調べるハック
-var under = document.elementFromPoint(ev.pageX, ev.pageY);
-console.log(under, ev.type, ev.target, ev, ev["count"]);
-cnv.style.display = tmpDisp; // もとの設定に戻す
-if (! (under instanceof Element) ){ // under == null, 下には何もなかった（そんな馬鹿な
-  return;
-}
-// under は何らかの要素だった
-// 直下要素へイベント作りなおして伝播
-if(/^mouse/.test(ev.type)){//マウスイベントの場合
-  ev.preventDefault();
-  ev.stopPropagation();
-  // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/MouseEvent
-  var mev = new MouseEvent(ev.type, {
-    screenX: ev.screenX,
-    screenY: ev.screenY,
-    clientX: ev.clientX,
-    clientY: ev.clientY,
-    ctrlKey: ev.ctrlKey,
-    altKey: ev.altKey,
-    shiftKey: ev.shiftKey,
-    metaKey: ev.metaKey,
-    button: ev.button,
-    buttons: <number>ev["buttons"],
-    relatedTarget: ev.relatedTarget,
-    view: <Window>ev["view"],
-    detail: <number>ev["detail"],
-    bubbles: false
-  });
-  under.dispatchEvent(mev);
-  return;
-}
-//タッチイベントの場合 without IE
-if( /^touch/.test(ev.type) && !!document.createTouchList){
-  ev.preventDefault();
-  ev.stopPropagation();
-  var tev = document.createEvent("TouchEvent");
-  // https://developer.mozilla.org/en/docs/Web/API/Document/createTouch
-  // http://stackoverflow.com/questions/31079014/how-to-create-a-touchevent-in-chrome
-  var touch = <Touch>document.createTouch(
-    <Window>ev["view"],
-    ev.target,
-    0, //identifier
-    ev.pageX,
-    ev.pageY,
-    ev.screenX,
-    ev.screenY); //force
-  var touches = document.createTouchList(touch);
-  // http://qiita.com/damele0n/items/dc312bbf66da1d46dd6f
-  var initTouchEvent = <Function>TouchEvent.prototype["initTouchEvent"];
-  var args: [any];
-  if(true){// Chrome, Opera
-    args = [
-      touches,             // {TouchList} touches
-      touches,             // {TouchList} targetTouches
-      touches,             // {TouchList} changedTouches
-      ev.type,             // {String}    type
-      <Window>ev["view"],  // {Window}    view
-      ev.screenX,          // {Number}    screenX
-      ev.screenY,          // {Number}    screenY
-      ev.clientX,          // {Number}    clientX
-      ev.clientY,          // {Number}    clientY
-      ev.ctrlKey,          // {Boolean}   ctrlKey
-      ev.altKey,           // {Boolean}   alrKey
-      ev.shiftKey,         // {Boolean}   shiftKey
-      ev.metaKey           // {Boolean}   metaKey
-    ];
-  }else if (false){// Safari
-    args = [
-      ev.type,              // {String}    type
-      ev.cancelBubble,      // {Boolean}   canBubble
-      ev.cancelable,        // {Boolean}   cancelable
-      <Window>ev["view"],   // {Window}    view
-      <number>ev["detail"], // {Number}    detail
-      ev.screenX,           // {Number}    screenX
-      ev.screenY,           // {Number}    screenY
-      ev.clientX,           // {Number}    clientX
-      ev.clientY,           // {Number}    clientY
-      ev.ctrlKey,           // {Boolean}   ctrlKey
-      ev.altKey,            // {Boolean}   alrKey
-      ev.shiftKey,          // {Boolean}   shiftKey
-      ev.metaKey,           // {Boolean}   metaKey
-      touches,              // {TouchList} touches
-      touches,              // {TouchList} targetTouches
-      touches,              // {TouchList} changedTouches
-      0,                    // {Number}    scale(0 - 1)
-      0                     // {Number}    rotation
-    ];
-  }else if (false){// Firefox
-    args = [
-      ev.type,              // {String} type
-      ev.cancelBubble,      // {Boolean} canBubble
-      ev.cancelable,        // {Boolean} cancelable
-      <Window>ev["view"],   // {Window} view
-      <number>ev["detail"], // {Number} detail
-      ev.ctrlKey,           // {Boolean} ctrlKey
-      ev.altKey,            // {Boolean} altKey
-      ev.shiftKey,          // {Boolean} shiftKey
-      ev.metaKey,           // {Boolean} metaKey
-      touches,              // {TouchList} touches
-      touches,              // {TouchList} targetTouches
-      touches               // {TouchList} changedTouches
-    ];
-  }
-  initTouchEvent.apply(tev, args);
-  under.dispatchEvent(tev);
-  return;
-*/

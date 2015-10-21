@@ -102,11 +102,12 @@ srf2 = shell.attachSurface(cnv, 0, "びっくり") # \0\s[びっくり]
 document.body.appendChild(cnv2)
 ```
 
-### bind(animationId: number): void
-* animationIdの着せ替えを着せます。
+### bind(charaId: number, bindgroupId: number): void
+* `charaId` 番目のキャラクターの`bindgroupId`の着せ替えを着せます。
 
-### unbind(animationId: number): void
-* animationIdの着せ替えを脱がせます。
+
+### unbind(charaId: number, bindgroupId: number): void
+* `charaId` 番目のキャラクターの`bindgroupId`の着せ替えを脱がせます。
 
 ## Surface Class
 * canvas要素にサーフェスを描画します。

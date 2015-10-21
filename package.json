@@ -12,7 +12,7 @@
     "init": "npm run update; npm run build",
     "update": "npm update; bower update; dtsm update --save",
     "clean": "rm lib/*.js dist/*.js demo/*.js",
-    "start": "http-server -p 8000 & watchify lib/Shell.js  --standalone Shell -o dist/Shell.js -v & gulp watch;",
+    "start": "http-server -o --silent -p 8000 & watchify lib/Shell.js  --standalone Shell -o dist/Shell.js -v & gulp watch;",
     "stop": "killall -- node */http-server -p 8000",
     "build": "npm run clean; gulp build; browserify lib/Shell.js --outfile dist/Shell.js --standalone Shell",
     "dtsm-fetch": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git fetch",
