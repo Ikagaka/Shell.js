@@ -3,8 +3,6 @@ Ukagaka Shell Renderer for Web Browser
 
 ![screenshot](https://raw.githubusercontent.com/Ikagaka/Shell.js/master/screenshot1.png )
 
-![screenshot](https://raw.githubusercontent.com/Ikagaka/Shell.js/master/screenshot2.gif )
-
 ## About
 Shell.js is a `Ukagaka`  compatible Shell renderer for HTML canvas.
 
