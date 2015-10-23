@@ -32,6 +32,7 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
+        "index.ts",
         "Shell.ts",
         "Surface.ts",
         "SurfaceRender.ts",
