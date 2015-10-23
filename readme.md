@@ -1,6 +1,8 @@
 # Shell.js
 Ukagaka Shell Renderer for Web Browser
 
+[![npm](https://img.shields.io/npm/v/ikagaka.shell.js.svg?style=flat)](https://npmjs.com/package/ikagaka.shell.js)
+
 ![screenshot](https://raw.githubusercontent.com/Ikagaka/Shell.js/master/screenshot1.png )
 
 ## About
