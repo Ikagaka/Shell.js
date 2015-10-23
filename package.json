@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "init": "npm run update; npm run build",
-    "update": "npm update; bower update; dtsm fetch; dtsm update --save",
+    "update": "rm -rf bower_components node_modules typeings; npm update; bower update; dtsm fetch; dtsm update --save",
     "clean": "rm lib/*.js dist/*.js demo/*.js",
     "start": "http-server -o --silent -p 8000 & watchify lib/index.js  --standalone Shell -o dist/Shell.js -v & gulp watch;",
     "stop": "killall -- node */http-server -p 8000",

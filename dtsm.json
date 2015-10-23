@@ -46,6 +46,9 @@
     },
     "qunit/qunit.d.ts": {
       "ref": "3191f6e0088eee07c4d8fd24e4d27a40a60d9eb9"
+    },
+    "touch-events/touch-events.d.ts": {
+      "ref": "3191f6e0088eee07c4d8fd24e4d27a40a60d9eb9"
     }
   }
 }
