@@ -8,71 +8,80 @@
 <script src="../dist/Shell.js"></script>
 <fieldset>
 <legend>サーフィステスト</legend>
+<p><label>nar: <input type="file" id="nar" /></label></p>
 <p><label>scope id: <input type="number" name="scopeId" id="scopeId" value="0" /></label></p>
 <p><label>surface id: <select name="surfaceId" id="surfaceId"></select></label></p>
 <p>bindgroup id: <ol id="bindgroupId" start="0"/></ol></p>
-
+<p>collision: <input type="checkbox" id="collisionDraw" /></p>
 </fieldset>
 <canvas id="surfaceCanvas"></canvas>
 <script>
-NarLoader
-.loadFromURL("../nar/mobilemaster.nar")
-.then(function(nanikaDir){
+NarLoader.loadFromURL("../nar/mobilemaster.nar").then(changeNar)
+$("#nar").change(function(ev){
+  NarLoader.loadFromBlob($(this).prop("files")[0]).then(changeNar);
+})
+var shell = null;
+function changeNar(nanikaDir){
   console.log(nanikaDir.files);
   var shellDir = nanikaDir.getDirectory("shell/master").asArrayBuffer();
-  var shell = new Shell.Shell(shellDir);
-  return shell.load();
-}).then(function(shell){
-  console.log(shell);
-  shell.on("mouse", function(ev){ console.log(ev); });
+  !!shell && shell.unload();
+  shell = new Shell.Shell(shellDir);
+  shell.load().then(function(shell){
+    console.log(shell);
+    shell.on("mouse", function(ev){ console.log(ev); });
 
-  var srf = null;
-  var cnv = $("#surfaceCanvas")[0];
+    var srf = null;
+    var cnv = $("#surfaceCanvas")[0];
 
-  var $frag = $(document.createDocumentFragment());
-  Object.keys(shell.surfaceTree).forEach(function(surfaceId){
-    $frag.append($("<option />").val(surfaceId).text(surfaceId));
-  });
-  $("#surfaceId").append($frag);
-
-
-  var $frag = $(document.createDocumentFragment());
-  Object.keys(shell.bindgroup).forEach(function(scopeId){
-    $li = $("<li />").appendTo($frag)
-    Object.keys(shell.bindgroup[scopeId]).forEach(function(bindgroupId){
-      $checkbox = $("<input type='checkbox' name='bindgroupId'/>")
-      .val(bindgroupId).prop("checked", shell.bindgroup[scopeId][bindgroupId]);
-      $label = $("<label />").text(bindgroupId+":").append($checkbox).appendTo($li);
+    $("#surfaceId").children().remove();
+    var $frag = $(document.createDocumentFragment());
+    Object.keys(shell.surfaceTree).forEach(function(surfaceId){
+      $frag.append($("<option />").val(surfaceId).text(surfaceId));
     });
-  });
-  $("#bindgroupId").append($frag);
+    $("#surfaceId").append($frag);
 
-
-  $("#scopeId").change(changeSurface);
-  $("#surfaceId").change(changeSurface).val(0).change();
-  $("#bindgroupId input[name='bindgroupId']").change(changeSurface);
-
-  function changeSurface(){
-    var scopeId = $("#scopeId").val();
-    var surfaceId = $("#surfaceId").val();
-    var bindgroupIds = {};
-    $('#bindgroupId input[name="bindgroupId"]').each(function(){
-      bindgroupIds[$(this).val()] = $(this).prop("checked");
+    $("#bindgroupId").children().remove();
+    var $frag = $(document.createDocumentFragment());
+    Object.keys(shell.bindgroup).forEach(function(scopeId){
+      $li = $("<li />").appendTo($frag)
+      Object.keys(shell.bindgroup[scopeId]).forEach(function(bindgroupId){
+        $checkbox = $("<input type='checkbox' name='bindgroupId'/>")
+        .val(bindgroupId).prop("checked", shell.bindgroup[scopeId][bindgroupId]);
+        $label = $("<label />").text(bindgroupId+":").append($checkbox).appendTo($li);
+      });
     });
-    console.log("scopeId:", scopeId, "surfaceId:", surfaceId, "bindgroupIds:", bindgroupIds);
-    shell.detachSurface(cnv);
-    Object.keys(bindgroupIds).forEach(function(bindgroupId){
-      if(bindgroupIds[bindgroupId]){
-        shell.bind(scopeId, bindgroupId);
-      }else{
-        shell.unbind(scopeId, bindgroupId);
-      }
-    })
-    bindgroupIds.
-    srf = shell.attachSurface(cnv, Number(scopeId), Number(surfaceId));
-    console.log(srf);
-  }
-}).catch(function(err){
-  console.error(err, err.stack);
-});
+    $("#bindgroupId").append($frag);
+
+    $("#scopeId").unbind().change(changeSurface);
+    $("#surfaceId").unbind().change(changeSurface).val(0).change();
+    $("#bindgroupId input[name='bindgroupId']").unbind().change(changeSurface);
+    $("#collisionDraw").unbind().change(function(){
+      shell.enableRegionDraw = $(this).prop("checked");
+      shell.render();
+    });
+
+    function changeSurface(){
+      var scopeId = $("#scopeId").val();
+      var surfaceId = $("#surfaceId").val();
+      var bindgroupIds = {};
+      $('#bindgroupId input[name="bindgroupId"]').each(function(){
+        bindgroupIds[$(this).val()] = $(this).prop("checked");
+      });
+      console.log("scopeId:", scopeId, "surfaceId:", surfaceId, "bindgroupIds:", bindgroupIds);
+      shell.detachSurface(cnv);
+      Object.keys(bindgroupIds).forEach(function(bindgroupId){
+        if(bindgroupIds[bindgroupId]){
+          shell.bind(scopeId, bindgroupId);
+        }else{
+          shell.unbind(scopeId, bindgroupId);
+        }
+      })
+      srf = shell.attachSurface(cnv, Number(scopeId), Number(surfaceId));
+      console.log(srf);
+    }
+  }).catch(function(err){
+    console.error(err.stack);
+  });
+
+}
 </script>
