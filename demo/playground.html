@@ -9,9 +9,10 @@
 <fieldset>
 <legend>サーフィステスト</legend>
 <p><label>nar: <input type="file" id="nar" /></label></p>
-<p><label>scope id: <input type="number" name="scopeId" id="scopeId" value="0" /></label></p>
-<p><label>surface id: <select name="surfaceId" id="surfaceId"></select></label></p>
-<p>bindgroup id: <ol id="bindgroupId" start="0"/></ol></p>
+<p><label>scope: <input type="number" name="scopeId" id="scopeId" value="0" /></label></p>
+<p><label>surface: <select name="surfaceId" id="surfaceId"></select></label></p>
+<p><label>animation: <select name="animationId" id="animationId"></select></label></p>
+<p>bindgroup: <ol id="bindgroupId" start="0"/></ol></p>
 <p>collision: <input type="checkbox" id="collisionDraw" /></p>
 </fieldset>
 <canvas id="surfaceCanvas"></canvas>
@@ -53,8 +54,34 @@ function changeNar(nanikaDir){
     $("#bindgroupId").append($frag);
 
     $("#scopeId").unbind().change(changeSurface);
-    $("#surfaceId").unbind().change(changeSurface).val(0).change();
-    $("#bindgroupId input[name='bindgroupId']").unbind().change(changeSurface);
+    $("#surfaceId").unbind().change(function(){
+      $("#animationId").children().remove();
+      var $frag = $(document.createDocumentFragment());
+      var surfaceId = $("#surfaceId").val();
+      $("<option />").val("").text("---").appendTo($frag);
+      !!shell.surfaceTree[surfaceId] && shell.surfaceTree[surfaceId].animations.forEach(function(animation, i){
+        $("<option />").val(i).text(i+":"+animation.interval).appendTo($frag);
+      });
+      $("#animationId").append($frag);
+      changeSurface();
+    }).val(0).change();
+    $("#animationId").unbind().change(function(){
+      var animationId = $(this).val();
+      if(!!srf && isFinite(Number(animationId))){
+        srf.stop(Number(animationId));
+        srf.play(Number(animationId));
+      }
+    });
+    $("#bindgroupId input[name='bindgroupId']").unbind().change(function(){
+      var scopeId = $("#scopeId").val();
+      var bindgroupIds = {};
+      $(this).each(function(){
+        var bindgroupId = $(this).val();
+        if($(this).prop("checked")) shell.bind(scopeId, bindgroupId);
+        else                        shell.unbind(scopeId, bindgroupId);
+      });
+      shell.render();
+    });
     $("#collisionDraw").unbind().change(function(){
       shell.enableRegionDraw = $(this).prop("checked");
       shell.render();
@@ -63,19 +90,10 @@ function changeNar(nanikaDir){
     function changeSurface(){
       var scopeId = $("#scopeId").val();
       var surfaceId = $("#surfaceId").val();
-      var bindgroupIds = {};
-      $('#bindgroupId input[name="bindgroupId"]').each(function(){
-        bindgroupIds[$(this).val()] = $(this).prop("checked");
-      });
-      console.log("scopeId:", scopeId, "surfaceId:", surfaceId, "bindgroupIds:", bindgroupIds);
+
+      console.log("scopeId:", scopeId, "surfaceId:", surfaceId);
+
       shell.detachSurface(cnv);
-      Object.keys(bindgroupIds).forEach(function(bindgroupId){
-        if(bindgroupIds[bindgroupId]){
-          shell.bind(scopeId, bindgroupId);
-        }else{
-          shell.unbind(scopeId, bindgroupId);
-        }
-      })
       srf = shell.attachSurface(cnv, Number(scopeId), Number(surfaceId));
       console.log(srf);
     }
