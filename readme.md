@@ -108,6 +108,10 @@ cnv2 = document.createElement("canvas")
 srf2 = shell.attachSurface(cnv, 0, "びっくり") # \0\s[びっくり]
 document.body.appendChild(cnv2)
 ```
+### dettatchSurface(canvas: HTMLCanvasElement): void
+* attachSurfaceしたcanvasを描画対象から外します。
+* ___サーフェスを変更する前に必ず呼び出してください___
+
 
 ### bind(charaId: number, bindgroupId: number): void
 * `charaId` 番目のキャラクターの`bindgroupId`の着せ替えを着せます。
@@ -125,14 +129,14 @@ document.body.appendChild(cnv2)
 * canvas要素にサーフェスを描画します。
 * このコンストラクタが呼ばれた時からアニメーションが開始されます。
 * surfaceIdはサーフェスエイリアスが考慮されません。
-  * `attatchSurface`を使って下さい。
+  * `Shell#attatchSurface`から内部的に呼び出されます。そちらをを使って下さい。
 ```coffeescript
 srf = new Sufrace(cnv, 0, 0, shell) # \0\s[0]
 ```
 ### destructor(): void
 * canvasへのサーフェスの描画を終了します。
 * canvasへのあらゆるイベントハンドラを解除します。
-* ___サーフェスを変更する前に必ず呼び出してください___
+* `Shell#dettatchSurface`から内部的に呼び出されます。そちらを使ってください。
 
 ### render(): void
 * サーフェスを再描画します。

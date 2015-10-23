@@ -279,18 +279,18 @@ export class Shell {
     }else if(typeof surfaceId === "number"){
       var _surfaceId = surfaceId;
     }else throw new Error("TypeError: surfaceId: number|string is not match " + typeof surfaceId);
-    var tuple = this.attachedSurface.filter((tuple)=> tuple[0] === canvas)[0];
-    if(!!tuple) throw new Error("ReferenceError: this HTMLCanvasElement is already attached");
+    var hits = this.attachedSurface.filter(({canvas: _canvas})=> _canvas === canvas);
+    if(hits.length !== 0) throw new Error("ReferenceError: this HTMLCanvasElement is already attached");
     var srf = new Surface(canvas, scopeId, _surfaceId, this);
     this.attachedSurface.push({canvas, surface:srf});
     return srf;
   }
 
   detachSurface(canvas: HTMLCanvasElement): void {
-    var tuple = this.attachedSurface.filter((tuple)=> tuple[0] === canvas)[0];
-    if(!tuple) return;
-    tuple[1].destructor();
-    this.attachedSurface.splice(this.attachedSurface.indexOf(tuple), 1);
+    var hits = this.attachedSurface.filter(({canvas: _canvas})=> _canvas === canvas);
+    if(hits.length === 0) return;
+    hits[0].surface.destructor();
+    this.attachedSurface.splice(this.attachedSurface.indexOf(hits[0]), 1);
   }
 
   hasSurface(scopeId: number, surfaceId: number|string): boolean {

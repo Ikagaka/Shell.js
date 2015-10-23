@@ -65,6 +65,7 @@ export class Surface extends EventEmitter2{
 
   // public methods
   public destructor(): void {
+    this.destructor = ()=> console.warn("this surface already destructed", this);
     this.destructors.forEach((fn)=> fn());
     this.elmRender.clear();
     this.destructed = true;
