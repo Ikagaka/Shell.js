@@ -8,13 +8,14 @@
 <script src="../dist/Shell.js"></script>
 <fieldset>
 <legend>サーフィステスト</legend>
-<p><label>scope id: <input type="number" name="scopeId" id="scopeId" value="0" /></p>
-<p><label>surface id: <select name="surfaceId" id="surfaceId"></select></p>
+<p><label>scope id: <input type="number" name="scopeId" id="scopeId" value="0" /></label></p>
+<p><label>surface id: <select name="surfaceId" id="surfaceId"></select></label></p>
+<p>bindgroup id: <ol id="bindgroupId" start="0"/></ol></p>
+
 </fieldset>
 <canvas id="surfaceCanvas"></canvas>
 <script>
 NarLoader
-//.loadFromURL("../nar/333-4.05.zip")
 .loadFromURL("../nar/mobilemaster.nar")
 .then(function(nanikaDir){
   console.log(nanikaDir.files);
@@ -23,6 +24,7 @@ NarLoader
   return shell.load();
 }).then(function(shell){
   console.log(shell);
+  shell.on("mouse", function(ev){ console.log(ev); });
 
   var srf = null;
   var cnv = $("#surfaceCanvas")[0];
@@ -33,20 +35,40 @@ NarLoader
   });
   $("#surfaceId").append($frag);
 
-  $("#surfaceId").change(function(ev){
-    changeSurface();
-  }).val(0).change();
 
-  $("#scopeId").change(function(ev){
-    changeSurface();
+  var $frag = $(document.createDocumentFragment());
+  Object.keys(shell.bindgroup).forEach(function(scopeId){
+    $li = $("<li />").appendTo($frag)
+    Object.keys(shell.bindgroup[scopeId]).forEach(function(bindgroupId){
+      $checkbox = $("<input type='checkbox' name='bindgroupId'/>")
+      .val(bindgroupId).prop("checked", shell.bindgroup[scopeId][bindgroupId]);
+      $label = $("<label />").text(bindgroupId+":").append($checkbox).appendTo($li);
+    });
   });
+  $("#bindgroupId").append($frag);
+
+
+  $("#scopeId").change(changeSurface);
+  $("#surfaceId").change(changeSurface).val(0).change();
+  $("#bindgroupId input[name='bindgroupId']").change(changeSurface);
 
   function changeSurface(){
     var scopeId = $("#scopeId").val();
     var surfaceId = $("#surfaceId").val();
-    console.log("scopeId:", scopeId, "surfaceId:", surfaceId);
-    console.log(cnv)
+    var bindgroupIds = {};
+    $('#bindgroupId input[name="bindgroupId"]').each(function(){
+      bindgroupIds[$(this).val()] = $(this).prop("checked");
+    });
+    console.log("scopeId:", scopeId, "surfaceId:", surfaceId, "bindgroupIds:", bindgroupIds);
     shell.detachSurface(cnv);
+    Object.keys(bindgroupIds).forEach(function(bindgroupId){
+      if(bindgroupIds[bindgroupId]){
+        shell.bind(scopeId, bindgroupId);
+      }else{
+        shell.unbind(scopeId, bindgroupId);
+      }
+    })
+    bindgroupIds.
     srf = shell.attachSurface(cnv, Number(scopeId), Number(surfaceId));
     console.log(srf);
   }
