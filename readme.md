@@ -83,6 +83,12 @@ shellDir =
 shell = new Shell(shellDir)
 ```
 
+### unload(): void
+* Shellクラスが管理しているすべてのリソースを開放します。
+* すべてのサーフェスがdettatchSurfaceされます。
+* すべてのイベントハンドラも解除されます。
+* すべてのプロパティにnullが代入され、GCを促します
+
 ### descript: { [key: string]: string; }
 * descript.txtの中身をkey-value形式で持っています。
 

@@ -13,14 +13,14 @@ export interface SurfaceTreeNode {
 
 export class Shell extends EventEmitter2 {
   //public
-  directory: { [filepath: string]: ArrayBuffer; }
-  descript: { [key: string]: string; };
-  attachedSurface: { canvas: HTMLCanvasElement, surface: Surface }[];
-  surfacesTxt: SurfacesTxt;
-  surfaceTree: SurfaceTreeNode[];
-  cacheCanvas: { [key: string]: HTMLCanvasElement; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
-  bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
-  enableRegionDraw: boolean;
+  public directory: { [filepath: string]: ArrayBuffer; }
+  public descript: { [key: string]: string; };
+  public attachedSurface: { canvas: HTMLCanvasElement, surface: Surface }[];
+  public surfacesTxt: SurfacesTxt;
+  public surfaceTree: SurfaceTreeNode[];
+  private cacheCanvas: { [key: string]: HTMLCanvasElement; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
+  public bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
+  public enableRegionDraw: boolean;
 
 
   constructor(directory: { [filepath: string]: ArrayBuffer; }) {
@@ -36,7 +36,7 @@ export class Shell extends EventEmitter2 {
     this.enableRegionDraw = false;
   }
 
-  load(): Promise<Shell> {
+  public load(): Promise<Shell> {
     return Promise.resolve(this)
     .then(()=> this.loadDescript()) // 1st // ←なにこれ（自問自答
     .then(()=> this.loadBindGroup()) // 2nd
@@ -53,7 +53,7 @@ export class Shell extends EventEmitter2 {
   }
 
   // load descript and assign to this.descript
-  loadDescript(): Promise<Shell> {
+  private loadDescript(): Promise<Shell> {
     var dir = this.directory;
     var getName = (dic: {[key: string]: any}, reg: RegExp)=>
       Object.keys(dic).filter((name)=> reg.test(name))[0] || "";
@@ -67,7 +67,7 @@ export class Shell extends EventEmitter2 {
   }
 
   // load bindgroup and assign to this.bindgroup
-  loadBindGroup(): Promise<Shell> {
+  private loadBindGroup(): Promise<Shell> {
     var descript = this.descript;
     var grep = (dic:{[key:string]:any}, reg: RegExp)=>
       Object.keys(dic).filter((key)=> reg.test(key))
@@ -91,7 +91,7 @@ export class Shell extends EventEmitter2 {
   }
 
   // load surfaces.txt
-  loadSurfacesTxt(): Promise<Shell> {
+  private loadSurfacesTxt(): Promise<Shell> {
     var surfaces_text_names = Object.keys(this.directory).filter((name)=> /^surfaces.*\.txt$|^alias\.txt$/i.test(name));
     if(surfaces_text_names.length === 0) {
       console.info("surfaces.txt is not found");
@@ -122,7 +122,7 @@ export class Shell extends EventEmitter2 {
   }
 
   // load surfacetable.txt
-  loadSurfaceTable(): Promise<Shell> {
+  private loadSurfaceTable(): Promise<Shell> {
     var surfacetable_name = Object.keys(this.directory).filter((name)=> /^surfacetable.*\.txt$/i.test(name))[0] || "";
     if(surfacetable_name === ""){
       console.info("surfacetable.txt is not found.")
@@ -134,7 +134,7 @@ export class Shell extends EventEmitter2 {
   }
 
   // load surface*.png and surface*.pna
-  loadSurfacePNG(): Promise<Shell> {
+  private loadSurfacePNG(): Promise<Shell> {
     var surface_names = Object.keys(this.directory).filter((filename)=> /^surface(\d+)\.png$/i.test(filename));
     var prms = surface_names.map((filename)=>{
       var n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
@@ -158,7 +158,7 @@ export class Shell extends EventEmitter2 {
   }
 
   // load elements
-  loadElements(): Promise<Shell>{
+  private loadElements(): Promise<Shell>{
     var srfs = this.surfacesTxt.surfaces;
     var hits = Object.keys(srfs).filter((name)=> !!srfs[name].elements);
     var prms = hits.map((defname)=>{
@@ -192,7 +192,7 @@ export class Shell extends EventEmitter2 {
   }
 
   // load collisions
-  loadCollisions(): Promise<Shell>{
+  private loadCollisions(): Promise<Shell>{
     var srfs = this.surfacesTxt.surfaces;
     Object.keys(srfs).filter((name)=> !!srfs[name].regions).forEach((defname)=>{
       var n = srfs[defname].is;
@@ -214,7 +214,7 @@ export class Shell extends EventEmitter2 {
   }
 
   // load animations
-  loadAnimations(): Promise<Shell>{
+  private loadAnimations(): Promise<Shell>{
     var srfs = this.surfacesTxt.surfaces;
     Object.keys(srfs).filter((name)=> !!srfs[name].animations).forEach((defname)=>{
       var n = srfs[defname].is;
@@ -235,11 +235,11 @@ export class Shell extends EventEmitter2 {
     return Promise.resolve(this);
   }
 
-  hasFile(filename: string): boolean {
+  private hasFile(filename: string): boolean {
     return SurfaceUtil.find(Object.keys(this.directory), filename).length > 0;
   }
 
-  getPNGFromDirectory(filename: string): Promise<HTMLCanvasElement> {
+  private getPNGFromDirectory(filename: string): Promise<HTMLCanvasElement> {
     var cached_filename = SurfaceUtil.find(Object.keys(this.cacheCanvas), filename)[0] || "";
     if(cached_filename !== ""){
       return Promise.resolve(this.cacheCanvas[cached_filename]);
@@ -273,7 +273,7 @@ export class Shell extends EventEmitter2 {
     });
   }
 
-  attachSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number|string): Surface {
+  public attachSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number|string): Surface {
     var type = SurfaceUtil.scope(scopeId);
     if(typeof surfaceId === "string"){
       if(!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]){
@@ -289,14 +289,24 @@ export class Shell extends EventEmitter2 {
     return srf;
   }
 
-  detachSurface(canvas: HTMLCanvasElement): void {
+  public detachSurface(canvas: HTMLCanvasElement): void {
     var hits = this.attachedSurface.filter(({canvas: _canvas})=> _canvas === canvas);
     if(hits.length === 0) return;
     hits[0].surface.destructor();
     this.attachedSurface.splice(this.attachedSurface.indexOf(hits[0]), 1);
   }
 
-  hasSurface(scopeId: number, surfaceId: number|string): boolean {
+  public unload(): void {
+    this.attachedSurface.forEach(function({canvas, surface}){
+      surface.destructor();
+    });
+    this.removeAllListeners();
+    Object.keys(this).forEach((key)=> {
+      this[key] = new this[key].constructor();
+    });
+  }
+
+  private hasSurface(scopeId: number, surfaceId: number|string): boolean {
     var type = SurfaceUtil.scope(scopeId);
     if(typeof surfaceId === "string"){
       if(!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]){
@@ -310,7 +320,8 @@ export class Shell extends EventEmitter2 {
     return this.surfaceTree[_surfaceId] != null;
   }
 
-  bind(scopeId: number, bindgroupId: number): void {
+  // 着せ替えオン
+  public bind(scopeId: number, bindgroupId: number): void {
     if(this.bindgroup[scopeId] == null){
       console.warn("Shell#bind > bindgroup", "scopeId:",scopeId, "bindgroupId:",bindgroupId, "is not defined")
       return;
@@ -321,7 +332,8 @@ export class Shell extends EventEmitter2 {
     });
   }
 
-  unbind(scopeId: number, bindgroupId: number): void {
+  // 着せ替えオフ
+  public unbind(scopeId: number, bindgroupId: number): void {
     if(this.bindgroup[scopeId] == null){
       console.warn("Shell#unbind > bindgroup", "scopeId:",scopeId, "bindgroupId:",bindgroupId, "is not defined")
       return;
@@ -332,7 +344,8 @@ export class Shell extends EventEmitter2 {
     });
   }
 
-  render(): void {
+  // 強制再描画
+  public render(): void {
     this.attachedSurface.forEach(({surface:srf, canvas})=>{
       srf.render();
     });
