@@ -1,4 +1,3 @@
-/// <reference path="../typings/tsd.d.ts"/>
 
 import {SurfaceRender, SurfaceLayerObject} from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
@@ -18,7 +17,7 @@ export interface SurfaceMouseEvent {
   event: JQueryEventObject;
 }
 
-export class Surface extends EventEmitter2{
+export class Surface extends EventEmitter2 {
   public element: HTMLCanvasElement;
   public scopeId: number;
   public surfaceId: number;
@@ -364,6 +363,7 @@ export class Surface extends EventEmitter2{
       }
       $(ev.target).css({"cursor": "pointer"}); //当たり判定でマウスポインタを指に
     }
-    this.emit(type, custom);
+    this.emit("mouse", custom);
+    this.shell.emit("mouse", custom);
   }
 }

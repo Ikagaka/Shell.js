@@ -11,7 +11,7 @@ export interface SurfaceTreeNode {
   animations: SurfaceAnimation[]
 }
 
-export class Shell {
+export class Shell extends EventEmitter2 {
   //public
   directory: { [filepath: string]: ArrayBuffer; }
   descript: { [key: string]: string; };
@@ -24,6 +24,9 @@ export class Shell {
 
 
   constructor(directory: { [filepath: string]: ArrayBuffer; }) {
+    super();
+    EventEmitter2.call(this);
+
     this.directory = directory;
     this.attachedSurface = [];
     this.surfacesTxt = <SurfacesTxt>{};

@@ -120,6 +120,32 @@ document.body.appendChild(cnv2)
 ### unbind(charaId: number, bindgroupId: number): void
 * `charaId` 番目のキャラクターの`bindgroupId`の着せ替えを脱がせます。
 
+### on(type: string, callback: (event: SurfaceMouseEvent)=> void): void
+* マウスイベントのイベントリスナーです。
+* 対応しているイベントは以下の通りです。
+  * `mouse`
+    * タッチイベントとマウスイベントの区別は現状していません。
+    * mousewheelまだー？
+* 透明領域のマウスイベントにも反応します。 `ev.transparency` で判定してください、。
+  * これはsurface canvasレイヤが重なった時のマウスイベントの透過処理のためのフラグです。
+  * 複数レイヤ間の重なりの上下順番を管理するNamedMgr.jsなどが使います。
+
+```typescript
+
+interface SurfaceMouseEvent {
+  type: string; // mousedown|mousemove|mouseup|mouseclick|mousedblclick のどれか
+  transparency: boolean; // 透明領域ならtrue
+  button: number; // マウスのボタン。 https://developer.mozilla.org/ja/docs/Web/API/MouseEvent/button
+  offsetX: number; // canvas左上からのx座標
+  offsetY: number; // canvas左上からのy座標
+  region: string; // collisionの名前,"Bust","Head","Face"など
+  scope: number; // このサーフェスのスコープ番号
+  wheel: number; // mousewheel実装したら使われるかも
+  event: UIEvent // 生のDOMイベント。 https://developer.mozilla.org/ja/docs/Web/API/UIEvent
+}
+```
+
+
 ## Surface Class
 * canvas要素にサーフェスを描画します。
   * SERIKOアニメーションを再生します。
@@ -154,27 +180,3 @@ srf = new Sufrace(cnv, 0, 0, shell) # \0\s[0]
 ### talk(): void
 * talkタイミングのカウンタを進め、
   指定回数呼び出されるとtalkタイミングのアニメーションを再生します。
-
-### on(type: string, callback: (event: SurfaceMouseEvent)=> void): void
-* マウスイベントのイベントリスナーです。
-* 対応しているイベントは以下の通りです。
-  * `mousedown|mousemove|mouseup|mouseclick|mousedblclick`
-  * タッチイベントとマウスイベントの区別は現状していません。
-  * mousewheelまだー？
-* 透明領域のマウスイベントにも反応します。 `ev.transparency` で判定してください、。
-  * これはsurface canvasレイヤが重なった時のマウスイベントの透過処理のためのフラグです。
-  * 複数レイヤ間の重なりの上下順番を管理するNamedMgr.jsなどが使います。
-
-```typescript
-
-interface SurfaceMouseEvent {
-  button: number; // マウスのボタン
-  offsetX: number; // canvas左上からのx座標
-  offsetY: number; // canvas左上からのy座標
-  region: string; // collisionの名前
-  scope: number; // このサーフェスのスコープ番号
-  wheel: number; // mousewheel実装したら使われるかも
-  type: string; // "Bust","Head","Face"など、collisionのアレ
-  transparency: boolean; // 透明領域ならtrue
-}
-```
