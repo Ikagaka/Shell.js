@@ -90,7 +90,8 @@ var Shell = (function (_EventEmitter2) {
             };
             var descript_name = getName(dir, /^descript\.txt$/i);
             if (descript_name === "") {
-                console.warn("descript.txt is not found");
+                console.info("descript.txt is not found");
+                this.descript = {};
             } else {
                 this.descript = SurfaceUtil.parseDescript(SurfaceUtil.convert(dir[descript_name]));
             }
@@ -145,6 +146,7 @@ var Shell = (function (_EventEmitter2) {
             });
             if (surfaces_text_names.length === 0) {
                 console.info("surfaces.txt is not found");
+                this.surfacesTxt = { surfaces: {}, descript: {}, aliases: {}, regions: {} };
             } else {
                 surfaces_text_names.forEach(function (filename) {
                     var text = SurfaceUtil.convert(_this3.directory[filename]);
@@ -1073,6 +1075,9 @@ var SurfaceRender = (function () {
         key: "composeElements",
         value: function composeElements(elements) {
             if (elements.length === 0) {
+                if (this.DEBUG) {
+                    $("<hr />").appendTo(document.body);
+                }
                 return;
             }
             if (!Array.isArray(elements)) throw new Error("TypeError: elements is not array.");
@@ -1087,6 +1092,14 @@ var SurfaceRender = (function () {
 
             var offsetX = 0;
             var offsetY = 0;
+            if (this.DEBUG) {
+                var wrapper = document.createElement("fieldset");
+                var prev = SurfaceUtil.copy(this.cnv);
+                var adder = SurfaceUtil.copy(this.cnv);
+                var __render = new SurfaceRender(adder);
+                __render.clear();
+                __render.overlay(canvas, offsetX + x, offsetY + y);
+            }
             switch (type) {
                 case "base":
                     this.base(canvas);
@@ -1117,6 +1130,10 @@ var SurfaceRender = (function () {
                     break;
                 default:
                     console.error(elements[0]);
+            }
+            if (this.DEBUG) {
+                var result = SurfaceUtil.copy(this.cnv);
+                $(wrapper).append($("<legend />").text(type + "(" + x + "," + y + ")")).append($("<style scoped />").html("\n        canvas{border:1px solid black;}\n      ")).append(prev).append("+").append(adder).append("=").append(result).appendTo(document.body);
             }
             this.composeElements(elements.slice(1));
         }
@@ -1170,11 +1187,14 @@ var SurfaceRender = (function () {
         key: "overlay",
         value: function overlay(part, x, y) {
             if (this.cnv.width < part.width || this.cnv.height < part.height) {
-                this.init(part);
-            } else {
-                this.ctx.globalCompositeOperation = "source-over";
-                this.ctx.drawImage(part, x, y);
+                // baseのcanvasを拡大
+                var tmp = SurfaceUtil.copy(this.cnv);
+                this.cnv.width = part.width > this.cnv.width ? part.width : this.cnv.width;
+                this.cnv.height = part.height > this.cnv.height ? part.height : this.cnv.height;
+                this.ctx.drawImage(tmp, 0, 0);
             }
+            this.ctx.globalCompositeOperation = "source-over";
+            this.ctx.drawImage(part, x, y);
         }
     }, {
         key: "overlayfast",
@@ -1261,6 +1281,8 @@ var SurfaceRender = (function () {
 })();
 
 exports.SurfaceRender = SurfaceRender;
+
+SurfaceRender.prototype.DEBUG = false;
 },{"./SurfaceUtil":4}],4:[function(require,module,exports){
 /**
  * extend deep like jQuery $.extend(true, target, source)

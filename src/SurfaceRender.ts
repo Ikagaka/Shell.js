@@ -9,9 +9,9 @@ export interface SurfaceLayerObject {
 }
 
 export class SurfaceRender {
-
   cnv: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  DEBUG: boolean;
 
   constructor(cnv: HTMLCanvasElement) {
     this.cnv = cnv;
@@ -19,12 +19,25 @@ export class SurfaceRender {
   }
 
   composeElements(elements: SurfaceLayerObject[]): void {
-    if (elements.length === 0) { return; }
+    if (elements.length === 0) {
+      if(this.DEBUG){
+        $("<hr />").appendTo(document.body);
+      }
+      return;
+    }
     if(!Array.isArray(elements)) throw new Error("TypeError: elements is not array.")
     // elements is a array but it is like `a=[];a[2]="hoge";a[0] === undefined. so use filter.`
     var {canvas, type, x, y} = elements.filter(function(elm){return !!elm;})[0];
     var offsetX = 0;
     var offsetY = 0;
+    if(this.DEBUG){
+      var wrapper = document.createElement("fieldset");
+      var prev = SurfaceUtil.copy(this.cnv);
+      var adder = SurfaceUtil.copy(this.cnv);
+      var __render = new SurfaceRender(adder);
+      __render.clear();
+      __render.overlay(canvas, offsetX + x, offsetY + y);
+    }
     switch (type) {
       case "base":
         this.base(canvas);
@@ -54,6 +67,14 @@ export class SurfaceRender {
       case "insert,ID": break;
       default:
         console.error(elements[0]);
+    }
+    if(this.DEBUG){
+      var result = SurfaceUtil.copy(this.cnv);
+      $(wrapper).append($("<legend />").text(type+"("+x+","+y+")"))
+      .append($("<style scoped />").html(`
+        canvas{border:1px solid black;}
+      `)).append(prev).append("+").append(adder).append("=").append(result)
+      .appendTo(document.body);
     }
     this.composeElements(elements.slice(1));
   }
@@ -99,11 +120,14 @@ export class SurfaceRender {
 
   overlay(part: HTMLCanvasElement, x: number, y: number): void {
     if(this.cnv.width < part.width || this.cnv.height < part.height){
-      this.init(part);
-    }else{
-      this.ctx.globalCompositeOperation = "source-over";
-      this.ctx.drawImage(part, x, y);
+      // baseのcanvasを拡大
+      var tmp = SurfaceUtil.copy(this.cnv);
+      this.cnv.width = part.width > this.cnv.width ? part.width : this.cnv.width;
+      this.cnv.height = part.height > this.cnv.height ? part.height : this.cnv.height;
+      this.ctx.drawImage(tmp, 0, 0);
     }
+    this.ctx.globalCompositeOperation = "source-over";
+    this.ctx.drawImage(part, x, y);
   }
 
   overlayfast(part: HTMLCanvasElement, x: number, y: number): void {
@@ -166,3 +190,5 @@ export class SurfaceRender {
     this.ctx.fillText(type + ":" + name, left + 5, top + 10);
   }
 }
+
+SurfaceRender.prototype.DEBUG = false;

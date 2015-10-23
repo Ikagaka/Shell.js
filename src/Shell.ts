@@ -59,7 +59,8 @@ export class Shell extends EventEmitter2 {
       Object.keys(dic).filter((name)=> reg.test(name))[0] || "";
     var descript_name = getName(dir, /^descript\.txt$/i);
     if (descript_name === "") {
-      console.warn("descript.txt is not found");
+      console.info("descript.txt is not found");
+      this.descript = {};
     } else {
       this.descript = SurfaceUtil.parseDescript(SurfaceUtil.convert(dir[descript_name]));
     }
@@ -95,6 +96,7 @@ export class Shell extends EventEmitter2 {
     var surfaces_text_names = Object.keys(this.directory).filter((name)=> /^surfaces.*\.txt$|^alias\.txt$/i.test(name));
     if(surfaces_text_names.length === 0) {
       console.info("surfaces.txt is not found");
+      this.surfacesTxt = <SurfacesTxt>{surfaces:{}, descript: {}, aliases: {}, regions: {}};
     } else {
       surfaces_text_names.forEach((filename)=> {
         var text = SurfaceUtil.convert(this.directory[filename]);

@@ -8,6 +8,7 @@
 <script src="../dist/Shell.js"></script>
 <fieldset>
 <legend>サーフィステスト</legend>
+<canvas id="surfaceCanvas" style="float:right;"></canvas>
 <p><label>nar: <input type="file" id="nar" /></label></p>
 <p><label>scope: <input type="number" name="scopeId" id="scopeId" value="0" /></label></p>
 <p><label>surface: <select name="surfaceId" id="surfaceId"></select></label></p>
@@ -15,9 +16,14 @@
 <p>bindgroup: <ol id="bindgroupId" start="0"/></ol></p>
 <p>collision: <input type="checkbox" id="collisionDraw" /></p>
 </fieldset>
-<canvas id="surfaceCanvas"></canvas>
+<fieldset>
+<legend>SERIKO Inspector</legend>
+<style scoepd>#seriko_inspector canvas{border:1px solid black;}</style>
+<div id="seriko_inspector"></div>
+</fieldset>
 <script>
-NarLoader.loadFromURL("../nar/mobilemaster.nar").then(changeNar)
+Shell.SurfaceRender.prototype.DEBUG = false;//DOMTreeに大量のcanvasを撒き散らすので実際メモリの危機
+NarLoader.loadFromURL("../nar/ku-ver06.1.nar").then(changeNar)
 $("#nar").change(function(ev){
   NarLoader.loadFromBlob($(this).prop("files")[0]).then(changeNar);
 })
@@ -30,6 +36,11 @@ function changeNar(nanikaDir){
   shell.load().then(function(shell){
     console.log(shell);
     shell.on("mouse", function(ev){ console.log(ev); });
+
+    /*//DOMTreeに大量のcanvasを撒き散らすので実際メモリの危機
+    $("#seriko_inspector").children().remove();
+    $("#seriko_inspector").append(toHTML(shell.surfaceTree));
+    */
 
     var srf = null;
     var cnv = $("#surfaceCanvas")[0];
@@ -100,6 +111,27 @@ function changeNar(nanikaDir){
   }).catch(function(err){
     console.error(err.stack);
   });
+}
 
+function toHTML(obj){
+  if(false){
+  }else if(obj instanceof HTMLCanvasElement){
+    return Shell.SurfaceUtil.copy(obj);
+  }else if(typeof obj === "number"){ return JSON.stringify(obj);
+  }else if(typeof obj === "string"){ return JSON.stringify(obj);
+  }else if(typeof obj === "boolean"){ return JSON.stringify(obj);
+  }else if(obj === null){ return JSON.stringify(obj);
+  }else if(obj === undefined){ return JSON.stringify(obj);
+  }else if(obj instanceof Array || obj instanceof Object){
+    if(obj instanceof Array && obj.length === 0) return "[]";
+    if(obj instanceof Object && Object.keys(obj).length === 0) return "{}";
+    var $ul = $("<ul />");
+    Object.keys(obj).forEach(function(key){
+      $("<li />").text(key+": ").append(toHTML(obj[key])).appendTo($ul)
+    });
+    return $ul[0];
+  }else{
+    console.error(obj);
+  }
 }
 </script>
