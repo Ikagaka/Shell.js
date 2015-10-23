@@ -1,0 +1,56 @@
+
+<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
+<script src="../bower_components/jquery/dist/jquery.min.js"></script>
+<script src="../bower_components/encoding-japanese/encoding.js"></script>
+<script src="../bower_components/jszip/dist/jszip.min.js"></script>
+<script src="../bower_components/narloader/NarLoader.js"></script>
+<script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
+<script src="../dist/Shell.js"></script>
+<fieldset>
+<legend>サーフィステスト</legend>
+<p><label>scope id: <input type="number" name="scopeId" id="scopeId" value="0" /></p>
+<p><label>surface id: <select name="surfaceId" id="surfaceId"></select></p>
+</fieldset>
+<canvas id="surfaceCanvas"></canvas>
+<script>
+NarLoader
+//.loadFromURL("../nar/333-4.05.zip")
+.loadFromURL("../nar/mobilemaster.nar")
+.then(function(nanikaDir){
+  console.log(nanikaDir.files);
+  var shellDir = nanikaDir.getDirectory("shell/master").asArrayBuffer();
+  var shell = new Shell.Shell(shellDir);
+  return shell.load();
+}).then(function(shell){
+  console.log(shell);
+
+  var srf = null;
+  var cnv = $("#surfaceCanvas")[0];
+
+  var $frag = $(document.createDocumentFragment());
+  Object.keys(shell.surfaceTree).forEach(function(surfaceId){
+    $frag.append($("<option />").val(surfaceId).text(surfaceId));
+  });
+  $("#surfaceId").append($frag);
+
+  $("#surfaceId").change(function(ev){
+    changeSurface();
+  }).val(0).change();
+
+  $("#scopeId").change(function(ev){
+    changeSurface();
+  });
+
+  function changeSurface(){
+    var scopeId = $("#scopeId").val();
+    var surfaceId = $("#surfaceId").val();
+    console.log("scopeId:", scopeId, "surfaceId:", surfaceId);
+    console.log(cnv)
+    shell.detachSurface(cnv);
+    srf = shell.attachSurface(cnv, Number(scopeId), Number(surfaceId));
+    console.log(srf);
+  }
+}).catch(function(err){
+  console.error(err, err.stack);
+});
+</script>
