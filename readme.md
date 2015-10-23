@@ -1,13 +1,15 @@
 # Shell.js
-Ukagaka Shell Renderer for Web Browser
 
 [![npm](https://img.shields.io/npm/v/ikagaka.shell.js.svg?style=flat)](https://npmjs.com/package/ikagaka.shell.js)
+
+Ukagaka Shell Renderer for Web Browser
 
 ![screenshot](https://raw.githubusercontent.com/Ikagaka/Shell.js/master/screenshot1.png )
 
 ## About
 Shell.js is a `Ukagaka`  compatible Shell renderer for HTML canvas.
 
+* [demo](https://ikagaka.github.io/Shell.js/demo/playground.html)
 
 ## Dependence
 * [Narazaka/surfaces_txt2yaml](https://github.com/Narazaka/surfaces_txt2yaml)
