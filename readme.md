@@ -186,3 +186,6 @@ srf = new Sufrace(cnv, 0, 0, shell) # \0\s[0]
 ### talk(): void
 * talkタイミングのカウンタを進め、
   指定回数呼び出されるとtalkタイミングのアニメーションを再生します。
+
+## ChangeLog
+* [release log](https://github.com/Ikagaka/Shell.js/releases)
