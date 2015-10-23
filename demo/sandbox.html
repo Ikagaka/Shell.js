@@ -21,21 +21,4 @@ NarLoader
 }).catch(function(err){
   console.error(err, err.stack);
 });
-
-/*getBuffer("mobilemaster/shell/master/surface0.png")
-.then(function(buffer){
-  console.log(buffer);
-});*/
-
-function getBuffer(url){
-  return new Promise(function(resolve, reject){
-    var xhr = new XMLHttpRequest();
-      xhr.open('GET', url, true);
-      xhr.responseType = 'arraybuffer';
-      xhr.onload = function(e) {
-        resolve(this.response);
-      };
-      xhr.send();
-  });
-}
 </script>
