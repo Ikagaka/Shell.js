@@ -14,7 +14,8 @@ export interface SurfaceMouseEvent {
   scope: number; // このサーフェスのスコープ番号
   wheel: number; // 0
   type: string; // "Bust"
-  transparency: boolean; // 透明領域ならtrue
+  transparency: boolean; // 透明領域ならtrue,
+  event: JQueryEventObject;
 }
 
 export class Surface extends EventEmitter2{
@@ -351,7 +352,8 @@ export class Surface extends EventEmitter2{
       "scope": this.scopeId,
       "region": hit.name,
       "button": ev.button === 2 ? 1 : 0,
-      "transparency": !hit.isHit
+      "transparency": !hit.isHit,
+      "event": ev // onした先でpriventDefaultとかstopPropagationとかしたいので
     };
     if(hit.name !== ""){//もし当たり判定
       if(/^touch/.test(ev.type)){
@@ -361,6 +363,6 @@ export class Surface extends EventEmitter2{
       }
       $(ev.target).css({"cursor": "pointer"}); //当たり判定でマウスポインタを指に
     }
-    this.emit(type, custom, ev); // 第三引数のjQueryEventは非公式です。
+    this.emit(type, custom);
   }
 }
