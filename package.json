@@ -1,6 +1,6 @@
 {
   "name": "ikagaka.shell.js",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "url": "https://github.com/ikagaka/Shell.js",
@@ -23,8 +23,7 @@
     "type": "git",
     "url": "https://github.com/ikagaka/ikagaka/Shell.js.git"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "coffee-script": "^1.10.0",
     "gulp": "^3.9.0",
