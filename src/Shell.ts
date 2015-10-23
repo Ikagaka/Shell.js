@@ -284,6 +284,13 @@ export class Shell extends EventEmitter2 {
     }else throw new Error("TypeError: surfaceId: number|string is not match " + typeof surfaceId);
     var hits = this.attachedSurface.filter(({canvas: _canvas})=> _canvas === canvas);
     if(hits.length !== 0) throw new Error("ReferenceError: this HTMLCanvasElement is already attached");
+    if(scopeId < 0){
+      throw new Error("TypeError: scopeId needs more than 0, but:" + scopeId);
+    }
+    if(!this.surfaceTree[surfaceId]){
+      console.warn("surfaceId:", surfaceId, "is not defined");
+      return null;
+    }
     var srf = new Surface(canvas, scopeId, _surfaceId, this);
     this.attachedSurface.push({canvas, surface:srf});
     return srf;

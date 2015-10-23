@@ -33,6 +33,7 @@ export class Surface extends EventEmitter2 {
   private talkCount: number;
   private talkCounts: { [key: string]: number };//key:タイミングがtalkのアニメーションid、number:talkCountの閾値
   private destructors: Function[]; // destructor実行時に実行される関数のリスト
+  private animationsQueue: { [key:number]: Function[] }; // key:animationId, 再生中のアニメーションのコマごとのキュー。アニメーションの強制停止に使う
 
   constructor(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number, shell: Shell) {
     super();
@@ -55,6 +56,7 @@ export class Surface extends EventEmitter2 {
     this.stopFlags = {};
     this.talkCount = 0;
     this.talkCounts = {};
+    this.animationsQueue = [];
 
     // initialize methods
     this.initMouseEvent();
@@ -68,6 +70,9 @@ export class Surface extends EventEmitter2 {
     this.destructors.forEach((fn)=> fn());
     this.elmRender.clear();
     this.destructed = true;
+    // これ以後のsetTimeoutトリガーのアニメーションを表示しない保険
+    this.element = document.createElement("canvas");
+    this.elmRender = new SurfaceRender(this.element);
     this.layers = {};
   }
 
@@ -113,14 +118,14 @@ export class Surface extends EventEmitter2 {
     var anims = this.surfaceResources.animations;
     var anim = this.surfaceResources.animations[animationId];
     if(!anim) return void setTimeout(callback);
-    // lazyPromises: [()=> Promise<void>, ()=> Promise<void>, ...]
-    var lazyPromises = anim.patterns.map((pattern)=> ()=> new Promise<void>((resolve, reject)=> {
+    this.stopFlags[animationId] = false;
+    this.animationsQueue[animationId] = anim.patterns.map((pattern)=> ()=>{
       var {surface, wait, type, x, y, animation_ids} = pattern;
       switch(type){
-        case "start":            this.play(animation_ids[0],                              ()=> resolve(Promise.resolve())); return;
-        case "stop":             this.stop(animation_ids[0]);                  setTimeout(()=> resolve(Promise.resolve())); return;
-        case "alternativestart": this.play(SurfaceUtil.choice<number>(animation_ids),             ()=> resolve(Promise.resolve())); return;
-        case "alternativestart": this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(()=> resolve(Promise.resolve())); return;
+        case "start":            this.play(animation_ids[0], nextTick); return;
+        case "stop":             this.stop(animation_ids[0]); setTimeout(nextTick); return;
+        case "alternativestart": this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
+        case "alternativestart": this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
       }
       this.layers[animationId] = pattern;
       this.render();
@@ -128,22 +133,22 @@ export class Surface extends EventEmitter2 {
       var _wait = isFinite(Number(b))
                 ? SurfaceUtil.randomRange(Number(a), Number(b))
                 : Number(a);
-      setTimeout((()=>{
-        if(this.destructed){// stop pattern animation.
-          reject(null);
-        }else{
-          resolve(Promise.resolve());
-        }
-      }), _wait);
-    }));
-    var promise = lazyPromises.reduce(((proA, proB)=> proA.then(proB)), Promise.resolve()); // Promise.resolve().then(prom).then(prom)...
-    promise
-    .then(()=> setTimeout(callback))
-    .catch((err)=>{if(!!err) console.error(err.stack); });
+      setTimeout(nextTick, _wait);
+    });
+    var nextTick = ()=>{
+      var next = this.animationsQueue[animationId].shift();
+      if(!(next instanceof Function) || this.destructed || !!this.stopFlags[animationId]){
+        // stop pattern animation.
+        this.animationsQueue[animationId] = [];
+        setTimeout(callback);
+      }else next();
+    };
+    this.animationsQueue[animationId][0] instanceof Function && this.animationsQueue[animationId][0]();
   }
 
   public stop(animationId: number): void {
     this.stopFlags[animationId] = true;
+    this.animationsQueue[animationId] = [];
   }
 
   public talk(): void {
