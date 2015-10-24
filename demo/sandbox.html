@@ -1,0 +1,87 @@
+<script src="../bower_components/encoding-japanese/encoding.js"></script>
+<script src="../bower_components/jszip/dist/jszip.min.js"></script>
+<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
+<script src="../bower_components/jquery/dist/jquery.min.js"></script>
+<script src="../bower_components/narloader/NarLoader.js"></script>
+<script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
+<script src="../dist/NamedManager.js"></script>
+<script>
+Promise.all([
+  NarLoader.loadFromURL("../nar/origin.nar"),
+  NarLoader.loadFromURL("../nar/mobilemaster.nar")
+]).then(function(tmp){
+  var balloonNDir = tmp[0];
+  var shellNDir = tmp[1];
+  var balloonDir = balloonNDir.asArrayBuffer();
+  var shellDir = shellNDir.getDirectory("shell/master").asArrayBuffer();
+  var shell = new NamedManager.Shell(shellDir);
+  var balloon = new NamedManager.Balloon(balloonDir);
+  return Promise.all([
+    shell.load(),
+    balloon.load()
+  ]);
+}).then(function(tmp){
+  var shell = tmp[0];
+  var balloon = tmp[1];
+  var nmdmgr = new NamedManager.NamedManager();
+  document.body.appendChild(nmdmgr.element);
+
+  var hwnd = nmdmgr.materialize(shell, balloon);
+  var named = nmdmgr.named(hwnd);
+
+  console.log(nmdmgr, named, shell, balloon);
+
+  named.on("mouse", function (ev){ console.log(ev); });
+
+  talk(named);
+});
+
+
+
+function wait(ms, callback) {
+  return function(ctx) {
+    return new Promise(function(resolve) {
+      setTimeout((function() {
+        if(callback instanceof Function) callback(ctx);
+        return resolve(ctx);
+      }), ms);
+    });
+  };
+}
+
+function talk(named){
+  Promise.resolve(named)
+  .then(wait(0, function(named) { named.scope(0); }))
+  .then(wait(0, function(named) { named.scope().surface(0); }))
+  .then(wait(0, function(named) { named.scope().blimp().clear(); }))
+  .then(wait(0, function(named) { named.scope(1); }))
+  .then(wait(0, function(named) { named.scope().surface(10); }))
+  .then(wait(0, function(named) { named.scope().blimp().clear(); }))
+  .then(wait(0, function(named) { named.scope(0); }))
+  .then(wait(0, function(named) { named.scope().blimp(0); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("H"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("e"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("l"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("l"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("o"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk(","); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("w"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("o"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("r"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("l"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("d"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("!"); }))
+  .then(wait(160, function(named) { named.scope(1); }))
+  .then(wait(0, function(named) { named.scope().blimp().anchorBegin("AnchorID"); }))
+  .then(wait(0, function(named) { named.scope().blimp().talk("anchor"); }))
+  .then(wait(0, function(named) { named.scope().blimp().anchorEnd(); }))
+  .then(wait(0, function(named) { named.scope().blimp().br(); }))
+  .then(wait(0, function(named) { named.scope().blimp().talk("<" + "script>alert(1);<" + "/script>"); }))
+  .then(wait(0, function(named) { named.scope().blimp().br(); }))
+  .then(wait(0, function(named) { named.scope().blimp().choice("choice", "ChoceID"); }))
+  .then(wait(0, function(named) { named.scope().blimp().br(); }))
+  .then(wait(0, function(named) { named.scope().blimp().talk("hi."); }))
+  .then(wait(0, function(named) { named.scope().blimp().showWait(); }))
+  .then(wait(3000, function(named) { named.scope().blimp().talk("stop wait"); }));
+}
+</script>

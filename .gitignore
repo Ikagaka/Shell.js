@@ -1,5 +1,8 @@
 node_modules
-
+bower_components
+typings
+npm-debug.log
+nar
 #################
 ## Eclipse
 #################
@@ -138,7 +141,7 @@ Desktop.ini
 # Packages
 *.egg
 *.egg-info
-dist
+#dist
 build
 eggs
 parts

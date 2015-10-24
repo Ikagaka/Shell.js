@@ -1,27 +1,36 @@
 {
-  "name":           "ikagaka.named.js",
-  "version":        "3.0.3",
-  "description":    "Ikagaka Named DOM Manager ",
-  "url":            "https://github.com/ikagaka/Named.js",
-  "keywords":       ["ikagaka", "unstable", "ukagaka"],
+  "name": "ikagaka.namedmanager.js",
+  "version": "4.0.0",
+  "description": "Ikagaka Window Manager",
+  "url": "https://github.com/ikagaka/NamedManager.js",
+  "keywords": [
+    "nar",
+    "ikagaka",
+    "unstable",
+    "ukagaka"
+  ],
   "repository": {
-    "type":         "git",
-    "url":          "https://github.com/ikagaka/Named.js"
+    "type": "git",
+    "url": "https://github.com/ikagaka/NamedManager.js"
   },
   "scripts": {
-    "watch": "coffee -cw ./*.coffee",
-    "build": "coffee -c ./*.coffee"
+    "init": "npm run update; npm run build",
+    "update": "rm -rf bower_components node_modules; npm update; bower update",
+    "clean": "rm lib/*.js dist/*.js",
+    "start": "http-server -o --silent -p 8000 & watchify lib/index.js --standalone NamedManager -o dist/NamedManager.js -v & coffee -c -w -o lib src/*.coffee",
+    "build": "coffee -c -o lib src/*.coffee; browserify lib/index.js --standalone NamedManager -o dist/NamedManager.js",
+    "patch": "mversion patch -m; git push origin --tag"
   },
   "dependencies": {
-    "ikagaka.shell.js": "",
-    "ikagaka.balloon.js": "",
-    "zepto": "",
-    "es6-shim": ""
+    "ikagaka.shell.js": "ikagaka/Shell.js",
+    "ikagaka.balloon.js": "ikagaka/Balloon.js"
   },
-  "devDependencies": {
-  },
-  "main":           "./NamedManager.js",
-  "author":         "Ikagaka",
-  "license":        "MIT",
-  "contributors":   ["legokichi"]
+  "devDependencies": {},
+  "main": "./lib/index.js",
+  "author": "Ikagaka",
+  "license": "MIT",
+  "contributors": [
+    "legokichi",
+    "narazaka"
+  ]
 }
