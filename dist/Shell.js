@@ -1001,11 +1001,10 @@ var Surface = (function (_EventEmitter2) {
             // マウスイベントの共通処理
             // 副作用なし。イベント発火する。
             $(ev.target).css({ "cursor": "default" });
-            if (/^touch/.test(ev.type)) {
-                var changedTouches = ev["changedTouches"]; //そういうプロパティがあるんです（おこ
-                var _changedTouches$0 = changedTouches[0];
-                var pageX = _changedTouches$0.pageX;
-                var pageY = _changedTouches$0.pageY;
+            if (/^touch/.test(ev.type) && ev.originalEvent instanceof TouchEvent) {
+                var _ev$originalEvent$targetTouches$0 = ev.originalEvent.targetTouches[0];
+                var pageX = _ev$originalEvent$targetTouches$0.pageX;
+                var pageY = _ev$originalEvent$targetTouches$0.pageY;
             } else {
                 var pageX = ev.pageX;
                 var pageY = ev.pageY;

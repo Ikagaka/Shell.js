@@ -27,6 +27,7 @@ export class Shell extends EventEmitter2 {
     super();
     EventEmitter2.call(this);
 
+    this.descript = {};
     this.directory = directory;
     this.attachedSurface = [];
     this.surfacesTxt = <SurfacesTxt>{};
@@ -38,8 +39,8 @@ export class Shell extends EventEmitter2 {
 
   public load(): Promise<Shell> {
     return Promise.resolve(this)
-    .then(()=> this.loadDescript()) // 1st // ←なにこれ（自問自答
-    .then(()=> this.loadBindGroup()) // 2nd
+    .then(()=> this.loadDescript()) // 1st // ←なにこれ（自問自
+    .then(()=> this.loadBindGroup()) // 2nd // 依存関係的なやつだと思われ
     .then(()=> this.loadSurfacesTxt()) // 1st
     .then(()=> this.loadSurfaceTable()) // 1st
     .then(()=> this.loadSurfacePNG())   // 2nd

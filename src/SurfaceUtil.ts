@@ -189,7 +189,7 @@ export function scope(scopeId: number): string {
        : "char"+scopeId;
 }
 
-/*
+/*なにこれ
 var _charId = charId === "sakura" ? 0
             : charId === "kero"   ? 1
             : Number(/^char(\d+)/.exec(charId)[1]);
