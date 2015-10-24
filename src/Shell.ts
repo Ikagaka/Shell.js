@@ -316,7 +316,8 @@ export class Shell extends EventEmitter2 {
     });
   }
 
-  private hasSurface(scopeId: number, surfaceId: number|string): boolean {
+  // サーフェスエイリアス込みでサーフェスが存在するか確認
+  public hasSurface(scopeId: number, surfaceId: number|string): boolean {
     var type = SurfaceUtil.scope(scopeId);
     if(typeof surfaceId === "string"){
       if(!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]){

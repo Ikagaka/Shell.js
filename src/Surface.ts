@@ -23,6 +23,8 @@ export class Surface extends EventEmitter2 {
   public surfaceId: number;
   public shell: Shell;
   public destructed: boolean;
+  public width: number;
+  public height: number;
 
   private surfaceResources: SurfaceTreeNode; //{base, elements, collisions, animations}
   private bufferCanvas: HTMLCanvasElement; //チラツキを抑えるためのバッファ
@@ -45,6 +47,8 @@ export class Surface extends EventEmitter2 {
     this.surfaceId = surfaceId;
     this.shell = shell;
     this.destructed = false;
+    this.width = 0;
+    this.height = 0;
 
     // private
     this.surfaceResources = shell.surfaceTree[surfaceId];
@@ -64,7 +68,7 @@ export class Surface extends EventEmitter2 {
     this.render();
   }
 
-  // public methods
+  // Shellから呼ばれるためpublic
   public destructor(): void {
     this.destructor = ()=> console.warn("this surface already destructed", this);
     this.destructors.forEach((fn)=> fn());
@@ -112,6 +116,8 @@ export class Surface extends EventEmitter2 {
       this.bufRender.drawRegions(srfNode.collisions);
     }
     this.elmRender.init(this.bufRender.cnv); //バッファから実DOMTree上のcanvasへ描画
+    this.width = this.element.width;
+    this.height = this.element.height;
   }
 
   public play(animationId: number, callback?: () => void): void {

@@ -170,10 +170,11 @@ interface SurfaceMouseEvent {
 srf = new Sufrace(cnv, 0, 0, shell) # \0\s[0]
 ```
 
-#### destructor(): void
-* canvasへのサーフェスの描画を終了します。
-* canvasへのあらゆるイベントハンドラを解除します。
-* `Shell#dettatchSurface`から内部的に呼び出されます。そちらを使ってください。
+#### width: number
+* サーフェスの横幅px
+
+#### height: number
+* サーフェスの縦幅px
 
 #### render(): void
 * サーフェスを再描画します。
