@@ -34,6 +34,7 @@ var Shell = (function (_EventEmitter2) {
 
         _get(Object.getPrototypeOf(Shell.prototype), "constructor", this).call(this);
         EventEmitter2.call(this);
+        this.descript = {};
         this.directory = directory;
         this.attachedSurface = [];
         this.surfacesTxt = {};
@@ -50,10 +51,10 @@ var Shell = (function (_EventEmitter2) {
 
             return Promise.resolve(this).then(function () {
                 return _this.loadDescript();
-            }) // 1st // ←なにこれ（自問自答
+            }) // 1st // ←なにこれ（自問自
             .then(function () {
                 return _this.loadBindGroup();
-            }) // 2nd
+            }) // 2nd // 依存関係的なやつだと思われ
             .then(function () {
                 return _this.loadSurfacesTxt();
             }) // 1st
@@ -1471,7 +1472,7 @@ function scope(scopeId) {
     return scopeId === 0 ? "sakura" : scopeId === 1 ? "kero" : "char" + scopeId;
 }
 
-/*
+/*なにこれ
 var _charId = charId === "sakura" ? 0
             : charId === "kero"   ? 1
             : Number(/^char(\d+)/.exec(charId)[1]);
