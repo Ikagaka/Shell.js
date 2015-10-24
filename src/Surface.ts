@@ -10,7 +10,7 @@ export interface SurfaceMouseEvent {
   offsetX: number; // canvas左上からのx座標
   offsetY: number; // canvas左上からのy座標
   region: string; // collisionの名前
-  scope: number; // このサーフェスのスコープ番号
+  scopeId: number; // このサーフェスのスコープ番号
   wheel: number; // 0
   type: string; // "Bust"
   transparency: boolean; // 透明領域ならtrue,
@@ -359,7 +359,7 @@ export class Surface extends EventEmitter2 {
       "offsetX": offsetX|0,//float->int
       "offsetY": offsetY|0,//float->int
       "wheel": 0,
-      "scope": this.scopeId,
+      "scopeId": this.scopeId,
       "region": hit.name,
       "button": ev.button === 2 ? 1 : 0,
       "transparency": !hit.isHit,

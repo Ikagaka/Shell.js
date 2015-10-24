@@ -1031,7 +1031,7 @@ var Surface = (function (_EventEmitter2) {
                 "offsetX": offsetX | 0,
                 "offsetY": offsetY | 0,
                 "wheel": 0,
-                "scope": this.scopeId,
+                "scopeId": this.scopeId,
                 "region": hit.name,
                 "button": ev.button === 2 ? 1 : 0,
                 "transparency": !hit.isHit,

@@ -149,7 +149,7 @@ interface SurfaceMouseEvent {
   offsetX: number; // canvas左上からのx座標
   offsetY: number; // canvas左上からのy座標
   region: string; // collisionの名前,"Bust","Head","Face"など
-  scope: number; // このサーフェスのスコープ番号
+  scopeId: number; // このサーフェスのスコープ番号
   wheel: number; // mousewheel実装したら使われるかも
   event: UIEvent // 生のDOMイベント。 https://developer.mozilla.org/ja/docs/Web/API/UIEvent
 }
