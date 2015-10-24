@@ -421,6 +421,8 @@ var Shell = (function (_EventEmitter2) {
                 _this9[key] = new _this9[key].constructor();
             });
         }
+
+        // サーフェスエイリアス込みでサーフェスが存在するか確認
     }, {
         key: "hasSurface",
         value: function hasSurface(scopeId, surfaceId) {
@@ -531,6 +533,8 @@ var Surface = (function (_EventEmitter2) {
         this.surfaceId = surfaceId;
         this.shell = shell;
         this.destructed = false;
+        this.width = 0;
+        this.height = 0;
         // private
         this.surfaceResources = shell.surfaceTree[surfaceId];
         this.bufferCanvas = SurfaceUtil.createCanvas();
@@ -548,7 +552,7 @@ var Surface = (function (_EventEmitter2) {
         this.render();
     }
 
-    // public methods
+    // Shellから呼ばれるためpublic
 
     _createClass(Surface, [{
         key: "destructor",
@@ -616,6 +620,8 @@ var Surface = (function (_EventEmitter2) {
                 this.bufRender.drawRegions(srfNode.collisions);
             }
             this.elmRender.init(this.bufRender.cnv); //バッファから実DOMTree上のcanvasへ描画
+            this.width = this.element.width;
+            this.height = this.element.height;
         }
     }, {
         key: "play",
