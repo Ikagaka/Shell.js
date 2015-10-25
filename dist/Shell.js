@@ -1315,6 +1315,7 @@ exports.offset = offset;
 exports.createCanvas = createCanvas;
 exports.scope = scope;
 exports.unscope = unscope;
+exports.getEventPosition = getEventPosition;
 exports.recursiveElementFromPoint = recursiveElementFromPoint;
 exports.eventPropagationSim = eventPropagationSim;
 exports.randomRange = randomRange;
@@ -1523,11 +1524,32 @@ function unscope(charId) {
     return charId === "sakura" ? 0 : charId === "kero" ? 1 : Number(/^char(\d+)/.exec(charId)[1]);
 }
 
+function getEventPosition(ev) {
+    if (/^touch/.test(ev.type)) {
+        var pageX = ev.originalEvent.touches[0].pageX;
+        var pageY = ev.originalEvent.touches[0].pageY;
+        var clientX = ev.originalEvent.touches[0].clientX;
+        var clientY = ev.originalEvent.touches[0].clientY;
+        var screenX = ev.originalEvent.touches[0].screenX;
+        var screenY = ev.originalEvent.touches[0].screenY;
+    } else {
+        var pageX = ev.pageX;
+        var pageY = ev.pageY;
+        var clientX = ev.clientX;
+        var clientY = ev.clientY;
+        var screenX = ev.screenX;
+        var screenY = ev.screenY;
+    }
+    return { pageX: pageX, pageY: pageY, clientX: clientX, clientY: clientY, screenX: screenX, screenY: screenY };
+}
+
 function recursiveElementFromPoint(ev, parent, target) {
-    var clientX = ev.clientX;
-    var clientY = ev.clientY;
-    var pageX = ev.pageX;
-    var pageY = ev.pageY;
+    var _getEventPosition = getEventPosition(ev);
+
+    var clientX = _getEventPosition.clientX;
+    var clientY = _getEventPosition.clientY;
+    var pageX = _getEventPosition.pageX;
+    var pageY = _getEventPosition.pageY;
 
     var _$$offset = $(target).offset();
 
@@ -1588,15 +1610,25 @@ function eventPropagationSim(target, ev) {
         if (!(document.createTouch instanceof Function)) return console.warn(ua, "does not support document.createTouch");
         if (!(document.createTouchList instanceof Function)) return console.warn(ua, "does not support document.createTouchList");
         if (!(tev["initTouchEvent"] instanceof Function)) return console.warn(ua, "does not support TouchEvent#initTouchEvent");
+
+        var _getEventPosition2 = getEventPosition(ev);
+
+        var pageX = _getEventPosition2.pageX;
+        var pageY = _getEventPosition2.pageY;
+        var clientX = _getEventPosition2.clientX;
+        var clientY = _getEventPosition2.clientY;
+        var screenX = _getEventPosition2.screenX;
+        var screenY = _getEventPosition2.screenY;
+
         var tev = document.createEvent("TouchEvent");
-        var touch = document.createTouch(document.defaultView, ev.target, 0, ev.pageX, ev.pageY, ev.screenX, ev.screenY);
+        var touch = document.createTouch(document.defaultView, ev.target, 0, pageX, pageY, screenX, screenY);
         var touches = document.createTouchList(touch);
         if (ua.indexOf('chrome') != -1 || ua.indexOf('opera') != -1) {
             console.info("this browser is chrome or opera", ua);
-            tev["initTouchEvent"](touches, touches, touches, ev.type, ev.originalEvent["view"], ev.screenX, ev.screenY, ev.clientX, ev.clientY, ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey);
+            tev["initTouchEvent"](touches, touches, touches, ev.type, ev.originalEvent["view"], screenX, screenY, clientX, clientY, ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey);
         } else if (ua.indexOf('safari') != -1) {
             console.info("this browser is safari", ua);
-            tev["initTouchEvent"](ev.type, true, ev.cancelable, ev.originalEvent["view"], ev.originalEvent["detail"], ev.screenX, ev.screenY, ev.clientX, ev.clientY, ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey, touches, touches, touches, 0, 0);
+            tev["initTouchEvent"](ev.type, true, ev.cancelable, ev.originalEvent["view"], ev.originalEvent["detail"], screenX, screenY, clientX, clientY, ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey, touches, touches, touches, 0, 0);
         } else if (ua.indexOf('firefox') != -1 || true) {
             console.info("this browser is firefox", ua);
             tev["initTouchEvent"](ev.type, true, ev.cancelable, ev.originalEvent["view"], ev.originalEvent["detail"], ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey, touches, touches, touches);

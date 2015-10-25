@@ -199,8 +199,27 @@ export function unscope(charId: string): number {
        : Number(/^char(\d+)/.exec(charId)[1]);
 }
 
+export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY: number, clientX: number, clientY: number, screenX: number, screenY: number } {
+  if (/^touch/.test(ev.type)){
+    var pageX = (<TouchEvent>ev.originalEvent).touches[0].pageX;
+    var pageY = (<TouchEvent>ev.originalEvent).touches[0].pageY;
+    var clientX = (<TouchEvent>ev.originalEvent).touches[0].clientX;
+    var clientY = (<TouchEvent>ev.originalEvent).touches[0].clientY;
+    var screenX = (<TouchEvent>ev.originalEvent).touches[0].screenX;
+    var screenY = (<TouchEvent>ev.originalEvent).touches[0].screenY;
+  }else{
+    var pageX = ev.pageX;
+    var pageY = ev.pageY;
+    var clientX = ev.clientX;
+    var clientY = ev.clientY;
+    var screenX = ev.screenX;
+    var screenY = ev.screenY;
+  }
+  return {pageX, pageY, clientX, clientY, screenX, screenY};
+}
+
 export function recursiveElementFromPoint(ev: JQueryEventObject, parent: HTMLElement, target: HTMLElement): HTMLElement {
-  var {clientX, clientY, pageX, pageY} = ev;
+  var {clientX, clientY, pageX, pageY} = getEventPosition(ev);
   var {left, top} = $(target).offset();
   var [offsetX, offsetY] = [pageX - left, pageY - top];
   if ($(parent).find(target).length > 0 &&
@@ -257,15 +276,16 @@ export function eventPropagationSim(target: HTMLElement, ev: JQueryEventObject):
     if (!(document.createTouch instanceof Function)) return console.warn(ua, "does not support document.createTouch");
     if (!(document.createTouchList instanceof Function)) return console.warn(ua, "does not support document.createTouchList");
     if (!(tev["initTouchEvent"] instanceof Function)) return console.warn(ua, "does not support TouchEvent#initTouchEvent");
-    var tev = document.createEvent("TouchEvent")
+    var {pageX, pageY, clientX, clientY, screenX, screenY} = getEventPosition(ev);
+    var tev = document.createEvent("TouchEvent");
     var touch = document.createTouch(
       document.defaultView,
       ev.target,
       0,
-      ev.pageX,
-      ev.pageY,
-      ev.screenX,
-      ev.screenY);
+      pageX,
+      pageY,
+      screenX,
+      screenY);
     var touches = document.createTouchList(touch);
     if (ua.indexOf('chrome') != -1 || ua.indexOf('opera') != -1) {//chrome|opera
       console.info("this browser is chrome or opera", ua);
@@ -275,10 +295,10 @@ export function eventPropagationSim(target: HTMLElement, ev: JQueryEventObject):
         touches,
         ev.type,
         ev.originalEvent["view"],
-        ev.screenX,
-        ev.screenY,
-        ev.clientX,
-        ev.clientY,
+        screenX,
+        screenY,
+        clientX,
+        clientY,
         ev.ctrlKey,
         ev.altKey,
         ev.shiftKey,
@@ -291,10 +311,10 @@ export function eventPropagationSim(target: HTMLElement, ev: JQueryEventObject):
         ev.cancelable,
         ev.originalEvent["view"],
         ev.originalEvent["detail"],
-        ev.screenX,
-        ev.screenY,
-        ev.clientX,
-        ev.clientY,
+        screenX,
+        screenY,
+        clientX,
+        clientY,
         ev.ctrlKey,
         ev.altKey,
         ev.shiftKey,
