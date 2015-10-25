@@ -9,6 +9,8 @@ Ikagaka Window Manager
 ## About
 NamedManager.js is a `Ukagaka` compatible Shell renderer and Window Manager for Web Browser.
 
+* [demo](http://ikagaka.github.io/NamedManager.js/demo/sandbox.html)
+
 ## Dependence
 * [Narazaka/surfaces_txt2yaml](https://github.com/Narazaka/surfaces_txt2yaml)
 * [asyncly/EventEmitter2](https://github.com/asyncly/EventEmitter2)
