@@ -222,7 +222,7 @@ export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY
 export function recursiveElementFromPoint(ev: JQueryEventObject, parent: HTMLElement, target: HTMLElement): HTMLElement {
   var {clientX, clientY, pageX, pageY} = getEventPosition(ev);
   var {left, top} = $(target).offset();
-  var [offsetX, offsetY] = [pageX - left, pageY - top];
+  var [offsetX, offsetY] = [clientX - left, clientY - top];
   if ($(parent).find(target).length > 0 &&
      target instanceof HTMLCanvasElement &&
      isHit(target, offsetX, offsetY)){
