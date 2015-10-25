@@ -1009,9 +1009,9 @@ var Surface = (function (_EventEmitter2) {
             // 副作用なし。イベント発火する。
             $(ev.target).css({ "cursor": "default" });
             if (/^touch/.test(ev.type) && ev.originalEvent instanceof TouchEvent) {
-                var _ev$originalEvent$targetTouches$0 = ev.originalEvent.targetTouches[0];
-                var pageX = _ev$originalEvent$targetTouches$0.pageX;
-                var pageY = _ev$originalEvent$targetTouches$0.pageY;
+                var _ev$originalEvent$changedTouches$0 = ev.originalEvent.changedTouches[0];
+                var pageX = _ev$originalEvent$changedTouches$0.pageX;
+                var pageY = _ev$originalEvent$changedTouches$0.pageY;
             } else {
                 var pageX = ev.pageX;
                 var pageY = ev.pageY;
@@ -1397,7 +1397,41 @@ function copy(cnv) {
 }
 
 function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf, pnabuf) {
-    return new Promise(function (resolve, reject) {})["catch"](function (err) {
+    return new Promise(function (resolve, reject) {
+        reject("deplicated");
+        /*
+        var reader = new PNGReader(pngbuf);
+        var png = reader.parse();
+        var dataA = png.getUint8ClampedArray();
+        if(typeof pnabuf === "undefined"){
+          var r = dataA[0], g = dataA[1], b = dataA[2], a = dataA[3];
+          var i = 0;
+          if (a !== 0) {
+            while (i < dataA.length) {
+              if (r === dataA[i] && g === dataA[i + 1] && b === dataA[i + 2]) {
+                dataA[i + 3] = 0;
+              }
+              i += 4;
+            }
+          }
+          return resolve(Promise.resolve({width: png.width, height: png.height, data: dataA}));
+        }
+        var pnareader = new PNGReader(pnabuf);
+        var pna = pnareader.parse();
+        var dataB = pna.getUint8ClampedArray();
+        if(dataA.length !== dataB.length){
+          return reject("fetchPNGUint8ClampedArrayFromArrayBuffer TypeError: png" +
+          png.width+"x"+png.height+" and  pna"+pna.width+"x"+pna.height +
+          " do not match both sizes");
+        }
+        var j = 0;
+        while (j < dataA.length) {
+          dataA[j + 3] = dataB[j];
+          j += 4;
+        }
+        return resolve(Promise.resolve({width: png.width, height: png.height, data: dataA}));
+        */
+    })["catch"](function (err) {
         return Promise.reject("fetchPNGUint8ClampedArrayFromArrayBuffer msg:" + err + ", reason: " + err.stack);
     });
 }
@@ -1549,6 +1583,25 @@ function eventPropagationSim(target, ev) {
             bubbles: true
         });
         target.dispatchEvent(mev);
+    } else if (/^touch/.test(ev.type)) {
+        var ua = window.navigator.userAgent.toLowerCase();
+        if (!(document.createTouch instanceof Function)) return console.warn(ua, "does not support document.createTouch");
+        if (!(document.createTouchList instanceof Function)) return console.warn(ua, "does not support document.createTouchList");
+        if (!(tev["initTouchEvent"] instanceof Function)) return console.warn(ua, "does not support TouchEvent#initTouchEvent");
+        var tev = document.createEvent("TouchEvent");
+        var touch = document.createTouch(document.defaultView, ev.target, 0, ev.pageX, ev.pageY, ev.screenX, ev.screenY);
+        var touches = document.createTouchList(touch);
+        if (ua.indexOf('chrome') != -1 || ua.indexOf('opera') != -1) {
+            console.info("this browser is chrome or opera", ua);
+            tev["initTouchEvent"](touches, touches, touches, ev.type, ev.originalEvent["view"], ev.screenX, ev.screenY, ev.clientX, ev.clientY, ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey);
+        } else if (ua.indexOf('safari') != -1) {
+            console.info("this browser is safari", ua);
+            tev["initTouchEvent"](ev.type, true, ev.cancelable, ev.originalEvent["view"], ev.originalEvent["detail"], ev.screenX, ev.screenY, ev.clientX, ev.clientY, ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey, touches, touches, touches, 0, 0);
+        } else if (ua.indexOf('firefox') != -1 || true) {
+            console.info("this browser is firefox", ua);
+            tev["initTouchEvent"](ev.type, true, ev.cancelable, ev.originalEvent["view"], ev.originalEvent["detail"], ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey, touches, touches, touches);
+        }
+        target.dispatchEvent(tev);
     } else {
         console.warn(ev.type, "is not support event");
     }

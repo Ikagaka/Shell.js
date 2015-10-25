@@ -74,7 +74,9 @@ export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement
 }
 
 export function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf: ArrayBuffer, pnabuf?: ArrayBuffer): Promise<{width:number, height:number, data:Uint8ClampedArray}> {
-  return new Promise((resolve,reject)=>{/*
+  return new Promise((resolve,reject)=>{
+    reject("deplicated");
+    /*
     var reader = new PNGReader(pngbuf);
     var png = reader.parse();
     var dataA = png.getUint8ClampedArray();
@@ -250,6 +252,75 @@ export function eventPropagationSim(target: HTMLElement, ev: JQueryEventObject):
       bubbles: true
     });
     target.dispatchEvent(mev);
+  }else if (/^touch/.test(ev.type)){
+    var ua = window.navigator.userAgent.toLowerCase();
+    if (!(document.createTouch instanceof Function)) return console.warn(ua, "does not support document.createTouch");
+    if (!(document.createTouchList instanceof Function)) return console.warn(ua, "does not support document.createTouchList");
+    if (!(tev["initTouchEvent"] instanceof Function)) return console.warn(ua, "does not support TouchEvent#initTouchEvent");
+    var tev = document.createEvent("TouchEvent")
+    var touch = document.createTouch(
+      document.defaultView,
+      ev.target,
+      0,
+      ev.pageX,
+      ev.pageY,
+      ev.screenX,
+      ev.screenY);
+    var touches = document.createTouchList(touch);
+    if (ua.indexOf('chrome') != -1 || ua.indexOf('opera') != -1) {//chrome|opera
+      console.info("this browser is chrome or opera", ua);
+      (<Function>tev["initTouchEvent"])(
+        touches,
+        touches,
+        touches,
+        ev.type,
+        ev.originalEvent["view"],
+        ev.screenX,
+        ev.screenY,
+        ev.clientX,
+        ev.clientY,
+        ev.ctrlKey,
+        ev.altKey,
+        ev.shiftKey,
+        ev.metaKey);
+    }else if (ua.indexOf('safari') != -1) {//safari
+      console.info("this browser is safari", ua);
+      (<Function>tev["initTouchEvent"])(
+        ev.type,
+        true,
+        ev.cancelable,
+        ev.originalEvent["view"],
+        ev.originalEvent["detail"],
+        ev.screenX,
+        ev.screenY,
+        ev.clientX,
+        ev.clientY,
+        ev.ctrlKey,
+        ev.altKey,
+        ev.shiftKey,
+        ev.metaKey,
+        touches,
+        touches,
+        touches,
+        0,
+        0);
+    }else if (ua.indexOf('firefox') != -1 || true) {//firefox or anything else
+      console.info("this browser is firefox", ua);
+      (<Function>tev["initTouchEvent"])(
+        ev.type,
+        true,
+        ev.cancelable,
+        ev.originalEvent["view"],
+        ev.originalEvent["detail"],
+        ev.ctrlKey,
+        ev.altKey,
+        ev.shiftKey,
+        ev.metaKey,
+        touches,
+        touches,
+        touches);
+    }
+    target.dispatchEvent(tev)
   }else{
     console.warn(ev.type, "is not support event");
   }

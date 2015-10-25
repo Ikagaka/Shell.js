@@ -344,7 +344,7 @@ export class Surface extends EventEmitter2 {
     $(ev.target).css({"cursor": "default"});
 
     if (/^touch/.test(ev.type) && ev.originalEvent instanceof TouchEvent) {//もしタッチ
-      var {pageX, pageY} = (<TouchEvent>ev.originalEvent).targetTouches[0];
+      var {pageX, pageY} = (<TouchEvent>ev.originalEvent).changedTouches[0];
     } else {//もしマウス
       var {pageX, pageY} = ev;
     }
