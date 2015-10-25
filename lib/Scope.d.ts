@@ -5,15 +5,16 @@ import {Balloon, Blimp} from "ikagaka.balloon.js";
 import {Named} from "./Named";
 
 export declare class Scope {
-  element: HTMLElement;
-  currentSurface: Surface;
-  currentBlimp: Blimp;
-  scopeId: number;
-  type: string; // sakura|kero
+  public element: HTMLElement;
+  private currentSurface: Surface;
+  private currentBlimp: Blimp;
+  public scopeId: number;
+  public type: string; // sakura|kero
 
   constructor(scopeId: number, shell: Shell, balloon: Balloon, named: Named);
-  surface(): Surface;
-  surface(surfaceId: number): Surface;
-  surface(surfaceAlias: string): Surface;
-  blimp(blimpId?: number): Blimp;
+  public destructor(): void;
+  public surface(): Surface;
+  public surface(surfaceId: number): Surface;
+  public surface(surfaceAlias: string): Surface;
+  public blimp(blimpId?: number): Blimp;
 }

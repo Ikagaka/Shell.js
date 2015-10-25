@@ -40,14 +40,6 @@ class NamedManager extends EventEmitter2
     return
 
   initEventListener: ->
-    onmousedown = (ev)=>
-      # Namedを一番前のレイヤへ、300msは多分タップ処理とか待ってる
-      setTimeout((=> @$namedMgr.append(ev.currentTarget) ), 300)
-    @$namedMgr.on("mousedown", ".named", onmousedown)
-    @$namedMgr.on("touchstart", ".named", onmousedown)
-    @destructors.push =>
-      @$namedMgr.off("mousedown", ".named", onmousedown)
-      @$namedMgr.off("touchstart", ".named", onmousedown)
     return
 
   destructor: ->
@@ -77,6 +69,5 @@ class NamedManager extends EventEmitter2
       console.error("namedId " + namedId + " is not used yet")
       return null
     return @namedies[namedId]
-
 
 exports.NamedManager = NamedManager

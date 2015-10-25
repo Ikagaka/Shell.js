@@ -9,8 +9,7 @@ export declare class NamedManager extends EventEmitter2 {
   public namedies: Named[];
 
   constructor();
-  public load(): Promise<NamedManager>;
-  public unload(): void;
+  public destructor(): void;
   public materialize(shell: Shell, balloon: Balloon): number;
   public vanish(namedId: number): void;
   public named(namedId: number): Named;

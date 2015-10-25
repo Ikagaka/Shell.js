@@ -15,25 +15,46 @@ Promise.all([
   var balloonDir = balloonNDir.asArrayBuffer();
   var shellDir = shellNDir.getDirectory("shell/master").asArrayBuffer();
   var shell = new NamedManager.Shell(shellDir);
+  var shell2 = new NamedManager.Shell(shellDir);
+  var shell3 = new NamedManager.Shell(shellDir);
   var balloon = new NamedManager.Balloon(balloonDir);
+  var balloon2 = new NamedManager.Balloon(balloonDir);
+  var balloon3 = new NamedManager.Balloon(balloonDir);
   return Promise.all([
     shell.load(),
-    balloon.load()
+    balloon.load(),
+    shell2.load(),
+    balloon2.load(),
+    shell3.load(),
+    balloon3.load()
   ]);
 }).then(function(tmp){
   var shell = tmp[0];
   var balloon = tmp[1];
+  var shell2 = tmp[2];
+  var balloon2 = tmp[3];
+  var shell3 = tmp[4];
+  var balloon3 = tmp[5];
   var nmdmgr = new NamedManager.NamedManager();
   document.body.appendChild(nmdmgr.element);
-
+  shell2.bindgroup.forEach(function (arr, i){
+    arr.forEach(function(_, j){ shell2.bindgroup[i][j] = false});});
+  shell3.bindgroup[0][30] = false
+  shell3.bindgroup[0][31] = false
   var hwnd = nmdmgr.materialize(shell, balloon);
+  var hwnd2 = nmdmgr.materialize(shell2, balloon2);
+  var hwnd3 = nmdmgr.materialize(shell3, balloon3);
   var named = nmdmgr.named(hwnd);
+  var named2 = nmdmgr.named(hwnd2);
+  var named3 = nmdmgr.named(hwnd3);
 
-  console.log(nmdmgr, named, shell, balloon);
-
-  named.on("mouse", function (ev){ console.log(ev); });
+  console.log(nmdmgr, hwnd, named, shell, balloon);
+  console.log(nmdmgr, hwnd2, named2, shell2, balloon2);
+  console.log(nmdmgr, hwnd3, named3, shell3, balloon3);
 
   talk(named);
+  talk(named2);
+  talk(named3);
 });
 
 
@@ -50,6 +71,9 @@ function wait(ms, callback) {
 }
 
 function talk(named){
+  named.on("mouse", function(ev){ console.log(ev); });
+  named.on("select", function(ev){ console.log(ev); });
+  named.on("input", function(ev){ console.log(ev); });
   Promise.resolve(named)
   .then(wait(0, function(named) { named.scope(0); }))
   .then(wait(0, function(named) { named.scope().surface(0); }))

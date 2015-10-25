@@ -1,3 +1,4 @@
+{SurfaceUtil} = require("ikagaka.shell.js")
 {Scope} = require("./Scope")
 
 class Named extends EventEmitter2
@@ -23,71 +24,51 @@ class Named extends EventEmitter2
   initEventListener: ->
     $target = null
     relLeft = relTop = 0
-    onmouseup = (ev)=>
-      if !!$target
-        if $(ev.target).hasClass("blimpText") || $(ev.target).hasClass("blimpCanvas")
-          if $target[0] is $(ev.target).parent()?[0]
-            $target = null
-        else if $(ev.target).hasClass("surfaceCanvas")
-          if $target[0] is $(ev.target).parent().parent()?[0]
-            $target = null
-    onmousedown = (ev)=>
-      if $(ev.target).hasClass("blimpText") || $(ev.target).hasClass("blimpCanvas")
-        if $(ev.target).parent().parent().parent()?[0] is @element
-          $target = $(ev.target).parent() # .blimp
-          $scope = $target.parent()
+    @shell.on "mouse", (ev)=>
+      if ev.transparency is true and
+         ev.type isnt "mousemove" # mousemoveおよびmouseenterはループするので
+        SurfaceUtil.recursiveElementFromPoint(ev.event, @nmdmgr.element, ev.event.target)
+        # 透明領域の下要素にイベントが投げられたので
+        # それが拾われるのを待つ
+        return
+      switch ev.type
+        when "mouseup"
+          $target = null
+        when "mousemove"
+          if $target?
+            if /^touch/.test(ev.event.type)
+              pageX = ev.event.touches[0].pageX
+              pageY = ev.touches[0].pageY
+            else
+              pageX = ev.event.pageX
+              pageY = ev.event.pageY
+            $target.css
+              left: pageX - relLeft
+              top:  pageY - relTop
+        when "mousedown"
+          $target = $scope = $(@scopes[ev.scopeId].element)
           {top, left} = $target.offset()
-          offsetY = parseInt($target.css("left"), 10)
-          offsetX = parseInt($target.css("top"), 10)
-          if /^touch/.test(ev.type)
-            pageX = ev.touches[0].pageX
-            pageY = ev.touches[0].pageY
+          if /^touch/.test(ev.event.type)
+            pageX = ev.event.touches[0].pageX
+            pageY = ev.event.touches[0].pageY
           else
-            pageX = ev.pageX
-            pageY = ev.pageY
-          relLeft = pageX - offsetY
-          relTop  = pageY - offsetX
-          setTimeout((=>
-            @$named.append($scope) ), 200)
-      else if $(ev.target).hasClass("surfaceCanvas")
-        if $(ev.target).parent().parent().parent()?[0] is @element
-          $scope = $target = $(ev.target).parent().parent() # .scope
-          {top, left} = $target.offset()
-          if /^touch/.test(ev.type)
-            pageX = ev.touches[0].pageX
-            pageY = ev.touches[0].pageY
-          else
-            pageX = ev.pageX
-            pageY = ev.pageY
+            pageX = ev.event.pageX
+            pageY = ev.event.pageY
           relLeft = pageX - left
           relTop  = pageY - top
-          setTimeout((=>
-            @$named.append($scope) ), 200)
-    onmousemove = (ev)=>
-      if !!$target
-        if /^touch/.test(ev.type)
-          pageX = ev.touches[0].pageX
-          pageY = ev.touches[0].pageY
-        else
-          pageX = ev.pageX
-          pageY = ev.pageY
-        $target.css
-          left: pageX - relLeft
-          top:  pageY - relTop
-    $body = $("body")
-    $body.on("mousedown", onmousedown)
-    $body.on("mousemove", onmousemove)
-    $body.on("mouseup",   onmouseup)
-    $body.on("touchstart", onmousedown)
-    $body.on("touchmove",  onmousemove)
-    $body.on("touchend",   onmouseup)
-    @destructors.push ->
-      $body.off("mousedown", onmousedown)
-      $body.off("mousemove", onmousemove)
-      $body.off("mouseup",   onmouseup)
-      $body.off("touchstart", onmousedown)
-      $body.off("touchmove",  onmousemove)
-      $body.off("touchend",   onmouseup)
+          @$named.append($scope) # このnamedの中のscopeの中で最前面に
+          @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
+      return
+    @balloon.on "mouse", (ev)=>
+      $scope = $(@scopes[ev.scopeId].element)
+      switch ev.type
+        when "mousedown"
+          @$named.append($scope) # namedの中のscopeの中で最前面に
+          @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
+      return
+    @balloon.on "select", (ev)=>
+      console.log(ev);
+      @emit("select", ev);
     return
 
   destructor: ->
@@ -110,20 +91,21 @@ class Named extends EventEmitter2
     return @currentScope
 
   openInputBox: (id, text="")->
+    # TODO use Ballon
     event =
       "type": "userinput"
       "id": id
       "content": prompt("UserInput", text)
-    @emit(event.type, event)
+    @emit("input", event)
     return
 
   openCommunicateBox: (text="")->
+    # TODO use Ballon
     event =
       "type": "communicateinput"
       "sender": "user"
       "content": prompt("Communicate", text)
-    @emit(event.type, event)
+    @emit("input", event)
     return
-
 
 exports.Named = Named
