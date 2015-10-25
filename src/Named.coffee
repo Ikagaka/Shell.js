@@ -36,35 +36,48 @@ class Named extends EventEmitter2
           $target = null
         when "mousemove"
           if $target?
-            if /^touch/.test(ev.event.type)
-              pageX = ev.event.touches[0].pageX
-              pageY = ev.touches[0].pageY
-            else
-              pageX = ev.event.pageX
-              pageY = ev.event.pageY
+            $surfaceCanvas = $(@scopes[ev.scopeId].element).find(".surfaceCanvas")
+            {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev.event);
             $target.css
-              left: pageX - relLeft
-              top:  pageY - relTop
+              right:  document.body.clientWidth  - clientX - ($surfaceCanvas.width()  - relLeft)
+              bottom: document.body.clientHeight - clientY - ($surfaceCanvas.height() - relTop)
         when "mousedown"
           $target = $scope = $(@scopes[ev.scopeId].element)
           {top, left} = $target.offset()
-          if /^touch/.test(ev.event.type)
-            pageX = ev.event.touches[0].pageX
-            pageY = ev.event.touches[0].pageY
-          else
-            pageX = ev.event.pageX
-            pageY = ev.event.pageY
-          relLeft = pageX - left
-          relTop  = pageY - top
+          {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev.event);
+          relLeft = clientX - (left - window.scrollX) # サーフェス左上を起点とした
+          relTop  = clientY - (top  - window.scrollY) # マウスの相対座標
           @$named.append($scope) # このnamedの中のscopeの中で最前面に
           @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
+      @emit("mouseShell", ev)
       return
     @balloon.on "mouse", (ev)=>
       $scope = $(@scopes[ev.scopeId].element)
       switch ev.type
+        when "mouseup"
+          $target = null
+        when "mousemove"
+          if $target?
+            {pageX, pageY, clientX, clientY, screenX, screenY} = SurfaceUtil.getEventPosition(ev.event);
+            $scope = $(@scopes[ev.scopeId].element)
+            if pageX - relLeft + $scope.width()/2 > 0
+            then @scope(ev.scopeId).blimp().right()
+            else @scope(ev.scopeId).blimp().left()
+            $target.css
+              left: pageX - relLeft
+              top:  pageY - relTop
         when "mousedown"
+          $scope = $(@scopes[ev.scopeId].element)
+          $target = $scope.find(".blimp")
+          {top, left} = $target.offset()
+          offsetY = parseInt($target.css("left"), 10)
+          offsetX = parseInt($target.css("top"), 10)
+          {pageX, pageY, clientX, clientY, screenX, screenY} = SurfaceUtil.getEventPosition(ev.event);
+          relLeft = pageX - offsetY
+          relTop  = pageY - offsetX
           @$named.append($scope) # namedの中のscopeの中で最前面に
           @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
+      @emit("mouseBalloon", ev)
       return
     @balloon.on "select", (ev)=>
       console.log(ev);

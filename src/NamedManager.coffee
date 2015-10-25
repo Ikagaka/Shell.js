@@ -18,16 +18,24 @@ class NamedManager extends EventEmitter2
     return
 
   initStyle: ->
+    @$namedMgr.css
+      bottom: "0px"
+      right: "0px"
+      position: "fixed"
     $style = $("<style scoped />").text("""
       .scope {
         position: absolute;
+        right: 0px;
+        bottom: 0px;
         pointer-events: none;
         user-select: none;
         -webkit-tap-highlight-color: transparent;
       }
       .surface {
+        user-select: none;
       }
       .surfaceCanvas {
+        user-select: none;
         pointer-events: auto;
       }
       .blimp {
@@ -35,6 +43,9 @@ class NamedManager extends EventEmitter2
         top: 0px;
         left: 0px;
         pointer-events: auto;
+      }
+      .blimpCanvas {
+        user-select: none;
       }
     """).appendTo(@$namedMgr)
     return
