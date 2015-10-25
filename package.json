@@ -15,9 +15,10 @@
   },
   "scripts": {
     "init": "npm run update; npm run build",
-    "update": "rm -rf bower_components node_modules; npm update; bower update",
+    "update": "rm -rf bower_components node_modules; npm update; bower update; dtsm fetch; dtsm update --save",
     "clean": "rm lib/*.js dist/*.js",
     "start": "http-server -o --silent -p 8000 & watchify lib/index.js --standalone NamedManager -o dist/NamedManager.js -v & coffee -c -w -o lib src/*.coffee",
+    "stop": "killall -- node */http-server -p 8000",
     "build": "coffee -c -o lib src/*.coffee; browserify lib/index.js --standalone NamedManager -o dist/NamedManager.js",
     "patch": "mversion patch -m; git push origin --tag"
   },

@@ -346,19 +346,27 @@
 
   NamedManager = require("./NamedManager").NamedManager;
 
-  Named = require("./Named");
+  Named = require("./Named").Named;
 
-  Scope = require("./Scope");
-
-  exports.Scope = Scope;
-
-  exports.Named = Named;
-
-  exports.NamedManager = NamedManager;
+  Scope = require("./Scope").Scope;
 
   exports.Balloon = Balloon;
 
+  exports.Blimp = Blimp;
+
   exports.Shell = Shell;
+
+  exports.Surface = Surface;
+
+  exports.SurfaceUtil = SurfaceUtil;
+
+  exports.SurfaceRender = SurfaceRender;
+
+  exports.NamedManager = NamedManager;
+
+  exports.Named = Named;
+
+  exports.Scope = Scope;
 
 }).call(this);
 
