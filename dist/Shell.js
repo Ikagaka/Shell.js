@@ -1525,21 +1525,21 @@ function unscope(charId) {
 }
 
 function getEventPosition(ev) {
-    if (/^touch/.test(ev.type)) {
+    if (/^touch/.test(ev.type) && ev.originalEvent.touches.length > 0) {
         var pageX = ev.originalEvent.touches[0].pageX;
         var pageY = ev.originalEvent.touches[0].pageY;
         var clientX = ev.originalEvent.touches[0].clientX;
         var clientY = ev.originalEvent.touches[0].clientY;
         var screenX = ev.originalEvent.touches[0].screenX;
         var screenY = ev.originalEvent.touches[0].screenY;
-    } else {
-        var pageX = ev.pageX;
-        var pageY = ev.pageY;
-        var clientX = ev.clientX;
-        var clientY = ev.clientY;
-        var screenX = ev.screenX;
-        var screenY = ev.screenY;
+        return { pageX: pageX, pageY: pageY, clientX: clientX, clientY: clientY, screenX: screenX, screenY: screenY };
     }
+    var pageX = ev.pageX;
+    var pageY = ev.pageY;
+    var clientX = ev.clientX;
+    var clientY = ev.clientY;
+    var screenX = ev.screenX;
+    var screenY = ev.screenY;
     return { pageX: pageX, pageY: pageY, clientX: clientX, clientY: clientY, screenX: screenX, screenY: screenY };
 }
 

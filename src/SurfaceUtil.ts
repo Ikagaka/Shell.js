@@ -200,21 +200,21 @@ export function unscope(charId: string): number {
 }
 
 export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY: number, clientX: number, clientY: number, screenX: number, screenY: number } {
-  if (/^touch/.test(ev.type)){
+  if (/^touch/.test(ev.type) && (<TouchEvent>ev.originalEvent).touches.length > 0){
     var pageX = (<TouchEvent>ev.originalEvent).touches[0].pageX;
     var pageY = (<TouchEvent>ev.originalEvent).touches[0].pageY;
     var clientX = (<TouchEvent>ev.originalEvent).touches[0].clientX;
     var clientY = (<TouchEvent>ev.originalEvent).touches[0].clientY;
     var screenX = (<TouchEvent>ev.originalEvent).touches[0].screenX;
     var screenY = (<TouchEvent>ev.originalEvent).touches[0].screenY;
-  }else{
-    var pageX = ev.pageX;
-    var pageY = ev.pageY;
-    var clientX = ev.clientX;
-    var clientY = ev.clientY;
-    var screenX = ev.screenX;
-    var screenY = ev.screenY;
+    return {pageX, pageY, clientX, clientY, screenX, screenY};
   }
+  var pageX = ev.pageX;
+  var pageY = ev.pageY;
+  var clientX = ev.clientX;
+  var clientY = ev.clientY;
+  var screenX = ev.screenX;
+  var screenY = ev.screenY;
   return {pageX, pageY, clientX, clientY, screenX, screenY};
 }
 
