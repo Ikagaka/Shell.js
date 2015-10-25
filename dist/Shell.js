@@ -1556,9 +1556,9 @@ function recursiveElementFromPoint(ev, parent, target) {
 
     var left = _$$offset.left;
     var top = _$$offset.top;
-    var offsetX = clientX - left;
-    var offsetY = clientY - top;
 
+    var offsetX = clientX - (left - window.scrollX); // window.scrollX は position: fixed; でのclientWidthをとるため
+    var offsetY = clientY - (top - window.scrollY);
     if ($(parent).find(target).length > 0 && target instanceof HTMLCanvasElement && isHit(target, offsetX, offsetY)) {
         eventPropagationSim(target, ev);
         return target;
