@@ -162,6 +162,7 @@ export function always(  callback: (callback: () => void) => void): void {
 }
 
 export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
+  if(!(cnv.width > 0 || cnv.height > 0)) return false;
   var ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
   var imgdata = ctx.getImageData(0, 0, x + 1|0, y + 1|0);
   var data = imgdata.data;
