@@ -361,5 +361,4 @@ export class Shell extends EventEmitter2 {
       srf.render();
     });
   }
-
 }

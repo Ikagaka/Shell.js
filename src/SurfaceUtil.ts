@@ -183,70 +183,78 @@ export function createCanvas(): HTMLCanvasElement {
   return cnv;
 }
 
+// 0 -> sakura
 export function scope(scopeId: number): string {
   return scopeId === 0 ? "sakura"
        : scopeId === 1 ? "kero"
        : "char"+scopeId;
 }
 
-/*なにこれ
-var _charId = charId === "sakura" ? 0
-            : charId === "kero"   ? 1
-            : Number(/^char(\d+)/.exec(charId)[1]);
-*/
-
-/*
-@isHitBubble = (element, pageX, pageY)->
-  $(element).hide()
-  elm = document.elementFromPoint(pageX, pageY)
-  if !elm
-    $(element).show(); return elm
-  unless elm instanceof HTMLCanvasElement
-    $(element).show(); return elm
-  {top, left} = $(elm).offset()
-  if Surface.isHit(elm, pageX-left, pageY-top)
-    $(element).show(); return elm
-  _elm = Surface.isHitBubble(elm, pageX, pageY)
-  $(element).show(); return _elm
-*/
-
-// ↑この死にコードなんだよ
-
-/*
-以下Named.jsから呼ばれなくなった死にコード
-export function elementFromPointWithout (element: HTMLElement, pageX: number, pageY: number): Element {
-  var tmp = element.style.display;
-  element.style.display = "none";
-  // elementを非表示にして直下の要素を調べる
-  var elm = document.elementFromPoint(pageX, pageY);
-  // 直下の要素がcanvasなら透明かどうか調べる
-  // todo: cuttlebone管理下の要素かどうかの判定必要
-  if (!elm){
-    element.style.display = tmp;
-    return elm;
-  }
-  if (!(elm instanceof HTMLCanvasElement)) {
-    element.style.display = tmp;
-    return elm;
-  }
-  var {top, left} = offset(elm);
-  // 不透明canvasならヒット
-  if (elm instanceof HTMLCanvasElement && isHit(elm, pageX - left, pageY - top)) {
-    element.style.display = tmp;
-    return elm;
-  }
-  if(elm instanceof HTMLElement){
-    // elementの非表示のままさらに下の要素を調べにいく
-    var _elm = elementFromPointWithout(elm, pageX, pageY)
-    element.style.display = tmp;
-    return _elm;
-  }
-  // 解決できなかった！ザンネン!
-  console.warn(elm);
-  element.style.display = tmp;
-  return null;
+// sakuta -> 0
+export function unscope(charId: string): number {
+  return charId === "sakura" ? 0
+       : charId === "kero"   ? 1
+       : Number(/^char(\d+)/.exec(charId)[1]);
 }
-*/
+
+export function recursiveElementFromPoint(ev: JQueryEventObject, parent: HTMLElement, target: HTMLElement): HTMLElement {
+  var {clientX, clientY, pageX, pageY} = ev;
+  var {left, top} = $(target).offset();
+  var [offsetX, offsetY] = [pageX - left, pageY - top];
+  if ($(parent).find(target).length > 0 &&
+     target instanceof HTMLCanvasElement &&
+     isHit(target, offsetX, offsetY)){
+    eventPropagationSim(target, ev);
+    return target;
+  }
+  var tmp = target.style.display;
+  target.style.display = "none";
+  var under = <HTMLElement>document.elementFromPoint(clientX, clientY);
+  if (under == null){
+    target.style.display = tmp;
+    return null;
+  }
+  if ($(parent).find(under).length > 0){
+    var result = recursiveElementFromPoint(ev, parent, under);
+    target.style.display = tmp;
+    return result;
+  }
+  eventPropagationSim(under, ev);
+  target.style.display = tmp
+  // マウスを停止しているのにここを大量のmousemoveが通過するが
+  // target.style.display = "none"したのち
+  // target.style.display = tmp した瞬間に
+  // mousemoveが発生してしまうためで、それほど大きな問題はないので大丈夫
+  // (モバイルだとマウスないからmousemove発生しないし)
+  return under;
+}
+
+export function eventPropagationSim(target: HTMLElement, ev: JQueryEventObject): void {
+  ev.preventDefault();
+  ev.stopPropagation();
+  if(/^mouse|click$/.test(ev.type)) {
+    var mev = new MouseEvent(ev.type, {
+      screenX: ev.screenX,
+      screenY: ev.screenY,
+      clientX: ev.clientX,
+      clientY: ev.clientY,
+      ctrlKey: ev.ctrlKey,
+      altKey:  ev.altKey,
+      shiftKey:ev.shiftKey,
+      metaKey: ev.metaKey,
+      button:  ev.button,
+      buttons: ev.originalEvent["buttons"],
+      relatedTarget: ev.relatedTarget,
+      view:    ev.originalEvent["view"],
+      detail:  ev.originalEvent["detail"],
+      bubbles: true
+    });
+    target.dispatchEvent(mev);
+  }else{
+    console.warn(ev.type, "is not support event");
+  }
+}
+
 
 export function randomRange(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
