@@ -1,3 +1,5 @@
+import {SurfaceTreeNode} from "./Shell";
+
 /**
  * extend deep like jQuery $.extend(true, target, source)
  */
@@ -200,7 +202,7 @@ export function unscope(charId: string): number {
        : Number(/^char(\d+)/.exec(charId)[1]);
 }
 
-export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY: number, clientX: number, clientY: number, screenX: number, screenY: number } {
+export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY: number, clientX: number, clientY: number, screenX: number, screenY: number} {
   if (/^touch/.test(ev.type) && (<TouchEvent>ev.originalEvent).touches.length > 0){
     var pageX = (<TouchEvent>ev.originalEvent).touches[0].pageX;
     var pageY = (<TouchEvent>ev.originalEvent).touches[0].pageY;
@@ -351,4 +353,54 @@ export function eventPropagationSim(target: HTMLElement, ev: JQueryEventObject):
 
 export function randomRange(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+
+
+export function getRegion(element: HTMLCanvasElement, surfaceNode: SurfaceTreeNode, offsetX: number, offsetY: number): {isHit:boolean, name:string} {
+  // canvas左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べるメソッド
+  if(isHit(element, offsetX, offsetY)){
+    var hitCols = surfaceNode.collisions.filter((collision, colId)=>{
+      var {type, name, left, top, right, bottom, coordinates, radius, center_x, center_y} = collision;
+      switch(type){
+        case "rect":
+          return (left < offsetX && offsetX < right && top < offsetY && offsetY < bottom) ||
+                 (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
+        case "ellipse":
+          var width = Math.abs(right - left);
+          var height = Math.abs(bottom - top);
+          return Math.pow((offsetX-(left+width/2))/(width/2), 2) +
+                 Math.pow((offsetY-(top+height/2))/(height/2), 2) < 1;
+        case "circle":
+          return Math.pow((offsetX-center_x)/radius, 2)+Math.pow((offsetY-center_y)/radius, 2) < 1;
+        case "polygon":
+          var ptC = {x:offsetX, y:offsetY};
+          var tuples = coordinates.reduce(((arr, {x, y}, i)=>{
+            arr.push([
+              coordinates[i],
+              (!!coordinates[i+1] ? coordinates[i+1] : coordinates[0])
+            ]);
+            return arr;
+          }), []);
+          var deg = tuples.reduce(((sum, [ptA, ptB])=>{
+            var vctA = [ptA.x-ptC.x, ptA.y-ptC.y];
+            var vctB = [ptB.x-ptC.x, ptB.y-ptC.y];
+            var dotP = vctA[0]*vctB[0] + vctA[1]*vctB[1];
+            var absA = Math.sqrt(vctA.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
+            var absB = Math.sqrt(vctB.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
+            var rad = Math.acos(dotP/(absA*absB))
+            return sum + rad;
+          }), 0)
+          return deg/(2*Math.PI) >= 1;
+        default:
+          console.warn("unkown collision type:", this.surfaceId, colId, name, collision);
+          return false;
+      }
+    });
+    if(hitCols.length > 0)
+      return {isHit:true, name:hitCols[hitCols.length-1].name};
+    return {isHit:true, name:""};
+  }else{
+    return {isHit:false, name:""};
+  }
 }

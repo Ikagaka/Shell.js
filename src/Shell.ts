@@ -25,7 +25,6 @@ export class Shell extends EventEmitter2 {
 
   constructor(directory: { [filepath: string]: ArrayBuffer; }) {
     super();
-    EventEmitter2.call(this);
 
     this.descript = {};
     this.directory = directory;
@@ -73,18 +72,21 @@ export class Shell extends EventEmitter2 {
     var descript = this.descript;
     var grep = (dic:{[key:string]:any}, reg: RegExp)=>
       Object.keys(dic).filter((key)=> reg.test(key))
-    var reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)\.default/;
+    var reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)(?:\.(default))?/;
     grep(descript, reg).forEach((key)=>{
-      var [_, charId, bindgroupId] = reg.exec(key);
+      var [_, charId, bindgroupId, dflt] = reg.exec(key);
       var _charId = charId === "sakura" ? "0" :
                                "kero"   ? "1" :
                                (/char(\d+)/.exec(charId)||["", Number.NaN])[1];
       var maybeNumCharId = Number(_charId);
       var maybeNumBindgroupId = Number(bindgroupId);
-      var maybeNumBool = Number(descript[key]);
       if(isFinite(maybeNumCharId) && isFinite(maybeNumBindgroupId)){
         this.bindgroup[maybeNumCharId] = this.bindgroup[maybeNumCharId] || [];
-        this.bindgroup[maybeNumCharId][maybeNumBindgroupId] = maybeNumBool === 1 ? true : false;
+        if(dflt === "default"){
+          this.bindgroup[maybeNumCharId][maybeNumBindgroupId] = !!Number(descript[key]);
+        }else{
+          this.bindgroup[maybeNumCharId][maybeNumBindgroupId] = this.bindgroup[maybeNumCharId][maybeNumBindgroupId] || false;
+        }
       }else{
         console.warn("CharId: "+ _charId + " or bindgroupId: " + bindgroupId + " is not number");
       }

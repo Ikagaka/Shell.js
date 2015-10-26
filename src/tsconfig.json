@@ -34,6 +34,7 @@
     "files": [
         "index.ts",
         "Shell.ts",
+        "Surface_.ts",
         "Surface.ts",
         "SurfaceRender.ts",
         "SurfaceUtil.ts"
