@@ -1,6 +1,13 @@
+/// <reference path="../typings/tsd.d.ts"/>
+
 import {SurfaceRender, SurfaceLayerObject} from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
 import {Shell, SurfaceTreeNode} from "./Shell";
+import jQuery from "jquery";
+
+self["$"] = jQuery;
+self["jQuery"] = jQuery;
+var $ = jQuery;
 
 export interface SurfaceMouseEvent {
   button: number; // マウスのボタン
@@ -15,6 +22,7 @@ export interface SurfaceMouseEvent {
 }
 
 export class Surface {
+
   public element: HTMLCanvasElement;
   public scopeId: number;
   public surfaceId: number;
@@ -220,6 +228,12 @@ export class Surface {
     this.stopFlags[animationId] = true;
   }
 
+  public endAll(): void {
+    Object.keys(this.stopFlags).forEach((key)=>{
+      this.stopFlags[key] = false;
+    })
+  }
+
   // アニメーション再生
   public play(animationId: number, callback?: Function): void {
     if(this.destructed) return;
@@ -229,10 +243,10 @@ export class Surface {
     this.animationsQueue[animationId] = anim.patterns.map((pattern)=> ()=>{
       var {surface, wait, type, x, y, animation_ids} = pattern;
       switch(type){
-        case "start":            return this.play(animation_ids[0], nextTick);
-        case "stop":             return this.stop(animation_ids[0]); setTimeout(nextTick);
-        case "alternativestart": return this.play(SurfaceUtil.choice<number>(animation_ids), nextTick);
-        case "alternativestart": return this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick);
+        case "start":            this.play(animation_ids[0], nextTick); return;
+        case "stop":             this.stop(animation_ids[0]); setTimeout(nextTick); return;
+        case "alternativestart": this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
+        case "alternativestart": this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
       }
       var [__, a, b] = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]);
       var _wait = isFinite(Number(b))
@@ -265,6 +279,16 @@ export class Surface {
 
   public stop(animationId: number): void {
     this.animationsQueue[animationId] = []; // アニメーションキューを破棄
+  }
+
+  public talk(): void {
+    var animations = this.surfaceNode.animations;
+    this.talkCount++;
+    var hits = animations.filter((anim)=>
+        /^talk/.test(anim.interval) && this.talkCount % this.talkCounts[anim.is] === 0);
+    hits.forEach((anim)=>{
+      this.play(anim.is);
+    });
   }
 
   public yenE(): void {

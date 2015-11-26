@@ -3,6 +3,40 @@
 import {Surface} from './Surface';
 import {SurfaceRender, SurfaceLayerObject} from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
+import EventEmitter from "eventemitter3";
+import * as SurfacesTxt2Yaml from "surfaces_txt2yaml";
+
+export interface EventEmitter {};
+export interface SurfaceRegion {
+  is: number;
+  name: string;
+  type: string;
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  radius: number;
+  center_x: number;
+  center_y: number;
+  coordinates: { x: number; y: number; }[];
+}
+
+export interface SurfaceAnimation {
+  is: number;
+  interval: string;
+  option: string;
+  patterns: SurfaceAnimationPattern[];
+}
+
+export interface SurfaceAnimationPattern {
+  animation_ids: number[];
+  type: string;
+  surface: number;
+  wait: string;
+  x: number;
+  y: number;
+}
+
 
 export interface SurfaceTreeNode {
   base:  HTMLCanvasElement,
@@ -11,8 +45,9 @@ export interface SurfaceTreeNode {
   animations: SurfaceAnimation[]
 }
 
-export class Shell extends EventEmitter2 {
+export class Shell extends EventEmitter {
   //public
+
   public directory: { [filepath: string]: ArrayBuffer; }
   public descript: { [key: string]: string; };
   public attachedSurface: { canvas: HTMLCanvasElement, surface: Surface }[];
@@ -312,7 +347,7 @@ export class Shell extends EventEmitter2 {
     this.attachedSurface.forEach(function({canvas, surface}){
       surface.destructor();
     });
-    this.removeAllListeners();
+    this.removeAllListeners("");
     Object.keys(this).forEach((key)=> {
       this[key] = new this[key].constructor();
     });

@@ -1,3 +1,4 @@
+/// <reference path="../typings/tsd.d.ts"/>
 
 import * as SurfaceUtil from "./SurfaceUtil";
 
@@ -9,6 +10,7 @@ export interface SurfaceLayerObject {
 }
 
 export class SurfaceRender {
+
   cnv: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   DEBUG: boolean;

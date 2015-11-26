@@ -4,12 +4,6 @@
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "dependencies": {
-    "surfaces_txt2yaml": "Narazaka/surfaces_txt2yaml",
-    "encoding-japanese": "~1.0.23",
-    "text-encoding": "~0.5.3",
-    "jszip": "*",
-    "eventemitter2": "~0.4.14",
-    "jquery": "*"
   },
   "devDependencies": {
     "qunit": "*",

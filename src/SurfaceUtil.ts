@@ -1,8 +1,9 @@
-import {SurfaceTreeNode} from "./Shell";
+/// <reference path="../typings/tsd.d.ts"/>
 
-/**
- * extend deep like jQuery $.extend(true, target, source)
- */
+import {SurfaceTreeNode} from "./Shell";
+import * as Encoding from "encoding-japanese";
+
+// extend deep like jQuery $.extend(true, target, source)
 export function extend(target: any, source: any): void {
   for(var key in source){
     if (typeof source[key] === "object" && Object.getPrototypeOf(source[key]) === Object.prototype) {
@@ -17,9 +18,7 @@ export function extend(target: any, source: any): void {
   }
 }
 
-/**
- * "hoge.huga, foo, bar\n" to {"hoge.huga": "foo, bar"}
- */
+// "hoge.huga, foo, bar\n" to {"hoge.huga": "foo, bar"}
 export function parseDescript(text: string): {[key:string]:string}{
   text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
   while(true){// remove commentout
@@ -41,18 +40,38 @@ export function parseDescript(text: string): {[key:string]:string}{
   return dic;
 }
 
+// XMLHttpRequest, xhr.responseType = "arraybuffer"
+export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
+  return new Promise(function(resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", function() {
+      if (200 <= xhr.status && xhr.status < 300) {
+        if (xhr.response.error == null) {
+          return resolve(xhr.response);
+        } else {
+          return reject(new Error("message: "+ xhr.response.error.message));
+        }
+      } else {
+        return reject(new Error("status: "+xhr.status));
+      }
+    });
+    xhr["open"]("GET", url);
+    xhr["responseType"] = "arraybuffer";
+    return xhr["send"]();
+  });
+}
 
-/**
- * convert some encoding txt file arraybuffer to js string
- */
+
+// convert some encoding txt file arraybuffer to js string
+// TODO: use text-enconding & charset detection code
 export function convert(buffer: ArrayBuffer):string{
   //return new TextDecoder('shift_jis').decode(buffer);
   return Encoding.codeToString(Encoding.convert(new Uint8Array(buffer), 'UNICODE', 'AUTO'));
 }
 
-/**
- * find filename that matches arg "filename" from arg "paths"
- */
+
+// find filename that matches arg "filename" from arg "paths"
+// filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
 export function find(paths: string[], filename: string): string[] {
   filename = filename.split("\\").join("/");
   if(filename.slice(0,2) === "./") filename = filename.slice(2);
@@ -61,11 +80,14 @@ export function find(paths: string[], filename: string): string[] {
   return hits;
 }
 
-
+// [1,2,3] -> 1 or 2 or 3 as 33% probability
 export function choice<T>(arr: T[]): T {
-  return arr[Math.round(Math.random()*(arr.length-1))];
+  return arr[(Math.random()*100*(arr.length)|0)%arr.length];
 }
 
+// copy canvas as new object
+// this copy technic is faster than getImageData full copy, but some pixels are bad copy.
+// see also: http://stackoverflow.com/questions/4405336/how-to-copy-contents-of-one-canvas-to-another-canvas-locally
 export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement {
   var _copy = document.createElement("canvas");
   var ctx = <CanvasRenderingContext2D>_copy.getContext("2d");
@@ -115,7 +137,7 @@ export function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf: ArrayBuffer, pn
   });
 }
 
-
+// ArrayBuffer -> HTMLImageElement
 export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string): Promise<HTMLImageElement> {
   var url = URL.createObjectURL(new Blob([buffer], {type: mimetype || "image/png"}));
   return fetchImageFromURL(url).then((img)=>{
@@ -126,6 +148,7 @@ export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string)
   });
 }
 
+// URL -> HTMLImageElement
 export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
   var img = new Image();
   img.src = url;
@@ -140,6 +163,7 @@ export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
   });
 }
 
+// random(func, 2) means call func 1/2 of probability every 1 second
 export function random(callback: (nextTick: () => void) => void, probability: number): void {
   var ms = 1;
   while (Math.round(Math.random() * 1000) > 1000 / probability) {
