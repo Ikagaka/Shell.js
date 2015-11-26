@@ -1037,6 +1037,8 @@ var SurfaceRender = (function () {
         _classCallCheck(this, SurfaceRender);
 
         this.cnv = cnv;
+        this.basePosX = 0;
+        this.basePosY = 0;
         this.ctx = cnv.getContext("2d");
     }
 
@@ -1155,32 +1157,45 @@ var SurfaceRender = (function () {
     }, {
         key: "overlay",
         value: function overlay(part, x, y) {
-            if (this.cnv.width < part.width || this.cnv.height < part.height) {
-                // baseのcanvasを拡大
-                var tmp = SurfaceUtil.copy(this.cnv);
-                this.cnv.width = part.width > this.cnv.width ? part.width : this.cnv.width;
-                this.cnv.height = part.height > this.cnv.height ? part.height : this.cnv.height;
-                this.ctx.drawImage(tmp, 0, 0);
+            // baseのcanvasを拡大
+            var tmp = SurfaceUtil.copy(this.cnv);
+            // もしパーツが右下へはみだす
+            if (x >= 0) {
+                this.cnv.width = x + part.width > this.cnv.width ? x + part.width : this.cnv.width;
             }
+            if (y >= 0) {
+                this.cnv.height = y + part.height > this.cnv.height ? y + part.height : this.cnv.height;
+            }
+            // もしパーツが右上へはみだす（ネガティブマージン
+            if (x < 0) {
+                // もし右へははみ出す
+                this.cnv.width = part.width + x > this.cnv.width ? part.width : this.cnv.width - x;
+                this.basePosX = -x;
+            }
+            if (y < 0) {
+                this.cnv.height = part.height + y > this.cnv.height ? part.height : this.cnv.height - y;
+                this.basePosY = -y;
+            }
+            this.ctx.drawImage(tmp, this.basePosX, this.basePosY);
             this.ctx.globalCompositeOperation = "source-over";
-            this.ctx.drawImage(part, x, y);
+            this.ctx.drawImage(part, this.basePosX + x, this.basePosY + y);
         }
     }, {
         key: "overlayfast",
         value: function overlayfast(part, x, y) {
             this.ctx.globalCompositeOperation = "source-atop";
-            this.ctx.drawImage(part, x, y);
+            this.ctx.drawImage(part, this.basePosX + x, this.basePosY + y);
         }
     }, {
         key: "interpolate",
         value: function interpolate(part, x, y) {
             this.ctx.globalCompositeOperation = "destination-over";
-            this.ctx.drawImage(part, x, y);
+            this.ctx.drawImage(part, this.basePosX + x, this.basePosY + y);
         }
     }, {
         key: "replace",
         value: function replace(part, x, y) {
-            this.ctx.clearRect(x, y, part.width, part.height);
+            this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.width, part.height);
             this.overlay(part, x, y);
         }
     }, {
@@ -1188,7 +1203,8 @@ var SurfaceRender = (function () {
         value: function init(cnv) {
             this.cnv.width = cnv.width;
             this.cnv.height = cnv.height;
-            this.overlay(cnv, 0, 0); // type hack
+            this.ctx.globalCompositeOperation = "source-over";
+            this.ctx.drawImage(cnv, 0, 0);
         }
     }, {
         key: "initImageData",
@@ -1223,6 +1239,12 @@ var SurfaceRender = (function () {
             var center_x = region.center_x;
             var center_y = region.center_y;
 
+            left += this.basePosX;
+            top += this.basePosY;
+            right += this.basePosX;
+            bottom += this.basePosY;
+            center_x += this.basePosX;
+            center_y += this.basePosY;
             this.ctx.strokeStyle = "#00FF00";
             switch (type) {
                 case "rect":
@@ -1257,6 +1279,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
 
+exports.log = log;
 exports.extend = extend;
 exports.parseDescript = parseDescript;
 exports.fetchArrayBuffer = fetchArrayBuffer;
@@ -1286,6 +1309,18 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 var _encodingJapanese = require("encoding-japanese");
 
 var Encoding = _interopRequireWildcard(_encodingJapanese);
+
+function log(element) {
+    var description = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
+
+    var fieldset = document.createElement('fieldset');
+    var legend = document.createElement('legend');
+    legend.appendChild(document.createTextNode(description));
+    fieldset.appendChild(legend);
+    fieldset.appendChild(element);
+    fieldset.style.display = 'inline-block';
+    document.body.appendChild(fieldset);
+}
 
 // extend deep like jQuery $.extend(true, target, source)
 
@@ -1458,19 +1493,15 @@ function fetchImageFromURL(url) {
     });
 }
 
-// random(func, 2) means call func 1/2 of probability every 1 second
+// random(func, n) means call func 1/n per sec
 
 function random(callback, probability) {
-    var ms = 1;
-    while (Math.round(Math.random() * 1000) > 1000 / probability) {
-        ms++;
-    }
     setTimeout(function () {
-        var nextTick = function nextTick() {
-            return random(callback, probability);
-        };
-        callback(nextTick);
-    }, ms * 1000);
+        function nextTick() {
+            random(callback, probability);
+        }
+        if (Math.random() < 1 / probability) callback(nextTick);else nextTick();
+    }, 1000);
 }
 
 function periodic(callback, sec) {

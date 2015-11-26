@@ -13,10 +13,14 @@ export class SurfaceRender {
 
   cnv: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  basePosX: number;
+  basePosY: number;
   DEBUG: boolean;
 
   constructor(cnv: HTMLCanvasElement) {
     this.cnv = cnv;
+    this.basePosX = 0;
+    this.basePosY = 0;
     this.ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
   }
 
@@ -121,36 +125,50 @@ export class SurfaceRender {
   }
 
   overlay(part: HTMLCanvasElement, x: number, y: number): void {
-    if(this.cnv.width < part.width || this.cnv.height < part.height){
-      // baseのcanvasを拡大
-      var tmp = SurfaceUtil.copy(this.cnv);
-      this.cnv.width = part.width > this.cnv.width ? part.width : this.cnv.width;
-      this.cnv.height = part.height > this.cnv.height ? part.height : this.cnv.height;
-      this.ctx.drawImage(tmp, 0, 0);
+    // baseのcanvasを拡大
+    var tmp = SurfaceUtil.copy(this.cnv);
+    // もしパーツが右下へはみだす
+    if(x >= 0){
+      this.cnv.width = x + part.width > this.cnv.width ? x + part.width : this.cnv.width;
     }
+    if(y >= 0){
+      this.cnv.height = y + part.height > this.cnv.height ? y + part.height : this.cnv.height;
+    }
+    // もしパーツが右上へはみだす（ネガティブマージン
+    if(x < 0){
+      // もし右へははみ出す
+      this.cnv.width = part.width + x > this.cnv.width ? part.width : this.cnv.width - x;
+      this.basePosX = -x
+    }
+    if(y < 0){
+      this.cnv.height = part.height + y > this.cnv.height ? part.height : this.cnv.height - y;
+      this.basePosY = -y
+    }
+    this.ctx.drawImage(tmp, this.basePosX, this.basePosY);
     this.ctx.globalCompositeOperation = "source-over";
-    this.ctx.drawImage(part, x, y);
+    this.ctx.drawImage(part, this.basePosX + x, this.basePosY + y);
   }
 
   overlayfast(part: HTMLCanvasElement, x: number, y: number): void {
     this.ctx.globalCompositeOperation = "source-atop";
-    this.ctx.drawImage(part, x, y);
+    this.ctx.drawImage(part, this.basePosX + x, this.basePosY + y);
   }
 
   interpolate(part: HTMLCanvasElement, x: number, y: number): void {
     this.ctx.globalCompositeOperation = "destination-over";
-    this.ctx.drawImage(part, x, y);
+    this.ctx.drawImage(part, this.basePosX + x, this.basePosY + y);
   }
 
   replace(part: HTMLCanvasElement, x: number, y: number): void {
-    this.ctx.clearRect(x, y, part.width, part.height);
+    this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.width, part.height);
     this.overlay(part, x, y);
   }
 
   init(cnv: HTMLImageElement|HTMLCanvasElement): void {
     this.cnv.width = cnv.width;
     this.cnv.height = cnv.height;
-    this.overlay(<HTMLCanvasElement>cnv, 0, 0); // type hack
+    this.ctx.globalCompositeOperation = "source-over";
+    this.ctx.drawImage(cnv, 0, 0);
   }
 
   initImageData(width: number, height: number, data: Uint8ClampedArray): void {
@@ -170,6 +188,12 @@ export class SurfaceRender {
 
   drawRegion(region: SurfaceRegion): void {
     var {type, name, left, top, right, bottom, coordinates, radius, center_x, center_y} = region;
+    left += this.basePosX
+    top += this.basePosY
+    right += this.basePosX
+    bottom += this.basePosY
+    center_x += this.basePosX
+    center_y += this.basePosY
     this.ctx.strokeStyle = "#00FF00";
     switch (type) {
       case "rect":

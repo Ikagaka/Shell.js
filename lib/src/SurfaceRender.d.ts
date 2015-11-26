@@ -8,6 +8,8 @@ export interface SurfaceLayerObject {
 export declare class SurfaceRender {
     cnv: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
+    basePosX: number;
+    basePosY: number;
     DEBUG: boolean;
     constructor(cnv: HTMLCanvasElement);
     composeElements(elements: SurfaceLayerObject[]): void;

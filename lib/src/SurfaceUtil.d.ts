@@ -1,5 +1,6 @@
 /// <reference path="../../typings/tsd.d.ts" />
 import { SurfaceTreeNode } from "./Shell";
+export declare function log(element: Element, description?: string): void;
 export declare function extend(target: any, source: any): void;
 export declare function parseDescript(text: string): {
     [key: string]: string;

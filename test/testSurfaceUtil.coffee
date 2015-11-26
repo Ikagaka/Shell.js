@@ -1,4 +1,13 @@
 window.SurfaceUtil = Shell.SurfaceUtil
+setPictureFrame = (element, description) ->
+  fieldset = document.createElement('fieldset')
+  legend = document.createElement('legend')
+  legend.appendChild document.createTextNode(description)
+  fieldset.appendChild legend
+  fieldset.appendChild element
+  fieldset.style.display = 'inline-block'
+  document.body.appendChild fieldset
+  return
 
 QUnit.module 'SurfaceUtil'
 
@@ -72,8 +81,8 @@ QUnit.test "SurfaceUtil.copy", (assert)->
   assert.ok cnv isnt cnv2
   assert.ok cnv.width is cnv2.width
   assert.ok cnv.height is cnv2.height
-  document.body.appendChild(cnv2)
-  document.body.appendChild(cnv)
+  setPictureFrame(cnv, "SurfaceUtil.copy cnv")
+  setPictureFrame(cnv2, "SurfaceUtil.copy cnv2")
 
 QUnit.test "SurfaceUtil.fetchImageFromURL, SurfaceUtil.fetchImageFromArrayBuffer", (assert)->
   done = assert.async()
@@ -83,12 +92,11 @@ QUnit.test "SurfaceUtil.fetchImageFromURL, SurfaceUtil.fetchImageFromArrayBuffer
   .then (img)->
     assert.ok img.width is 182
     assert.ok img.height is 445
+    setPictureFrame(img, "SurfaceUtil.fetchImageFromURL")
     done()
   .catch (err)-> done()
 
 QUnit.test "SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10 sec)", (assert)->
-  assert.ok false, "test is not written yet"
-  """
   done = assert.async()
   assert.expect(3)
   endtime = Date.now() + 1000*10
@@ -97,16 +105,16 @@ QUnit.test "SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10
       count = 0
       func = (next)->
         if endtime < Date.now()
-          assert.ok 1 < count < 5, "random"
+          assert.ok 4 <= count <= 6, "random, 2"
           return resolve()
         count++
         next()
-      SurfaceUtil.random(func, 1)
+      SurfaceUtil.random(func, 2)
     new Promise (resolve, reject)->
       count = 0
       func = (next)->
         if endtime < Date.now()
-          assert.ok count is 5, "periodic"
+          assert.ok 4 <= count <= 6, "periodic"
           return resolve()
         count++
         next()
@@ -115,23 +123,23 @@ QUnit.test "SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10
       count = 0
       func = (next)->
         if endtime < Date.now()
-          assert.ok count is 10, "always"
+          assert.ok 9 <= count <= 11, "always"
           return resolve()
         count++
-        setTimeout(next, 900)
+        setTimeout(next, 1000)
       SurfaceUtil.always(func)
   ]).then(done)
-  """
+
 QUnit.test "SurfaceUtil.isHit", (assert)->
   cnv = document.createElement("canvas")
   cnv.width = cnv.height = 100
   ctx = cnv.getContext("2d")
-  ctx.strokeStyle = "black"
+  ctx.fillStyle = "black"
   ctx.rect(10,10,80,80)
   ctx.fill()
-  document.body.appendChild(cnv)
   assert.ok SurfaceUtil.isHit(cnv, 5, 5) is false
   assert.ok SurfaceUtil.isHit(cnv, 50, 50) is true
+  setPictureFrame(cnv, "SurfaceUtil.isHit cnv")
 
 QUnit.test "SurfaceUtil.offset", (assert)->
   {left, top, width, height} = SurfaceUtil.offset(document.body)
@@ -145,6 +153,7 @@ QUnit.test "SurfaceUtil.createCanvas", (assert)->
   assert.ok cnv instanceof HTMLCanvasElement
   assert.ok cnv.width is 1
   assert.ok cnv.height is 1
+  setPictureFrame cnv, "SurfaceUtil.createCanvas"
 
 QUnit.test "SurfaceUtil.scope", (assert)->
   assert.ok "sakura" is SurfaceUtil.scope 0
@@ -158,7 +167,7 @@ QUnit.test "SurfaceUtil.unscope", (assert)->
 
 
 QUnit.test "SurfaceUtil.getEventPosition", (assert)->
-  $(document.body).click (ev)->
+  $(document.body).click handler = (ev)->
     {pageX, pageY, clientX, clientY, screenX, screenY} = SurfaceUtil.getEventPosition(ev)
     assert.ok 100 is pageX
     assert.ok 100 is pageY
@@ -166,6 +175,7 @@ QUnit.test "SurfaceUtil.getEventPosition", (assert)->
     assert.ok 100 is clientY
     assert.ok 100 is screenX
     assert.ok 100 is screenY
+    $(document.body).off("click", handler)
   document.body.dispatchEvent new MouseEvent("click", {
     screenX: 100,
     screenY: 100,

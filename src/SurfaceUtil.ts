@@ -3,6 +3,17 @@
 import {SurfaceTreeNode} from "./Shell";
 import * as Encoding from "encoding-japanese";
 
+
+export function log(element: Element, description=""){
+  var fieldset = document.createElement('fieldset');
+  var legend = document.createElement('legend');
+  legend.appendChild(document.createTextNode(description));
+  fieldset.appendChild(legend);
+  fieldset.appendChild(element);
+  fieldset.style.display = 'inline-block';
+  document.body.appendChild(fieldset);
+}
+
 // extend deep like jQuery $.extend(true, target, source)
 export function extend(target: any, source: any): void {
   for(var key in source){
@@ -163,23 +174,19 @@ export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
   });
 }
 
-// random(func, 2) means call func 1/2 of probability every 1 second
+// random(func, n) means call func 1/n per sec
 export function random(callback: (nextTick: () => void) => void, probability: number): void {
-  var ms = 1;
-  while (Math.round(Math.random() * 1000) > 1000 / probability) {
-    ms++;
-  }
   setTimeout((() =>{
-    var nextTick = () => random(callback, probability);
-    callback(nextTick);
-  }), ms * 1000);
+    function nextTick(){ random(callback, probability); }
+    if (Math.random() < 1/probability) callback(nextTick)
+    else nextTick();
+  }), 1000);
 }
 
 export function periodic(callback: (callback: () => void) => void, sec: number): void {
   setTimeout((() =>
     callback(()=>
-      periodic(callback, sec)
-    )
+      periodic(callback, sec) )
   ), sec * 1000);
 }
 
