@@ -14,10 +14,68 @@ QUnit.module('SurfaceUtil');
 QUnit.test('chromakey_snipet speed test', function (assert) {
     var done;
     done = assert.async();
-    return SurfaceUtil.fetchImageFromURL('surface0.png').then(function (img) {
-        var chromakeyTime, chromakeyTimes, getImageDataTime, getImageDataTimes, j, putImageDataTime, putImageDataTimes, results, results1, test;
+    return Promise.all([
+        SurfaceUtil.fetchImageFromURL('surface0.png'),
+        SurfaceUtil.fetchArrayBuffer('surface0.png')
+    ]).then(function (arg) {
+        var buffer, img, workers;
+        img = arg[0], buffer = arg[1];
+        workers = [
+            1,
+            2
+        ].map(function () {
+            return new InlineServerWorker([
+                '../bower_components/jszip/dist/jszip.min.js',
+                '../bower_components/PNG.ts/dist/PNG.js'
+            ], function (conn) {
+                return conn.on('getImageData', function (buffer, reply) {
+                    var decoded, reader;
+                    reader = new PNG.PNGReader(buffer);
+                    reader.deflate = JSZip.compressions.DEFLATE.uncompress;
+                    decoded = reader.parse().getUint8ClampedArray();
+                    return reply(decoded, [decoded.buffer]);
+                });
+            });
+        });
+        return Promise.all(workers.map(function (worker) {
+            return worker.load();
+        })).then(function (workers) {
+            var j, results1, start;
+            start = performance.now();
+            return Promise.all(function () {
+                results1 = [];
+                for (j = 1; j <= 100; j++) {
+                    results1.push(j);
+                }
+                return results1;
+            }.apply(this).map(function (i) {
+                return workers[i % workers.length].request('getImageData', buffer);
+            })).then(function (results) {
+                var TotalWorkerTime, stop;
+                stop = performance.now();
+                TotalWorkerTime = stop - start;
+                assert.ok(assert._expr(assert._capt(TotalWorkerTime, 'arguments/0'), {
+                    content: 'assert.ok(TotalWorkerTime, "Worker並列数2でPNG.ts deflate")',
+                    filepath: 'test/testSurfaceUtil.js',
+                    line: 50
+                }), 'Worker並列数2でPNG.ts deflate');
+                return [
+                    img,
+                    buffer
+                ];
+            });
+        });
+    }).then(function (arg) {
+        var PNGTSTimes, TotalChromakeyTime, TotalGetImageDataTime, TotalPNGTSTime, TotalPutImageDataTime, buffer, chromakeyTimes, getImageDataTimes, img, j, putImageDataTimes, results, results1, test;
+        img = arg[0], buffer = arg[1];
         test = function () {
-            var chromakeyTime, cnv, ctx, getImageDataTime, imgdata, putImageDataTime, start, stop;
+            var PNGTSTime, chromakeyTime, cnv, ctx, decoded, getImageDataTime, imgdata, putImageDataTime, reader, start, stop;
+            start = performance.now();
+            reader = new PNG.PNGReader(buffer);
+            reader.deflate = JSZip.compressions.DEFLATE.uncompress;
+            decoded = reader.parse().getUint8ClampedArray();
+            stop = performance.now();
+            PNGTSTime = stop - start;
             cnv = SurfaceUtil.copy(img);
             ctx = cnv.getContext('2d');
             start = performance.now();
@@ -33,6 +91,7 @@ QUnit.test('chromakey_snipet speed test', function (assert) {
             stop = performance.now();
             putImageDataTime = stop - start;
             return {
+                PNGTSTime: PNGTSTime,
                 getImageDataTime: getImageDataTime,
                 chromakeyTime: chromakeyTime,
                 putImageDataTime: putImageDataTime
@@ -47,6 +106,9 @@ QUnit.test('chromakey_snipet speed test', function (assert) {
         }.apply(this).map(function () {
             return test();
         });
+        PNGTSTimes = results.map(function (a) {
+            return a.PNGTSTime;
+        });
         getImageDataTimes = results.map(function (a) {
             return a.getImageDataTime;
         });
@@ -56,25 +118,41 @@ QUnit.test('chromakey_snipet speed test', function (assert) {
         chromakeyTimes = results.map(function (a) {
             return a.chromakeyTime;
         });
-        getImageDataTime = getImageDataTimes.reduce(function (a, b) {
+        TotalPNGTSTime = PNGTSTimes.reduce(function (a, b) {
             return a + b;
         });
-        putImageDataTime = putImageDataTimes.reduce(function (a, b) {
+        TotalGetImageDataTime = getImageDataTimes.reduce(function (a, b) {
             return a + b;
         });
-        chromakeyTime = chromakeyTimes.reduce(function (a, b) {
+        TotalPutImageDataTime = putImageDataTimes.reduce(function (a, b) {
             return a + b;
         });
-        assert.ok(assert._expr(assert._capt(assert._capt(getImageDataTime, 'arguments/0/left') > assert._capt(putImageDataTime, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok(getImageDataTime > putImageDataTime)',
+        TotalChromakeyTime = chromakeyTimes.reduce(function (a, b) {
+            return a + b;
+        });
+        assert.ok(assert._expr(assert._capt(TotalPNGTSTime, 'arguments/0'), {
+            content: 'assert.ok(TotalPNGTSTime, "UIスレッドでPNG.ts deflate")',
             filepath: 'test/testSurfaceUtil.js',
-            line: 70
-        }));
-        assert.ok(assert._expr(assert._capt(assert._capt(chromakeyTime, 'arguments/0/left') > 0, 'arguments/0'), {
-            content: 'assert.ok(chromakeyTime > 0)',
+            line: 117
+        }), 'UIスレッドでPNG.ts deflate');
+        assert.ok(assert._expr(assert._capt(TotalGetImageDataTime, 'arguments/0'), {
+            content: 'assert.ok(TotalGetImageDataTime, "UIスレッドでgetImageData")',
             filepath: 'test/testSurfaceUtil.js',
-            line: 71
+            line: 118
+        }), 'UIスレッドでgetImageData');
+        assert.ok(assert._expr(assert._capt(TotalPutImageDataTime, 'arguments/0'), {
+            content: 'assert.ok(TotalPutImageDataTime)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 119
         }));
+        assert.ok(assert._expr(assert._capt(TotalChromakeyTime, 'arguments/0'), {
+            content: 'assert.ok(TotalChromakeyTime)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 120
+        }));
+        return done();
+    })['catch'](function (err) {
+        console.error(err);
         return done();
     });
 });
@@ -94,17 +172,17 @@ QUnit.test('SurfaceUtil.extend', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(original, 'arguments/0/left/object').a, 'arguments/0/left') === 1, 'arguments/0'), {
         content: 'assert.ok(original.a === 1)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 91
+        line: 143
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(original, 'arguments/0/left/object/object').b, 'arguments/0/left/object').c, 'arguments/0/left') === 1, 'arguments/0'), {
         content: 'assert.ok(original.b.c === 1)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 92
+        line: 144
     }));
     return assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(original, 'arguments/0/left/object/object').b, 'arguments/0/left/object').d, 'arguments/0/left') === 0, 'arguments/0'), {
         content: 'assert.ok(original.b.d === 0)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 93
+        line: 145
     }));
 });
 QUnit.test('SurfaceUtil.parseDescript', function (assert) {
@@ -114,17 +192,17 @@ QUnit.test('SurfaceUtil.parseDescript', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(dic, 'arguments/0/left/object')['charset'], 'arguments/0/left') === 'Shift_JIS', 'arguments/0'), {
         content: 'assert.ok(dic["charset"] === "Shift_JIS")',
         filepath: 'test/testSurfaceUtil.js',
-        line: 100
+        line: 152
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(dic, 'arguments/0/left/object')['sakura.balloon.offsetx'], 'arguments/0/left') === '21', 'arguments/0'), {
         content: 'assert.ok(dic["sakura.balloon.offsetx"] === "21")',
         filepath: 'test/testSurfaceUtil.js',
-        line: 101
+        line: 153
     }));
     return assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(dic, 'arguments/0/left/object')['seriko.paint_transparent_region_black'], 'arguments/0/left') === '0', 'arguments/0'), {
         content: 'assert.ok(dic["seriko.paint_transparent_region_black"] === "0")',
         filepath: 'test/testSurfaceUtil.js',
-        line: 102
+        line: 154
     }));
 });
 QUnit.test('SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer', function (assert) {
@@ -137,7 +215,7 @@ QUnit.test('SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer', function (assert
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(txt, 'arguments/0/left/callee/object').match(/フリーシェル 「窗子」（MADOKO）を改変の上使用しています。/), 'arguments/0/left') !== null, 'arguments/0'), {
             content: 'assert.ok(txt.match(/フリーシェル \u300C窗子\u300D\uFF08MADOKO\uFF09を改変の上使用しています\u3002/) !== null)',
             filepath: 'test/testSurfaceUtil.js',
-            line: 112
+            line: 164
         }));
         return done();
     });
@@ -153,19 +231,19 @@ QUnit.test('SurfaceUtil.find', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(results, 'arguments/0/left/object')[0], 'arguments/0/left') === assert._capt(assert._capt(paths, 'arguments/0/right/object')[0], 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(results[0] === paths[0])',
         filepath: 'test/testSurfaceUtil.js',
-        line: 121
+        line: 173
     }));
     results = SurfaceUtil.find(paths, 'SURFACE10.PNG');
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(results, 'arguments/0/left/object')[0], 'arguments/0/left') === assert._capt(assert._capt(paths, 'arguments/0/right/object')[1], 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(results[0] === paths[1])',
         filepath: 'test/testSurfaceUtil.js',
-        line: 123
+        line: 175
     }));
     results = SurfaceUtil.find(paths, 'elements\\element0.png');
     return assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(results, 'arguments/0/left/object')[0], 'arguments/0/left') === assert._capt(assert._capt(paths, 'arguments/0/right/object')[2], 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(results[0] === paths[2])',
         filepath: 'test/testSurfaceUtil.js',
-        line: 125
+        line: 177
     }));
 });
 QUnit.test('SurfaceUtil.choice', function (assert) {
@@ -191,7 +269,7 @@ QUnit.test('SurfaceUtil.choice', function (assert) {
     }, 0), 'arguments/0/left/right/right/left') / assert._capt(assert._capt(results, 'arguments/0/left/right/right/right/object').length, 'arguments/0/left/right/right/right'), 'arguments/0/left/right/right'), 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(ref, 'arguments/0/right/left') < 0.4, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0.2 < (ref = results.reduce(function (count, val) {if (val === 1) {return count + 1;} else {return count;}}, 0) / results.length) && ref < 0.4)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 138
+        line: 190
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(0.2 < assert._capt(ref1 = assert._capt(assert._capt(assert._capt(results, 'arguments/0/left/right/right/left/callee/object').reduce(function (count, val) {
         if (val === 2) {
@@ -202,7 +280,7 @@ QUnit.test('SurfaceUtil.choice', function (assert) {
     }, 0), 'arguments/0/left/right/right/left') / assert._capt(assert._capt(results, 'arguments/0/left/right/right/right/object').length, 'arguments/0/left/right/right/right'), 'arguments/0/left/right/right'), 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(ref1, 'arguments/0/right/left') < 0.4, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0.2 < (ref1 = results.reduce(function (count, val) {if (val === 2) {return count + 1;} else {return count;}}, 0) / results.length) && ref1 < 0.4)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 145
+        line: 197
     }));
     return assert.ok(assert._expr(assert._capt(assert._capt(0.2 < assert._capt(ref2 = assert._capt(assert._capt(assert._capt(results, 'arguments/0/left/right/right/left/callee/object').reduce(function (count, val) {
         if (val === 3) {
@@ -213,7 +291,7 @@ QUnit.test('SurfaceUtil.choice', function (assert) {
     }, 0), 'arguments/0/left/right/right/left') / assert._capt(assert._capt(results, 'arguments/0/left/right/right/right/object').length, 'arguments/0/left/right/right/right'), 'arguments/0/left/right/right'), 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(ref2, 'arguments/0/right/left') < 0.4, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0.2 < (ref2 = results.reduce(function (count, val) {if (val === 3) {return count + 1;} else {return count;}}, 0) / results.length) && ref2 < 0.4)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 152
+        line: 204
     }));
 });
 QUnit.test('SurfaceUtil.copy', function (assert) {
@@ -228,17 +306,17 @@ QUnit.test('SurfaceUtil.copy', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') !== assert._capt(cnv2, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(cnv !== cnv2)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 170
+        line: 222
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').width, 'arguments/0/left') === assert._capt(assert._capt(cnv2, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(cnv.width === cnv2.width)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 171
+        line: 223
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').height, 'arguments/0/left') === assert._capt(assert._capt(cnv2, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(cnv.height === cnv2.height)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 172
+        line: 224
     }));
     setPictureFrame(cnv, 'SurfaceUtil.copy cnv');
     return setPictureFrame(cnv2, 'SurfaceUtil.copy cnv2');
@@ -253,12 +331,12 @@ QUnit.test('SurfaceUtil.fetchImageFromURL, SurfaceUtil.fetchImageFromArrayBuffer
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(img, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
             content: 'assert.ok(img.width === 182)',
             filepath: 'test/testSurfaceUtil.js',
-            line: 184
+            line: 236
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(img, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
             content: 'assert.ok(img.height === 445)',
             filepath: 'test/testSurfaceUtil.js',
-            line: 185
+            line: 237
         }));
         setPictureFrame(img, 'SurfaceUtil.fetchImageFromURL');
         return done();
@@ -280,7 +358,7 @@ QUnit.test('SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10
                     assert.ok(assert._expr(assert._capt(assert._capt(4 <= assert._capt(count, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(count, 'arguments/0/right/left') <= 6, 'arguments/0/right'), 'arguments/0'), {
                         content: 'assert.ok(4 <= count && count <= 6, "random, 2")',
                         filepath: 'test/testSurfaceUtil.js',
-                        line: 204
+                        line: 256
                     }), 'random, 2');
                     return resolve();
                 }
@@ -297,7 +375,7 @@ QUnit.test('SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10
                     assert.ok(assert._expr(assert._capt(assert._capt(4 <= assert._capt(count, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(count, 'arguments/0/right/left') <= 6, 'arguments/0/right'), 'arguments/0'), {
                         content: 'assert.ok(4 <= count && count <= 6, "periodic")',
                         filepath: 'test/testSurfaceUtil.js',
-                        line: 216
+                        line: 268
                     }), 'periodic');
                     return resolve();
                 }
@@ -314,7 +392,7 @@ QUnit.test('SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10
                     assert.ok(assert._expr(assert._capt(assert._capt(9 <= assert._capt(count, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(count, 'arguments/0/right/left') <= 11, 'arguments/0/right'), 'arguments/0'), {
                         content: 'assert.ok(9 <= count && count <= 11, "always")',
                         filepath: 'test/testSurfaceUtil.js',
-                        line: 228
+                        line: 280
                     }), 'always');
                     return resolve();
                 }
@@ -336,12 +414,12 @@ QUnit.test('SurfaceUtil.isHit', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(SurfaceUtil, 'arguments/0/left/callee/object').isHit(assert._capt(cnv, 'arguments/0/left/arguments/0'), 5, 5), 'arguments/0/left') === false, 'arguments/0'), {
         content: 'assert.ok(SurfaceUtil.isHit(cnv, 5, 5) === false)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 247
+        line: 299
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(SurfaceUtil, 'arguments/0/left/callee/object').isHit(assert._capt(cnv, 'arguments/0/left/arguments/0'), 50, 50), 'arguments/0/left') === true, 'arguments/0'), {
         content: 'assert.ok(SurfaceUtil.isHit(cnv, 50, 50) === true)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 248
+        line: 300
     }));
     return setPictureFrame(cnv, 'SurfaceUtil.isHit cnv');
 });
@@ -351,22 +429,22 @@ QUnit.test('SurfaceUtil.offset', function (assert) {
     assert.ok(assert._expr(assert._capt(0 < assert._capt(left, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0 < left)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 255
+        line: 307
     }));
     assert.ok(assert._expr(assert._capt(0 < assert._capt(top, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0 < top)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 256
+        line: 308
     }));
     assert.ok(assert._expr(assert._capt(0 < assert._capt(width, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0 < width)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 257
+        line: 309
     }));
     return assert.ok(assert._expr(assert._capt(0 < assert._capt(height, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0 < height)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 258
+        line: 310
     }));
 });
 QUnit.test('SurfaceUtil.createCanvas', function (assert) {
@@ -375,17 +453,17 @@ QUnit.test('SurfaceUtil.createCanvas', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 264
+        line: 316
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').width, 'arguments/0/left') === 1, 'arguments/0'), {
         content: 'assert.ok(cnv.width === 1)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 265
+        line: 317
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').height, 'arguments/0/left') === 1, 'arguments/0'), {
         content: 'assert.ok(cnv.height === 1)',
         filepath: 'test/testSurfaceUtil.js',
-        line: 266
+        line: 318
     }));
     return setPictureFrame(cnv, 'SurfaceUtil.createCanvas');
 });
@@ -393,34 +471,34 @@ QUnit.test('SurfaceUtil.scope', function (assert) {
     assert.ok(assert._expr(assert._capt('sakura' === assert._capt(assert._capt(SurfaceUtil, 'arguments/0/right/callee/object').scope(0), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok("sakura" === SurfaceUtil.scope(0))',
         filepath: 'test/testSurfaceUtil.js',
-        line: 271
+        line: 323
     }));
     assert.ok(assert._expr(assert._capt('kero' === assert._capt(assert._capt(SurfaceUtil, 'arguments/0/right/callee/object').scope(1), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok("kero" === SurfaceUtil.scope(1))',
         filepath: 'test/testSurfaceUtil.js',
-        line: 272
+        line: 324
     }));
     return assert.ok(assert._expr(assert._capt('char2' === assert._capt(assert._capt(SurfaceUtil, 'arguments/0/right/callee/object').scope(2), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok("char2" === SurfaceUtil.scope(2))',
         filepath: 'test/testSurfaceUtil.js',
-        line: 273
+        line: 325
     }));
 });
 QUnit.test('SurfaceUtil.unscope', function (assert) {
     assert.ok(assert._expr(assert._capt(0 === assert._capt(assert._capt(SurfaceUtil, 'arguments/0/right/callee/object').unscope('sakura'), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0 === SurfaceUtil.unscope("sakura"))',
         filepath: 'test/testSurfaceUtil.js',
-        line: 277
+        line: 329
     }));
     assert.ok(assert._expr(assert._capt(1 === assert._capt(assert._capt(SurfaceUtil, 'arguments/0/right/callee/object').unscope('kero'), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(1 === SurfaceUtil.unscope("kero"))',
         filepath: 'test/testSurfaceUtil.js',
-        line: 278
+        line: 330
     }));
     return assert.ok(assert._expr(assert._capt(2 === assert._capt(assert._capt(SurfaceUtil, 'arguments/0/right/callee/object').unscope('char2'), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(2 === SurfaceUtil.unscope("char2"))',
         filepath: 'test/testSurfaceUtil.js',
-        line: 279
+        line: 331
     }));
 });
 QUnit.test('SurfaceUtil.getEventPosition', function (assert) {
@@ -431,32 +509,32 @@ QUnit.test('SurfaceUtil.getEventPosition', function (assert) {
         assert.ok(assert._expr(assert._capt(100 === assert._capt(pageX, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === pageX)',
             filepath: 'test/testSurfaceUtil.js',
-            line: 287
+            line: 339
         }));
         assert.ok(assert._expr(assert._capt(100 === assert._capt(pageY, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === pageY)',
             filepath: 'test/testSurfaceUtil.js',
-            line: 288
+            line: 340
         }));
         assert.ok(assert._expr(assert._capt(100 === assert._capt(clientX, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === clientX)',
             filepath: 'test/testSurfaceUtil.js',
-            line: 289
+            line: 341
         }));
         assert.ok(assert._expr(assert._capt(100 === assert._capt(clientY, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === clientY)',
             filepath: 'test/testSurfaceUtil.js',
-            line: 290
+            line: 342
         }));
         assert.ok(assert._expr(assert._capt(100 === assert._capt(screenX, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === screenX)',
             filepath: 'test/testSurfaceUtil.js',
-            line: 291
+            line: 343
         }));
         assert.ok(assert._expr(assert._capt(100 === assert._capt(screenY, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === screenY)',
             filepath: 'test/testSurfaceUtil.js',
-            line: 292
+            line: 344
         }));
         return $(document.body).off('click', handler);
     });
