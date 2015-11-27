@@ -1,4 +1,6 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Shell = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+
+},{}],2:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
 "use strict";
 
@@ -505,7 +507,7 @@ var Shell = (function (_EventEmitter) {
 })(_eventemitter32["default"]);
 
 exports.Shell = Shell;
-},{"./Surface":2,"./SurfaceRender":3,"./SurfaceUtil":4,"eventemitter3":8,"surfaces_txt2yaml":43}],2:[function(require,module,exports){
+},{"./Surface":3,"./SurfaceRender":5,"./SurfaceUtil":6,"eventemitter3":9,"surfaces_txt2yaml":44}],3:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
 "use strict";
 
@@ -1014,7 +1016,7 @@ var Surface = (function () {
 })();
 
 exports.Surface = Surface;
-},{"./SurfaceRender":3,"./SurfaceUtil":4,"jquery":11}],3:[function(require,module,exports){
+},{"./SurfaceRender":5,"./SurfaceUtil":6,"jquery":12}],4:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
 "use strict";
 
@@ -1032,81 +1034,186 @@ var _SurfaceUtil = require("./SurfaceUtil");
 
 var SurfaceUtil = _interopRequireWildcard(_SurfaceUtil);
 
-var SurfaceRender = (function () {
-    function SurfaceRender(cnv) {
-        _classCallCheck(this, SurfaceRender);
+// サーフェスのリソースのキャッシュのためのクラス
+// あるサーフェスの様々なリソースを統一的に扱えるようにするためのクラス
 
-        this.cnv = cnv;
-        this.basePosX = 0;
-        this.basePosY = 0;
-        this.ctx = cnv.getContext("2d");
+var SurfaceCanvas = (function () {
+    function SurfaceCanvas() {
+        _classCallCheck(this, SurfaceCanvas);
+
+        this.url = "";
+        this.buffer = null;
+        this.img = null;
+        this.cnv = null;
+        this.pixels = null;
+        this.ctx = null;
+        this.width = 0;
+        this.height = 0;
     }
 
+    _createClass(SurfaceCanvas, [{
+        key: "loadFromURL",
+        value: function loadFromURL(url) {
+            var _this = this;
+
+            this.url = url;
+            return SurfaceUtil.fetchArrayBuffer(url).then(function (buffer) {
+                return _this.loadFromBuffer(buffer);
+            });
+        }
+    }, {
+        key: "loadFromBuffer",
+        value: function loadFromBuffer(buffer) {
+            var _this2 = this;
+
+            this.buffer = buffer;
+            return SurfaceUtil.fetchImageFromArrayBuffer(buffer).then(function (img) {
+                return _this2.loadFromImage(img);
+            });
+        }
+    }, {
+        key: "loadFromImage",
+        value: function loadFromImage(img) {
+            this.img = img;
+            return Promise.resolve(this.loadFromCanvas(SurfaceUtil.copy(img)));
+        }
+    }, {
+        key: "loadFromCanvas",
+        value: function loadFromCanvas(cnv) {
+            this.cnv = cnv;
+            this.ctx = cnv.getContext("2d");
+            var imgdata = this.ctx.getImageData(0, 0, cnv.width, cnv.height);
+            SurfaceUtil.chromakey_snipet(imgdata.data); // cnvとimgdataは色抜きでキャッシュ
+            this.ctx.putImageData(imgdata, 0, 0);
+            return this.loadFromUint8ClampedArray(imgdata.data, cnv.width, cnv.height);
+        }
+    }, {
+        key: "loadFromUint8ClampedArray",
+        value: function loadFromUint8ClampedArray(pixels, width, height) {
+            this.width = width;
+            this.height = height;
+            this.pixels = pixels;
+            return this;
+        }
+    }]);
+
+    return SurfaceCanvas;
+})();
+
+exports["default"] = SurfaceCanvas;
+module.exports = exports["default"];
+},{"./SurfaceUtil":6}],5:[function(require,module,exports){
+/// <reference path="../typings/tsd.d.ts"/>
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj["default"] = obj; return newObj; } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var _SurfaceUtil = require("./SurfaceUtil");
+
+var SurfaceUtil = _interopRequireWildcard(_SurfaceUtil);
+
+var _SurfaceCanvas = require("./SurfaceCanvas");
+
+var _SurfaceCanvas2 = _interopRequireDefault(_SurfaceCanvas);
+
+var SurfaceRender = (function () {
+    // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
+    // nullならば1x1のCanvasをベースサーフェスとする。
+    // 渡されたSurfaceCanvasは変更しない。
+
+    function SurfaceRender(arg) {
+        _classCallCheck(this, SurfaceRender);
+
+        if (arg == null) {
+            arg = new _SurfaceCanvas2["default"]().loadFromCanvas(SurfaceUtil.createCanvas());
+        }
+        this.baseSrfCanvas = arg;
+        this.cnv = SurfaceUtil.copy(arg.cnv);
+        this.ctx = this.cnv.getContext("2d");
+        this.imgdata = this.ctx.createImageData(this.cnv.width, this.cnv.height);
+        this.imgdata.data.set(arg.pixels); // copy
+        this.basePosX = 0;
+        this.basePosY = 0;
+    }
+
+    // 現在の下位レイヤーをSurfaceCanvasとしてコピー書き出し
+
     _createClass(SurfaceRender, [{
+        key: "getSurfaceCanvas",
+        value: function getSurfaceCanvas() {
+            return new _SurfaceCanvas2["default"]().loadFromCanvas(SurfaceUtil.copy(this.cnv));
+        }
+
+        // [
+        //  {canvas: srfCnv1, type: "base",    x: 0,  y: 0}
+        //  {canvas: srfCnv2, type: "overlay", x: 50, y: 50}
+        // ]
+    }, {
         key: "composeElements",
         value: function composeElements(elements) {
-            if (elements.length === 0) {
-                if (this.DEBUG) {
-                    $("<hr />").appendTo(document.body);
-                }
-                return;
-            }
-            if (!Array.isArray(elements)) throw new Error("TypeError: elements is not array.");
-            // elements is a array but it is like `a=[];a[2]="hoge";a[0] === undefined. so use filter.`
-            var _elements$filter$0 = elements.filter(function (elm) {
-                return !!elm;
-            })[0];
-            var canvas = _elements$filter$0.canvas;
-            var type = _elements$filter$0.type;
-            var x = _elements$filter$0.x;
-            var y = _elements$filter$0.y;
+            var _this = this;
 
-            var offsetX = 0;
-            var offsetY = 0;
-            if (this.DEBUG) {
-                var wrapper = document.createElement("fieldset");
-                var prev = SurfaceUtil.copy(this.cnv);
-                var adder = SurfaceUtil.copy(this.cnv);
-                var __render = new SurfaceRender(adder);
-                __render.clear();
-                __render.overlay(canvas, offsetX + x, offsetY + y);
-            }
+            elements.forEach(function (_ref, id) {
+                var canvas = _ref.canvas;
+                var type = _ref.type;
+                var x = _ref.x;
+                var y = _ref.y;
+
+                _this.composeElement(canvas, type, x, y);
+            });
+        }
+    }, {
+        key: "composeElement",
+        value: function composeElement(canvas, type, x, y) {
             switch (type) {
                 case "base":
                     this.base(canvas);
                     break;
                 case "overlay":
+                    this.overlay(canvas, x, y);
+                    break;
                 case "add":
+                    this.add(canvas, x, y);
+                    break;
                 case "bind":
-                    this.overlay(canvas, offsetX + x, offsetY + y);
+                    this.bind(canvas, x, y);
                     break;
                 case "overlayfast":
-                    this.overlayfast(canvas, offsetX + x, offsetY + y);
+                    this.overlayfast(canvas, x, y);
                     break;
                 case "replace":
-                    this.replace(canvas, offsetX + x, offsetY + y);
+                    this.replace(canvas, x, y);
                     break;
                 case "interpolate":
-                    this.interpolate(canvas, offsetX + x, offsetY + y);
+                    this.interpolate(canvas, x, y);
                     break;
                 case "move":
-                    offsetX = x;
-                    offsetY = y;
-                    var copyed = SurfaceUtil.copy(this.cnv);
-                    this.base(copyed);
+                    this.move(x, y);
                     break;
                 case "asis":
-                case "reduce":
-                case "insert,ID":
+                    this.asis(canvas, x, y);
                     break;
+                case "reduce":
+                    this.reduce(canvas, x, y);
+                    break;
+                case "start":
+                case "stop":
+                case "alternativestart":
+                case "alternativestop":
+                case "insert": // こいつらはSurfaceRenerの仕事ではない。Surfaceでやって
                 default:
-                    console.error(elements[0]);
+                    console.warn("SurfaceRender#composeElement", new Error("unsupport type"), canvas, type, x, y);
             }
-            if (this.DEBUG) {
-                var result = SurfaceUtil.copy(this.cnv);
-                $(wrapper).append($("<legend />").text(type + "(" + x + "," + y + ")")).append($("<style scoped />").html("\n        canvas{border:1px solid black;}\n      ")).append(prev).append("+").append(adder).append("=").append(result).appendTo(document.body);
-            }
-            this.composeElements(elements.slice(1));
         }
     }, {
         key: "clear",
@@ -1114,50 +1221,36 @@ var SurfaceRender = (function () {
             this.cnv.width = this.cnv.width;
         }
     }, {
-        key: "chromakey",
-        value: function chromakey() {
-            var ctx = this.cnv.getContext("2d");
-            var imgdata = ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
-            var data = imgdata.data;
-            var r = data[0],
-                g = data[1],
-                b = data[2],
-                a = data[3];
-            var i = 0;
-            if (a !== 0) {
-                while (i < data.length) {
-                    if (r === data[i] && g === data[i + 1] && b === data[i + 2]) {
-                        data[i + 3] = 0;
-                    }
-                    i += 4;
-                }
-            }
-            ctx.putImageData(imgdata, 0, 0);
-        }
-    }, {
         key: "pna",
         value: function pna(_pna) {
-            var ctxB = _pna.getContext("2d");
-            var imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
-            var imgdataB = ctxB.getImageData(0, 0, _pna.width, _pna.height);
-            var dataA = imgdataA.data;
-            var dataB = imgdataB.data;
-            var i = 0;
-            while (i < dataA.length) {
-                dataA[i + 3] = dataB[i];
-                i += 4;
+            var dataA = this.imgdata.data;
+            var dataB = new Uint8ClampedArray(_pna.pixels);
+            for (var y = 0; y < _pna.height; y++) {
+                for (var x = 0; x < _pna.width; x++) {
+                    var iA = x * 4 + y * this.cnv.width * 4; // baseのxy座標とインデックス
+                    var iB = x * 4 + y * _pna.width * 4; // pnaのxy座標とインデックス
+                    dataA[iA + 3] = dataB[iB]; // pnaのRの値をpngのalphaチャネルへ代入
+                }
             }
-            this.ctx.putImageData(imgdataA, 0, 0);
+            this.ctx.putImageData(this.imgdata, 0, 0);
         }
+
+        //下位レイヤをコマで完全に置き換える。collisionもコマのサーフェスに定義されたものに更新される。
+        //このメソッドのパターンを重ねると、サーフェス全面を描画し直すことによるアニメーション（いわばパラパラ漫画）が実現される。
+        //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
+        //着せ替え・elementでも使用できる。
     }, {
         key: "base",
         value: function base(part) {
             this.init(part);
         }
+
+        //下位レイヤにコマを重ねる。
+        //着せ替え・elementでも使用できる。
     }, {
         key: "overlay",
         value: function overlay(part, x, y) {
-            // baseのcanvasを拡大
+            // baseのcanvasを拡大するためのキャッシュ
             var tmp = SurfaceUtil.copy(this.cnv);
             // もしパーツが右下へはみだす
             if (x >= 0) {
@@ -1176,35 +1269,108 @@ var SurfaceRender = (function () {
                 this.cnv.height = part.height + y > this.cnv.height ? part.height : this.cnv.height - y;
                 this.basePosY = -y;
             }
-            this.ctx.drawImage(tmp, this.basePosX, this.basePosY);
+            this.ctx.drawImage(tmp, this.basePosX, this.basePosY); //下位レイヤ再描画
             this.ctx.globalCompositeOperation = "source-over";
-            this.ctx.drawImage(part, this.basePosX + x, this.basePosY + y);
+            this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y); //コマ追加
         }
+
+        //下位レイヤの非透過部分（半透明含む）にのみコマを重ねる。
+        //着せ替え・elementでも使用できる。
     }, {
         key: "overlayfast",
         value: function overlayfast(part, x, y) {
             this.ctx.globalCompositeOperation = "source-atop";
-            this.ctx.drawImage(part, this.basePosX + x, this.basePosY + y);
+            this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
         }
+
+        //下位レイヤの透明なところにのみコマを重ねる。
+        //下位レイヤの半透明部分に対しても、透明度が高い部分ほど強くコマを合成する。
+        //interpolateで重なる部分はベースより上位（手前）側になければならない
+        //（interpolateのコマが描画している部分に、上位のレイヤで不透明な部分が重なると反映されなくなる）。
+        //着せ替え・elementでも使用できる。
     }, {
         key: "interpolate",
         value: function interpolate(part, x, y) {
             this.ctx.globalCompositeOperation = "destination-over";
-            this.ctx.drawImage(part, this.basePosX + x, this.basePosY + y);
+            this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
         }
+
+        //下位レイヤにコマを重ねるが、コマの透過部分について下位レイヤにも反映する（reduce + overlayに近い）。
+        //着せ替え・elementでも使用できる。
     }, {
         key: "replace",
         value: function replace(part, x, y) {
             this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.width, part.height);
             this.overlay(part, x, y);
         }
+
+        //下位レイヤに、抜き色やアルファチャンネルを適応しないままそのコマを重ねる。
+        //着せ替え・elementでも使用できる。
+        //なおelement合成されたサーフェスを他のサーフェスのアニメーションパーツとしてasisメソッドで合成した場合の表示は未定義であるが、
+        //Windows上では普通、透過領域は画像本来の抜き色に関係なく黒（#000000）で表示されるだろう。
+    }, {
+        key: "asis",
+        value: function asis(part, x, y) {
+            this.ctx.globalCompositeOperation = "source-over";
+            this.ctx.drawImage(part.img || part.cnv, this.basePosX + x, this.basePosY + y);
+        }
+
+        //下位レイヤをXY座標指定分ずらす。
+        //この描画メソッドが指定されたpattern定義では、サーフェスIDは無視される。
+        //着せ替え・elementでは使用不可。
+    }, {
+        key: "move",
+        value: function move(x, y) {
+            var srfCnv = new _SurfaceCanvas2["default"]().loadFromCanvas(SurfaceUtil.copy(this.cnv));
+            this.clear(); // 大きさだけ残して一旦消す
+            this.overlay(srfCnv, x, y); //ずらした位置に再描画
+        }
+
+        //そのコマを着せ替えパーツとして重ねる。現在ではoverlayと同じ。
+        //着せ替えパーツとして単純に一つのサーフェスを重ねることしか出来なかった頃の唯一のメソッドで、現在はaddが互換。
+        //着せ替えでないアニメーション・elementでの使用は未定義。
+    }, {
+        key: "bind",
+        value: function bind(part, x, y) {
+            this.add(part, x, y);
+        }
+
+        //下位レイヤにそのコマを着せ替えパーツとして重ねる。本質的にはoverlayと同じ。
+        //着せ替え用に用意されたメソッドで、着せ替えでないアニメーション・elementでの使用は未定義。
+    }, {
+        key: "add",
+        value: function add(part, x, y) {
+            this.overlay(part, x, y);
+        }
+
+        //下位レイヤの抜き色による透過領域に、そのコマの抜き色による透過領域を追加する。コマの抜き色で無い部分は無視される。
+        //着せ替え用に用意されたメソッドだが、着せ替えでないアニメーション・elementでも使用可能。
+        //http://usada.sakura.vg/contents/seriko.html
+    }, {
+        key: "reduce",
+        value: function reduce(part, x, y) {
+            // はみ出しちぇっく
+            var width = x + part.width < this.cnv.width ? part.width : this.cnv.width - x;
+            var height = y + part.height < this.cnv.height ? part.height : this.cnv.height - y;
+            var dataA = this.imgdata.data;
+            var dataB = part.pixels;
+            for (var _y = 0; _y < height; _y++) {
+                for (var _x = 0; _x < width; _x++) {
+                    var iA = (x + _x) * 4 + (y + _y) * this.cnv.width * 4; // baseのxy座標とインデックス
+                    var iB = _x * 4 + _y * part.width * 4; // partのxy座標とインデックス
+                    // もしコマが透過ならpartのalphaチャネルでbaseのを上書き
+                    if (dataB[iB + 3] === 0) dataA[iA + 3] = dataB[iB + 3];
+                }
+            }
+            this.ctx.putImageData(this.imgdata, 0, 0);
+        }
     }, {
         key: "init",
-        value: function init(cnv) {
-            this.cnv.width = cnv.width;
-            this.cnv.height = cnv.height;
+        value: function init(srfCnv) {
+            this.cnv.width = srfCnv.width;
+            this.cnv.height = srfCnv.height;
             this.ctx.globalCompositeOperation = "source-over";
-            this.ctx.drawImage(cnv, 0, 0);
+            this.ctx.drawImage(srfCnv.cnv, 0, 0);
         }
     }, {
         key: "initImageData",
@@ -1212,32 +1378,41 @@ var SurfaceRender = (function () {
             this.cnv.width = width;
             this.cnv.height = height;
             var imgdata = this.ctx.getImageData(0, 0, width, height);
-            var _data = imgdata.data; // type hack
-            _data.set(data);
+            imgdata.data.set(data);
             this.ctx.putImageData(imgdata, 0, 0);
         }
     }, {
         key: "drawRegions",
         value: function drawRegions(regions) {
-            var _this = this;
+            var _this2 = this;
 
             regions.forEach(function (col) {
-                _this.drawRegion(col);
+                _this2.drawRegion(col);
             });
         }
     }, {
         key: "drawRegion",
         value: function drawRegion(region) {
-            var type = region.type;
-            var name = region.name;
-            var left = region.left;
-            var top = region.top;
-            var right = region.right;
-            var bottom = region.bottom;
-            var coordinates = region.coordinates;
-            var radius = region.radius;
-            var center_x = region.center_x;
-            var center_y = region.center_y;
+            var _region$type = region.type;
+            var type = _region$type === undefined ? "" : _region$type;
+            var _region$name = region.name;
+            var name = _region$name === undefined ? "" : _region$name;
+            var _region$left = region.left;
+            var left = _region$left === undefined ? 0 : _region$left;
+            var _region$top = region.top;
+            var top = _region$top === undefined ? 0 : _region$top;
+            var _region$right = region.right;
+            var right = _region$right === undefined ? 0 : _region$right;
+            var _region$bottom = region.bottom;
+            var bottom = _region$bottom === undefined ? 0 : _region$bottom;
+            var _region$coordinates = region.coordinates;
+            var coordinates = _region$coordinates === undefined ? [] : _region$coordinates;
+            var _region$radius = region.radius;
+            var radius = _region$radius === undefined ? 0 : _region$radius;
+            var _region$center_x = region.center_x;
+            var center_x = _region$center_x === undefined ? 0 : _region$center_x;
+            var _region$center_y = region.center_y;
+            var center_y = _region$center_y === undefined ? 0 : _region$center_y;
 
             left += this.basePosX;
             top += this.basePosY;
@@ -1266,10 +1441,9 @@ var SurfaceRender = (function () {
     return SurfaceRender;
 })();
 
-exports.SurfaceRender = SurfaceRender;
-
-SurfaceRender.prototype.DEBUG = false;
-},{"./SurfaceUtil":4}],4:[function(require,module,exports){
+exports["default"] = SurfaceRender;
+module.exports = exports["default"];
+},{"./SurfaceCanvas":4,"./SurfaceUtil":6}],6:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
 "use strict";
 
@@ -1279,6 +1453,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
 
+exports.chromakey_snipet = chromakey_snipet;
 exports.log = log;
 exports.extend = extend;
 exports.parseDescript = parseDescript;
@@ -1304,11 +1479,27 @@ exports.eventPropagationSim = eventPropagationSim;
 exports.randomRange = randomRange;
 exports.getRegion = getRegion;
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj["default"] = obj; return newObj; } }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 var _encodingJapanese = require("encoding-japanese");
 
-var Encoding = _interopRequireWildcard(_encodingJapanese);
+var _encodingJapanese2 = _interopRequireDefault(_encodingJapanese);
+
+function chromakey_snipet(data) {
+    var r = data[0],
+        g = data[1],
+        b = data[2],
+        a = data[3];
+    var i = 0;
+    if (a !== 0) {
+        while (i < data.length) {
+            if (r === data[i] && g === data[i + 1] && b === data[i + 2]) {
+                data[i + 3] = 0;
+            }
+            i += 4;
+        }
+    }
+}
 
 function log(element) {
     var description = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
@@ -1390,7 +1581,7 @@ function fetchArrayBuffer(url) {
 
 function convert(buffer) {
     //return new TextDecoder('shift_jis').decode(buffer);
-    return Encoding.codeToString(Encoding.convert(new Uint8Array(buffer), 'UNICODE', 'AUTO'));
+    return _encodingJapanese2["default"].codeToString(_encodingJapanese2["default"].convert(new Uint8Array(buffer), 'UNICODE', 'AUTO'));
 }
 
 // find filename that matches arg "filename" from arg "paths"
@@ -1743,7 +1934,7 @@ function getRegion(element, surfaceNode, offsetX, offsetY) {
         return { isHit: false, name: "" };
     }
 }
-},{"encoding-japanese":7}],5:[function(require,module,exports){
+},{"encoding-japanese":8}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1752,33 +1943,39 @@ Object.defineProperty(exports, "__esModule", {
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj["default"] = obj; return newObj; } }
 
-var _Surface2 = require('./Surface');
-
-var _Surface = _interopRequireWildcard(_Surface2);
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 var _SurfaceRender2 = require("./SurfaceRender");
 
-var _SurfaceRender = _interopRequireWildcard(_SurfaceRender2);
+var _SurfaceRender3 = _interopRequireDefault(_SurfaceRender2);
+
+var _SurfaceCanvas2 = require("./SurfaceCanvas");
+
+var _SurfaceCanvas3 = _interopRequireDefault(_SurfaceCanvas2);
 
 var _SurfaceUtil2 = require("./SurfaceUtil");
 
 var _SurfaceUtil = _interopRequireWildcard(_SurfaceUtil2);
 
+var _Surface2 = require('./Surface');
+
+var _Surface3 = _interopRequireDefault(_Surface2);
+
 var _Shell2 = require("./Shell");
 
-var _Shell = _interopRequireWildcard(_Shell2);
+var _Shell3 = _interopRequireDefault(_Shell2);
 
-var Surface = _Surface.Surface;
-exports.Surface = Surface;
-var SurfaceRender = _SurfaceRender.SurfaceRender;
+var SurfaceRender = _SurfaceRender3["default"];
 exports.SurfaceRender = SurfaceRender;
+var SurfaceCanvas = _SurfaceCanvas3["default"];
+exports.SurfaceCanvas = SurfaceCanvas;
 var SurfaceUtil = _SurfaceUtil;
 exports.SurfaceUtil = SurfaceUtil;
-var Shell = _Shell.Shell;
+var Surface = _Surface3["default"];
+exports.Surface = Surface;
+var Shell = _Shell3["default"];
 exports.Shell = Shell;
-},{"./Shell":1,"./Surface":2,"./SurfaceRender":3,"./SurfaceUtil":4}],6:[function(require,module,exports){
-
-},{}],7:[function(require,module,exports){
+},{"./Shell":2,"./Surface":3,"./SurfaceCanvas":4,"./SurfaceRender":5,"./SurfaceUtil":6}],8:[function(require,module,exports){
 /**
  * Encoding.js
  *
@@ -8065,7 +8262,7 @@ var zenkanaCase_table = [
 return Encoding;
 });
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 'use strict';
 
 //
@@ -8329,7 +8526,7 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /*!
  * node-inherit
  * Copyright(c) 2011 Dmitry Filatov <dfilatov@yandex-team.ru>
@@ -8338,7 +8535,7 @@ if ('undefined' !== typeof module) {
 
 module.exports = require('./lib/inherit');
 
-},{"./lib/inherit":10}],10:[function(require,module,exports){
+},{"./lib/inherit":11}],11:[function(require,module,exports){
 /**
  * @module inherit
  * @version 2.2.2
@@ -8528,7 +8725,7 @@ defineAsGlobal && (global.inherit = inherit);
 
 })(this);
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -17740,7 +17937,7 @@ return jQuery;
 
 }));
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 'use strict';
 
 
@@ -17749,7 +17946,7 @@ var yaml = require('./lib/js-yaml.js');
 
 module.exports = yaml;
 
-},{"./lib/js-yaml.js":13}],13:[function(require,module,exports){
+},{"./lib/js-yaml.js":14}],14:[function(require,module,exports){
 'use strict';
 
 
@@ -17790,7 +17987,7 @@ module.exports.parse          = deprecated('parse');
 module.exports.compose        = deprecated('compose');
 module.exports.addConstructor = deprecated('addConstructor');
 
-},{"./js-yaml/dumper":15,"./js-yaml/exception":16,"./js-yaml/loader":17,"./js-yaml/schema":19,"./js-yaml/schema/core":20,"./js-yaml/schema/default_full":21,"./js-yaml/schema/default_safe":22,"./js-yaml/schema/failsafe":23,"./js-yaml/schema/json":24,"./js-yaml/type":25}],14:[function(require,module,exports){
+},{"./js-yaml/dumper":16,"./js-yaml/exception":17,"./js-yaml/loader":18,"./js-yaml/schema":20,"./js-yaml/schema/core":21,"./js-yaml/schema/default_full":22,"./js-yaml/schema/default_safe":23,"./js-yaml/schema/failsafe":24,"./js-yaml/schema/json":25,"./js-yaml/type":26}],15:[function(require,module,exports){
 'use strict';
 
 
@@ -17853,7 +18050,7 @@ module.exports.repeat         = repeat;
 module.exports.isNegativeZero = isNegativeZero;
 module.exports.extend         = extend;
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-use-before-define*/
@@ -18703,7 +18900,7 @@ function safeDump(input, options) {
 module.exports.dump     = dump;
 module.exports.safeDump = safeDump;
 
-},{"./common":14,"./exception":16,"./schema/default_full":21,"./schema/default_safe":22}],16:[function(require,module,exports){
+},{"./common":15,"./exception":17,"./schema/default_full":22,"./schema/default_safe":23}],17:[function(require,module,exports){
 // YAML error class. http://stackoverflow.com/questions/8458984
 //
 'use strict';
@@ -18751,7 +18948,7 @@ YAMLException.prototype.toString = function toString(compact) {
 
 module.exports = YAMLException;
 
-},{"inherit":9}],17:[function(require,module,exports){
+},{"inherit":10}],18:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len,no-use-before-define*/
@@ -20331,7 +20528,7 @@ module.exports.load        = load;
 module.exports.safeLoadAll = safeLoadAll;
 module.exports.safeLoad    = safeLoad;
 
-},{"./common":14,"./exception":16,"./mark":18,"./schema/default_full":21,"./schema/default_safe":22}],18:[function(require,module,exports){
+},{"./common":15,"./exception":17,"./mark":19,"./schema/default_full":22,"./schema/default_safe":23}],19:[function(require,module,exports){
 'use strict';
 
 
@@ -20411,7 +20608,7 @@ Mark.prototype.toString = function toString(compact) {
 
 module.exports = Mark;
 
-},{"./common":14}],19:[function(require,module,exports){
+},{"./common":15}],20:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len*/
@@ -20517,7 +20714,7 @@ Schema.create = function createSchema() {
 
 module.exports = Schema;
 
-},{"./common":14,"./exception":16,"./type":25}],20:[function(require,module,exports){
+},{"./common":15,"./exception":17,"./type":26}],21:[function(require,module,exports){
 // Standard YAML's Core schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2804923
 //
@@ -20537,7 +20734,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":19,"./json":24}],21:[function(require,module,exports){
+},{"../schema":20,"./json":25}],22:[function(require,module,exports){
 // JS-YAML's default schema for `load` function.
 // It is not described in the YAML specification.
 //
@@ -20564,7 +20761,7 @@ module.exports = Schema.DEFAULT = new Schema({
   ]
 });
 
-},{"../schema":19,"../type/js/function":30,"../type/js/regexp":31,"../type/js/undefined":32,"./default_safe":22}],22:[function(require,module,exports){
+},{"../schema":20,"../type/js/function":31,"../type/js/regexp":32,"../type/js/undefined":33,"./default_safe":23}],23:[function(require,module,exports){
 // JS-YAML's default schema for `safeLoad` function.
 // It is not described in the YAML specification.
 //
@@ -20594,7 +20791,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":19,"../type/binary":26,"../type/merge":34,"../type/omap":36,"../type/pairs":37,"../type/set":39,"../type/timestamp":41,"./core":20}],23:[function(require,module,exports){
+},{"../schema":20,"../type/binary":27,"../type/merge":35,"../type/omap":37,"../type/pairs":38,"../type/set":40,"../type/timestamp":42,"./core":21}],24:[function(require,module,exports){
 // Standard YAML's Failsafe schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2802346
 
@@ -20613,7 +20810,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":19,"../type/map":33,"../type/seq":38,"../type/str":40}],24:[function(require,module,exports){
+},{"../schema":20,"../type/map":34,"../type/seq":39,"../type/str":41}],25:[function(require,module,exports){
 // Standard YAML's JSON schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2803231
 //
@@ -20640,7 +20837,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":19,"../type/bool":27,"../type/float":28,"../type/int":29,"../type/null":35,"./failsafe":23}],25:[function(require,module,exports){
+},{"../schema":20,"../type/bool":28,"../type/float":29,"../type/int":30,"../type/null":36,"./failsafe":24}],26:[function(require,module,exports){
 'use strict';
 
 var YAMLException = require('./exception');
@@ -20703,7 +20900,7 @@ function Type(tag, options) {
 
 module.exports = Type;
 
-},{"./exception":16}],26:[function(require,module,exports){
+},{"./exception":17}],27:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-bitwise*/
@@ -20839,7 +21036,7 @@ module.exports = new Type('tag:yaml.org,2002:binary', {
   represent: representYamlBinary
 });
 
-},{"../type":25,"buffer":6}],27:[function(require,module,exports){
+},{"../type":26,"buffer":1}],28:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -20878,7 +21075,7 @@ module.exports = new Type('tag:yaml.org,2002:bool', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":25}],28:[function(require,module,exports){
+},{"../type":26}],29:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -20997,7 +21194,7 @@ module.exports = new Type('tag:yaml.org,2002:float', {
   defaultStyle: 'lowercase'
 });
 
-},{"../common":14,"../type":25}],29:[function(require,module,exports){
+},{"../common":15,"../type":26}],30:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -21182,7 +21379,7 @@ module.exports = new Type('tag:yaml.org,2002:int', {
   }
 });
 
-},{"../common":14,"../type":25}],30:[function(require,module,exports){
+},{"../common":15,"../type":26}],31:[function(require,module,exports){
 'use strict';
 
 var esprima;
@@ -21268,7 +21465,7 @@ module.exports = new Type('tag:yaml.org,2002:js/function', {
   represent: representJavascriptFunction
 });
 
-},{"../../type":25,"esprima":42}],31:[function(require,module,exports){
+},{"../../type":26,"esprima":43}],32:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -21353,7 +21550,7 @@ module.exports = new Type('tag:yaml.org,2002:js/regexp', {
   represent: representJavascriptRegExp
 });
 
-},{"../../type":25}],32:[function(require,module,exports){
+},{"../../type":26}],33:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -21383,7 +21580,7 @@ module.exports = new Type('tag:yaml.org,2002:js/undefined', {
   represent: representJavascriptUndefined
 });
 
-},{"../../type":25}],33:[function(require,module,exports){
+},{"../../type":26}],34:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21393,7 +21590,7 @@ module.exports = new Type('tag:yaml.org,2002:map', {
   construct: function (data) { return null !== data ? data : {}; }
 });
 
-},{"../type":25}],34:[function(require,module,exports){
+},{"../type":26}],35:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21407,7 +21604,7 @@ module.exports = new Type('tag:yaml.org,2002:merge', {
   resolve: resolveYamlMerge
 });
 
-},{"../type":25}],35:[function(require,module,exports){
+},{"../type":26}],36:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21445,7 +21642,7 @@ module.exports = new Type('tag:yaml.org,2002:null', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":25}],36:[function(require,module,exports){
+},{"../type":26}],37:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21503,7 +21700,7 @@ module.exports = new Type('tag:yaml.org,2002:omap', {
   construct: constructYamlOmap
 });
 
-},{"../type":25}],37:[function(require,module,exports){
+},{"../type":26}],38:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21566,7 +21763,7 @@ module.exports = new Type('tag:yaml.org,2002:pairs', {
   construct: constructYamlPairs
 });
 
-},{"../type":25}],38:[function(require,module,exports){
+},{"../type":26}],39:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21576,7 +21773,7 @@ module.exports = new Type('tag:yaml.org,2002:seq', {
   construct: function (data) { return null !== data ? data : []; }
 });
 
-},{"../type":25}],39:[function(require,module,exports){
+},{"../type":26}],40:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21611,7 +21808,7 @@ module.exports = new Type('tag:yaml.org,2002:set', {
   construct: constructYamlSet
 });
 
-},{"../type":25}],40:[function(require,module,exports){
+},{"../type":26}],41:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21621,7 +21818,7 @@ module.exports = new Type('tag:yaml.org,2002:str', {
   construct: function (data) { return null !== data ? data : ''; }
 });
 
-},{"../type":25}],41:[function(require,module,exports){
+},{"../type":26}],42:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21716,7 +21913,7 @@ module.exports = new Type('tag:yaml.org,2002:timestamp', {
   represent: representYamlTimestamp
 });
 
-},{"../type":25}],42:[function(require,module,exports){
+},{"../type":26}],43:[function(require,module,exports){
 /*
   Copyright (c) jQuery Foundation, Inc. and Contributors, All Rights Reserved.
 
@@ -27461,10 +27658,10 @@ module.exports = new Type('tag:yaml.org,2002:timestamp', {
 }));
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 module.exports = require('./lib/surfaces_txt2yaml.js')
 
-},{"./lib/surfaces_txt2yaml.js":44}],44:[function(require,module,exports){
+},{"./lib/surfaces_txt2yaml.js":45}],45:[function(require,module,exports){
 // Generated by CoffeeScript 1.8.0
 
 /* (C) 2014 Narazaka : Licensed under The MIT License - http://narazaka.net/license/MIT?2014 */
@@ -28636,5 +28833,5 @@ if (typeof exports !== "undefined" && exports !== null) {
   exports.txt_to_yaml = SurfacesTxt2Yaml.txt_to_yaml;
 }
 
-},{"js-yaml":12}]},{},[5])(5)
+},{"js-yaml":13}]},{},[7])(7)
 });

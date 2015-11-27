@@ -11,6 +11,36 @@ setPictureFrame = (element, description) ->
 
 QUnit.module 'SurfaceUtil'
 
+QUnit.test 'chromakey_snipet speed test', (assert) ->
+  done = assert.async()
+  SurfaceUtil.fetchImageFromURL("surface0.png").then (img)->
+    test = ->
+      cnv = SurfaceUtil.copy(img)
+      ctx = cnv.getContext("2d")
+      start = performance.now()
+      imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+      stop = performance.now()
+      getImageDataTime = stop - start
+      start = performance.now()
+      SurfaceUtil.chromakey_snipet(imgdata.data)
+      stop = performance.now()
+      chromakeyTime = stop - start
+      start = performance.now()
+      ctx.putImageData(imgdata, 0, 0)
+      stop = performance.now()
+      putImageDataTime = stop - start
+      {getImageDataTime, chromakeyTime, putImageDataTime}
+    results = [1..100].map -> test()
+    getImageDataTimes = results.map (a)-> a.getImageDataTime
+    putImageDataTimes = results.map (a)-> a.putImageDataTime
+    chromakeyTimes = results.map (a)-> a.chromakeyTime
+    getImageDataTime = getImageDataTimes.reduce (a,b)-> a+b
+    putImageDataTime = putImageDataTimes.reduce (a,b)-> a+b
+    chromakeyTime = chromakeyTimes.reduce (a,b)-> a+b
+    assert.ok getImageDataTime > putImageDataTime
+    assert.ok chromakeyTime > 0
+    done()
+
 QUnit.test 'SurfaceUtil.extend', (assert) ->
   original = {a: 0, b: {c: 0, d: 0}}
   SurfaceUtil.extend(original, {a: 1, b: {c: 1}})

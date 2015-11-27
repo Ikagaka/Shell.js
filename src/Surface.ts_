@@ -1,27 +1,15 @@
 /// <reference path="../typings/tsd.d.ts"/>
 
-import {SurfaceRender, SurfaceLayerObject} from "./SurfaceRender";
+import SurfaceRender from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
-import {Shell, SurfaceTreeNode} from "./Shell";
-import jQuery from "jquery";
+import Shell from "./Shell";
+import {SurfaceTreeNode} from "./Interfaces";
+import * as $ from "jquery";
 
-self["$"] = jQuery;
-self["jQuery"] = jQuery;
-var $ = jQuery;
+self["$"] = $;
+self["jQuery"] = $;
 
-export interface SurfaceMouseEvent {
-  button: number; // マウスのボタン
-  offsetX: number; // canvas左上からのx座標
-  offsetY: number; // canvas左上からのy座標
-  region: string; // collisionの名前
-  scopeId: number; // このサーフェスのスコープ番号
-  wheel: number; // 0
-  type: string; // "Bust"
-  transparency: boolean; // 透明領域ならtrue,
-  event: JQueryEventObject;
-}
-
-export class Surface {
+export default class Surface {
 
   public element: HTMLCanvasElement;
   public scopeId: number;

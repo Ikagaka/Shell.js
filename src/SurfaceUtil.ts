@@ -1,8 +1,22 @@
 /// <reference path="../typings/tsd.d.ts"/>
 
-import {SurfaceTreeNode} from "./Shell";
-import * as Encoding from "encoding-japanese";
+import {SurfaceTreeNode} from "./Interfaces";
+import Encoding from "encoding-japanese";
 
+
+
+export function chromakey_snipet(data: Uint8ClampedArray): void { // side effect
+  var r = data[0], g = data[1], b = data[2], a = data[3];
+  var i = 0;
+  if (a !== 0) {
+    while (i < data.length) {
+      if (r === data[i] && g === data[i + 1] && b === data[i + 2]) {
+        data[i + 3] = 0;
+      }
+      i += 4;
+    }
+  }
+}
 
 export function log(element: Element, description=""){
   var fieldset = document.createElement('fieldset');

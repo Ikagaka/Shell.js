@@ -1,17 +1,6 @@
 /// <reference path="../../typings/tsd.d.ts" />
-import { Shell } from "./Shell";
-export interface SurfaceMouseEvent {
-    button: number;
-    offsetX: number;
-    offsetY: number;
-    region: string;
-    scopeId: number;
-    wheel: number;
-    type: string;
-    transparency: boolean;
-    event: JQueryEventObject;
-}
-export declare class Surface {
+import Shell from "./Shell";
+export default class Surface {
     element: HTMLCanvasElement;
     scopeId: number;
     surfaceId: number;
