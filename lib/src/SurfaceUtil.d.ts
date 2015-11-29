@@ -1,5 +1,6 @@
 /// <reference path="../../typings/tsd.d.ts" />
 import { SurfaceTreeNode } from "./Interfaces";
+export declare function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src: HTMLCanvasElement): void;
 export declare function chromakey_snipet(data: Uint8ClampedArray): void;
 export declare function log(element: Element, description?: string): void;
 export declare function extend(target: any, source: any): void;

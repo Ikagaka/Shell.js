@@ -6,7 +6,7 @@
   <link  href="../bower_components/qunit/qunit/qunit.css" rel="stylesheet" />
   <script src="../bower_components/qunit/qunit/qunit.js"></script>
   <!--script src="../bower_components/qunit-tap/lib/qunit-tap.js"></script>
-  <script>qunitTap(QUnit, function() { console.log.apply(console, arguments); }, {showSourceOnFailure: false});</script-->
+  <script>qunitTap(QUnit, function() { console.log.apply(console, arguments); }, {showSourceOnFailure: true});</script-->
   <script src="../bower_components/empower/build/empower.js"></script>
   <script src="../bower_components/power-assert-formatter/build/power-assert-formatter.js"></script>
   <script>empower(QUnit.assert, powerAssertFormatter(), {destructive: true});</script>
@@ -18,7 +18,7 @@
     }
   </style>
   <script src="../dist/Shell.js"></script>
-  <script src="./test/testSurfaceRender.js"></script>
+  <script src="./test/testSurface.js"></script>
 </head>
 <body>
   <h1 id="qunit-header">QUnit Test Suite</h1>

@@ -1,5 +1,6 @@
 import SurfaceCanvas from "./SurfaceCanvas";
 
+
 export interface SurfaceMouseEvent {
   button: number; // マウスのボタン
   offsetX: number; // canvas左上からのx座標
@@ -44,7 +45,7 @@ export interface SurfaceAnimationPattern {
 
 
 export interface SurfaceTreeNode {
-  base:  HTMLCanvasElement,
+  base:  SurfaceCanvas,
   elements: SurfaceLayerObject[],
   collisions: SurfaceRegion[],
   animations: SurfaceAnimation[]

@@ -3,6 +3,12 @@
 import {SurfaceTreeNode} from "./Interfaces";
 import Encoding from "encoding-japanese";
 
+export function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src: HTMLCanvasElement): void {
+  cnv.width = src.width;
+  cnv.height = src.height;
+  ctx.globalCompositeOperation = "source-over";
+  ctx.drawImage(src, 0, 0);
+}
 
 
 export function chromakey_snipet(data: Uint8ClampedArray): void { // side effect

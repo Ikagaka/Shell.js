@@ -15,8 +15,8 @@ QUnit.test('chromakey_snipet speed test', function (assert) {
     var done;
     done = assert.async();
     return Promise.all([
-        SurfaceUtil.fetchImageFromURL('surface0.png'),
-        SurfaceUtil.fetchArrayBuffer('surface0.png')
+        SurfaceUtil.fetchImageFromURL('src/surface0.png'),
+        SurfaceUtil.fetchArrayBuffer('src/surface0.png')
     ]).then(function (arg) {
         var buffer, img, workers;
         img = arg[0], buffer = arg[1];
@@ -209,7 +209,7 @@ QUnit.test('SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer', function (assert
     var done;
     assert.expect(1);
     done = assert.async();
-    return SurfaceUtil.fetchArrayBuffer('./readme.txt').then(function (buffer) {
+    return SurfaceUtil.fetchArrayBuffer('./src/readme.txt').then(function (buffer) {
         var txt;
         txt = SurfaceUtil.convert(buffer);
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(txt, 'arguments/0/left/callee/object').match(/フリーシェル 「窗子」（MADOKO）を改変の上使用しています。/), 'arguments/0/left') !== null, 'arguments/0'), {
@@ -325,7 +325,7 @@ QUnit.test('SurfaceUtil.fetchImageFromURL, SurfaceUtil.fetchImageFromArrayBuffer
     var done;
     done = assert.async();
     assert.expect(2);
-    return SurfaceUtil.fetchArrayBuffer('./surface0.png').then(function (buffer) {
+    return SurfaceUtil.fetchArrayBuffer('src/surface0.png').then(function (buffer) {
         return SurfaceUtil.fetchImageFromArrayBuffer(buffer);
     }).then(function (img) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(img, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {

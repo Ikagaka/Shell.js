@@ -35,6 +35,7 @@
     ],
     "files": [
         "./Interfaces.ts",
+        "./Surface.ts",
         "./SurfaceCanvas.ts",
         "./SurfaceRender.ts",
         "./SurfaceUtil.ts"

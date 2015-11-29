@@ -23,7 +23,7 @@ gulp.task 'build:test', ->
   gulp.src("test/**/*.coffee")
     .pipe coffee({bare: true}).on("error", console.error.bind(console))
     .pipe espower()
-    .pipe gulp.dest 'demo'
+    .pipe gulp.dest 'demo/test'
 
 gulp.task 'tslint', ->
   tsProject.src()
@@ -41,5 +41,5 @@ gulp.task 'watch:tslint', ->
 
 
 gulp.task('default', ['build']);
-gulp.task('build', ['build:ts', "build:test", "tslint"]);
-gulp.task('watch', ['build', 'watch:ts', "watch:test", "watch:tslint"]);
+gulp.task('build', ['build:ts', "build:test"]);
+gulp.task('watch', ['build', 'watch:ts', "watch:test"]);

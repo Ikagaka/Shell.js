@@ -7,7 +7,7 @@ export default class SurfaceRender {
     imgdata: ImageData;
     basePosX: number;
     basePosY: number;
-    constructor(arg: SurfaceCanvas);
+    constructor(arg?: SurfaceCanvas);
     getSurfaceCanvas(): SurfaceCanvas;
     composeElements(elements: {
         canvas: SurfaceCanvas;

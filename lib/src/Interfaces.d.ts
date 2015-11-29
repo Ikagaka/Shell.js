@@ -41,7 +41,7 @@ export interface SurfaceAnimationPattern {
     y: number;
 }
 export interface SurfaceTreeNode {
-    base: HTMLCanvasElement;
+    base: SurfaceCanvas;
     elements: SurfaceLayerObject[];
     collisions: SurfaceRegion[];
     animations: SurfaceAnimation[];

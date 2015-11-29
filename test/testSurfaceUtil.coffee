@@ -14,8 +14,8 @@ QUnit.module 'SurfaceUtil'
 QUnit.test 'chromakey_snipet speed test', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.fetchImageFromURL("surface0.png")
-    SurfaceUtil.fetchArrayBuffer("surface0.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+    SurfaceUtil.fetchArrayBuffer("src/surface0.png")
   ]).then ([img, buffer])->
     workers = [1..2].map ->
       new InlineServerWorker [
@@ -110,7 +110,7 @@ QUnit.test 'SurfaceUtil.parseDescript', (assert) ->
 QUnit.test "SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer", (assert)->
   assert.expect(1);
   done = assert.async()
-  SurfaceUtil.fetchArrayBuffer("./readme.txt").then (buffer)->
+  SurfaceUtil.fetchArrayBuffer("./src/readme.txt").then (buffer)->
     txt = SurfaceUtil.convert(buffer)
     assert.ok txt.match(/フリーシェル 「窗子」（MADOKO）を改変の上使用しています。/) isnt null
     done()
@@ -153,7 +153,7 @@ QUnit.test "SurfaceUtil.copy", (assert)->
 QUnit.test "SurfaceUtil.fetchImageFromURL, SurfaceUtil.fetchImageFromArrayBuffer", (assert)->
   done = assert.async()
   assert.expect(2);
-  SurfaceUtil.fetchArrayBuffer("./surface0.png")
+  SurfaceUtil.fetchArrayBuffer("src/surface0.png")
   .then (buffer)-> SurfaceUtil.fetchImageFromArrayBuffer(buffer)
   .then (img)->
     assert.ok img.width is 182

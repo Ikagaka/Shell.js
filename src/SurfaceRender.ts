@@ -19,7 +19,7 @@ export default class SurfaceRender {
   // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
   // nullならば1x1のCanvasをベースサーフェスとする。
   // 渡されたSurfaceCanvasは変更しない。
-  constructor(arg: SurfaceCanvas) {
+  constructor(arg?: SurfaceCanvas) {
     if(arg == null){
       arg = new SurfaceCanvas().loadFromCanvas(SurfaceUtil.createCanvas());
     }
@@ -197,10 +197,7 @@ export default class SurfaceRender {
   }
 
   init(srfCnv: SurfaceCanvas): void {
-    this.cnv.width = srfCnv.width;
-    this.cnv.height = srfCnv.height;
-    this.ctx.globalCompositeOperation = "source-over";
-    this.ctx.drawImage(srfCnv.cnv, 0, 0);
+    SurfaceUtil.init(this.cnv, this.ctx, srfCnv.cnv);
   }
 
   initImageData(width: number, height: number, data: Uint8ClampedArray): void {

@@ -28,7 +28,7 @@ QUnit.module 'Shell.SurfaceRender'
 QUnit.test 'SurfaceRender#clear', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0730.png")
+    new SurfaceCanvas().loadFromURL("src/surface0730.png")
   ]).then ([png])->
     render = new SurfaceRender(png)
     ctx = render.ctx
@@ -44,8 +44,8 @@ QUnit.test 'SurfaceRender#clear', (assert) ->
 QUnit.test 'SurfaceRender#pna', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0730.png")
-    new SurfaceCanvas().loadFromURL("surface0730.pna")
+    new SurfaceCanvas().loadFromURL("src/surface0730.png")
+    new SurfaceCanvas().loadFromURL("src/surface0730.pna")
   ]).then ([png, pna])->
     render = new SurfaceRender(png)
     render.pna(pna)
@@ -61,7 +61,7 @@ QUnit.test 'SurfaceRender#pna', (assert) ->
 QUnit.test 'SurfaceRender#base, SurfaceRender#init', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
   ]).then ([png])->
     render = new SurfaceRender()
     render.base(png)
@@ -72,9 +72,9 @@ QUnit.test 'SurfaceRender#base, SurfaceRender#init', (assert) ->
 QUnit.test 'SurfaceRender#overlay', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
-    new SurfaceCanvas().loadFromURL("surface0730.png")
-    new SurfaceCanvas().loadFromURL("surface0730.pna")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0730.png")
+    new SurfaceCanvas().loadFromURL("src/surface0730.pna")
   ]).then ([base, png, pna])->
     base_render = new SurfaceRender(base)
     megane_render = new SurfaceRender(png)
@@ -108,7 +108,7 @@ QUnit.test 'SurfaceRender#overlay', (assert) ->
 QUnit.test 'SurfaceRender#overlayfast', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
   ]).then ([base])->
     render = new SurfaceRender(base)
     transparent = render.getSurfaceCanvas()
@@ -122,7 +122,7 @@ QUnit.test 'SurfaceRender#overlayfast', (assert) ->
 QUnit.test 'SurfaceRender#interpolate', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
   ]).then ([base])->
     render = new SurfaceRender(base)
     transparent = render.getSurfaceCanvas()
@@ -136,7 +136,7 @@ QUnit.test 'SurfaceRender#interpolate', (assert) ->
 QUnit.test 'SurfaceRender#replace', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
   ]).then ([base])->
     render = new SurfaceRender(base)
     transparent = render.getSurfaceCanvas()
@@ -150,7 +150,7 @@ QUnit.test 'SurfaceRender#replace', (assert) ->
 QUnit.test 'SurfaceRender#move', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
   ]).then ([base])->
     render = new SurfaceRender(base)
     render.move(50, 50)
@@ -163,7 +163,7 @@ QUnit.test 'SurfaceRender#move', (assert) ->
 QUnit.test 'SurfaceRender#reduce', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
   ]).then ([base])->
     cnv = document.createElement("canvas")
     cnv.width = cnv.height = 100
@@ -185,7 +185,7 @@ QUnit.test 'SurfaceRender#reduce', (assert) ->
 QUnit.test 'SurfaceRender#asis', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
   ]).then ([base])->
     render = new SurfaceRender(base)
     render.asis(base, 50, 50)
@@ -199,7 +199,7 @@ QUnit.test 'SurfaceRender#asis', (assert) ->
 QUnit.test 'SurfaceRender#initImageData', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
   ]).then ([base])->
     render = new SurfaceRender()
     render.initImageData(base.width, base.height, base.pixels)
@@ -211,9 +211,9 @@ QUnit.test 'SurfaceRender#initImageData', (assert) ->
 QUnit.test 'SurfaceRender#composeElements', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
-    new SurfaceCanvas().loadFromURL("surface0730.png")
-    new SurfaceCanvas().loadFromURL("surface0730.pna")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0730.png")
+    new SurfaceCanvas().loadFromURL("src/surface0730.pna")
   ]).then ([base, png, pna])->
     megane_render = new SurfaceRender(png)
     megane_render.pna(pna)
@@ -231,9 +231,9 @@ QUnit.test 'SurfaceRender#composeElements', (assert) ->
 QUnit.test 'SurfaceRender#drawRegions', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("surface0.png")
-    new SurfaceCanvas().loadFromURL("surface0730.png")
-    new SurfaceCanvas().loadFromURL("surface0730.pna")
+    new SurfaceCanvas().loadFromURL("src/surface0.png")
+    new SurfaceCanvas().loadFromURL("src/surface0730.png")
+    new SurfaceCanvas().loadFromURL("src/surface0730.pna")
   ]).then ([base, png, pna])->
     megane_render = new SurfaceRender(png)
     megane_render.pna(pna)

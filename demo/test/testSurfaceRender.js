@@ -38,7 +38,7 @@ QUnit.module('Shell.SurfaceRender');
 QUnit.test('SurfaceRender#clear', function (assert) {
     var done;
     done = assert.async();
-    return Promise.all([new SurfaceCanvas().loadFromURL('surface0730.png')]).then(function (arg) {
+    return Promise.all([new SurfaceCanvas().loadFromURL('src/surface0730.png')]).then(function (arg) {
         var alpha, ctx, imagedata, png, render;
         png = arg[0];
         render = new SurfaceRender(png);
@@ -61,8 +61,8 @@ QUnit.test('SurfaceRender#pna', function (assert) {
     var done;
     done = assert.async();
     return Promise.all([
-        new SurfaceCanvas().loadFromURL('surface0730.png'),
-        new SurfaceCanvas().loadFromURL('surface0730.pna')
+        new SurfaceCanvas().loadFromURL('src/surface0730.png'),
+        new SurfaceCanvas().loadFromURL('src/surface0730.pna')
     ]).then(function (arg) {
         var alpha, frame, imagedata, pna, png, render;
         png = arg[0], pna = arg[1];
@@ -85,7 +85,7 @@ QUnit.test('SurfaceRender#pna', function (assert) {
 QUnit.test('SurfaceRender#base, SurfaceRender#init', function (assert) {
     var done;
     done = assert.async();
-    return Promise.all([new SurfaceCanvas().loadFromURL('surface0.png')]).then(function (arg) {
+    return Promise.all([new SurfaceCanvas().loadFromURL('src/surface0.png')]).then(function (arg) {
         var png, render;
         png = arg[0];
         render = new SurfaceRender();
@@ -107,9 +107,9 @@ QUnit.test('SurfaceRender#overlay', function (assert) {
     var done;
     done = assert.async();
     return Promise.all([
-        new SurfaceCanvas().loadFromURL('surface0.png'),
-        new SurfaceCanvas().loadFromURL('surface0730.png'),
-        new SurfaceCanvas().loadFromURL('surface0730.pna')
+        new SurfaceCanvas().loadFromURL('src/surface0.png'),
+        new SurfaceCanvas().loadFromURL('src/surface0730.png'),
+        new SurfaceCanvas().loadFromURL('src/surface0730.pna')
     ]).then(function (arg) {
         var base, base_on_megane_negative_render, base_on_megane_render, base_render, frame, megane, megane_on_base_negative_render, megane_on_base_render, megane_render, pna, png;
         base = arg[0], png = arg[1], pna = arg[2];
@@ -178,7 +178,7 @@ QUnit.test('SurfaceRender#overlay', function (assert) {
 QUnit.test('SurfaceRender#overlayfast', function (assert) {
     var done;
     done = assert.async();
-    return Promise.all([new SurfaceCanvas().loadFromURL('surface0.png')]).then(function (arg) {
+    return Promise.all([new SurfaceCanvas().loadFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, render, transparent;
         base = arg[0];
         render = new SurfaceRender(base);
@@ -194,7 +194,7 @@ QUnit.test('SurfaceRender#overlayfast', function (assert) {
 QUnit.test('SurfaceRender#interpolate', function (assert) {
     var done;
     done = assert.async();
-    return Promise.all([new SurfaceCanvas().loadFromURL('surface0.png')]).then(function (arg) {
+    return Promise.all([new SurfaceCanvas().loadFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, render, transparent;
         base = arg[0];
         render = new SurfaceRender(base);
@@ -210,7 +210,7 @@ QUnit.test('SurfaceRender#interpolate', function (assert) {
 QUnit.test('SurfaceRender#replace', function (assert) {
     var done;
     done = assert.async();
-    return Promise.all([new SurfaceCanvas().loadFromURL('surface0.png')]).then(function (arg) {
+    return Promise.all([new SurfaceCanvas().loadFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, render, transparent;
         base = arg[0];
         render = new SurfaceRender(base);
@@ -226,7 +226,7 @@ QUnit.test('SurfaceRender#replace', function (assert) {
 QUnit.test('SurfaceRender#move', function (assert) {
     var done;
     done = assert.async();
-    return Promise.all([new SurfaceCanvas().loadFromURL('surface0.png')]).then(function (arg) {
+    return Promise.all([new SurfaceCanvas().loadFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, render;
         base = arg[0];
         render = new SurfaceRender(base);
@@ -241,7 +241,7 @@ QUnit.test('SurfaceRender#move', function (assert) {
 QUnit.test('SurfaceRender#reduce', function (assert) {
     var done;
     done = assert.async();
-    return Promise.all([new SurfaceCanvas().loadFromURL('surface0.png')]).then(function (arg) {
+    return Promise.all([new SurfaceCanvas().loadFromURL('src/surface0.png')]).then(function (arg) {
         var base, cnv, ctx, filter, frame, render;
         base = arg[0];
         cnv = document.createElement('canvas');
@@ -265,7 +265,7 @@ QUnit.test('SurfaceRender#reduce', function (assert) {
 QUnit.test('SurfaceRender#asis', function (assert) {
     var done;
     done = assert.async();
-    return Promise.all([new SurfaceCanvas().loadFromURL('surface0.png')]).then(function (arg) {
+    return Promise.all([new SurfaceCanvas().loadFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, render;
         base = arg[0];
         render = new SurfaceRender(base);
@@ -281,7 +281,7 @@ QUnit.test('SurfaceRender#asis', function (assert) {
 QUnit.test('SurfaceRender#initImageData', function (assert) {
     var done;
     done = assert.async();
-    return Promise.all([new SurfaceCanvas().loadFromURL('surface0.png')]).then(function (arg) {
+    return Promise.all([new SurfaceCanvas().loadFromURL('src/surface0.png')]).then(function (arg) {
         var base, render;
         base = arg[0];
         render = new SurfaceRender();
@@ -303,9 +303,9 @@ QUnit.test('SurfaceRender#composeElements', function (assert) {
     var done;
     done = assert.async();
     return Promise.all([
-        new SurfaceCanvas().loadFromURL('surface0.png'),
-        new SurfaceCanvas().loadFromURL('surface0730.png'),
-        new SurfaceCanvas().loadFromURL('surface0730.pna')
+        new SurfaceCanvas().loadFromURL('src/surface0.png'),
+        new SurfaceCanvas().loadFromURL('src/surface0730.png'),
+        new SurfaceCanvas().loadFromURL('src/surface0730.pna')
     ]).then(function (arg) {
         var base, frame, megane, megane_render, pna, png, render;
         base = arg[0], png = arg[1], pna = arg[2];
@@ -337,9 +337,9 @@ QUnit.test('SurfaceRender#drawRegions', function (assert) {
     var done;
     done = assert.async();
     return Promise.all([
-        new SurfaceCanvas().loadFromURL('surface0.png'),
-        new SurfaceCanvas().loadFromURL('surface0730.png'),
-        new SurfaceCanvas().loadFromURL('surface0730.pna')
+        new SurfaceCanvas().loadFromURL('src/surface0.png'),
+        new SurfaceCanvas().loadFromURL('src/surface0730.png'),
+        new SurfaceCanvas().loadFromURL('src/surface0730.pna')
     ]).then(function (arg) {
         var base, frame, megane, megane_render, pna, png, render;
         base = arg[0], png = arg[1], pna = arg[2];
