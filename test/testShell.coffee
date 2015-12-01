@@ -1,4 +1,7 @@
 prmNar = NarLoader.loadFromURL('../nar/mobilemaster.nar')
+$ -> $("<style />").html("body{background-color:#D2E0E6;}canvas,img{border:1px solid black;}").appendTo($("body"))
+window.SurfaceUtil = Shell.SurfaceUtil
+window.Shell = Shell.Shell
 
 prmNar.then (nanikaDir) ->
 
@@ -22,7 +25,8 @@ prmNar.then (nanikaDir) ->
       top = tmp.top
       offsetX = pageX - left
       offsetY = pageY - top
-      hit = srf.getRegion(offsetX, offsetY)
+      hit = SurfaceUtil.getRegion(srf.element, srf.surfaceNode , offsetX, offsetY)
+      console.log(hit)
       if hit.isHit
         $(ev.target).css 'cursor': 'pointer'
       else
@@ -33,7 +37,7 @@ prmNar.then (nanikaDir) ->
   QUnit.module 'Shell'
   shellDir = nanikaDir.getDirectory('shell/master').asArrayBuffer()
   console.dir shellDir
-  shell = new (Shell.Shell)(shellDir)
+  shell = new Shell(shellDir)
   QUnit.test 'shell#load', (assert) ->
     done = assert.async()
     shell.load().then((shell) ->
@@ -45,7 +49,7 @@ prmNar.then (nanikaDir) ->
         shell.unbind 0, 31
         shell.unbind 0, 32
         shell.unbind 0, 50
-        shell.enableRegionDraw = true
+        shell.showRegion()
         shell.render()
         setTimeout (->
           shell.bind 0, 20
@@ -53,7 +57,7 @@ prmNar.then (nanikaDir) ->
           shell.bind 0, 31
           shell.bind 0, 32
           shell.bind 0, 50
-          shell.enableRegionDraw = false
+          shell.hideRegion()
           shell.render()
           return
         ), 3000
@@ -101,8 +105,8 @@ prmNar.then (nanikaDir) ->
     assert.ok srf.element instanceof HTMLCanvasElement
     assert.ok srf.element.height == 445
     assert.ok srf.element.width == 182
-    assert.ok srf.surfaceResources.collisions[0].name == 'Head'
-    assert.ok srf.surfaceResources.animations[0].interval == 'sometimes'
+    assert.ok srf.surfaceNode.collisions[0].name == 'Head'
+    assert.ok srf.surfaceNode.animations[0].interval == 'sometimes'
     setInterval (->
       srf.talk()
       return
@@ -116,7 +120,7 @@ prmNar.then (nanikaDir) ->
     assert.ok srf.element instanceof HTMLCanvasElement
     assert.ok srf.element.height == 445
     assert.ok srf.element.width == 182
-    assert.ok srf.surfaceResources.collisions[0].name == 'Head'
+    assert.ok srf.surfaceNode.collisions[0].name == 'Head'
     setInterval (->
       srf.talk()
       return
@@ -140,7 +144,7 @@ prmNar.then (nanikaDir) ->
     assert.ok srf.element instanceof HTMLCanvasElement
     assert.ok srf.element.height == 210
     assert.ok srf.element.width == 230
-    assert.ok srf.surfaceResources.collisions[0].name == 'Screen'
+    assert.ok srf.surfaceNode.collisions[0].name == 'Screen'
     setInterval (->
       srf.talk()
       return

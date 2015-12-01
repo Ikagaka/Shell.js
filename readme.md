@@ -130,6 +130,12 @@ document.body.appendChild(cnv2)
 #### unbind(charaId: number, bindgroupId: number): void
 * `charaId` 番目のキャラクターの`bindgroupId`の着せ替えを脱がせます。
 
+#### showRegion(): void
+* このシェルの当たり判定を表示します。
+
+#### hideRegion(): void
+* このシェルの当たり判定を非表示にします。
+
 #### on("mouse", callback: (event: SurfaceMouseEvent)=> void): void
 * マウスイベントのイベントリスナーです。
 * 対応しているイベントは以下の通りです。

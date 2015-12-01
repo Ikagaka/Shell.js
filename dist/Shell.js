@@ -12,11 +12,11 @@ var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = 
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj["default"] = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -24,7 +24,11 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var _Surface = require('./Surface');
 
+var _Surface2 = _interopRequireDefault(_Surface);
+
 var _SurfaceRender = require("./SurfaceRender");
+
+var _SurfaceRender2 = _interopRequireDefault(_SurfaceRender);
 
 var _SurfaceUtil = require("./SurfaceUtil");
 
@@ -36,9 +40,7 @@ var _eventemitter32 = _interopRequireDefault(_eventemitter3);
 
 var _surfaces_txt2yaml = require("surfaces_txt2yaml");
 
-var SurfacesTxt2Yaml = _interopRequireWildcard(_surfaces_txt2yaml);
-
-;
+var _surfaces_txt2yaml2 = _interopRequireDefault(_surfaces_txt2yaml);
 
 var Shell = (function (_EventEmitter) {
     _inherits(Shell, _EventEmitter);
@@ -54,7 +56,7 @@ var Shell = (function (_EventEmitter) {
         this.surfaceTree = [];
         this.cacheCanvas = {};
         this.bindgroup = [];
-        this.enableRegionDraw = false;
+        this.enableRegion = false;
     }
 
     _createClass(Shell, [{
@@ -92,7 +94,7 @@ var Shell = (function (_EventEmitter) {
             });
         }
 
-        // load descript and assign to this.descript
+        // this.directoryからdescript.txtを探してthis.descriptに入れる
     }, {
         key: "loadDescript",
         value: function loadDescript() {
@@ -112,7 +114,7 @@ var Shell = (function (_EventEmitter) {
             return Promise.resolve(this);
         }
 
-        // load bindgroup and assign to this.bindgroup
+        // descript.txtからbindgroup探してデフォルト値を反映
     }, {
         key: "loadBindGroup",
         value: function loadBindGroup() {
@@ -152,7 +154,7 @@ var Shell = (function (_EventEmitter) {
             return Promise.resolve(this);
         }
 
-        // load surfaces.txt
+        // surfaces.txtを読んでthis.surfacesTxtに反映
     }, {
         key: "loadSurfacesTxt",
         value: function loadSurfacesTxt() {
@@ -168,7 +170,7 @@ var Shell = (function (_EventEmitter) {
             } else {
                 surfaces_text_names.forEach(function (filename) {
                     var text = SurfaceUtil.convert(_this3.directory[filename]);
-                    var srfs = SurfacesTxt2Yaml.txt_to_data(text, { compatible: 'ssp-lazy' });
+                    var srfs = _surfaces_txt2yaml2["default"].txt_to_data(text, { compatible: 'ssp-lazy' });
                     SurfaceUtil.extend(_this3.surfacesTxt, srfs);
                 });
                 //{ expand inherit and remove
@@ -189,7 +191,7 @@ var Shell = (function (_EventEmitter) {
             return Promise.resolve(this);
         }
 
-        // load surfacetable.txt
+        // surfacetable.txtを読む予定
     }, {
         key: "loadSurfaceTable",
         value: function loadSurfaceTable() {
@@ -205,7 +207,7 @@ var Shell = (function (_EventEmitter) {
             return Promise.resolve(this);
         }
 
-        // load surface*.png and surface*.pna
+        // this.directory から surface*.png と surface*.pna を読み込んで this.surfaceTree に反映
     }, {
         key: "loadSurfacePNG",
         value: function loadSurfacePNG() {
@@ -238,7 +240,7 @@ var Shell = (function (_EventEmitter) {
             });
         }
 
-        // load elements
+        // this.surfacesTxt から element を読み込んで this.surfaceTree に反映
     }, {
         key: "loadElements",
         value: function loadElements() {
@@ -262,7 +264,7 @@ var Shell = (function (_EventEmitter) {
                     return _this5.getPNGFromDirectory(file).then(function (canvas) {
                         if (!_this5.surfaceTree[n]) {
                             _this5.surfaceTree[n] = {
-                                base: SurfaceUtil.createCanvas(),
+                                base: { cnv: SurfaceUtil.createCanvas(), img: null },
                                 elements: [],
                                 collisions: [],
                                 animations: []
@@ -284,7 +286,7 @@ var Shell = (function (_EventEmitter) {
             });
         }
 
-        // load collisions
+        // this.surfacesTxt から collision を読み込んで this.surfaceTree に反映
     }, {
         key: "loadCollisions",
         value: function loadCollisions() {
@@ -299,7 +301,7 @@ var Shell = (function (_EventEmitter) {
                 Object.keys(regions).forEach(function (regname) {
                     if (!_this6.surfaceTree[n]) {
                         _this6.surfaceTree[n] = {
-                            base: SurfaceUtil.createCanvas(),
+                            base: { cnv: SurfaceUtil.createCanvas(), img: null },
                             elements: [],
                             collisions: [],
                             animations: []
@@ -313,7 +315,7 @@ var Shell = (function (_EventEmitter) {
             return Promise.resolve(this);
         }
 
-        // load animations
+        // this.surfacesTxt から animation を読み込んで this.surfaceTree に反映
     }, {
         key: "loadAnimations",
         value: function loadAnimations() {
@@ -328,7 +330,7 @@ var Shell = (function (_EventEmitter) {
                 Object.keys(animations).forEach(function (animname) {
                     if (!_this7.surfaceTree[n]) {
                         _this7.surfaceTree[n] = {
-                            base: SurfaceUtil.createCanvas(),
+                            base: { cnv: SurfaceUtil.createCanvas(), img: null },
                             elements: [],
                             collisions: [],
                             animations: []
@@ -348,6 +350,9 @@ var Shell = (function (_EventEmitter) {
         value: function hasFile(filename) {
             return SurfaceUtil.find(Object.keys(this.directory), filename).length > 0;
         }
+
+        // this.directoryからfilenameなサーフェスを探す。
+        // あったらついでにpnaも探して合成する
     }, {
         key: "getPNGFromDirectory",
         value: function getPNGFromDirectory(filename) {
@@ -368,19 +373,17 @@ var Shell = (function (_EventEmitter) {
             var pnafilename = _filename.replace(/\.png$/i, ".pna");
             var _pnafilename = SurfaceUtil.find(Object.keys(this.directory), pnafilename)[0] || "";
             var pngbuf = this.directory[_filename];
-            var pnabuf = this.directory[_pnafilename];
-            var render = new _SurfaceRender.SurfaceRender(SurfaceUtil.createCanvas());
-            return SurfaceUtil.fetchImageFromArrayBuffer(pngbuf).then(function (img) {
-                render.init(img);
+            return SurfaceUtil.createSurfaceCanvasFromArrayBuffer(pngbuf).then(function (pngsrfcnv) {
                 if (_pnafilename === "") {
-                    render.chromakey();
-                    _this8.cacheCanvas[_filename] = render.cnv;
-                    return render.cnv;
+                    _this8.cacheCanvas[_filename] = pngsrfcnv;
+                    return _this8.cacheCanvas[_filename];
                 }
-                return SurfaceUtil.fetchImageFromArrayBuffer(pnabuf).then(function (pnaimg) {
-                    render.pna(SurfaceUtil.copy(pnaimg));
-                    _this8.cacheCanvas[_filename] = render.cnv;
-                    return render.cnv;
+                var pnabuf = _this8.directory[_pnafilename];
+                return SurfaceUtil.createSurfaceCanvasFromArrayBuffer(pnabuf).then(function (pnasrfcnv) {
+                    var render = new _SurfaceRender2["default"]();
+                    render.pna(pngsrfcnv, pnasrfcnv);
+                    _this8.cacheCanvas[_filename] = render.getSurfaceCanvas();
+                    return _this8.cacheCanvas[_filename];
                 });
             });
         }
@@ -407,7 +410,8 @@ var Shell = (function (_EventEmitter) {
                 console.warn("surfaceId:", surfaceId, "is not defined");
                 return null;
             }
-            var srf = new _Surface.Surface(canvas, scopeId, _surfaceId, this);
+            var srf = new _Surface2["default"](canvas, scopeId, _surfaceId, this.surfaceTree);
+            srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
             this.attachedSurface.push({ canvas: canvas, surface: srf });
             return srf;
         }
@@ -460,6 +464,8 @@ var Shell = (function (_EventEmitter) {
     }, {
         key: "bind",
         value: function bind(scopeId, bindgroupId) {
+            var _this10 = this;
+
             if (this.bindgroup[scopeId] == null) {
                 console.warn("Shell#bind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
                 return;
@@ -469,7 +475,7 @@ var Shell = (function (_EventEmitter) {
                 var srf = _ref4.surface;
                 var canvas = _ref4.canvas;
 
-                srf.updateBind();
+                srf.updateBind(_this10.bindgroup);
             });
         }
 
@@ -477,6 +483,8 @@ var Shell = (function (_EventEmitter) {
     }, {
         key: "unbind",
         value: function unbind(scopeId, bindgroupId) {
+            var _this11 = this;
+
             if (this.bindgroup[scopeId] == null) {
                 console.warn("Shell#unbind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
                 return;
@@ -486,11 +494,11 @@ var Shell = (function (_EventEmitter) {
                 var srf = _ref5.surface;
                 var canvas = _ref5.canvas;
 
-                srf.updateBind();
+                srf.updateBind(_this11.bindgroup);
             });
         }
 
-        // 強制再描画
+        // 全サーフェス強制再描画
     }, {
         key: "render",
         value: function render() {
@@ -501,13 +509,42 @@ var Shell = (function (_EventEmitter) {
                 srf.render();
             });
         }
+
+        //当たり判定表示
+    }, {
+        key: "showRegion",
+        value: function showRegion() {
+            this.enableRegion = true;
+            this.attachedSurface.forEach(function (_ref7) {
+                var srf = _ref7.surface;
+                var canvas = _ref7.canvas;
+
+                srf.enableRegionDraw = true;
+            });
+            this.render();
+        }
+
+        //当たり判定非表示
+    }, {
+        key: "hideRegion",
+        value: function hideRegion() {
+            this.enableRegion = false;
+            this.attachedSurface.forEach(function (_ref8) {
+                var srf = _ref8.surface;
+                var canvas = _ref8.canvas;
+
+                srf.enableRegionDraw = false;
+            });
+            this.render();
+        }
     }]);
 
     return Shell;
 })(_eventemitter32["default"]);
 
-exports.Shell = Shell;
-},{"./Surface":3,"./SurfaceRender":5,"./SurfaceUtil":6,"eventemitter3":9,"surfaces_txt2yaml":44}],3:[function(require,module,exports){
+exports["default"] = Shell;
+module.exports = exports["default"];
+},{"./Surface":3,"./SurfaceRender":4,"./SurfaceUtil":5,"eventemitter3":8,"surfaces_txt2yaml":43}],3:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
 "use strict";
 
@@ -803,6 +840,7 @@ var Surface = (function (_EventEmitter) {
 
             if (intervals.length > 0) return;
             intervals.forEach(function (interval) {
+                //sometimesみたいのはinitAnimationに丸投げ
                 _this4.initAnimation({ interval: interval, is: is, patterns: patterns, option: option });
             });
             var option = anim.option;
@@ -814,24 +852,33 @@ var Surface = (function (_EventEmitter) {
             }
             this.render();
         }
+    }, {
+        key: "updateBind",
+        value: function updateBind(bindgroup) {
+            var _this5 = this;
 
-        /*
-          public updateBind(): void {
             // Shell.tsから呼ばれるためpublic
             // Shell#bind,Shell#unbindで発動
-            // shell.bindgroup[scopeId][bindgroupId] が変更された時に呼ばれるようだ
-            this.surfaceNode.animations.forEach((anim)=>{
-              var {is, interval, patterns} = anim;
-              if (this.shell.bindgroup[this.scopeId] == null) return;
-              if (this.shell.bindgroup[this.scopeId][is] == null) return;
-              if (!/^bind/.test(interval)) return;
-              if (this.shell.bindgroup[this.scopeId][is] === true){
-                this.initBind(anim);
-              }else{
-                delete this.layers[is];
-              }
+            // shell.bindgroup[scopeId][bindgroupId] が変更された時に呼ばれる
+            this.surfaceNode.animations.forEach(function (anim) {
+                //このサーフェスに定義されたアニメーションの中でintervalがbindなものｗ探す
+                var is = anim.is;
+                var interval = anim.interval;
+                var patterns = anim.patterns;
+
+                if (bindgroup[_this5.scopeId] == null) return;
+                if (bindgroup[_this5.scopeId][is] == null) return;
+                if (!/^bind/.test(interval)) return;
+                if (bindgroup[_this5.scopeId][is] === true) {
+                    //現在の設定が着せ替え有効ならばinitBindにまるなげ
+                    _this5.initBind(anim);
+                } else {
+                    //現在の合成レイヤから着せ替えレイヤを削除
+                    delete _this5.layers[is];
+                }
             });
-          }*/
+        }
+
         // アニメーションタイミングループの開始
     }, {
         key: "begin",
@@ -850,10 +897,10 @@ var Surface = (function (_EventEmitter) {
     }, {
         key: "endAll",
         value: function endAll() {
-            var _this5 = this;
+            var _this6 = this;
 
             Object.keys(this.stopFlags).forEach(function (key) {
-                _this5.stopFlags[key] = false;
+                _this6.stopFlags[key] = false;
             });
         }
 
@@ -861,7 +908,7 @@ var Surface = (function (_EventEmitter) {
     }, {
         key: "play",
         value: function play(animationId, callback) {
-            var _this6 = this;
+            var _this7 = this;
 
             if (this.destructed) return;
             var anims = this.surfaceNode.animations;
@@ -878,17 +925,17 @@ var Surface = (function (_EventEmitter) {
 
                     switch (type) {
                         case "start":
-                            _this6.play(animation_ids[0], nextTick);
+                            _this7.play(animation_ids[0], nextTick);
                             return;
                         case "stop":
-                            _this6.stop(animation_ids[0]);
+                            _this7.stop(animation_ids[0]);
                             setTimeout(nextTick);
                             return;
                         case "alternativestart":
-                            _this6.play(SurfaceUtil.choice(animation_ids), nextTick);
+                            _this7.play(SurfaceUtil.choice(animation_ids), nextTick);
                             return;
                         case "alternativestop":
-                            _this6.stop(SurfaceUtil.choice(animation_ids));
+                            _this7.stop(SurfaceUtil.choice(animation_ids));
                             setTimeout(nextTick);
                             return;
                     }
@@ -902,25 +949,23 @@ var Surface = (function (_EventEmitter) {
                     var b = _ref62[2];
 
                     var _wait = isFinite(Number(b)) ? SurfaceUtil.randomRange(Number(a), Number(b)) : Number(a);
-                    console.log(_wait, "start", i, animationId, _this6.animationsQueue[animationId]);
                     setTimeout(function () {
-                        console.log(_wait, "stop", i, animationId, _this6.animationsQueue[animationId]);
                         if (anim.option === "background") {
-                            _this6.backgrounds[animationId] = pattern;
+                            _this7.backgrounds[animationId] = pattern;
                         } else {
-                            _this6.layers[animationId] = pattern;
+                            _this7.layers[animationId] = pattern;
                         }
-                        _this6.render();
+                        _this7.render();
                         nextTick();
                     }, _wait);
                 };
             });
             var nextTick = function nextTick() {
-                if (_this6.destructed) return;
-                var next = _this6.animationsQueue[animationId].shift();
+                if (_this7.destructed) return;
+                var next = _this7.animationsQueue[animationId].shift();
                 if (!(next instanceof Function)) {
                     // stop pattern animation.
-                    _this6.animationsQueue[animationId] = [];
+                    _this7.animationsQueue[animationId] = [];
                     setTimeout(callback);
                 } else {
                     next();
@@ -938,35 +983,35 @@ var Surface = (function (_EventEmitter) {
     }, {
         key: "talk",
         value: function talk() {
-            var _this7 = this;
+            var _this8 = this;
 
             var animations = this.surfaceNode.animations;
             this.talkCount++;
             var hits = animations.filter(function (anim) {
-                return (/^talk/.test(anim.interval) && _this7.talkCount % _this7.talkCounts[anim.is] === 0
+                return (/^talk/.test(anim.interval) && _this8.talkCount % _this8.talkCounts[anim.is] === 0
                 );
             });
             hits.forEach(function (anim) {
-                _this7.play(anim.is);
+                _this8.play(anim.is);
             });
         }
     }, {
         key: "yenE",
         value: function yenE() {
-            var _this8 = this;
+            var _this9 = this;
 
             var anims = this.surfaceNode.animations;
             anims.forEach(function (anim) {
                 // この条件式よくわからない
-                if (anim.interval === "yen-e" && _this8.talkCount % _this8.talkCounts[anim.is] === 0) {
-                    _this8.play(anim.is);
+                if (anim.interval === "yen-e" && _this9.talkCount % _this9.talkCounts[anim.is] === 0) {
+                    _this9.play(anim.is);
                 }
             });
         }
     }, {
         key: "composeAnimationPatterns",
         value: function composeAnimationPatterns(layers) {
-            var _this9 = this;
+            var _this10 = this;
 
             var renderLayers = [];
             layers.forEach(function (pattern, i) {
@@ -975,11 +1020,11 @@ var Surface = (function (_EventEmitter) {
                 var x = pattern.x;
                 var y = pattern.y;
 
-                if (surface === -1) return; // idが-1つまり非表示指定
-                var srf = _this9.surfaceTree[surface]; // 該当のサーフェス
+                if (surface < 0) return; // idが-1つまり非表示指定
+                var srf = _this10.surfaceTree[surface]; // 該当のサーフェス
                 if (srf == null) {
                     console.warn("Surface#render: surface id " + surface + " is not defined.", pattern);
-                    console.warn(surface, Object.keys(_this9.surfaceTree));
+                    console.warn(surface, Object.keys(_this10.surfaceTree));
                     return; // 対象サーフェスがないのでスキップ
                 }
                 // 対象サーフェスを構築描画する
@@ -988,7 +1033,8 @@ var Surface = (function (_EventEmitter) {
                 var collisions = srf.collisions;
                 var animations = srf.animations;
 
-                var rndr = new _SurfaceRender2["default"](base); // 対象サーフェスのbaseサーフェス(surface*.png)の上に
+                var rndr = new _SurfaceRender2["default"](); // 対象サーフェスのbaseサーフェス(surface*.png)の上に
+                rndr.base(base);
                 rndr.composeElements(elements); // elementを合成する
                 renderLayers.push({ type: type, x: x, y: y, canvas: rndr.getSurfaceCanvas() });
             });
@@ -1020,7 +1066,7 @@ var Surface = (function (_EventEmitter) {
 
 exports["default"] = Surface;
 module.exports = exports["default"];
-},{"./SurfaceRender":5,"./SurfaceUtil":6,"eventemitter3":9,"jquery":12}],4:[function(require,module,exports){
+},{"./SurfaceRender":4,"./SurfaceUtil":5,"eventemitter3":8,"jquery":11}],4:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
 "use strict";
 
@@ -1037,125 +1083,27 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var _SurfaceUtil = require("./SurfaceUtil");
 
 var SurfaceUtil = _interopRequireWildcard(_SurfaceUtil);
-
-// サーフェスのリソースのキャッシュのためのクラス
-// あるサーフェスの様々なリソースを統一的に扱えるようにするためのクラス
-
-var SurfaceCanvas = (function () {
-    function SurfaceCanvas() {
-        _classCallCheck(this, SurfaceCanvas);
-
-        this.url = "";
-        this.buffer = null;
-        this.img = null;
-        this.cnv = null;
-        this.pixels = null;
-        this.ctx = null;
-        this.width = 0;
-        this.height = 0;
-    }
-
-    _createClass(SurfaceCanvas, [{
-        key: "loadFromURL",
-        value: function loadFromURL(url) {
-            var _this = this;
-
-            this.url = url;
-            return SurfaceUtil.fetchArrayBuffer(url).then(function (buffer) {
-                return _this.loadFromBuffer(buffer);
-            });
-        }
-    }, {
-        key: "loadFromBuffer",
-        value: function loadFromBuffer(buffer) {
-            var _this2 = this;
-
-            this.buffer = buffer;
-            return SurfaceUtil.fetchImageFromArrayBuffer(buffer).then(function (img) {
-                return _this2.loadFromImage(img);
-            });
-        }
-    }, {
-        key: "loadFromImage",
-        value: function loadFromImage(img) {
-            this.img = img;
-            return Promise.resolve(this.loadFromCanvas(SurfaceUtil.copy(img)));
-        }
-    }, {
-        key: "loadFromCanvas",
-        value: function loadFromCanvas(cnv) {
-            this.cnv = cnv;
-            this.ctx = cnv.getContext("2d");
-            var imgdata = this.ctx.getImageData(0, 0, cnv.width, cnv.height);
-            SurfaceUtil.chromakey_snipet(imgdata.data); // cnvとimgdataは色抜きでキャッシュ
-            this.ctx.putImageData(imgdata, 0, 0);
-            return this.loadFromUint8ClampedArray(imgdata.data, cnv.width, cnv.height);
-        }
-    }, {
-        key: "loadFromUint8ClampedArray",
-        value: function loadFromUint8ClampedArray(pixels, width, height) {
-            this.width = width;
-            this.height = height;
-            this.pixels = pixels;
-            return this;
-        }
-    }]);
-
-    return SurfaceCanvas;
-})();
-
-exports["default"] = SurfaceCanvas;
-module.exports = exports["default"];
-},{"./SurfaceUtil":6}],5:[function(require,module,exports){
-/// <reference path="../typings/tsd.d.ts"/>
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj["default"] = obj; return newObj; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _SurfaceUtil = require("./SurfaceUtil");
-
-var SurfaceUtil = _interopRequireWildcard(_SurfaceUtil);
-
-var _SurfaceCanvas = require("./SurfaceCanvas");
-
-var _SurfaceCanvas2 = _interopRequireDefault(_SurfaceCanvas);
 
 var SurfaceRender = (function () {
     // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
     // nullならば1x1のCanvasをベースサーフェスとする。
     // 渡されたSurfaceCanvasは変更しない。
 
-    function SurfaceRender(arg) {
+    function SurfaceRender() {
         _classCallCheck(this, SurfaceRender);
 
-        if (arg == null) {
-            arg = new _SurfaceCanvas2["default"]().loadFromCanvas(SurfaceUtil.createCanvas());
-        }
-        this.baseSrfCanvas = arg;
-        this.cnv = SurfaceUtil.copy(arg.cnv);
+        this.cnv = SurfaceUtil.createCanvas();
+        this.img = this.cnv; // HTMLElementでwidthとHeightがあってdrawImageできるから！
         this.ctx = this.cnv.getContext("2d");
-        this.imgdata = this.ctx.createImageData(this.cnv.width, this.cnv.height);
-        this.imgdata.data.set(arg.pixels); // copy
         this.basePosX = 0;
         this.basePosY = 0;
+        this.elements = [];
     }
-
-    // 現在の下位レイヤーをSurfaceCanvasとしてコピー書き出し
 
     _createClass(SurfaceRender, [{
         key: "getSurfaceCanvas",
         value: function getSurfaceCanvas() {
-            return new _SurfaceCanvas2["default"]().loadFromCanvas(SurfaceUtil.copy(this.cnv));
+            return { cnv: SurfaceUtil.copy(this.cnv), img: this.img };
         }
 
         // [
@@ -1222,21 +1170,31 @@ var SurfaceRender = (function () {
     }, {
         key: "clear",
         value: function clear() {
+            this.elements.push({ method: "clear", args: [] });
             this.cnv.width = this.cnv.width;
         }
     }, {
         key: "pna",
-        value: function pna(_pna) {
-            var dataA = this.imgdata.data;
-            var dataB = new Uint8ClampedArray(_pna.pixels);
-            for (var y = 0; y < _pna.height; y++) {
-                for (var x = 0; x < _pna.width; x++) {
-                    var iA = x * 4 + y * this.cnv.width * 4; // baseのxy座標とインデックス
-                    var iB = x * 4 + y * _pna.width * 4; // pnaのxy座標とインデックス
+        value: function pna(png, _pna) {
+            this.elements.push({ method: "pna", args: [png, _pna] });
+            var cnvA = SurfaceUtil.copy(png.img || png.cnv);
+            var ctxA = cnvA.getContext("2d");
+            var imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
+            var dataA = imgdataA.data;
+            var cnvB = SurfaceUtil.copy(_pna.img || _pna.cnv);
+            var ctxB = cnvB.getContext("2d");
+            var imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
+            var dataB = imgdataB.data;
+            for (var y = 0; y < cnvB.height; y++) {
+                for (var x = 0; x < cnvB.width; x++) {
+                    var iA = x * 4 + y * cnvA.width * 4; // baseのxy座標とインデックス
+                    var iB = x * 4 + y * cnvB.width * 4; // pnaのxy座標とインデックス
                     dataA[iA + 3] = dataB[iB]; // pnaのRの値をpngのalphaチャネルへ代入
                 }
             }
-            this.ctx.putImageData(this.imgdata, 0, 0);
+            this.cnv.width = cnvA.width;
+            this.cnv.height = cnvA.height;
+            this.ctx.putImageData(imgdataA, 0, 0);
         }
 
         //下位レイヤをコマで完全に置き換える。collisionもコマのサーフェスに定義されたものに更新される。
@@ -1246,7 +1204,8 @@ var SurfaceRender = (function () {
     }, {
         key: "base",
         value: function base(part) {
-            this.init(part);
+            this.elements.push({ method: "base", args: [part] });
+            SurfaceUtil.init(this.cnv, this.ctx, part.cnv);
         }
 
         //下位レイヤにコマを重ねる。
@@ -1254,23 +1213,24 @@ var SurfaceRender = (function () {
     }, {
         key: "overlay",
         value: function overlay(part, x, y) {
+            this.elements.push({ method: "overlay", args: [part, x, y] });
             // baseのcanvasを拡大するためのキャッシュ
             var tmp = SurfaceUtil.copy(this.cnv);
             // もしパーツが右下へはみだす
             if (x >= 0) {
-                this.cnv.width = x + part.width > this.cnv.width ? x + part.width : this.cnv.width;
+                this.cnv.width = x + part.cnv.width > this.cnv.width ? x + part.cnv.width : this.cnv.width;
             }
             if (y >= 0) {
-                this.cnv.height = y + part.height > this.cnv.height ? y + part.height : this.cnv.height;
+                this.cnv.height = y + part.cnv.height > this.cnv.height ? y + part.cnv.height : this.cnv.height;
             }
             // もしパーツが右上へはみだす（ネガティブマージン
             if (x < 0) {
                 // もし右へははみ出す
-                this.cnv.width = part.width + x > this.cnv.width ? part.width : this.cnv.width - x;
+                this.cnv.width = part.cnv.width + x > this.cnv.width ? part.cnv.width : this.cnv.width - x;
                 this.basePosX = -x;
             }
             if (y < 0) {
-                this.cnv.height = part.height + y > this.cnv.height ? part.height : this.cnv.height - y;
+                this.cnv.height = part.cnv.height + y > this.cnv.height ? part.cnv.height : this.cnv.height - y;
                 this.basePosY = -y;
             }
             this.ctx.drawImage(tmp, this.basePosX, this.basePosY); //下位レイヤ再描画
@@ -1283,6 +1243,7 @@ var SurfaceRender = (function () {
     }, {
         key: "overlayfast",
         value: function overlayfast(part, x, y) {
+            this.elements.push({ method: "overlayfast", args: [part, x, y] });
             this.ctx.globalCompositeOperation = "source-atop";
             this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
         }
@@ -1295,6 +1256,7 @@ var SurfaceRender = (function () {
     }, {
         key: "interpolate",
         value: function interpolate(part, x, y) {
+            this.elements.push({ method: "interpolate", args: [part, x, y] });
             this.ctx.globalCompositeOperation = "destination-over";
             this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
         }
@@ -1304,7 +1266,8 @@ var SurfaceRender = (function () {
     }, {
         key: "replace",
         value: function replace(part, x, y) {
-            this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.width, part.height);
+            this.elements.push({ method: "replace", args: [part, x, y] });
+            this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv.width, part.cnv.height);
             this.overlay(part, x, y);
         }
 
@@ -1315,6 +1278,7 @@ var SurfaceRender = (function () {
     }, {
         key: "asis",
         value: function asis(part, x, y) {
+            this.elements.push({ method: "asis", args: [part, x, y] });
             this.ctx.globalCompositeOperation = "source-over";
             this.ctx.drawImage(part.img || part.cnv, this.basePosX + x, this.basePosY + y);
         }
@@ -1325,7 +1289,9 @@ var SurfaceRender = (function () {
     }, {
         key: "move",
         value: function move(x, y) {
-            var srfCnv = new _SurfaceCanvas2["default"]().loadFromCanvas(SurfaceUtil.copy(this.cnv));
+            this.elements.push({ method: "move", args: [x, y] });
+            // overlayするためだけのものなのでnullでもまあ問題ない
+            var srfCnv = { cnv: SurfaceUtil.copy(this.cnv), img: null };
             this.clear(); // 大きさだけ残して一旦消す
             this.overlay(srfCnv, x, y); //ずらした位置に再描画
         }
@@ -1336,6 +1302,7 @@ var SurfaceRender = (function () {
     }, {
         key: "bind",
         value: function bind(part, x, y) {
+            this.elements.push({ method: "bind", args: [part, x, y] });
             this.add(part, x, y);
         }
 
@@ -1344,6 +1311,7 @@ var SurfaceRender = (function () {
     }, {
         key: "add",
         value: function add(part, x, y) {
+            this.elements.push({ method: "add", args: [part, x, y] });
             this.overlay(part, x, y);
         }
 
@@ -1353,29 +1321,35 @@ var SurfaceRender = (function () {
     }, {
         key: "reduce",
         value: function reduce(part, x, y) {
+            this.elements.push({ method: "reduce", args: [part, x, y] });
             // はみ出しちぇっく
-            var width = x + part.width < this.cnv.width ? part.width : this.cnv.width - x;
-            var height = y + part.height < this.cnv.height ? part.height : this.cnv.height - y;
-            var dataA = this.imgdata.data;
-            var dataB = part.pixels;
+            var width = x + part.cnv.width < this.cnv.width ? part.cnv.width : this.cnv.width - x;
+            var height = y + part.cnv.height < this.cnv.height ? part.cnv.height : this.cnv.height - y;
+            var imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
+            var dataA = imgdataA.data;
+            var ctxB = part.cnv.getContext("2d");
+            var imgdataB = ctxB.getImageData(0, 0, part.cnv.width, part.cnv.height);
+            var dataB = imgdataB.data;
             for (var _y = 0; _y < height; _y++) {
                 for (var _x = 0; _x < width; _x++) {
                     var iA = (x + _x) * 4 + (y + _y) * this.cnv.width * 4; // baseのxy座標とインデックス
-                    var iB = _x * 4 + _y * part.width * 4; // partのxy座標とインデックス
+                    var iB = _x * 4 + _y * part.cnv.width * 4; // partのxy座標とインデックス
                     // もしコマが透過ならpartのalphaチャネルでbaseのを上書き
                     if (dataB[iB + 3] === 0) dataA[iA + 3] = dataB[iB + 3];
                 }
             }
-            this.ctx.putImageData(this.imgdata, 0, 0);
+            this.ctx.putImageData(imgdataA, 0, 0);
         }
     }, {
         key: "init",
         value: function init(srfCnv) {
+            this.elements.push({ method: "init", args: [srfCnv] });
             SurfaceUtil.init(this.cnv, this.ctx, srfCnv.cnv);
         }
     }, {
         key: "initImageData",
         value: function initImageData(width, height, data) {
+            this.elements.push({ method: "initImageData", args: [width, height, data] });
             this.cnv.width = width;
             this.cnv.height = height;
             var imgdata = this.ctx.getImageData(0, 0, width, height);
@@ -1394,6 +1368,7 @@ var SurfaceRender = (function () {
     }, {
         key: "drawRegion",
         value: function drawRegion(region) {
+            this.elements.push({ method: "drawRegion", args: [region] });
             var _region$type = region.type;
             var type = _region$type === undefined ? "" : _region$type;
             var _region$name = region.name;
@@ -1444,7 +1419,7 @@ var SurfaceRender = (function () {
 
 exports["default"] = SurfaceRender;
 module.exports = exports["default"];
-},{"./SurfaceCanvas":4,"./SurfaceUtil":6}],6:[function(require,module,exports){
+},{"./SurfaceUtil":5}],5:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
 "use strict";
 
@@ -1454,6 +1429,8 @@ Object.defineProperty(exports, "__esModule", {
 
 var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
 
+exports.createSurfaceCanvasFromURL = createSurfaceCanvasFromURL;
+exports.createSurfaceCanvasFromArrayBuffer = createSurfaceCanvasFromArrayBuffer;
 exports.init = init;
 exports.chromakey_snipet = chromakey_snipet;
 exports.log = log;
@@ -1486,6 +1463,21 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
 var _encodingJapanese = require("encoding-japanese");
 
 var _encodingJapanese2 = _interopRequireDefault(_encodingJapanese);
+
+function createSurfaceCanvasFromURL(url) {
+    return fetchArrayBuffer(url).then(createSurfaceCanvasFromArrayBuffer);
+}
+
+function createSurfaceCanvasFromArrayBuffer(buffer) {
+    return fetchImageFromArrayBuffer(buffer).then(function (img) {
+        var cnv = copy(img);
+        var ctx = cnv.getContext("2d");
+        var imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+        chromakey_snipet(imgdata.data);
+        ctx.putImageData(imgdata, 0, 0);
+        return { cnv: cnv, img: img };
+    });
+}
 
 function init(cnv, ctx, src) {
     cnv.width = src.width;
@@ -1719,9 +1711,11 @@ function always(callback) {
 }
 
 function isHit(cnv, x, y) {
+    if (!(x > 0 && y > 0)) return false;
+    // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
     if (!(cnv.width > 0 || cnv.height > 0)) return false;
     var ctx = cnv.getContext("2d");
-    var imgdata = ctx.getImageData(0, 0, x + 1 | 0, y + 1 | 0);
+    var imgdata = ctx.getImageData(0, 0, x, y);
     var data = imgdata.data;
     return data[data.length - 1] !== 0;
 }
@@ -1943,7 +1937,7 @@ function getRegion(element, surfaceNode, offsetX, offsetY) {
         return { isHit: false, name: "" };
     }
 }
-},{"encoding-japanese":8}],7:[function(require,module,exports){
+},{"encoding-japanese":7}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1957,10 +1951,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
 var _SurfaceRender2 = require("./SurfaceRender");
 
 var _SurfaceRender3 = _interopRequireDefault(_SurfaceRender2);
-
-var _SurfaceCanvas2 = require("./SurfaceCanvas");
-
-var _SurfaceCanvas3 = _interopRequireDefault(_SurfaceCanvas2);
 
 var _SurfaceUtil2 = require("./SurfaceUtil");
 
@@ -1976,15 +1966,13 @@ var _Shell3 = _interopRequireDefault(_Shell2);
 
 var SurfaceRender = _SurfaceRender3["default"];
 exports.SurfaceRender = SurfaceRender;
-var SurfaceCanvas = _SurfaceCanvas3["default"];
-exports.SurfaceCanvas = SurfaceCanvas;
 var SurfaceUtil = _SurfaceUtil;
 exports.SurfaceUtil = SurfaceUtil;
 var Surface = _Surface3["default"];
 exports.Surface = Surface;
 var Shell = _Shell3["default"];
 exports.Shell = Shell;
-},{"./Shell":2,"./Surface":3,"./SurfaceCanvas":4,"./SurfaceRender":5,"./SurfaceUtil":6}],8:[function(require,module,exports){
+},{"./Shell":2,"./Surface":3,"./SurfaceRender":4,"./SurfaceUtil":5}],7:[function(require,module,exports){
 /**
  * Encoding.js
  *
@@ -8271,7 +8259,7 @@ var zenkanaCase_table = [
 return Encoding;
 });
 
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
 
 //
@@ -8535,7 +8523,7 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /*!
  * node-inherit
  * Copyright(c) 2011 Dmitry Filatov <dfilatov@yandex-team.ru>
@@ -8544,7 +8532,7 @@ if ('undefined' !== typeof module) {
 
 module.exports = require('./lib/inherit');
 
-},{"./lib/inherit":11}],11:[function(require,module,exports){
+},{"./lib/inherit":10}],10:[function(require,module,exports){
 /**
  * @module inherit
  * @version 2.2.2
@@ -8734,7 +8722,7 @@ defineAsGlobal && (global.inherit = inherit);
 
 })(this);
 
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -17946,7 +17934,7 @@ return jQuery;
 
 }));
 
-},{}],13:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 'use strict';
 
 
@@ -17955,7 +17943,7 @@ var yaml = require('./lib/js-yaml.js');
 
 module.exports = yaml;
 
-},{"./lib/js-yaml.js":14}],14:[function(require,module,exports){
+},{"./lib/js-yaml.js":13}],13:[function(require,module,exports){
 'use strict';
 
 
@@ -17996,7 +17984,7 @@ module.exports.parse          = deprecated('parse');
 module.exports.compose        = deprecated('compose');
 module.exports.addConstructor = deprecated('addConstructor');
 
-},{"./js-yaml/dumper":16,"./js-yaml/exception":17,"./js-yaml/loader":18,"./js-yaml/schema":20,"./js-yaml/schema/core":21,"./js-yaml/schema/default_full":22,"./js-yaml/schema/default_safe":23,"./js-yaml/schema/failsafe":24,"./js-yaml/schema/json":25,"./js-yaml/type":26}],15:[function(require,module,exports){
+},{"./js-yaml/dumper":15,"./js-yaml/exception":16,"./js-yaml/loader":17,"./js-yaml/schema":19,"./js-yaml/schema/core":20,"./js-yaml/schema/default_full":21,"./js-yaml/schema/default_safe":22,"./js-yaml/schema/failsafe":23,"./js-yaml/schema/json":24,"./js-yaml/type":25}],14:[function(require,module,exports){
 'use strict';
 
 
@@ -18059,7 +18047,7 @@ module.exports.repeat         = repeat;
 module.exports.isNegativeZero = isNegativeZero;
 module.exports.extend         = extend;
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-use-before-define*/
@@ -18909,7 +18897,7 @@ function safeDump(input, options) {
 module.exports.dump     = dump;
 module.exports.safeDump = safeDump;
 
-},{"./common":15,"./exception":17,"./schema/default_full":22,"./schema/default_safe":23}],17:[function(require,module,exports){
+},{"./common":14,"./exception":16,"./schema/default_full":21,"./schema/default_safe":22}],16:[function(require,module,exports){
 // YAML error class. http://stackoverflow.com/questions/8458984
 //
 'use strict';
@@ -18957,7 +18945,7 @@ YAMLException.prototype.toString = function toString(compact) {
 
 module.exports = YAMLException;
 
-},{"inherit":10}],18:[function(require,module,exports){
+},{"inherit":9}],17:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len,no-use-before-define*/
@@ -20537,7 +20525,7 @@ module.exports.load        = load;
 module.exports.safeLoadAll = safeLoadAll;
 module.exports.safeLoad    = safeLoad;
 
-},{"./common":15,"./exception":17,"./mark":19,"./schema/default_full":22,"./schema/default_safe":23}],19:[function(require,module,exports){
+},{"./common":14,"./exception":16,"./mark":18,"./schema/default_full":21,"./schema/default_safe":22}],18:[function(require,module,exports){
 'use strict';
 
 
@@ -20617,7 +20605,7 @@ Mark.prototype.toString = function toString(compact) {
 
 module.exports = Mark;
 
-},{"./common":15}],20:[function(require,module,exports){
+},{"./common":14}],19:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len*/
@@ -20723,7 +20711,7 @@ Schema.create = function createSchema() {
 
 module.exports = Schema;
 
-},{"./common":15,"./exception":17,"./type":26}],21:[function(require,module,exports){
+},{"./common":14,"./exception":16,"./type":25}],20:[function(require,module,exports){
 // Standard YAML's Core schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2804923
 //
@@ -20743,7 +20731,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":20,"./json":25}],22:[function(require,module,exports){
+},{"../schema":19,"./json":24}],21:[function(require,module,exports){
 // JS-YAML's default schema for `load` function.
 // It is not described in the YAML specification.
 //
@@ -20770,7 +20758,7 @@ module.exports = Schema.DEFAULT = new Schema({
   ]
 });
 
-},{"../schema":20,"../type/js/function":31,"../type/js/regexp":32,"../type/js/undefined":33,"./default_safe":23}],23:[function(require,module,exports){
+},{"../schema":19,"../type/js/function":30,"../type/js/regexp":31,"../type/js/undefined":32,"./default_safe":22}],22:[function(require,module,exports){
 // JS-YAML's default schema for `safeLoad` function.
 // It is not described in the YAML specification.
 //
@@ -20800,7 +20788,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":20,"../type/binary":27,"../type/merge":35,"../type/omap":37,"../type/pairs":38,"../type/set":40,"../type/timestamp":42,"./core":21}],24:[function(require,module,exports){
+},{"../schema":19,"../type/binary":26,"../type/merge":34,"../type/omap":36,"../type/pairs":37,"../type/set":39,"../type/timestamp":41,"./core":20}],23:[function(require,module,exports){
 // Standard YAML's Failsafe schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2802346
 
@@ -20819,7 +20807,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":20,"../type/map":34,"../type/seq":39,"../type/str":41}],25:[function(require,module,exports){
+},{"../schema":19,"../type/map":33,"../type/seq":38,"../type/str":40}],24:[function(require,module,exports){
 // Standard YAML's JSON schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2803231
 //
@@ -20846,7 +20834,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":20,"../type/bool":28,"../type/float":29,"../type/int":30,"../type/null":36,"./failsafe":24}],26:[function(require,module,exports){
+},{"../schema":19,"../type/bool":27,"../type/float":28,"../type/int":29,"../type/null":35,"./failsafe":23}],25:[function(require,module,exports){
 'use strict';
 
 var YAMLException = require('./exception');
@@ -20909,7 +20897,7 @@ function Type(tag, options) {
 
 module.exports = Type;
 
-},{"./exception":17}],27:[function(require,module,exports){
+},{"./exception":16}],26:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-bitwise*/
@@ -21045,7 +21033,7 @@ module.exports = new Type('tag:yaml.org,2002:binary', {
   represent: representYamlBinary
 });
 
-},{"../type":26,"buffer":1}],28:[function(require,module,exports){
+},{"../type":25,"buffer":1}],27:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21084,7 +21072,7 @@ module.exports = new Type('tag:yaml.org,2002:bool', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":26}],29:[function(require,module,exports){
+},{"../type":25}],28:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -21203,7 +21191,7 @@ module.exports = new Type('tag:yaml.org,2002:float', {
   defaultStyle: 'lowercase'
 });
 
-},{"../common":15,"../type":26}],30:[function(require,module,exports){
+},{"../common":14,"../type":25}],29:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -21388,7 +21376,7 @@ module.exports = new Type('tag:yaml.org,2002:int', {
   }
 });
 
-},{"../common":15,"../type":26}],31:[function(require,module,exports){
+},{"../common":14,"../type":25}],30:[function(require,module,exports){
 'use strict';
 
 var esprima;
@@ -21474,7 +21462,7 @@ module.exports = new Type('tag:yaml.org,2002:js/function', {
   represent: representJavascriptFunction
 });
 
-},{"../../type":26,"esprima":43}],32:[function(require,module,exports){
+},{"../../type":25,"esprima":42}],31:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -21559,7 +21547,7 @@ module.exports = new Type('tag:yaml.org,2002:js/regexp', {
   represent: representJavascriptRegExp
 });
 
-},{"../../type":26}],33:[function(require,module,exports){
+},{"../../type":25}],32:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -21589,7 +21577,7 @@ module.exports = new Type('tag:yaml.org,2002:js/undefined', {
   represent: representJavascriptUndefined
 });
 
-},{"../../type":26}],34:[function(require,module,exports){
+},{"../../type":25}],33:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21599,7 +21587,7 @@ module.exports = new Type('tag:yaml.org,2002:map', {
   construct: function (data) { return null !== data ? data : {}; }
 });
 
-},{"../type":26}],35:[function(require,module,exports){
+},{"../type":25}],34:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21613,7 +21601,7 @@ module.exports = new Type('tag:yaml.org,2002:merge', {
   resolve: resolveYamlMerge
 });
 
-},{"../type":26}],36:[function(require,module,exports){
+},{"../type":25}],35:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21651,7 +21639,7 @@ module.exports = new Type('tag:yaml.org,2002:null', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":26}],37:[function(require,module,exports){
+},{"../type":25}],36:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21709,7 +21697,7 @@ module.exports = new Type('tag:yaml.org,2002:omap', {
   construct: constructYamlOmap
 });
 
-},{"../type":26}],38:[function(require,module,exports){
+},{"../type":25}],37:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21772,7 +21760,7 @@ module.exports = new Type('tag:yaml.org,2002:pairs', {
   construct: constructYamlPairs
 });
 
-},{"../type":26}],39:[function(require,module,exports){
+},{"../type":25}],38:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21782,7 +21770,7 @@ module.exports = new Type('tag:yaml.org,2002:seq', {
   construct: function (data) { return null !== data ? data : []; }
 });
 
-},{"../type":26}],40:[function(require,module,exports){
+},{"../type":25}],39:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21817,7 +21805,7 @@ module.exports = new Type('tag:yaml.org,2002:set', {
   construct: constructYamlSet
 });
 
-},{"../type":26}],41:[function(require,module,exports){
+},{"../type":25}],40:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21827,7 +21815,7 @@ module.exports = new Type('tag:yaml.org,2002:str', {
   construct: function (data) { return null !== data ? data : ''; }
 });
 
-},{"../type":26}],42:[function(require,module,exports){
+},{"../type":25}],41:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -21922,7 +21910,7 @@ module.exports = new Type('tag:yaml.org,2002:timestamp', {
   represent: representYamlTimestamp
 });
 
-},{"../type":26}],43:[function(require,module,exports){
+},{"../type":25}],42:[function(require,module,exports){
 /*
   Copyright (c) jQuery Foundation, Inc. and Contributors, All Rights Reserved.
 
@@ -27667,10 +27655,10 @@ module.exports = new Type('tag:yaml.org,2002:timestamp', {
 }));
 /* vim: set sw=4 ts=4 et tw=80 : */
 
-},{}],44:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 module.exports = require('./lib/surfaces_txt2yaml.js')
 
-},{"./lib/surfaces_txt2yaml.js":45}],45:[function(require,module,exports){
+},{"./lib/surfaces_txt2yaml.js":44}],44:[function(require,module,exports){
 // Generated by CoffeeScript 1.8.0
 
 /* (C) 2014 Narazaka : Licensed under The MIT License - http://narazaka.net/license/MIT?2014 */
@@ -28842,5 +28830,5 @@ if (typeof exports !== "undefined" && exports !== null) {
   exports.txt_to_yaml = SurfacesTxt2Yaml.txt_to_yaml;
 }
 
-},{"js-yaml":13}]},{},[7])(7)
+},{"js-yaml":12}]},{},[6])(6)
 });

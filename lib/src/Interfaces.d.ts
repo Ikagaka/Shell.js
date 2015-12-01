@@ -1,4 +1,7 @@
-import SurfaceCanvas from "./SurfaceCanvas";
+export interface SurfaceCanvas {
+    cnv: HTMLCanvasElement;
+    img: HTMLImageElement;
+}
 export interface SurfaceMouseEvent {
     button: number;
     offsetX: number;

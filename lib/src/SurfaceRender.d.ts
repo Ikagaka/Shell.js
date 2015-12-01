@@ -1,14 +1,20 @@
 /// <reference path="../../typings/tsd.d.ts" />
-import SurfaceCanvas from "./SurfaceCanvas";
-export default class SurfaceRender {
-    baseSrfCanvas: SurfaceCanvas;
+import { SurfaceCanvas } from "./Interfaces";
+export default class SurfaceRender implements SurfaceCanvas {
     cnv: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
-    imgdata: ImageData;
+    img: HTMLImageElement;
     basePosX: number;
     basePosY: number;
-    constructor(arg?: SurfaceCanvas);
-    getSurfaceCanvas(): SurfaceCanvas;
+    elements: {
+        method: string;
+        args: any[];
+    }[];
+    constructor();
+    getSurfaceCanvas(): {
+        cnv: HTMLCanvasElement;
+        img: HTMLImageElement;
+    };
     composeElements(elements: {
         canvas: SurfaceCanvas;
         type: string;
@@ -17,7 +23,7 @@ export default class SurfaceRender {
     }[]): void;
     composeElement(canvas: SurfaceCanvas, type: string, x: number, y: number): void;
     clear(): void;
-    pna(pna: SurfaceCanvas): void;
+    pna(png: SurfaceCanvas, pna: SurfaceCanvas): void;
     base(part: SurfaceCanvas): void;
     overlay(part: SurfaceCanvas, x: number, y: number): void;
     overlayfast(part: SurfaceCanvas, x: number, y: number): void;

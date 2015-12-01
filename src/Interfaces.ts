@@ -1,4 +1,7 @@
-import SurfaceCanvas from "./SurfaceCanvas";
+export interface SurfaceCanvas {
+  cnv: HTMLCanvasElement; // 色抜き後のサーフェス
+  img: HTMLImageElement; // 色抜き前の素材
+}
 
 
 export interface SurfaceMouseEvent {

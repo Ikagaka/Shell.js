@@ -175,6 +175,7 @@ export default class Surface extends EventEmitter {
     var [_bind, ...intervals] = interval.split("+");
     if(intervals.length > 0) return;
     intervals.forEach((interval)=>{
+      //sometimesみたいのはinitAnimationに丸投げ
       this.initAnimation({interval, is, patterns, option});
     });
     var {option} = anim;
@@ -185,23 +186,26 @@ export default class Surface extends EventEmitter {
     }
     this.render();
   }
-/*
-  public updateBind(): void {
+
+  public updateBind(bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }): void {
     // Shell.tsから呼ばれるためpublic
     // Shell#bind,Shell#unbindで発動
-    // shell.bindgroup[scopeId][bindgroupId] が変更された時に呼ばれるようだ
+    // shell.bindgroup[scopeId][bindgroupId] が変更された時に呼ばれる
     this.surfaceNode.animations.forEach((anim)=>{
+      //このサーフェスに定義されたアニメーションの中でintervalがbindなものｗ探す
       var {is, interval, patterns} = anim;
-      if (this.shell.bindgroup[this.scopeId] == null) return;
-      if (this.shell.bindgroup[this.scopeId][is] == null) return;
+      if (bindgroup[this.scopeId] == null) return;
+      if (bindgroup[this.scopeId][is] == null) return;
       if (!/^bind/.test(interval)) return;
-      if (this.shell.bindgroup[this.scopeId][is] === true){
+      if (bindgroup[this.scopeId][is] === true){
+        //現在の設定が着せ替え有効ならばinitBindにまるなげ
         this.initBind(anim);
       }else{
+        //現在の合成レイヤから着せ替えレイヤを削除
         delete this.layers[is];
       }
     });
-  }*/
+  }
 
   // アニメーションタイミングループの開始
   public begin(animationId: number): void {
@@ -239,9 +243,7 @@ export default class Surface extends EventEmitter {
       var _wait = isFinite(Number(b))
                 ? SurfaceUtil.randomRange(Number(a), Number(b))
                 : Number(a);
-      console.log(_wait, "start", i, animationId, this.animationsQueue[animationId]);
       setTimeout(()=>{
-        console.log(_wait, "stop", i, animationId, this.animationsQueue[animationId]);
         if(anim.option === "background"){
           this.backgrounds[animationId] = pattern;
         }else{
@@ -295,7 +297,7 @@ export default class Surface extends EventEmitter {
     var renderLayers: SurfaceLayerObject[] = [];
     layers.forEach((pattern, i)=>{
       var {surface, type, x, y} = pattern;
-      if(surface === -1) return; // idが-1つまり非表示指定
+      if(surface < 0) return; // idが-1つまり非表示指定
       var srf = this.surfaceTree[surface]; // 該当のサーフェス
       if(srf == null){
         console.warn("Surface#render: surface id "+surface + " is not defined.", pattern);
@@ -304,7 +306,8 @@ export default class Surface extends EventEmitter {
       }
       // 対象サーフェスを構築描画する
       var {base, elements, collisions, animations} = srf;
-      var rndr = new SurfaceRender(base);// 対象サーフェスのbaseサーフェス(surface*.png)の上に
+      var rndr = new SurfaceRender();// 対象サーフェスのbaseサーフェス(surface*.png)の上に
+      rndr.base(base)
       rndr.composeElements(elements); // elementを合成する
       renderLayers.push({type, x, y, canvas: rndr.getSurfaceCanvas()});
     });

@@ -251,6 +251,43 @@ QUnit.test "SurfaceUtil.getEventPosition", (assert)->
     pageY: 100
   })
 
+QUnit.test "SurfaceUtil.createSurfaceCanvasFromURL, SurfaceUtil.createSurfaceCanvasFromArrayBuffer", (assert)->
+  done = assert.async()
+  SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png").then (base)->
+    assert.ok base.cnv instanceof HTMLCanvasElement
+    assert.ok base.img instanceof HTMLImageElement
+    assert.ok base.cnv.width is 182
+    assert.ok base.cnv.height is 445
+    assert.ok base.img.width is 182
+    assert.ok base.img.height is 445
+    done()
 
-QUnit.test "recursiveElementFromPoint, eventPropagationSim", (assert)->
-  assert.ok false, "test is not written yet"
+QUnit.test "SurfaceUtil.init", (assert)->
+  done = assert.async()
+  img = new Image()
+  img.src = "src/surface0.png"
+  img.onload = ->
+    cnv = SurfaceUtil.createCanvas()
+    ctx = cnv.getContext("2d")
+    SurfaceUtil.init(cnv, ctx, img)
+    assert.ok cnv.width is 182
+    assert.ok cnv.height is 445
+    done()
+
+QUnit.test "SurfaceUtil.log", (assert)->
+  assert.ok false, "まだ書いてない"
+
+QUnit.test "SurfaceUtil.recursiveElementFromPoint, SurfaceUtil.eventPropagationSim", (assert)->
+  assert.ok false, "まだ書いてない"
+
+QUnit.test "SurfaceUtil.getRegion", (assert)->
+  assert.ok false, "まだ書いてない"
+
+
+QUnit.test "SurfaceUtil.randomRange", (assert)->
+  assert.expect(10)
+  results = [1..1000].map -> SurfaceUtil.randomRange(0, 9)
+  histgram = [0..9].map (i)-> results.filter (a)-> a is i
+  histgram.forEach (arr, i)->
+    parsent = arr.length/10
+    assert.ok 5 <= parsent <= 15, i

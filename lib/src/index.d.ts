@@ -1,10 +1,8 @@
 import _SurfaceRender from "./SurfaceRender";
-import _SurfaceCanvas from "./SurfaceCanvas";
 import * as _SurfaceUtil from "./SurfaceUtil";
 import _Surface from './Surface';
 import _Shell from "./Shell";
 export declare var SurfaceRender: typeof _SurfaceRender;
-export declare var SurfaceCanvas: typeof _SurfaceCanvas;
 export declare var SurfaceUtil: typeof _SurfaceUtil;
 export declare var Surface: typeof _Surface;
 export declare var Shell: typeof _Shell;

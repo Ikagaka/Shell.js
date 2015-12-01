@@ -34,9 +34,10 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
+        "./index.ts",
         "./Interfaces.ts",
+        "./Shell.ts",
         "./Surface.ts",
-        "./SurfaceCanvas.ts",
         "./SurfaceRender.ts",
         "./SurfaceUtil.ts"
     ],

@@ -28,6 +28,11 @@ export default class Surface extends EventEmitter {
     private initMouseEvent();
     private initAnimation(anim);
     private initBind(anim);
+    updateBind(bindgroup: {
+        [charId: number]: {
+            [bindgroupId: number]: boolean;
+        };
+    }): void;
     begin(animationId: number): void;
     end(animationId: number): void;
     endAll(): void;

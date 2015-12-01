@@ -1,45 +1,8 @@
 /// <reference path="../../typings/tsd.d.ts" />
-import { Surface } from './Surface';
-import { SurfaceLayerObject } from "./SurfaceRender";
-export interface EventEmitter {
-}
-export interface SurfaceRegion {
-    is: number;
-    name: string;
-    type: string;
-    left: number;
-    top: number;
-    right: number;
-    bottom: number;
-    radius: number;
-    center_x: number;
-    center_y: number;
-    coordinates: {
-        x: number;
-        y: number;
-    }[];
-}
-export interface SurfaceAnimation {
-    is: number;
-    interval: string;
-    option: string;
-    patterns: SurfaceAnimationPattern[];
-}
-export interface SurfaceAnimationPattern {
-    animation_ids: number[];
-    type: string;
-    surface: number;
-    wait: string;
-    x: number;
-    y: number;
-}
-export interface SurfaceTreeNode {
-    base: HTMLCanvasElement;
-    elements: SurfaceLayerObject[];
-    collisions: SurfaceRegion[];
-    animations: SurfaceAnimation[];
-}
-export declare class Shell extends EventEmitter {
+import Surface from './Surface';
+import { SurfaceTreeNode } from "./Interfaces";
+import EventEmitter from "eventemitter3";
+export default class Shell extends EventEmitter {
     directory: {
         [filepath: string]: ArrayBuffer;
     };
@@ -58,7 +21,7 @@ export declare class Shell extends EventEmitter {
             [bindgroupId: number]: boolean;
         };
     };
-    enableRegionDraw: boolean;
+    enableRegion: boolean;
     constructor(directory: {
         [filepath: string]: ArrayBuffer;
     });
@@ -76,8 +39,10 @@ export declare class Shell extends EventEmitter {
     attachSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number | string): Surface;
     detachSurface(canvas: HTMLCanvasElement): void;
     unload(): void;
-    hasSurface(scopeId: number, surfaceId: number | string): boolean;
+    private hasSurface(scopeId, surfaceId);
     bind(scopeId: number, bindgroupId: number): void;
     unbind(scopeId: number, bindgroupId: number): void;
-    render(): void;
+    private render();
+    showRegion(): void;
+    hideRegion(): void;
 }

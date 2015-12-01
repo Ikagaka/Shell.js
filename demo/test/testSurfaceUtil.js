@@ -547,6 +547,110 @@ QUnit.test('SurfaceUtil.getEventPosition', function (assert) {
         pageY: 100
     }));
 });
-QUnit.test('recursiveElementFromPoint, eventPropagationSim', function (assert) {
-    return assert.ok(false, 'test is not written yet');
+QUnit.test('SurfaceUtil.createSurfaceCanvasFromURL, SurfaceUtil.createSurfaceCanvasFromArrayBuffer', function (assert) {
+    var done;
+    done = assert.async();
+    return SurfaceUtil.createSurfaceCanvasFromURL('src/surface0.png').then(function (base) {
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(base, 'arguments/0/left/object').cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok(base.cnv instanceof HTMLCanvasElement)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 361
+        }));
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(base, 'arguments/0/left/object').img, 'arguments/0/left') instanceof assert._capt(HTMLImageElement, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok(base.img instanceof HTMLImageElement)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 362
+        }));
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(base, 'arguments/0/left/object/object').cnv, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
+            content: 'assert.ok(base.cnv.width === 182)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 363
+        }));
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(base, 'arguments/0/left/object/object').cnv, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
+            content: 'assert.ok(base.cnv.height === 445)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 364
+        }));
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(base, 'arguments/0/left/object/object').img, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
+            content: 'assert.ok(base.img.width === 182)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 365
+        }));
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(base, 'arguments/0/left/object/object').img, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
+            content: 'assert.ok(base.img.height === 445)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 366
+        }));
+        return done();
+    });
+});
+QUnit.test('SurfaceUtil.init', function (assert) {
+    var done, img;
+    done = assert.async();
+    img = new Image();
+    img.src = 'src/surface0.png';
+    return img.onload = function () {
+        var cnv, ctx;
+        cnv = SurfaceUtil.createCanvas();
+        ctx = cnv.getContext('2d');
+        SurfaceUtil.init(cnv, ctx, img);
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
+            content: 'assert.ok(cnv.width === 182)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 381
+        }));
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
+            content: 'assert.ok(cnv.height === 445)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 382
+        }));
+        return done();
+    };
+});
+QUnit.test('SurfaceUtil.log', function (assert) {
+    return assert.ok(false, 'まだ書いてない');
+});
+QUnit.test('SurfaceUtil.recursiveElementFromPoint, SurfaceUtil.eventPropagationSim', function (assert) {
+    return assert.ok(false, 'まだ書いてない');
+});
+QUnit.test('SurfaceUtil.getRegion', function (assert) {
+    return assert.ok(false, 'まだ書いてない');
+});
+QUnit.test('SurfaceUtil.randomRange', function (assert) {
+    var histgram, j, results, results1;
+    assert.expect(10);
+    results = function () {
+        results1 = [];
+        for (j = 1; j <= 1000; j++) {
+            results1.push(j);
+        }
+        return results1;
+    }.apply(this).map(function () {
+        return SurfaceUtil.randomRange(0, 9);
+    });
+    histgram = [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+    ].map(function (i) {
+        return results.filter(function (a) {
+            return a === i;
+        });
+    });
+    return histgram.forEach(function (arr, i) {
+        var parsent;
+        parsent = arr.length / 10;
+        return assert.ok(assert._expr(assert._capt(assert._capt(5 <= assert._capt(parsent, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(parsent, 'arguments/0/right/left') <= 15, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok(5 <= parsent && parsent <= 15, i)',
+            filepath: 'test/testSurfaceUtil.js',
+            line: 417
+        }), i);
+    });
 });

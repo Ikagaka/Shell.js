@@ -3,13 +3,29 @@
 import {SurfaceTreeNode} from "./Interfaces";
 import Encoding from "encoding-japanese";
 
+export function createSurfaceCanvasFromURL(url: string): Promise<{img:HTMLImageElement, cnv:HTMLCanvasElement}> {
+  return fetchArrayBuffer(url)
+  .then(createSurfaceCanvasFromArrayBuffer);
+}
+
+export function createSurfaceCanvasFromArrayBuffer(buffer: ArrayBuffer): Promise<{img:HTMLImageElement, cnv:HTMLCanvasElement}> {
+  return fetchImageFromArrayBuffer(buffer)
+  .then((img)=>{
+    var cnv = copy(img);
+    var ctx = cnv.getContext("2d");
+    var imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+    chromakey_snipet(<Uint8ClampedArray><any>imgdata.data);
+    ctx.putImageData(imgdata, 0, 0);
+    return {cnv, img}
+  });
+}
+
 export function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src: HTMLCanvasElement): void {
   cnv.width = src.width;
   cnv.height = src.height;
   ctx.globalCompositeOperation = "source-over";
   ctx.drawImage(src, 0, 0);
 }
-
 
 export function chromakey_snipet(data: Uint8ClampedArray): void { // side effect
   var r = data[0], g = data[1], b = data[2], a = data[3];
@@ -215,9 +231,11 @@ export function always(  callback: (callback: () => void) => void): void {
 }
 
 export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
+  if(!(x > 0 && y > 0)) return false;
+  // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
   if(!(cnv.width > 0 || cnv.height > 0)) return false;
   var ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
-  var imgdata = ctx.getImageData(0, 0, x + 1|0, y + 1|0);
+  var imgdata = ctx.getImageData(0, 0, x, y);
   var data = imgdata.data;
   return data[data.length - 1] !== 0;
 }

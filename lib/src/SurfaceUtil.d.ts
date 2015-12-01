@@ -1,5 +1,13 @@
 /// <reference path="../../typings/tsd.d.ts" />
 import { SurfaceTreeNode } from "./Interfaces";
+export declare function createSurfaceCanvasFromURL(url: string): Promise<{
+    img: HTMLImageElement;
+    cnv: HTMLCanvasElement;
+}>;
+export declare function createSurfaceCanvasFromArrayBuffer(buffer: ArrayBuffer): Promise<{
+    img: HTMLImageElement;
+    cnv: HTMLCanvasElement;
+}>;
 export declare function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src: HTMLCanvasElement): void;
 export declare function chromakey_snipet(data: Uint8ClampedArray): void;
 export declare function log(element: Element, description?: string): void;

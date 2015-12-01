@@ -1,6 +1,6 @@
 window.SurfaceUtil = Shell.SurfaceUtil
-window.SurfaceCanvas = Shell.SurfaceCanvas
 window.Surface = Shell.Surface
+
 $ -> $("<style />").html("canvas{border:1px solid black;}").appendTo($("body"))
 craetePictureFrame = (description, target=document.body) ->
   fieldset = document.createElement('fieldset')
@@ -23,15 +23,17 @@ craetePictureFrame = (description, target=document.body) ->
       else fieldset.appendChild element
   }
 
+
+
 QUnit.module 'Shell.Surface'
 
 
-QUnit.test 'Surface()', (assert) ->
+QUnit.test 'surface0', (assert) ->
   done = assert.async()
   Promise.all([
-    new SurfaceCanvas().loadFromURL("src/surface0.png")
-    new SurfaceCanvas().loadFromURL("src/surface100.png")
-    new SurfaceCanvas().loadFromURL("src/surface101.png")
+    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
+    SurfaceUtil.createSurfaceCanvasFromURL("src/surface100.png")
+    SurfaceUtil.createSurfaceCanvasFromURL("src/surface101.png")
   ]).then ([base, srf100, srf101])->
     surfaceTree =
       0:
@@ -89,9 +91,14 @@ QUnit.test 'Surface()', (assert) ->
         elements: []
         collisions: []
         animations: []
-    console.log srf = new Surface(SurfaceUtil.createCanvas(), 0, 0, surfaceTree)
-    assert.ok srf.element.width is base.width
-    assert.ok srf.element.height is base.height
+    srf = new Surface(SurfaceUtil.createCanvas(), 0, 0, surfaceTree)
+    assert.ok srf.element.width is base.cnv.width
+    assert.ok srf.element.height is base.cnv.height
     frame = craetePictureFrame("surface0")
     frame.add srf.element, "マリちゃんの\\0\\s[0]のまばたき"
     done()
+
+###
+QUnit.test '不定形当たり判定', (assert) ->
+QUnit.test 'start.alternative', (assert) ->
+###

@@ -1,40 +1,35 @@
 /// <reference path="../typings/tsd.d.ts"/>
 
+import {SurfaceCanvas} from "./Interfaces";
 import * as SurfaceUtil from "./SurfaceUtil";
-import SurfaceCanvas from "./SurfaceCanvas";
 
 
-export default class SurfaceRender {
-  baseSrfCanvas: SurfaceCanvas; // immutable
-
+export default class SurfaceRender implements SurfaceCanvas {
   // baseCanvas
   cnv: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  imgdata: ImageData;
+  img: HTMLImageElement;
 
   // overlayではみ出した際canvasのリサイズがされるがその時の補正値
   basePosX: number;
   basePosY: number;
 
+  elements: {method: string, args:any[]}[]
+
   // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
   // nullならば1x1のCanvasをベースサーフェスとする。
   // 渡されたSurfaceCanvasは変更しない。
-  constructor(arg?: SurfaceCanvas) {
-    if(arg == null){
-      arg = new SurfaceCanvas().loadFromCanvas(SurfaceUtil.createCanvas());
-    }
-    this.baseSrfCanvas = arg;
-    this.cnv = SurfaceUtil.copy(arg.cnv);
+  constructor() {
+    this.cnv = SurfaceUtil.createCanvas();
+    this.img = <HTMLImageElement><any>this.cnv; // HTMLElementでwidthとHeightがあってdrawImageできるから！
     this.ctx = this.cnv.getContext("2d");
-    this.imgdata = this.ctx.createImageData(this.cnv.width, this.cnv.height);
-    (<Uint8ClampedArray><any>this.imgdata.data).set(arg.pixels); // copy
     this.basePosX = 0;
     this.basePosY = 0;
+    this.elements = [];
   }
 
-  // 現在の下位レイヤーをSurfaceCanvasとしてコピー書き出し
-  getSurfaceCanvas(): SurfaceCanvas {
-    return new SurfaceCanvas().loadFromCanvas(SurfaceUtil.copy(this.cnv));
+  getSurfaceCanvas() {
+    return {cnv: SurfaceUtil.copy(this.cnv), img: this.img};
   }
 
   // [
@@ -70,20 +65,30 @@ export default class SurfaceRender {
   }
 
   clear(): void {
+    this.elements.push({method: "clear", args:[]});
     this.cnv.width = this.cnv.width;
   }
 
-  pna(pna: SurfaceCanvas): void {
-    var dataA = this.imgdata.data;
-    var dataB = new Uint8ClampedArray(pna.pixels);
-    for(var y=0; y<pna.height; y++){
-      for(var x=0; x<pna.width; x++){
-        var iA = x*4 + y*this.cnv.width*4; // baseのxy座標とインデックス
-        var iB = x*4 + y*pna.width*4;      // pnaのxy座標とインデックス
+  pna(png: SurfaceCanvas, pna: SurfaceCanvas): void {
+    this.elements.push({method: "pna", args:[png, pna]});
+    var cnvA = SurfaceUtil.copy(png.img||png.cnv);
+    var ctxA = cnvA.getContext("2d")
+    var imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
+    var dataA = imgdataA.data;
+    var cnvB = SurfaceUtil.copy(pna.img||pna.cnv);
+    var ctxB = cnvB.getContext("2d")
+    var imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
+    var dataB = imgdataB.data;
+    for(var y=0; y<cnvB.height; y++){
+      for(var x=0; x<cnvB.width; x++){
+        var iA = x*4 + y*cnvA.width*4; // baseのxy座標とインデックス
+        var iB = x*4 + y*cnvB.width*4; // pnaのxy座標とインデックス
         dataA[iA+3] = dataB[iB]; // pnaのRの値をpngのalphaチャネルへ代入
       }
     }
-    this.ctx.putImageData(this.imgdata, 0, 0);
+    this.cnv.width = cnvA.width;
+    this.cnv.height = cnvA.height;
+    this.ctx.putImageData(imgdataA, 0, 0);
   }
 
   //下位レイヤをコマで完全に置き換える。collisionもコマのサーフェスに定義されたものに更新される。
@@ -91,29 +96,31 @@ export default class SurfaceRender {
   //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
   //着せ替え・elementでも使用できる。
   base(part: SurfaceCanvas): void {
-    this.init(part);
+    this.elements.push({method: "base", args:[part]});
+    SurfaceUtil.init(this.cnv, this.ctx, part.cnv)
   }
 
   //下位レイヤにコマを重ねる。
   //着せ替え・elementでも使用できる。
   overlay(part: SurfaceCanvas, x: number, y: number): void {
+    this.elements.push({method: "overlay", args:[part, x, y]});
     // baseのcanvasを拡大するためのキャッシュ
     var tmp = SurfaceUtil.copy(this.cnv);
     // もしパーツが右下へはみだす
     if(x >= 0){
-      this.cnv.width = x + part.width > this.cnv.width ? x + part.width : this.cnv.width;
+      this.cnv.width = x + part.cnv.width > this.cnv.width ? x + part.cnv.width : this.cnv.width;
     }
     if(y >= 0){
-      this.cnv.height = y + part.height > this.cnv.height ? y + part.height : this.cnv.height;
+      this.cnv.height = y + part.cnv.height > this.cnv.height ? y + part.cnv.height : this.cnv.height;
     }
     // もしパーツが右上へはみだす（ネガティブマージン
     if(x < 0){
       // もし右へははみ出す
-      this.cnv.width = part.width + x > this.cnv.width ? part.width : this.cnv.width - x;
+      this.cnv.width = part.cnv.width + x > this.cnv.width ? part.cnv.width : this.cnv.width - x;
       this.basePosX = -x
     }
     if(y < 0){
-      this.cnv.height = part.height + y > this.cnv.height ? part.height : this.cnv.height - y;
+      this.cnv.height = part.cnv.height + y > this.cnv.height ? part.cnv.height : this.cnv.height - y;
       this.basePosY = -y
     }
     this.ctx.drawImage(tmp, this.basePosX, this.basePosY); //下位レイヤ再描画
@@ -124,6 +131,7 @@ export default class SurfaceRender {
   //下位レイヤの非透過部分（半透明含む）にのみコマを重ねる。
   //着せ替え・elementでも使用できる。
   overlayfast(part: SurfaceCanvas, x: number, y: number): void {
+    this.elements.push({method: "overlayfast", args:[part, x, y]});
     this.ctx.globalCompositeOperation = "source-atop";
     this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
   }
@@ -134,6 +142,7 @@ export default class SurfaceRender {
   //（interpolateのコマが描画している部分に、上位のレイヤで不透明な部分が重なると反映されなくなる）。
   //着せ替え・elementでも使用できる。
   interpolate(part: SurfaceCanvas, x: number, y: number): void {
+    this.elements.push({method: "interpolate", args:[part, x, y]});
     this.ctx.globalCompositeOperation = "destination-over";
     this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
   }
@@ -141,7 +150,8 @@ export default class SurfaceRender {
   //下位レイヤにコマを重ねるが、コマの透過部分について下位レイヤにも反映する（reduce + overlayに近い）。
   //着せ替え・elementでも使用できる。
   replace(part: SurfaceCanvas, x: number, y: number): void {
-    this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.width, part.height);
+    this.elements.push({method: "replace", args:[part, x, y]});
+    this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv.width, part.cnv.height);
     this.overlay(part, x, y);
   }
 
@@ -150,6 +160,7 @@ export default class SurfaceRender {
   //なおelement合成されたサーフェスを他のサーフェスのアニメーションパーツとしてasisメソッドで合成した場合の表示は未定義であるが、
   //Windows上では普通、透過領域は画像本来の抜き色に関係なく黒（#000000）で表示されるだろう。
   asis(part: SurfaceCanvas, x: number, y: number): void {
+    this.elements.push({method: "asis", args:[part, x, y]});
     this.ctx.globalCompositeOperation = "source-over";
     this.ctx.drawImage(part.img||part.cnv, this.basePosX + x, this.basePosY + y);
   }
@@ -158,7 +169,9 @@ export default class SurfaceRender {
   //この描画メソッドが指定されたpattern定義では、サーフェスIDは無視される。
   //着せ替え・elementでは使用不可。
   move(x: number, y: number): void{
-    var srfCnv = new SurfaceCanvas().loadFromCanvas(SurfaceUtil.copy(this.cnv));
+    this.elements.push({method: "move", args:[x, y]});
+    // overlayするためだけのものなのでnullでもまあ問題ない
+    var srfCnv:SurfaceCanvas = {cnv: SurfaceUtil.copy(this.cnv), img: null};
     this.clear(); // 大きさだけ残して一旦消す
     this.overlay(srfCnv, x, y); //ずらした位置に再描画
   }
@@ -167,12 +180,14 @@ export default class SurfaceRender {
   //着せ替えパーツとして単純に一つのサーフェスを重ねることしか出来なかった頃の唯一のメソッドで、現在はaddが互換。
   //着せ替えでないアニメーション・elementでの使用は未定義。
   bind(part: SurfaceCanvas, x: number, y: number): void {
+    this.elements.push({method: "bind", args:[part, x, y]});
     this.add(part, x, y);
   }
 
   //下位レイヤにそのコマを着せ替えパーツとして重ねる。本質的にはoverlayと同じ。
   //着せ替え用に用意されたメソッドで、着せ替えでないアニメーション・elementでの使用は未定義。
   add(part: SurfaceCanvas, x: number, y: number): void {
+    this.elements.push({method: "add", args:[part, x, y]});
     this.overlay(part, x, y);
   }
 
@@ -180,27 +195,33 @@ export default class SurfaceRender {
   //着せ替え用に用意されたメソッドだが、着せ替えでないアニメーション・elementでも使用可能。
   //http://usada.sakura.vg/contents/seriko.html
   reduce(part: SurfaceCanvas, x: number, y: number): void {
+    this.elements.push({method: "reduce", args:[part, x, y]});
     // はみ出しちぇっく
-    var width  = x + part.width  < this.cnv.width  ? part.width  : this.cnv.width  - x;
-    var height = y + part.height < this.cnv.height ? part.height : this.cnv.height - y;
-    var dataA = this.imgdata.data;
-    var dataB = part.pixels;
+    var width  = x + part.cnv.width  < this.cnv.width  ? part.cnv.width  : this.cnv.width  - x;
+    var height = y + part.cnv.height < this.cnv.height ? part.cnv.height : this.cnv.height - y;
+    var imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
+    var dataA = imgdataA.data;
+    var ctxB = part.cnv.getContext("2d");
+    var imgdataB = ctxB.getImageData(0, 0, part.cnv.width, part.cnv.height)
+    var dataB = imgdataB.data;
     for(var _y=0; _y<height; _y++){
       for(var _x=0; _x<width; _x++){
         var iA = (x+_x)*4 + (y+_y)*this.cnv.width*4; // baseのxy座標とインデックス
-        var iB = (_x)*4 + (_y)*part.width*4;     // partのxy座標とインデックス
+        var iB = (_x)*4 + (_y)*part.cnv.width*4;     // partのxy座標とインデックス
         // もしコマが透過ならpartのalphaチャネルでbaseのを上書き
         if(dataB[iB + 3] === 0) dataA[iA + 3] = dataB[iB + 3];
       }
     }
-    this.ctx.putImageData(this.imgdata, 0, 0);
+    this.ctx.putImageData(imgdataA, 0, 0);
   }
 
   init(srfCnv: SurfaceCanvas): void {
+    this.elements.push({method: "init", args:[srfCnv]});
     SurfaceUtil.init(this.cnv, this.ctx, srfCnv.cnv);
   }
 
   initImageData(width: number, height: number, data: Uint8ClampedArray): void {
+    this.elements.push({method: "initImageData", args:[width, height, data]});
     this.cnv.width = width;
     this.cnv.height = height;
     var imgdata = this.ctx.getImageData(0, 0, width, height);
@@ -215,6 +236,7 @@ export default class SurfaceRender {
   }
 
   drawRegion(region: SurfaceRegion): void {
+    this.elements.push({method: "drawRegion", args:[region]});
     var {type="", name="", left=0, top=0, right=0, bottom=0, coordinates=[], radius=0, center_x=0, center_y=0} = region;
     left += this.basePosX
     top += this.basePosY

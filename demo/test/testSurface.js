@@ -1,6 +1,5 @@
 var craetePictureFrame;
 window.SurfaceUtil = Shell.SurfaceUtil;
-window.SurfaceCanvas = Shell.SurfaceCanvas;
 window.Surface = Shell.Surface;
 $(function () {
     return $('<style />').html('canvas{border:1px solid black;}').appendTo($('body'));
@@ -35,13 +34,13 @@ craetePictureFrame = function (description, target) {
     };
 };
 QUnit.module('Shell.Surface');
-QUnit.test('Surface()', function (assert) {
+QUnit.test('surface0', function (assert) {
     var done;
     done = assert.async();
     return Promise.all([
-        new SurfaceCanvas().loadFromURL('src/surface0.png'),
-        new SurfaceCanvas().loadFromURL('src/surface100.png'),
-        new SurfaceCanvas().loadFromURL('src/surface101.png')
+        SurfaceUtil.createSurfaceCanvasFromURL('src/surface0.png'),
+        SurfaceUtil.createSurfaceCanvasFromURL('src/surface100.png'),
+        SurfaceUtil.createSurfaceCanvasFromURL('src/surface101.png')
     ]).then(function (arg) {
         var base, frame, srf, srf100, srf101, surfaceTree;
         base = arg[0], srf100 = arg[1], srf101 = arg[2];
@@ -103,16 +102,16 @@ QUnit.test('Surface()', function (assert) {
                 animations: []
             }
         };
-        console.log(srf = new Surface(SurfaceUtil.createCanvas(), 0, 0, surfaceTree));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').width, 'arguments/0/left') === assert._capt(assert._capt(base, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok(srf.element.width === base.width)',
+        srf = new Surface(SurfaceUtil.createCanvas(), 0, 0, surfaceTree);
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').width, 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok(srf.element.width === base.cnv.width)',
             filepath: 'test/testSurface.js',
-            line: 109
+            line: 107
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').height, 'arguments/0/left') === assert._capt(assert._capt(base, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok(srf.element.height === base.height)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').height, 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok(srf.element.height === base.cnv.height)',
             filepath: 'test/testSurface.js',
-            line: 110
+            line: 108
         }));
         frame = craetePictureFrame('surface0');
         frame.add(srf.element, 'マリちゃんの\\0\\s[0]のまばたき');
