@@ -25,7 +25,7 @@ class Named extends EventEmitter
     return
 
   initEventListener: ->
-    do ->
+    do =>
       # サーフェス移動
       relLeft = relTop = 0
       $target = null
@@ -63,7 +63,7 @@ class Named extends EventEmitter
             @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
         @emit("shell_mouse", ev)
         return
-    do ->
+    do =>
       # バルーン移動
       relLeft = relTop = 0
       $target = null
