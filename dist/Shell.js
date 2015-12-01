@@ -868,6 +868,7 @@ var Surface = (function (_EventEmitter) {
                 var is = anim.is;
                 var interval = anim.interval;
                 var patterns = anim.patterns;
+                var option = anim.option;
 
                 if (bindgroup[_this5.scopeId] == null) return;
                 if (bindgroup[_this5.scopeId][is] == null) return;
@@ -878,6 +879,12 @@ var Surface = (function (_EventEmitter) {
                 } else {
                     //現在の合成レイヤから着せ替えレイヤを削除
                     delete _this5.layers[is];
+                    if (option === "background") {
+                        delete _this5.backgrounds[is];
+                    } else {
+                        delete _this5.layers[is];
+                    }
+                    _this5.render();
                 }
             });
         }
@@ -1753,6 +1760,7 @@ function unscope(charId) {
 }
 
 function getEventPosition(ev) {
+    console.warn("SurfaceUtil.getEventPosition is deprecated");
     if (/^touch/.test(ev.type) && ev.originalEvent.touches.length > 0) {
         var pageX = ev.originalEvent.touches[0].pageX;
         var pageY = ev.originalEvent.touches[0].pageY;
@@ -1772,6 +1780,8 @@ function getEventPosition(ev) {
 }
 
 function recursiveElementFromPoint(ev, parent, target) {
+    console.warn("SurfaceUtil.getEventPosition is deprecated");
+
     var _getEventPosition = getEventPosition(ev);
 
     var clientX = _getEventPosition.clientX;
@@ -1813,6 +1823,7 @@ function recursiveElementFromPoint(ev, parent, target) {
 }
 
 function eventPropagationSim(target, ev) {
+    console.warn("SurfaceUtil.getEventPosition is deprecated");
     ev.preventDefault();
     ev.stopPropagation();
     if (/^mouse|click$/.test(ev.type)) {

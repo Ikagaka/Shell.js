@@ -21,8 +21,8 @@
 <script>
 Shell.SurfaceRender.prototype.DEBUG = true;//DOMTreeに大量のcanvasを撒き散らすので実際メモリの危機
 
-NarLoader.loadFromURL("../nar/raychel_second.nar").then(changeNar)
-//NarLoader.loadFromURL("../nar/mobilemaster.nar").then(changeNar)
+//NarLoader.loadFromURL("../nar/raychel_second.nar").then(changeNar)
+NarLoader.loadFromURL("../nar/mobilemaster.nar").then(changeNar)
 //NarLoader.loadFromURL("../nar/yomefox.nar").then(changeNar)
 $("#nar").change(function(ev){
   NarLoader.loadFromBlob($(this).prop("files")[0]).then(changeNar);

@@ -194,7 +194,7 @@ export default class Surface extends EventEmitter {
     // shell.bindgroup[scopeId][bindgroupId] が変更された時に呼ばれる
     this.surfaceNode.animations.forEach((anim)=>{
       //このサーフェスに定義されたアニメーションの中でintervalがbindなものｗ探す
-      var {is, interval, patterns} = anim;
+      var {is, interval, patterns, option} = anim;
       if (bindgroup[this.scopeId] == null) return;
       if (bindgroup[this.scopeId][is] == null) return;
       if (!/^bind/.test(interval)) return;
@@ -204,6 +204,12 @@ export default class Surface extends EventEmitter {
       }else{
         //現在の合成レイヤから着せ替えレイヤを削除
         delete this.layers[is];
+        if(option === "background"){
+          delete this.backgrounds[is];
+        }else{
+          delete this.layers[is];
+        }
+        this.render();
       }
     });
   }
