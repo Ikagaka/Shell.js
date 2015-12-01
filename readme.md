@@ -174,3 +174,9 @@ npm run build
 #### blimp(blimpId?: number): Blimp
 * `blimpId`のバルーンを表示します。
 * 引数を省略した場合、現在のBlimpを返します。
+
+
+#### position(pos?:{right: number, bottom: number}): {right: number, bottom: number}
+* 指定した座標に移動します。
+* 基準は画面右下です。
+* 引数を省略すると現在の座標が返ります。

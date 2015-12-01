@@ -75,6 +75,7 @@ function talk(named, id){
   named.on("balloon_mouse", function(ev){ if(ev.type==="mousemove")return; console.log("balloon_mouse", ev); });
   named.on("balloon_select", function(ev){ console.log("balloon_select", ev); });
   named.on("balloon_input", function(ev){ console.log("balloon_input", ev); });
+  console.log(named.scope(1).position(), id);
   Promise.resolve(named)
   .then(wait(0, function(named) { named.scope(0); }))
   .then(wait(0, function(named) { named.scope().surface(0); }))

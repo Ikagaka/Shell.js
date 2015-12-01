@@ -22,7 +22,9 @@ class Scope
     # なんかissueあったような
     @$scope.css
       "bottom": "0px",
-      "right": (@scopeId*240)+"px"
+      "right": (@scopeId*240)+"px",
+      left: null
+      top: null
     return
 
   initSurface: ->
@@ -71,4 +73,15 @@ class Scope
           left: Number(@shell.descript["#{@type}.balloon.offsetx"] || 0) + @$surfaceCanvas[0].width
       return
 
+  position: (obj)->
+    if obj?
+      @$scope.css(obj)
+        "bottom": obj.bottom
+        "right": obj.right
+    {top, left}= @$scope.offset()
+    return {
+      # なんだよこの座標計算
+      right:  document.body.clientWidth  - window.scrollX - left - @$surfaceCanvas.width()
+      bottom: document.body.clientHeight - window.scrollY - top  - @$surfaceCanvas.height()
+    }
 module.exports = Scope

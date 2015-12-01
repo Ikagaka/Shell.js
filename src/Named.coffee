@@ -40,6 +40,7 @@ class Named extends EventEmitter
         when "mousemove"
           if $target?
             $surfaceCanvas = $(@scopes[ev.scopeId].element).find(".surfaceCanvas")
+            # この座標はbody要素直下のfixed座標用
             {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev.event)
             right  = document.body.clientWidth  - clientX - ($surfaceCanvas.width()  - relLeft)
             bottom = document.body.clientHeight - clientY - ($surfaceCanvas.height() - relTop)
@@ -48,7 +49,7 @@ class Named extends EventEmitter
               when "free" then break;
               when "top" then console.warn("seriko.alignmenttodesktop, free", "have not been supported yet"); break;
               when "bottom" then bottom = 0; break;
-            $target.css({right, bottom})
+            $target.css({right, bottom, top: null, left: null})
         when "mousedown"
           $target = $scope = $(@scopes[ev.scopeId].element)
           {top, left} = $target.offset()
@@ -67,6 +68,7 @@ class Named extends EventEmitter
           $target = null
         when "mousemove"
           if $target?
+            # この座標はbody要素直下のfixed座標用
             {pageX, pageY, clientX, clientY, screenX, screenY} = SurfaceUtil.getEventPosition(ev.event)
             $scope = $(@scopes[ev.scopeId].element)
             if pageX - relLeft + $scope.width()/2 > 0
@@ -75,6 +77,8 @@ class Named extends EventEmitter
             $target.css
               left: pageX - relLeft
               top:  pageY - relTop
+              right: null
+              bottom: null
         when "mousedown"
           $scope = $(@scopes[ev.scopeId].element)
           $target = $scope.find(".blimp")

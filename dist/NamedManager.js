@@ -168,7 +168,9 @@
                 }
                 $target.css({
                   right: right,
-                  bottom: bottom
+                  bottom: bottom,
+                  top: null,
+                  left: null
                 });
               }
               break;
@@ -203,7 +205,9 @@
                 }
                 $target.css({
                   left: pageX - relLeft,
-                  top: pageY - relTop
+                  top: pageY - relTop,
+                  right: null,
+                  bottom: null
                 });
               }
               break;
@@ -414,7 +418,9 @@
       this.$blimp = $("<div />").addClass("blimp").appendTo(this.$scope);
       this.$scope.css({
         "bottom": "0px",
-        "right": (this.scopeId * 240) + "px"
+        "right": (this.scopeId * 240) + "px",
+        left: null,
+        top: null
       });
     };
 
@@ -471,6 +477,21 @@
           });
         }
       }
+    };
+
+    Scope.prototype.position = function(obj) {
+      var left, ref, top;
+      if (obj != null) {
+        this.$scope.css(obj)({
+          "bottom": obj.bottom,
+          "right": obj.right
+        });
+      }
+      ref = this.$scope.offset(), top = ref.top, left = ref.left;
+      return {
+        right: document.body.clientWidth - window.scrollX - left - this.$surfaceCanvas.width(),
+        bottom: document.body.clientHeight - window.scrollY - top - this.$surfaceCanvas.height()
+      };
     };
 
     return Scope;
