@@ -29,6 +29,30 @@ class Named extends EventEmitter
       # サーフェス移動
       relLeft = relTop = 0
       $target = null
+      scopeId = -1
+      onmouseup = => $target = null; scopeId = -1
+      onmousemove = (ev)=> # https://github.com/Ikagaka/NamedManager.js/issues/16 によりbodyからキャプチャ
+        if !$target? then return
+        $surfaceCanvas = $(@scopes[scopeId].element).find(".surfaceCanvas")
+        # この座標はbody要素直下のfixed座標用
+        {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev)
+        right  = document.body.clientWidth  - clientX - ($surfaceCanvas.width()  - relLeft)
+        bottom = document.body.clientHeight - clientY - ($surfaceCanvas.height() - relTop)
+        alignment = @shell.descript["seriko.alignmenttodesktop"] || @shell.descript["#{SurfaceUtil.scope(scopeId)}.alignmenttodesktop"] || "bottom"
+        switch alignment
+          when "free" then break;
+          when "top" then console.warn("seriko.alignmenttodesktop, free", "have not been supported yet"); break;
+          when "bottom" then bottom = 0; break;
+        $target.css({right, bottom, top: "", left: ""})
+      $(document.body).on("mouseup", onmouseup)
+      $(document.body).on("mousemove", onmousemove)
+      $(document.body).on("touchmove", onmousemove)
+      $(document.body).on("touchend", onmouseup)
+      @destructors.push ->
+        $(document.body).off("mouseup", onmouseup)
+        $(document.body).off("mousemove", onmousemove)
+        $(document.body).off("touchmove", onmousemove)
+        $(document.body).off("touchend", onmouseup)
       @shell.on "mouse", (ev)=>
         if ev.transparency is true and
            ev.type isnt "mousemove" # mousemoveおよびmouseenterはループするので
@@ -37,22 +61,8 @@ class Named extends EventEmitter
           # それが拾われるのを待つ
           return
         switch ev.type
-          when "mouseup"
-            $target = null
-          when "mousemove"
-            if $target?
-              $surfaceCanvas = $(@scopes[ev.scopeId].element).find(".surfaceCanvas")
-              # この座標はbody要素直下のfixed座標用
-              {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev.event)
-              right  = document.body.clientWidth  - clientX - ($surfaceCanvas.width()  - relLeft)
-              bottom = document.body.clientHeight - clientY - ($surfaceCanvas.height() - relTop)
-              alignment = @shell.descript["seriko.alignmenttodesktop"] || @shell.descript["#{SurfaceUtil.scope(ev.scopeId)}.alignmenttodesktop"] || "bottom"
-              switch alignment
-                when "free" then break;
-                when "top" then console.warn("seriko.alignmenttodesktop, free", "have not been supported yet"); break;
-                when "bottom" then bottom = 0; break;
-              $target.css({right, bottom, top: "", left: ""})
           when "mousedown"
+            scopeId = ev.scopeId
             $target = $scope = $(@scopes[ev.scopeId].element)
             {top, left} = $target.offset()
             {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev.event)
