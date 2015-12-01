@@ -18,10 +18,7 @@ NamedManager.js is a `Ukagaka` compatible Shell renderer and Window Manager for 
 
 <script src="../bower_components/encoding-japanese/encoding.js"></script>
 <script src="../bower_components/jszip/dist/jszip.min.js"></script>
-<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
-<script src="../bower_components/jquery/dist/jquery.min.js"></script>
 <script src="../bower_components/narloader/NarLoader.js"></script>
-<script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
 <script src="../dist/NamedManager.js"></script>
 <script>
 Promise.all([
