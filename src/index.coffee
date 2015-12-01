@@ -1,8 +1,8 @@
 {Shell, Surface, SurfaceUtil, SurfaceRender} = require("ikagaka.shell.js")
 {Balloon, Blimp} = require("ikagaka.balloon.js")
-{NamedManager} = require("./NamedManager")
-{Named} = require("./Named")
-{Scope} = require("./Scope")
+NamedManager = require("./NamedManager")
+Named = require("./Named")
+Scope = require("./Scope")
 
 exports.Balloon = Balloon
 exports.Blimp = Blimp

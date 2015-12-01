@@ -1,6 +1,6 @@
 {
   "name": "ikagaka.namedmanager.js",
-  "version": "4.0.2",
+  "version": "4.1.0",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [
@@ -15,16 +15,18 @@
   },
   "scripts": {
     "init": "npm run update; npm run build",
-    "update": "rm -rf bower_components node_modules; npm update; bower update; dtsm fetch; dtsm update --save",
+    "update": "rm -rf bower_components node_modules; npm update; bower update",
     "clean": "rm lib/*.js dist/*.js",
-    "start": "http-server -o --silent -p 8000 & watchify lib/index.js --standalone NamedManager -o dist/NamedManager.js -v & coffee -c -w -o lib src/*.coffee",
+    "start": "http-server --silent -p 8000 & watchify lib/index.js --standalone NamedManager -o dist/NamedManager.js -v & coffee -c -w -o lib src/*.coffee",
     "stop": "killall -- node */http-server -p 8000",
     "build": "coffee -c -o lib src/*.coffee; browserify lib/index.js --standalone NamedManager -o dist/NamedManager.js",
     "patch": "mversion patch -m; git push origin --tag"
   },
   "dependencies": {
-    "ikagaka.shell.js": "ikagaka/Shell.js",
-    "ikagaka.balloon.js": "ikagaka/Balloon.js"
+    "eventemitter3": "*",
+    "jquery": "*",
+    "ikagaka.shell.js": "ikagaka/Shell.js#master",
+    "ikagaka.balloon.js": "ikagaka/Balloon.js#master"
   },
   "devDependencies": {},
   "main": "./lib/index.js",

@@ -1,4 +1,4 @@
-{SurfaceUtil} = require("ikagaka.shell.js")
+$ = require("jquery")
 
 class Scope
 
@@ -27,8 +27,7 @@ class Scope
 
   initSurface: ->
     # currentBlimpは生涯そのまま使いまわす
-    @currentBlimp =
-    @balloon.attachBlimp(@$blimp[0], @scopeId, 0)
+    @currentBlimp = @balloon.attachBlimp(@$blimp[0], @scopeId, 0)
     @surface(0) # まず要素に大きさを持たせる
     @blimp(0) # まず要素に大きさを持たせる
     @surface(-1) # そして消す
@@ -36,7 +35,7 @@ class Scope
     return
 
   destructor: ()->
-    
+
   surface: (surfaceId)->
     unless surfaceId? then return @currentSurface
     if Number(surfaceId) < 0 # 数値かつ負の値なら非表示
@@ -72,4 +71,4 @@ class Scope
           left: Number(@shell.descript["#{@type}.balloon.offsetx"] || 0) + @$surfaceCanvas[0].width
       return
 
-exports.Scope = Scope
+module.exports = Scope

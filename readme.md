@@ -11,13 +11,6 @@ NamedManager.js is a `Ukagaka` compatible Shell renderer and Window Manager for 
 
 * [demo](http://ikagaka.github.io/NamedManager.js/demo/sandbox.html)
 
-## Dependence
-* [Narazaka/surfaces_txt2yaml](https://github.com/Narazaka/surfaces_txt2yaml)
-* [asyncly/EventEmitter2](https://github.com/asyncly/EventEmitter2)
-* [Stuk/jszip](https://github.com/Stuk/jszip)
-* [Ikagaka/NarLoader](https://github.com/Ikagaka/NarLoader/)
-* [polygonplanet/encoding.js](https://github.com/polygonplanet/encoding.js)
-* [jquery/jquery](https://github.com/jquery/jquery)
 
 ## Usage
 
@@ -159,10 +152,17 @@ npm run build
 #### openCommunicateBox(placeHolder?: string): void
 * communicateboxを表示します。
 
-#### on(event: "select", callback: (ev: BalloonSelectEvent)=> void): EventEmitter2
+#### on(event: "balloon_select", callback: (ev: BalloonSelectEvent)=> void): EventEmitter
+* アンカーか選択肢が押された時
 
-#### on(event: "input", callback: (ev: BalloonInputEvent)=> void): EventEmitter2
+#### on(event: "balloon_input", callback: (ev: BalloonInputEvent)=> void): EventEmitter
+* ユーザーインプットかコミュニケートがあった時
 
+#### on(event: "shell_mouse", callback: (ev: ShellMouseEvent)=> void): EventEmitter
+* サーフェスが触られた時
+
+#### on(event: "balloon_mouse", callback: (ev: BalloonMouseEvent)=> void): EventEmitter
+* バルーンが触られた時
 
 ### Scope Class
 

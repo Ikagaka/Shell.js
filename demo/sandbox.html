@@ -1,14 +1,12 @@
 <script src="../bower_components/encoding-japanese/encoding.js"></script>
 <script src="../bower_components/jszip/dist/jszip.min.js"></script>
-<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
-<script src="../bower_components/jquery/dist/jquery.min.js"></script>
 <script src="../bower_components/narloader/NarLoader.js"></script>
-<script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
 <script src="../dist/NamedManager.js"></script>
 <script>
 Promise.all([
   NarLoader.loadFromURL("../nar/origin.nar"),
   NarLoader.loadFromURL("../nar/mobilemaster.nar")
+  //NarLoader.loadFromURL("../nar/toromi-nuru.nar")
 ]).then(function(tmp){
   var balloonNDir = tmp[0];
   var shellNDir = tmp[1];
@@ -37,8 +35,10 @@ Promise.all([
   var balloon3 = tmp[5];
   var nmdmgr = new NamedManager.NamedManager();
   document.body.appendChild(nmdmgr.element);
+
   shell2.bindgroup.forEach(function (arr, i){
-    arr.forEach(function(_, j){ shell2.bindgroup[i][j] = false});});
+    arr.forEach(function(_, j){
+      shell2.bindgroup[i][j] = false});});
   shell3.bindgroup[0][30] = false
   shell3.bindgroup[0][31] = false
   var hwnd = nmdmgr.materialize(shell, balloon);
@@ -52,9 +52,9 @@ Promise.all([
   console.log(nmdmgr, hwnd2, named2, shell2, balloon2);
   console.log(nmdmgr, hwnd3, named3, shell3, balloon3);
 
-  talk(named);
-  talk(named2);
-  talk(named3);
+  talk(named, 1);
+  talk(named2, 2);
+  talk(named3, 3);
 });
 
 
@@ -70,11 +70,11 @@ function wait(ms, callback) {
   };
 }
 
-function talk(named){
-  //named.on("mouseShell", function(ev){ console.log(ev); });
-  //named.on("mouseBalloon", function(ev){ console.log(ev); });
-  named.on("select", function(ev){ console.log(ev); });
-  named.on("input", function(ev){ console.log(ev); });
+function talk(named, id){
+  named.on("shell_mouse", function(ev){ if(ev.type==="mousemove")return; console.log("shell_mouse", ev); });
+  named.on("balloon_mouse", function(ev){ if(ev.type==="mousemove")return; console.log("balloon_mouse", ev); });
+  named.on("balloon_select", function(ev){ console.log("balloon_select", ev); });
+  named.on("balloon_input", function(ev){ console.log("balloon_input", ev); });
   Promise.resolve(named)
   .then(wait(0, function(named) { named.scope(0); }))
   .then(wait(0, function(named) { named.scope().surface(0); }))
@@ -101,7 +101,7 @@ function talk(named){
   .then(wait(0, function(named) { named.scope().blimp().talk("anchor"); }))
   .then(wait(0, function(named) { named.scope().blimp().anchorEnd(); }))
   .then(wait(0, function(named) { named.scope().blimp().br(); }))
-  .then(wait(0, function(named) { named.scope().blimp().talk("<" + "script>alert(1);<" + "/script>"); }))
+  .then(wait(0, function(named) { named.scope().blimp().talk("<" + "script>alert("+id+");<" + "/script>"); }))
   .then(wait(0, function(named) { named.scope().blimp().br(); }))
   .then(wait(0, function(named) { named.scope().blimp().choice("choice", "ChoceID"); }))
   .then(wait(0, function(named) { named.scope().blimp().br(); }))

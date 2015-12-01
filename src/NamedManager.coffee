@@ -1,6 +1,8 @@
-{Named} = require("./Named")
+Named = require("./Named")
+EventEmitter = require("eventemitter3")
+$ = require("jquery")
 
-class NamedManager extends EventEmitter2
+class NamedManager extends EventEmitter
   constructor: ->
     super()
 
@@ -81,4 +83,4 @@ class NamedManager extends EventEmitter2
       return null
     return @namedies[namedId]
 
-exports.NamedManager = NamedManager
+module.exports = NamedManager
