@@ -484,7 +484,9 @@
       if (obj != null) {
         this.$scope.css({
           "bottom": obj.bottom,
-          "right": obj.right
+          "right": obj.right,
+          "left": null,
+          "top": null
         });
       }
       ref = this.$scope.offset(), top = ref.top, left = ref.left;

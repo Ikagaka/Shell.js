@@ -78,6 +78,8 @@ class Scope
       @$scope.css
         "bottom": obj.bottom
         "right": obj.right
+        "left": null
+        "top": null
     {top, left}= @$scope.offset()
     return {
       # なんだよこの座標計算
