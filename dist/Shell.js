@@ -390,6 +390,8 @@ var Shell = (function (_EventEmitter) {
     }, {
         key: "attachSurface",
         value: function attachSurface(canvas, scopeId, surfaceId) {
+            var _this9 = this;
+
             var type = SurfaceUtil.scope(scopeId);
             if (typeof surfaceId === "string") {
                 if (!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]) {
@@ -412,6 +414,9 @@ var Shell = (function (_EventEmitter) {
             }
             var srf = new _Surface2["default"](canvas, scopeId, _surfaceId, this.surfaceTree);
             srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
+            srf.on("mouse", function (ev) {
+                _this9.emit("mouse", ev); // detachSurfaceで消える
+            });
             this.attachedSurface.push({ canvas: canvas, surface: srf });
             return srf;
         }
@@ -423,13 +428,13 @@ var Shell = (function (_EventEmitter) {
                 return _canvas === canvas;
             });
             if (hits.length === 0) return;
-            hits[0].surface.destructor();
+            hits[0].surface.destructor(); // srf.onのリスナはここで消される
             this.attachedSurface.splice(this.attachedSurface.indexOf(hits[0]), 1);
         }
     }, {
         key: "unload",
         value: function unload() {
-            var _this9 = this;
+            var _this10 = this;
 
             this.attachedSurface.forEach(function (_ref3) {
                 var canvas = _ref3.canvas;
@@ -437,9 +442,9 @@ var Shell = (function (_EventEmitter) {
 
                 surface.destructor();
             });
-            this.removeAllListeners("");
+            this.removeAllListeners(null);
             Object.keys(this).forEach(function (key) {
-                _this9[key] = new _this9[key].constructor();
+                _this10[key] = new _this10[key].constructor();
             });
         }
 
@@ -464,7 +469,7 @@ var Shell = (function (_EventEmitter) {
     }, {
         key: "bind",
         value: function bind(scopeId, bindgroupId) {
-            var _this10 = this;
+            var _this11 = this;
 
             if (this.bindgroup[scopeId] == null) {
                 console.warn("Shell#bind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
@@ -475,7 +480,7 @@ var Shell = (function (_EventEmitter) {
                 var srf = _ref4.surface;
                 var canvas = _ref4.canvas;
 
-                srf.updateBind(_this10.bindgroup);
+                srf.updateBind(_this11.bindgroup);
             });
         }
 
@@ -483,7 +488,7 @@ var Shell = (function (_EventEmitter) {
     }, {
         key: "unbind",
         value: function unbind(scopeId, bindgroupId) {
-            var _this11 = this;
+            var _this12 = this;
 
             if (this.bindgroup[scopeId] == null) {
                 console.warn("Shell#unbind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
@@ -494,7 +499,7 @@ var Shell = (function (_EventEmitter) {
                 var srf = _ref5.surface;
                 var canvas = _ref5.canvas;
 
-                srf.updateBind(_this11.bindgroup);
+                srf.updateBind(_this12.bindgroup);
             });
         }
 
@@ -634,6 +639,7 @@ var Surface = (function (_EventEmitter) {
             this.animationsQueue = {};
             this.talkCounts = {};
             this.destructors = [];
+            this.removeAllListeners(null);
             this.destructed = true;
         }
     }, {

@@ -13,11 +13,11 @@
 <p>bindgroup: <ol id="bindgroupId" start="0"/></ol></p>
 <p>collision: <input type="checkbox" id="collisionDraw" /></p>
 </fieldset>
-<fieldset>
+<!--fieldset>
 <legend>SERIKO Inspector</legend>
 <style scoepd>#seriko_inspector canvas{border:1px solid black;}</style>
 <div id="seriko_inspector"></div>
-</fieldset>
+</fieldset-->
 <script>
 Shell.SurfaceRender.prototype.DEBUG = true;//DOMTreeに大量のcanvasを撒き散らすので実際メモリの危機
 
@@ -52,7 +52,10 @@ function changeShell(nanikaDir){
   shell = new Shell.Shell(shellDir);
   shell.load().then(function(shell){
     console.log(shell);
-    //shell.on("mouse", function(ev){ console.log(ev); });
+    shell.on("mouse", function(ev){
+      if(ev.type === "mousemove") return; // mousemoveは鬱陶しいので表示しない
+      console.log(ev);
+    });
 
     //DOMTreeに大量のcanvasを撒き散らすのでメモリの危機
     //$("#seriko_inspector").children().remove();

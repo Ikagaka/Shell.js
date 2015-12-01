@@ -3,7 +3,7 @@
 import Surface from './Surface';
 import SurfaceRender from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
-import {SurfaceTreeNode, SurfaceCanvas} from "./Interfaces";
+import {SurfaceTreeNode, SurfaceCanvas, SurfaceMouseEvent} from "./Interfaces";
 import EventEmitter from "eventemitter3";
 import SurfacesTxt2Yaml from "surfaces_txt2yaml";
 
@@ -296,6 +296,9 @@ export default class Shell extends EventEmitter {
     }
     var srf = new Surface(canvas, scopeId, _surfaceId, this.surfaceTree);
     srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
+    srf.on("mouse", (ev: SurfaceMouseEvent)=>{
+      this.emit("mouse", ev); // detachSurfaceで消える
+    });
     this.attachedSurface.push({canvas, surface:srf});
     return srf;
   }
@@ -303,7 +306,7 @@ export default class Shell extends EventEmitter {
   public detachSurface(canvas: HTMLCanvasElement): void {
     var hits = this.attachedSurface.filter(({canvas: _canvas})=> _canvas === canvas);
     if(hits.length === 0) return;
-    hits[0].surface.destructor();
+    hits[0].surface.destructor(); // srf.onのリスナはここで消される
     this.attachedSurface.splice(this.attachedSurface.indexOf(hits[0]), 1);
   }
 
@@ -311,7 +314,7 @@ export default class Shell extends EventEmitter {
     this.attachedSurface.forEach(function({canvas, surface}){
       surface.destructor();
     });
-    this.removeAllListeners("");
+    this.removeAllListeners(null);
     Object.keys(this).forEach((key)=> {
       this[key] = new this[key].constructor();
     });
@@ -371,6 +374,7 @@ export default class Shell extends EventEmitter {
     });
     this.render();
   }
+
   //当たり判定非表示
   public hideRegion(): void {
     this.enableRegion = false;

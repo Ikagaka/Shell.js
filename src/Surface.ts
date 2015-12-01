@@ -74,6 +74,7 @@ export default class Surface extends EventEmitter {
     this.animationsQueue = {};
     this.talkCounts = {};
     this.destructors = [];
+    this.removeAllListeners(null);
     this.destructed = true;
   }
 
