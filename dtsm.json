@@ -18,37 +18,23 @@
   },
   "dependencies": {
     "text-encoding/text-encoding.d.ts": {
-      "ref": "3191f6e0088eee07c4d8fd24e4d27a40a60d9eb9"
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
     },
     "encoding-japanese/encoding.d.ts": {
       "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
-      "ref": "6300974eab5d6f02719f505d45d4bcf9fee36c5c",
+      "ref": "c0b1301f2011b7a47ef0940dd97b9e9efe89f2e5",
       "path": "encoding.d.ts"
     },
-    "surfaces_yaml/surfaces_yaml.d.ts": {
+    "surfaces_yaml/surfaces_txt2yaml.d.ts": {
       "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
-      "ref": "6300974eab5d6f02719f505d45d4bcf9fee36c5c",
-      "path": "surfaces_yaml.d.ts"
-    },
-    "jszip/jszip.d.ts": {
-      "ref": "3191f6e0088eee07c4d8fd24e4d27a40a60d9eb9"
-    },
-    "eventemitter2/eventemitter2.d.ts": {
-      "ref": "3191f6e0088eee07c4d8fd24e4d27a40a60d9eb9"
+      "ref": "c0b1301f2011b7a47ef0940dd97b9e9efe89f2e5",
+      "path": "surfaces_txt2yaml.d.ts"
     },
     "jquery/jquery.d.ts": {
-      "ref": "3191f6e0088eee07c4d8fd24e4d27a40a60d9eb9"
-    },
-    "NarLoader/NarLoader.d.ts": {
-      "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
-      "ref": "6300974eab5d6f02719f505d45d4bcf9fee36c5c",
-      "path": "NarLoader.d.ts"
-    },
-    "qunit/qunit.d.ts": {
-      "ref": "3191f6e0088eee07c4d8fd24e4d27a40a60d9eb9"
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
     },
     "touch-events/touch-events.d.ts": {
-      "ref": "3191f6e0088eee07c4d8fd24e4d27a40a60d9eb9"
+      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
     }
   }
 }

@@ -1,13 +1,9 @@
-
-<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
-<script src="../bower_components/jquery/dist/jquery.min.js"></script>
 <script src="../bower_components/encoding-japanese/encoding.js"></script>
 <script src="../bower_components/jszip/dist/jszip.min.js"></script>
 <script src="../bower_components/narloader/NarLoader.js"></script>
-<script src="../bower_components/surfaces_txt2yaml/lib/surfaces_txt2yaml.js"></script>
 <script src="../dist/Shell.js"></script>
 <fieldset>
-<legend>サーフィステスト</legend>
+<legend>サーフィステストするページ</legend>
 <canvas id="surfaceCanvas" style="float:right;"></canvas>
 <p><label>nar: <input type="file" id="nar" /></label></p>
 <p><label>shell: <select name="shellId" id="shellId"></select></label></p>
@@ -41,7 +37,7 @@ function changeNar(nanikaDir){
   shelllist.forEach(function(shellId){
     $("<option />").val(shellId).text(shellId).appendTo($frag);
   });
-  $("#shellId").append($frag).change(function(){ changeShell(nanikaDir); });
+  $("#shellId").children().remove().end().append($frag).change(function(){ changeShell(nanikaDir); });
   if(shelllist.length === 0) return console.warn("this nar does not have any shell");
   if(shelllist.indexOf("master") !== -1) {
     $("#shellId").val("master").change();
@@ -115,8 +111,11 @@ function changeShell(nanikaDir){
       shell.render();
     });
     $("#collisionDraw").unbind().change(function(){
-      shell.enableRegionDraw = $(this).prop("checked");
-      shell.render();
+      if($(this).prop("checked")){
+        shell.showRegion();
+      }else{
+        shell.hideRegion();
+      }
     });
 
     function changeSurface(){

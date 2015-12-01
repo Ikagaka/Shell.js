@@ -1,8 +1,56 @@
-import {SurfaceTreeNode} from "./Shell";
+/// <reference path="../typings/tsd.d.ts"/>
 
-/**
- * extend deep like jQuery $.extend(true, target, source)
- */
+import {SurfaceTreeNode} from "./Interfaces";
+import Encoding from "encoding-japanese";
+
+export function createSurfaceCanvasFromURL(url: string): Promise<{img:HTMLImageElement, cnv:HTMLCanvasElement}> {
+  return fetchArrayBuffer(url)
+  .then(createSurfaceCanvasFromArrayBuffer);
+}
+
+export function createSurfaceCanvasFromArrayBuffer(buffer: ArrayBuffer): Promise<{img:HTMLImageElement, cnv:HTMLCanvasElement}> {
+  return fetchImageFromArrayBuffer(buffer)
+  .then((img)=>{
+    var cnv = copy(img);
+    var ctx = cnv.getContext("2d");
+    var imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+    chromakey_snipet(<Uint8ClampedArray><any>imgdata.data);
+    ctx.putImageData(imgdata, 0, 0);
+    return {cnv, img}
+  });
+}
+
+export function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src: HTMLCanvasElement): void {
+  cnv.width = src.width;
+  cnv.height = src.height;
+  ctx.globalCompositeOperation = "source-over";
+  ctx.drawImage(src, 0, 0);
+}
+
+export function chromakey_snipet(data: Uint8ClampedArray): void { // side effect
+  var r = data[0], g = data[1], b = data[2], a = data[3];
+  var i = 0;
+  if (a !== 0) {
+    while (i < data.length) {
+      if (r === data[i] && g === data[i + 1] && b === data[i + 2]) {
+        data[i + 3] = 0;
+      }
+      i += 4;
+    }
+  }
+}
+
+export function log(element: Element, description=""){
+  var fieldset = document.createElement('fieldset');
+  var legend = document.createElement('legend');
+  legend.appendChild(document.createTextNode(description));
+  fieldset.appendChild(legend);
+  fieldset.appendChild(element);
+  fieldset.style.display = 'inline-block';
+  document.body.appendChild(fieldset);
+}
+
+// extend deep like jQuery $.extend(true, target, source)
 export function extend(target: any, source: any): void {
   for(var key in source){
     if (typeof source[key] === "object" && Object.getPrototypeOf(source[key]) === Object.prototype) {
@@ -17,9 +65,7 @@ export function extend(target: any, source: any): void {
   }
 }
 
-/**
- * "hoge.huga, foo, bar\n" to {"hoge.huga": "foo, bar"}
- */
+// "hoge.huga, foo, bar\n" to {"hoge.huga": "foo, bar"}
 export function parseDescript(text: string): {[key:string]:string}{
   text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
   while(true){// remove commentout
@@ -41,18 +87,38 @@ export function parseDescript(text: string): {[key:string]:string}{
   return dic;
 }
 
+// XMLHttpRequest, xhr.responseType = "arraybuffer"
+export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
+  return new Promise(function(resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", function() {
+      if (200 <= xhr.status && xhr.status < 300) {
+        if (xhr.response.error == null) {
+          return resolve(xhr.response);
+        } else {
+          return reject(new Error("message: "+ xhr.response.error.message));
+        }
+      } else {
+        return reject(new Error("status: "+xhr.status));
+      }
+    });
+    xhr["open"]("GET", url);
+    xhr["responseType"] = "arraybuffer";
+    return xhr["send"]();
+  });
+}
 
-/**
- * convert some encoding txt file arraybuffer to js string
- */
+
+// convert some encoding txt file arraybuffer to js string
+// TODO: use text-enconding & charset detection code
 export function convert(buffer: ArrayBuffer):string{
   //return new TextDecoder('shift_jis').decode(buffer);
   return Encoding.codeToString(Encoding.convert(new Uint8Array(buffer), 'UNICODE', 'AUTO'));
 }
 
-/**
- * find filename that matches arg "filename" from arg "paths"
- */
+
+// find filename that matches arg "filename" from arg "paths"
+// filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
 export function find(paths: string[], filename: string): string[] {
   filename = filename.split("\\").join("/");
   if(filename.slice(0,2) === "./") filename = filename.slice(2);
@@ -61,11 +127,14 @@ export function find(paths: string[], filename: string): string[] {
   return hits;
 }
 
-
+// [1,2,3] -> 1 or 2 or 3 as 33% probability
 export function choice<T>(arr: T[]): T {
-  return arr[Math.round(Math.random()*(arr.length-1))];
+  return arr[(Math.random()*100*(arr.length)|0)%arr.length];
 }
 
+// copy canvas as new object
+// this copy technic is faster than getImageData full copy, but some pixels are bad copy.
+// see also: http://stackoverflow.com/questions/4405336/how-to-copy-contents-of-one-canvas-to-another-canvas-locally
 export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement {
   var _copy = document.createElement("canvas");
   var ctx = <CanvasRenderingContext2D>_copy.getContext("2d");
@@ -115,7 +184,7 @@ export function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf: ArrayBuffer, pn
   });
 }
 
-
+// ArrayBuffer -> HTMLImageElement
 export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string): Promise<HTMLImageElement> {
   var url = URL.createObjectURL(new Blob([buffer], {type: mimetype || "image/png"}));
   return fetchImageFromURL(url).then((img)=>{
@@ -126,6 +195,7 @@ export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string)
   });
 }
 
+// URL -> HTMLImageElement
 export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
   var img = new Image();
   img.src = url;
@@ -140,22 +210,19 @@ export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
   });
 }
 
+// random(func, n) means call func 1/n per sec
 export function random(callback: (nextTick: () => void) => void, probability: number): void {
-  var ms = 1;
-  while (Math.round(Math.random() * 1000) > 1000 / probability) {
-    ms++;
-  }
   setTimeout((() =>{
-    var nextTick = () => random(callback, probability);
-    callback(nextTick);
-  }), ms * 1000);
+    function nextTick(){ random(callback, probability); }
+    if (Math.random() < 1/probability) callback(nextTick)
+    else nextTick();
+  }), 1000);
 }
 
 export function periodic(callback: (callback: () => void) => void, sec: number): void {
   setTimeout((() =>
     callback(()=>
-      periodic(callback, sec)
-    )
+      periodic(callback, sec) )
   ), sec * 1000);
 }
 
@@ -164,9 +231,11 @@ export function always(  callback: (callback: () => void) => void): void {
 }
 
 export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
+  if(!(x > 0 && y > 0)) return false;
+  // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
   if(!(cnv.width > 0 || cnv.height > 0)) return false;
   var ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
-  var imgdata = ctx.getImageData(0, 0, x + 1|0, y + 1|0);
+  var imgdata = ctx.getImageData(0, 0, x, y);
   var data = imgdata.data;
   return data[data.length - 1] !== 0;
 }

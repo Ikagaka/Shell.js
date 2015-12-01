@@ -10,7 +10,9 @@
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true,
         "outDir": "../lib",
-        "rootDir": "../"
+        "rootDir": "../",
+        "listFiles": true,
+        "experimentalDecorators": true
     },
     "compileOnSave": true,
     "formatCodeOptions": {
@@ -32,12 +34,15 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
-        "index.ts",
-        "Shell.ts",
-        "Surface_.ts",
-        "Surface.ts",
-        "SurfaceRender.ts",
-        "SurfaceUtil.ts"
+        "./index.ts",
+        "./Interfaces.ts",
+        "./Shell.ts",
+        "./Surface.ts",
+        "./SurfaceRender.ts",
+        "./SurfaceUtil.ts"
     ],
-    "exclude": []
+    "exclude": [],
+    "atom": {
+        "rewriteTsconfig": true
+    }
 }

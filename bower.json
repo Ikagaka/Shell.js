@@ -1,15 +1,11 @@
 {
   "name": "ikagaka.shell.js",
-  "version": "4.0.11",
+  "version": "4.1.0",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "dependencies": {
-    "surfaces_txt2yaml": "Narazaka/surfaces_txt2yaml",
-    "encoding-japanese": "~1.0.23",
-    "text-encoding": "~0.5.3",
-    "jszip": "*",
-    "eventemitter2": "~0.4.14",
-    "jquery": "*"
+    "PNG.ts": "legokichi/PNG.ts",
+    "duxca.serverworker.js": "legokichi/ServerWorker"
   },
   "devDependencies": {
     "qunit": "*",

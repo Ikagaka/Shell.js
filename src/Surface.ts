@@ -1,62 +1,60 @@
-import {SurfaceRender, SurfaceLayerObject} from "./SurfaceRender";
+/// <reference path="../typings/tsd.d.ts"/>
+
+import SurfaceRender from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
-import {Shell, SurfaceTreeNode} from "./Shell";
+import {SurfaceLayerObject, SurfaceTreeNode, SurfaceMouseEvent} from "./Interfaces";
+import EventEmitter from "eventemitter3";
+import $ from "jquery";
 
-export interface SurfaceMouseEvent {
-  button: number; // マウスのボタン
-  offsetX: number; // canvas左上からのx座標
-  offsetY: number; // canvas左上からのy座標
-  region: string; // collisionの名前
-  scopeId: number; // このサーフェスのスコープ番号
-  wheel: number; // 0
-  type: string; // "Bust"
-  transparency: boolean; // 透明領域ならtrue,
-  event: JQueryEventObject;
-}
+self["$"] = $;
+self["jQuery"] = $;
 
-export class Surface {
+export default class Surface extends EventEmitter {
+
   public element: HTMLCanvasElement;
   public scopeId: number;
   public surfaceId: number;
-  public shell: Shell;
   public position: string; // fixed|absolute
   public width: number;
   public height: number;
+  public enableRegionDraw: boolean;
 
+  private ctx: CanvasRenderingContext2D;
   private surfaceNode: SurfaceTreeNode
   private bufferCanvas: HTMLCanvasElement; //チラツキを抑えるためのバッファ
-  private bufRender: SurfaceRender;//バッファのためのレンダラ
-  private elmRender: SurfaceRender;//実際のDOMTreeにあるcanvasへのレンダラ
+
+  private backgrounds:     SurfaceAnimationPattern[];//背景レイヤ
+  private layers:          SurfaceAnimationPattern[];//アニメーションIDの現在のレイヤ。アニメで言う動画セル。
 
   private talkCount: number;
   private talkCounts:      { [animationId: number]: number };//key:タイミングがtalkのアニメーションid、number:talkCountの閾値
   private animationsQueue: { [animationId: number]: Function[] }; // key:animationId, 再生中のアニメーションのコマごとのキュー。アニメーションの強制停止に使う
-  private backgrounds:     { [animationId: number]: SurfaceAnimationPattern };
-  private layers:          { [animationId: number]: SurfaceAnimationPattern };//アニメーションIDの現在のレイヤ。アニメで言う動画セル。
   private stopFlags:       { [animationId: number]: boolean };//keyがfalseのアニメーションの"自発的"再生を停止する、sometimesみたいのを止める。bindには関係ない
+  private surfaceTree:     { [animationId: number]: SurfaceTreeNode };
 
   private destructed: boolean;
   private destructors: Function[]; // destructor実行時に実行される関数のリスト
 
-  constructor(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number, shell: Shell) {
+  constructor(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number, surfaceTree: { [animationId: number]: SurfaceTreeNode }) {
+    super();
+
     this.element = canvas;
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
-    this.shell = shell;
     this.width = 0;
     this.height = 0;
+    this.ctx = canvas.getContext("2d");
 
     this.position = "fixed";
-    this.surfaceNode = shell.surfaceTree[surfaceId];
+    this.surfaceTree = surfaceTree;
+    this.surfaceNode = this.surfaceTree[surfaceId];
     this.bufferCanvas = SurfaceUtil.createCanvas();
-    this.bufRender = new SurfaceRender(this.bufferCanvas);
-    this.elmRender = new SurfaceRender(this.element);
 
     this.talkCount = 0;
     this.talkCounts = {};
     this.animationsQueue = {};
-    this.backgrounds = {}
-    this.layers = {};
+    this.backgrounds = []
+    this.layers = [];
     this.stopFlags = {};
 
     this.destructed = false;
@@ -70,12 +68,9 @@ export class Surface {
   public destructor(): void {
     this.destructors.forEach((fn)=> fn());
     this.element = null;
-    this.shell = null;
-    this.elmRender.clear();
     this.surfaceNode = null;
     this.element = null;
-    this.elmRender = null;
-    this.layers = {};
+    this.layers = [];
     this.animationsQueue = {};
     this.talkCounts = {};
     this.destructors = [];
@@ -115,7 +110,7 @@ export class Surface {
           // ために親要素にイベント伝えない
         $(ev.target).css({"cursor": "pointer"}); //当たり判定でマウスポインタを指に
       }
-      this.shell.emit("mouse", custom);
+      this.emit("mouse", custom);
     };// processMouseEventここまで
     tuples.push(["contextmenu",(ev)=> processMouseEvent(ev, "mouseclick")   ]);
     tuples.push(["click",      (ev)=> processMouseEvent(ev, "mouseclick")   ]);
@@ -180,6 +175,7 @@ export class Surface {
     var [_bind, ...intervals] = interval.split("+");
     if(intervals.length > 0) return;
     intervals.forEach((interval)=>{
+      //sometimesみたいのはinitAnimationに丸投げ
       this.initAnimation({interval, is, patterns, option});
     });
     var {option} = anim;
@@ -191,18 +187,21 @@ export class Surface {
     this.render();
   }
 
-  public updateBind(): void {
+  public updateBind(bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }): void {
     // Shell.tsから呼ばれるためpublic
     // Shell#bind,Shell#unbindで発動
-    // shell.bindgroup[scopeId][bindgroupId] が変更された時に呼ばれるようだ
+    // shell.bindgroup[scopeId][bindgroupId] が変更された時に呼ばれる
     this.surfaceNode.animations.forEach((anim)=>{
+      //このサーフェスに定義されたアニメーションの中でintervalがbindなものｗ探す
       var {is, interval, patterns} = anim;
-      if (this.shell.bindgroup[this.scopeId] == null) return;
-      if (this.shell.bindgroup[this.scopeId][is] == null) return;
+      if (bindgroup[this.scopeId] == null) return;
+      if (bindgroup[this.scopeId][is] == null) return;
       if (!/^bind/.test(interval)) return;
-      if (this.shell.bindgroup[this.scopeId][is] === true){
+      if (bindgroup[this.scopeId][is] === true){
+        //現在の設定が着せ替え有効ならばinitBindにまるなげ
         this.initBind(anim);
       }else{
+        //現在の合成レイヤから着せ替えレイヤを削除
         delete this.layers[is];
       }
     });
@@ -220,19 +219,25 @@ export class Surface {
     this.stopFlags[animationId] = true;
   }
 
+  public endAll(): void {
+    Object.keys(this.stopFlags).forEach((key)=>{
+      this.stopFlags[key] = false;
+    })
+  }
+
   // アニメーション再生
   public play(animationId: number, callback?: Function): void {
     if(this.destructed) return;
     var anims = this.surfaceNode.animations;
     var anim = this.surfaceNode.animations[animationId];
     if(anim == null) return void setTimeout(callback); // そんなアニメーションはない
-    this.animationsQueue[animationId] = anim.patterns.map((pattern)=> ()=>{
+    this.animationsQueue[animationId] = anim.patterns.map((pattern, i)=> ()=>{
       var {surface, wait, type, x, y, animation_ids} = pattern;
       switch(type){
-        case "start":            return this.play(animation_ids[0], nextTick);
-        case "stop":             return this.stop(animation_ids[0]); setTimeout(nextTick);
-        case "alternativestart": return this.play(SurfaceUtil.choice<number>(animation_ids), nextTick);
-        case "alternativestart": return this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick);
+        case "start":            this.play(animation_ids[0], nextTick); return;
+        case "stop":             this.stop(animation_ids[0]); setTimeout(nextTick); return;
+        case "alternativestart": this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
+        case "alternativestop":  this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
       }
       var [__, a, b] = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]);
       var _wait = isFinite(Number(b))
@@ -242,7 +247,6 @@ export class Surface {
         if(anim.option === "background"){
           this.backgrounds[animationId] = pattern;
         }else{
-          console.log(animationId, this.layers)
           this.layers[animationId] = pattern;
         }
         this.render();
@@ -256,15 +260,27 @@ export class Surface {
         // stop pattern animation.
         this.animationsQueue[animationId] = [];
         setTimeout(callback);
-      }else next();
+      }else{
+        next();
+      }
     };
     if(this.animationsQueue[animationId][0] instanceof Function) {
-      this.animationsQueue[animationId][0]();
+      nextTick();
     }
   }
 
   public stop(animationId: number): void {
     this.animationsQueue[animationId] = []; // アニメーションキューを破棄
+  }
+
+  public talk(): void {
+    var animations = this.surfaceNode.animations;
+    this.talkCount++;
+    var hits = animations.filter((anim)=>
+        /^talk/.test(anim.interval) && this.talkCount % this.talkCounts[anim.is] === 0);
+    hits.forEach((anim)=>{
+      this.play(anim.is);
+    });
   }
 
   public yenE(): void {
@@ -277,41 +293,45 @@ export class Surface {
     });
   }
 
-  public render(): void {
-    if(this.destructed) return;
-    // this.layersが数字をキーとした辞書なのでレイヤー順にソート
-    var sortedKeys = Object.keys(this.layers).sort((layerNumA, layerNumB)=> Number(layerNumA) > Number(layerNumB) ? 1 : -1 );
-    var layers = sortedKeys.map((key)=> this.layers[Number(key)]);
+  private composeAnimationPatterns(layers: SurfaceAnimationPattern[]): SurfaceLayerObject[] {
     var renderLayers: SurfaceLayerObject[] = [];
     layers.forEach((pattern, i)=>{
       var {surface, type, x, y} = pattern;
-      if(surface === -1) return; // idが-1つまり非表示指定
-      var srf = this.shell.surfaceTree[surface]; // 該当のサーフェス
+      if(surface < 0) return; // idが-1つまり非表示指定
+      var srf = this.surfaceTree[surface]; // 該当のサーフェス
       if(srf == null){
         console.warn("Surface#render: surface id "+surface + " is not defined.", pattern);
-        console.warn(surface, Object.keys(this.shell.surfaceTree));
+        console.warn(surface, Object.keys(this.surfaceTree));
         return; // 対象サーフェスがないのでスキップ
       }
       // 対象サーフェスを構築描画する
-      var {base, elements} = srf;
-      var rndr = new SurfaceRender(SurfaceUtil.copy(base));// 対象サーフェスのbaseサーフェス(surface*.png)の上に
+      var {base, elements, collisions, animations} = srf;
+      var rndr = new SurfaceRender();// 対象サーフェスのbaseサーフェス(surface*.png)の上に
+      rndr.base(base)
       rndr.composeElements(elements); // elementを合成する
-      renderLayers.push({type, x, y, canvas: rndr.cnv});
+      renderLayers.push({type, x, y, canvas: rndr.getSurfaceCanvas()});
     });
-    if (sortedKeys.length > 0 && Number(sortedKeys[0]) < 0) { // マイナス値、つまりbackgroundなレイヤがある
-      console.info("background layer detected", sortedKeys, layers[-sortedKeys], layers, renderLayers);
-    }else{
-      // 物理ベースサーフェスを基準に
-      renderLayers.unshift({type:"overlay", canvas:SurfaceUtil.copy(this.surfaceNode.base), x:0, y:0})
+    return renderLayers;
+  }
+
+  public render(): void {
+    if(this.destructed) return;
+    var backgrounds = this.composeAnimationPatterns(this.backgrounds);
+    var base = this.surfaceNode.base;
+    var elements = this.surfaceNode.elements;
+    var fronts = this.composeAnimationPatterns(this.layers);
+    var renderLayers: SurfaceLayerObject[] = [].concat(
+      backgrounds,
+      [{type: "overlay", canvas: base, x: 0, y: 0}],
+      elements,
+      fronts);
+    var bufRender = new SurfaceRender(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
+    bufRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
+    if (this.enableRegionDraw) { // 当たり判定を描画
+      bufRender.ctx.fillText(""+this.surfaceId, 5, 10); // surfaceIdを描画
+      bufRender.drawRegions(this.surfaceNode.collisions);
     }
-    renderLayers = renderLayers.concat(this.surfaceNode.elements) // エレメントを合成
-    this.bufRender.init(renderLayers[0].canvas); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
-    this.bufRender.composeElements(renderLayers.slice(1)); // 現在有効なアニメーションのレイヤを合成
-    if (this.shell.enableRegionDraw) { // 当たり判定を描画
-      this.bufRender.ctx.fillText(""+this.surfaceId, 5, 10);
-      this.bufRender.drawRegions(this.surfaceNode.collisions);
-    }
-    this.elmRender.init(this.bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
+    SurfaceUtil.init(this.element, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
     this.width = this.element.width;
     this.height = this.element.height;
   }
