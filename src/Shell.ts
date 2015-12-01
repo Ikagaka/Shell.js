@@ -52,8 +52,9 @@ export default class Shell extends EventEmitter {
   // this.directoryからdescript.txtを探してthis.descriptに入れる
   private loadDescript(): Promise<Shell> {
     var dir = this.directory;
-    var getName = (dic: {[key: string]: any}, reg: RegExp)=>
-      Object.keys(dic).filter((name)=> reg.test(name))[0] || "";
+    var getName = (dic: {[key: string]: any}, reg: RegExp)=>{
+      return Object.keys(dic).filter((name)=> reg.test(name))[0] || "";
+    };
     var descript_name = getName(dir, /^descript\.txt$/i);
     if (descript_name === "") {
       console.info("descript.txt is not found");
@@ -296,6 +297,7 @@ export default class Shell extends EventEmitter {
     }
     var srf = new Surface(canvas, scopeId, _surfaceId, this.surfaceTree);
     srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
+    srf.updateBind(this.bindgroup); // 現在の着せ替え設定の反映
     srf.on("mouse", (ev: SurfaceMouseEvent)=>{
       this.emit("mouse", ev); // detachSurfaceで消える
     });
@@ -315,9 +317,7 @@ export default class Shell extends EventEmitter {
       surface.destructor();
     });
     this.removeAllListeners(null);
-    Object.keys(this).forEach((key)=> {
-      this[key] = new this[key].constructor();
-    });
+    Shell.call(this, {}); // 初期化
   }
 
   // サーフェスエイリアス込みでサーフェスが存在するか確認

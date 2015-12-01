@@ -272,6 +272,7 @@ export function unscope(charId: string): number {
 }
 
 export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY: number, clientX: number, clientY: number, screenX: number, screenY: number} {
+  console.warn("SurfaceUtil.getEventPosition is deprecated");
   if (/^touch/.test(ev.type) && (<TouchEvent>ev.originalEvent).touches.length > 0){
     var pageX = (<TouchEvent>ev.originalEvent).touches[0].pageX;
     var pageY = (<TouchEvent>ev.originalEvent).touches[0].pageY;
@@ -291,6 +292,7 @@ export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY
 }
 
 export function recursiveElementFromPoint(ev: JQueryEventObject, parent: HTMLElement, target: HTMLElement): HTMLElement {
+  console.warn("SurfaceUtil.getEventPosition is deprecated");
   var {clientX, clientY, pageX, pageY} = getEventPosition(ev);
   var {left, top} = $(target).offset();
   var offsetX = clientX - (left - window.scrollX); // window.scrollX は position: fixed; でのclientWidthをとるため
@@ -324,6 +326,7 @@ export function recursiveElementFromPoint(ev: JQueryEventObject, parent: HTMLEle
 }
 
 export function eventPropagationSim(target: HTMLElement, ev: JQueryEventObject): void {
+  console.warn("SurfaceUtil.getEventPosition is deprecated");
   ev.preventDefault();
   ev.stopPropagation();
   if(/^mouse|click$/.test(ev.type)) {
