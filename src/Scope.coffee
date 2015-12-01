@@ -83,7 +83,7 @@ class Scope
     {top, left}= @$scope.offset()
     return {
       # なんだよこの座標計算
-      right:  document.body.clientWidth  - window.scrollX - left - @$surfaceCanvas.width()
-      bottom: document.body.clientHeight - window.scrollY - top  - @$surfaceCanvas.height()
+      right:  window.innerWidth  - window.scrollX - left - @$surfaceCanvas.width()
+      bottom: window.innerHeight - window.scrollY - top  - @$surfaceCanvas.height()
     }
 module.exports = Scope

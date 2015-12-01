@@ -152,8 +152,8 @@
             }
             $surfaceCanvas = $(_this.scopes[scopeId].element).find(".surfaceCanvas");
             ref = SurfaceUtil.getEventPosition(ev), pageX = ref.pageX, pageY = ref.pageY, clientX = ref.clientX, clientY = ref.clientY;
-            right = document.body.clientWidth - clientX - ($surfaceCanvas.width() - relLeft);
-            bottom = document.body.clientHeight - clientY - ($surfaceCanvas.height() - relTop);
+            right = window.innerWidth - clientX - ($surfaceCanvas.width() - relLeft);
+            bottom = window.innerHeight - clientY - ($surfaceCanvas.height() - relTop);
             alignment = _this.shell.descript["seriko.alignmenttodesktop"] || _this.shell.descript[(SurfaceUtil.scope(scopeId)) + ".alignmenttodesktop"] || "bottom";
             switch (alignment) {
               case "free":
@@ -513,8 +513,8 @@
       }
       ref = this.$scope.offset(), top = ref.top, left = ref.left;
       return {
-        right: document.body.clientWidth - window.scrollX - left - this.$surfaceCanvas.width(),
-        bottom: document.body.clientHeight - window.scrollY - top - this.$surfaceCanvas.height()
+        right: window.innerWidth - window.scrollX - left - this.$surfaceCanvas.width(),
+        bottom: window.innerHeight - window.scrollY - top - this.$surfaceCanvas.height()
       };
     };
 

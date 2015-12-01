@@ -36,8 +36,9 @@ class Named extends EventEmitter
         $surfaceCanvas = $(@scopes[scopeId].element).find(".surfaceCanvas")
         # この座標はbody要素直下のfixed座標用
         {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev)
-        right  = document.body.clientWidth  - clientX - ($surfaceCanvas.width()  - relLeft)
-        bottom = document.body.clientHeight - clientY - ($surfaceCanvas.height() - relTop)
+        # ブラウザのユーザから見えてる部分の大きさを取得
+        right  = window.innerWidth  - clientX - ($surfaceCanvas.width()  - relLeft)
+        bottom = window.innerHeight - clientY - ($surfaceCanvas.height() - relTop)
         alignment = @shell.descript["seriko.alignmenttodesktop"] || @shell.descript["#{SurfaceUtil.scope(scopeId)}.alignmenttodesktop"] || "bottom"
         switch alignment
           when "free" then break;
