@@ -169,8 +169,8 @@
                 $target.css({
                   right: right,
                   bottom: bottom,
-                  top: null,
-                  left: null
+                  top: "",
+                  left: ""
                 });
               }
               break;
@@ -206,8 +206,8 @@
                 $target.css({
                   left: pageX - relLeft,
                   top: pageY - relTop,
-                  right: null,
-                  bottom: null
+                  right: "",
+                  bottom: ""
                 });
               }
               break;
@@ -485,8 +485,8 @@
         this.$scope.css({
           "bottom": obj.bottom,
           "right": obj.right,
-          "left": null,
-          "top": null
+          "left": "",
+          "top": ""
         });
       }
       ref = this.$scope.offset(), top = ref.top, left = ref.left;

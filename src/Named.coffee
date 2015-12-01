@@ -49,7 +49,7 @@ class Named extends EventEmitter
               when "free" then break;
               when "top" then console.warn("seriko.alignmenttodesktop, free", "have not been supported yet"); break;
               when "bottom" then bottom = 0; break;
-            $target.css({right, bottom, top: null, left: null})
+            $target.css({right, bottom, top: "", left: ""})
         when "mousedown"
           $target = $scope = $(@scopes[ev.scopeId].element)
           {top, left} = $target.offset()
@@ -77,8 +77,8 @@ class Named extends EventEmitter
             $target.css
               left: pageX - relLeft
               top:  pageY - relTop
-              right: null
-              bottom: null
+              right: ""
+              bottom: ""
         when "mousedown"
           $scope = $(@scopes[ev.scopeId].element)
           $target = $scope.find(".blimp")
