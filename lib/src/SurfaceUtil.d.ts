@@ -48,8 +48,6 @@ export declare function getEventPosition(ev: JQueryEventObject): {
     screenX: number;
     screenY: number;
 };
-export declare function recursiveElementFromPoint(ev: JQueryEventObject, parent: HTMLElement, target: HTMLElement): HTMLElement;
-export declare function eventPropagationSim(target: HTMLElement, ev: JQueryEventObject): void;
 export declare function randomRange(min: number, max: number): number;
 export declare function getRegion(element: HTMLCanvasElement, surfaceNode: SurfaceTreeNode, offsetX: number, offsetY: number): {
     isHit: boolean;
