@@ -75,7 +75,7 @@ class Scope
 
   position: (obj)->
     if obj?
-      @$scope.css(obj)
+      @$scope.css
         "bottom": obj.bottom
         "right": obj.right
     {top, left}= @$scope.offset()

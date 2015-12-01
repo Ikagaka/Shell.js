@@ -482,7 +482,7 @@
     Scope.prototype.position = function(obj) {
       var left, ref, top;
       if (obj != null) {
-        this.$scope.css(obj)({
+        this.$scope.css({
           "bottom": obj.bottom,
           "right": obj.right
         });
