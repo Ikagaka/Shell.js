@@ -146,14 +146,14 @@
             return scopeId = -1;
           };
           onmousemove = function(ev) {
-            var $surfaceCanvas, alignment, bottom, clientX, clientY, pageX, pageY, ref, right;
+            var $element, alignment, bottom, clientX, clientY, pageX, pageY, ref, right;
             if ($target == null) {
               return;
             }
-            $surfaceCanvas = $(_this.scopes[scopeId].element).find(".surfaceCanvas");
+            $element = $(_this.scopes[scopeId].element);
             ref = SurfaceUtil.getEventPosition(ev), pageX = ref.pageX, pageY = ref.pageY, clientX = ref.clientX, clientY = ref.clientY;
-            right = window.innerWidth - clientX - ($surfaceCanvas.width() - relLeft);
-            bottom = window.innerHeight - clientY - ($surfaceCanvas.height() - relTop);
+            right = window.innerWidth - clientX - ($element.width() - relLeft);
+            bottom = window.innerHeight - clientY - ($element.height() - relTop);
             alignment = _this.shell.descript["seriko.alignmenttodesktop"] || _this.shell.descript[(SurfaceUtil.scope(scopeId)) + ".alignmenttodesktop"] || "bottom";
             switch (alignment) {
               case "free":
@@ -184,6 +184,7 @@
           });
           return _this.shell.on("mouse", function(ev) {
             var $scope, clientX, clientY, left, pageX, pageY, ref, ref1, top;
+            console.log(ev);
             if (ev.transparency === true && ev.type !== "mousemove") {
               recursiveElementFromPoint(ev.event, _this.nmdmgr.element, ev.event.target);
               return;
@@ -361,7 +362,7 @@
         right: "0px",
         position: "fixed"
       });
-      $style = $("<style scoped />").text(".scope {\n  position: absolute;\n  right: 0px;\n  bottom: 0px;\n  pointer-events: none;\n  user-select: none;\n  -webkit-tap-highlight-color: transparent;\n}\n.surface {\n  user-select: none;\n}\n.surfaceCanvas {\n  user-select: none;\n  pointer-events: auto;\n}\n.blimp {\n  position: absolute;\n  top: 0px;\n  left: 0px;\n  pointer-events: auto;\n}\n.blimpCanvas {\n  user-select: none;\n}").appendTo(this.$namedMgr);
+      $style = $("<style scoped />").text(".scope {\n  position: absolute;\n  right: 0px;\n  bottom: 0px;\n  pointer-events: none;\n  user-select: none;\n  -webkit-tap-highlight-color: transparent;\n}\n.surface {\n  user-select: none;\n}\n.surface canvas {\n  user-select: none;\n  pointer-events: auto;\n}\n.blimp {\n  position: absolute;\n  top: 0px;\n  left: 0px;\n  pointer-events: auto;\n}\n.blimpCanvas {\n  user-select: none;\n}").appendTo(this.$namedMgr);
     };
 
     NamedManager.prototype.initEventListener = function() {};
@@ -436,7 +437,6 @@
     Scope.prototype.initDOMStructure = function() {
       this.$scope = $(this.element).addClass("scope");
       this.$surface = $("<div />").addClass("surface").appendTo(this.$scope);
-      this.$surfaceCanvas = $("<canvas width='10' height='100' />").addClass("surfaceCanvas").appendTo(this.$surface);
       this.$blimp = $("<div />").addClass("blimp").appendTo(this.$scope);
       this.$scope.css({
         "bottom": "0px",
@@ -468,10 +468,10 @@
         console.warn("Scope#surface > ReferenceError: surfaceId", surfaceId, "is not defined");
         return this.currentSurface;
       }
-      this.shell.detachSurface(this.$surfaceCanvas[0]);
-      this.currentSurface = this.shell.attachSurface(this.$surfaceCanvas[0], this.scopeId, surfaceId);
-      this.$scope.width(this.$surfaceCanvas[0].width);
-      this.$scope.height(this.$surfaceCanvas[0].height);
+      this.shell.detachSurface(this.$surface[0]);
+      this.currentSurface = this.shell.attachSurface(this.$surface[0], this.scopeId, surfaceId);
+      this.$scope.width(this.$surface.width());
+      this.$scope.height(this.$surface.height());
       this.$surface.show();
       return this.currentSurface;
     };
@@ -495,7 +495,7 @@
           });
         } else {
           this.$blimp.css({
-            left: Number(this.shell.descript[this.type + ".balloon.offsetx"] || 0) + this.$surfaceCanvas[0].width
+            left: Number(this.shell.descript[this.type + ".balloon.offsetx"] || 0) + this.$surface.width()
           });
         }
       }
@@ -513,8 +513,8 @@
       }
       ref = this.$scope.offset(), top = ref.top, left = ref.left;
       return {
-        right: window.innerWidth - window.scrollX - left - this.$surfaceCanvas.width(),
-        bottom: window.innerHeight - window.scrollY - top - this.$surfaceCanvas.height()
+        right: window.innerWidth - window.scrollX - left - this.$surface.width(),
+        bottom: window.innerHeight - window.scrollY - top - this.$surface.height()
       };
     };
 
@@ -13899,6 +13899,13 @@ var _surfaces_txt2yaml = require("surfaces_txt2yaml");
 
 var _surfaces_txt2yaml2 = _interopRequireDefault(_surfaces_txt2yaml);
 
+var _jquery = require("jquery");
+
+var _jquery2 = _interopRequireDefault(_jquery);
+
+self["$"] = _jquery2["default"];
+self["jQuery"] = _jquery2["default"];
+
 var Shell = (function (_EventEmitter) {
     _inherits(Shell, _EventEmitter);
 
@@ -14121,7 +14128,7 @@ var Shell = (function (_EventEmitter) {
                     return _this5.getPNGFromDirectory(file).then(function (canvas) {
                         if (!_this5.surfaceTree[n]) {
                             _this5.surfaceTree[n] = {
-                                base: { cnv: SurfaceUtil.createCanvas(), img: null },
+                                base: SurfaceUtil.createSurfaceCanvasDummy(),
                                 elements: [],
                                 collisions: [],
                                 animations: []
@@ -14158,7 +14165,7 @@ var Shell = (function (_EventEmitter) {
                 Object.keys(regions).forEach(function (regname) {
                     if (!_this6.surfaceTree[n]) {
                         _this6.surfaceTree[n] = {
-                            base: { cnv: SurfaceUtil.createCanvas(), img: null },
+                            base: SurfaceUtil.createSurfaceCanvasDummy(),
                             elements: [],
                             collisions: [],
                             animations: []
@@ -14187,7 +14194,7 @@ var Shell = (function (_EventEmitter) {
                 Object.keys(animations).forEach(function (animname) {
                     if (!_this7.surfaceTree[n]) {
                         _this7.surfaceTree[n] = {
-                            base: { cnv: SurfaceUtil.createCanvas(), img: null },
+                            base: SurfaceUtil.createSurfaceCanvasDummy(),
                             elements: [],
                             collisions: [],
                             animations: []
@@ -14246,7 +14253,7 @@ var Shell = (function (_EventEmitter) {
         }
     }, {
         key: "attachSurface",
-        value: function attachSurface(canvas, scopeId, surfaceId) {
+        value: function attachSurface(div, scopeId, surfaceId) {
             var _this9 = this;
 
             var type = SurfaceUtil.scope(scopeId);
@@ -14258,10 +14265,10 @@ var Shell = (function (_EventEmitter) {
                 var _surfaceId = surfaceId;
             } else throw new Error("TypeError: surfaceId: number|string is not match " + typeof surfaceId);
             var hits = this.attachedSurface.filter(function (_ref) {
-                var _canvas = _ref.canvas;
-                return _canvas === canvas;
+                var _div = _ref.div;
+                return _div === div;
             });
-            if (hits.length !== 0) throw new Error("ReferenceError: this HTMLCanvasElement is already attached");
+            if (hits.length !== 0) throw new Error("ReferenceError: this HTMLDivElement is already attached");
             if (scopeId < 0) {
                 throw new Error("TypeError: scopeId needs more than 0, but:" + scopeId);
             }
@@ -14269,21 +14276,21 @@ var Shell = (function (_EventEmitter) {
                 console.warn("surfaceId:", surfaceId, "is not defined");
                 return null;
             }
-            var srf = new _Surface2["default"](canvas, scopeId, _surfaceId, this.surfaceTree);
+            var srf = new _Surface2["default"](div, scopeId, _surfaceId, this.surfaceTree);
             srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
             srf.updateBind(this.bindgroup); // 現在の着せ替え設定の反映
             srf.on("mouse", function (ev) {
                 _this9.emit("mouse", ev); // detachSurfaceで消える
             });
-            this.attachedSurface.push({ canvas: canvas, surface: srf });
+            this.attachedSurface.push({ div: div, surface: srf });
             return srf;
         }
     }, {
         key: "detachSurface",
-        value: function detachSurface(canvas) {
+        value: function detachSurface(div) {
             var hits = this.attachedSurface.filter(function (_ref2) {
-                var _canvas = _ref2.canvas;
-                return _canvas === canvas;
+                var _div = _ref2.div;
+                return _div === div;
             });
             if (hits.length === 0) return;
             hits[0].surface.destructor(); // srf.onのリスナはここで消される
@@ -14293,7 +14300,7 @@ var Shell = (function (_EventEmitter) {
         key: "unload",
         value: function unload() {
             this.attachedSurface.forEach(function (_ref3) {
-                var canvas = _ref3.canvas;
+                var div = _ref3.div;
                 var surface = _ref3.surface;
 
                 surface.destructor();
@@ -14332,7 +14339,7 @@ var Shell = (function (_EventEmitter) {
             this.bindgroup[scopeId][bindgroupId] = true;
             this.attachedSurface.forEach(function (_ref4) {
                 var srf = _ref4.surface;
-                var canvas = _ref4.canvas;
+                var div = _ref4.div;
 
                 srf.updateBind(_this10.bindgroup);
             });
@@ -14351,7 +14358,7 @@ var Shell = (function (_EventEmitter) {
             this.bindgroup[scopeId][bindgroupId] = false;
             this.attachedSurface.forEach(function (_ref5) {
                 var srf = _ref5.surface;
-                var canvas = _ref5.canvas;
+                var div = _ref5.div;
 
                 srf.updateBind(_this11.bindgroup);
             });
@@ -14363,7 +14370,7 @@ var Shell = (function (_EventEmitter) {
         value: function render() {
             this.attachedSurface.forEach(function (_ref6) {
                 var srf = _ref6.surface;
-                var canvas = _ref6.canvas;
+                var div = _ref6.div;
 
                 srf.render();
             });
@@ -14376,7 +14383,7 @@ var Shell = (function (_EventEmitter) {
             this.enableRegion = true;
             this.attachedSurface.forEach(function (_ref7) {
                 var srf = _ref7.surface;
-                var canvas = _ref7.canvas;
+                var div = _ref7.div;
 
                 srf.enableRegionDraw = true;
             });
@@ -14390,7 +14397,7 @@ var Shell = (function (_EventEmitter) {
             this.enableRegion = false;
             this.attachedSurface.forEach(function (_ref8) {
                 var srf = _ref8.surface;
-                var canvas = _ref8.canvas;
+                var div = _ref8.div;
 
                 srf.enableRegionDraw = false;
             });
@@ -14403,7 +14410,7 @@ var Shell = (function (_EventEmitter) {
 
 exports["default"] = Shell;
 module.exports = exports["default"];
-},{"./Surface":14,"./SurfaceRender":15,"./SurfaceUtil":16,"eventemitter3":9,"surfaces_txt2yaml":56}],14:[function(require,module,exports){
+},{"./Surface":14,"./SurfaceRender":15,"./SurfaceUtil":16,"eventemitter3":9,"jquery":25,"surfaces_txt2yaml":56}],14:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
 "use strict";
 
@@ -14443,24 +14450,23 @@ var _jquery = require("jquery");
 
 var _jquery2 = _interopRequireDefault(_jquery);
 
-self["$"] = _jquery2["default"];
-self["jQuery"] = _jquery2["default"];
-
 var Surface = (function (_EventEmitter) {
     _inherits(Surface, _EventEmitter);
 
-    function Surface(canvas, scopeId, surfaceId, surfaceTree) {
+    function Surface(div, scopeId, surfaceId, surfaceTree) {
         var _this = this;
 
         _classCallCheck(this, Surface);
 
         _get(Object.getPrototypeOf(Surface.prototype), "constructor", this).call(this);
-        this.element = canvas;
+        this.element = div;
         this.scopeId = scopeId;
         this.surfaceId = surfaceId;
-        this.width = 0;
-        this.height = 0;
-        this.ctx = canvas.getContext("2d");
+        this.cnv = SurfaceUtil.createCanvas();
+        this.ctx = this.cnv.getContext("2d");
+        this.element.appendChild(this.cnv);
+        (0, _jquery2["default"])(this.element).css("position", "relative");
+        (0, _jquery2["default"])(this.cnv).css("position", "absolute");
         this.position = "fixed";
         this.surfaceTree = surfaceTree;
         this.surfaceNode = this.surfaceTree[surfaceId];
@@ -14483,6 +14489,7 @@ var Surface = (function (_EventEmitter) {
     _createClass(Surface, [{
         key: "destructor",
         value: function destructor() {
+            (0, _jquery2["default"])(this.element).children().remove();
             this.destructors.forEach(function (fn) {
                 return fn();
             });
@@ -14521,6 +14528,8 @@ var Surface = (function (_EventEmitter) {
                 var left = _$$offset.left;
                 var top = _$$offset.top;
 
+                // body直下 fixed だけにすべきかうーむ
+
                 var _ref = _this2.position !== "fixed" ? [pageX, pageY] : [clientX, clientY];
 
                 var _ref2 = _slicedToArray(_ref, 2);
@@ -14535,9 +14544,11 @@ var Surface = (function (_EventEmitter) {
                 var _left = _ref32[0];
                 var _top = _ref32[1];
 
-                var offsetX = baseX - _left; //canvas左上からのx座標
-                var offsetY = baseY - _top; //canvas左上からのy座標
-                var hit = SurfaceUtil.getRegion(_this2.element, _this2.surfaceNode, offsetX, offsetY); //透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
+                var basePosY = parseInt((0, _jquery2["default"])(_this2.cnv).css("top"), 10); // overlayでのずれた分を
+                var basePosX = parseInt((0, _jquery2["default"])(_this2.cnv).css("left"), 10); // とってくる
+                var offsetX = baseX - _left - basePosX; //canvas左上からのx座標
+                var offsetY = baseY - _top - basePosY; //canvas左上からのy座標
+                var hit = SurfaceUtil.getRegion(_this2.cnv, _this2.surfaceNode, offsetX, offsetY); //透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
                 var custom = {
                     "type": type,
                     "offsetX": offsetX | 0,
@@ -14922,9 +14933,11 @@ var Surface = (function (_EventEmitter) {
                 bufRender.ctx.fillText("" + this.surfaceId, 5, 10); // surfaceIdを描画
                 bufRender.drawRegions(this.surfaceNode.collisions);
             }
-            SurfaceUtil.init(this.element, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
-            this.width = this.element.width;
-            this.height = this.element.height;
+            SurfaceUtil.init(this.cnv, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
+            (0, _jquery2["default"])(this.element).width(bufRender.baseWidth); //this.cnv.width - bufRender.basePosX);
+            (0, _jquery2["default"])(this.element).height(bufRender.baseHeight); //this.cnv.height - bufRender.basePosY);
+            (0, _jquery2["default"])(this.cnv).css("top", -bufRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
+            (0, _jquery2["default"])(this.cnv).css("left", -bufRender.basePosX);
         }
     }]);
 
@@ -14964,6 +14977,8 @@ var SurfaceRender = (function () {
         this.ctx = this.cnv.getContext("2d");
         this.basePosX = 0;
         this.basePosY = 0;
+        this.baseWidth = 0;
+        this.baseHeight = 0;
         this.elements = [];
     }
 
@@ -15071,7 +15086,10 @@ var SurfaceRender = (function () {
     }, {
         key: "base",
         value: function base(part) {
+            if ($(part.cnv).attr("data-shell-dummy") != null) return;
             this.elements.push({ method: "base", args: [part] });
+            this.baseWidth = part.cnv.width;
+            this.baseHeight = part.cnv.height;
             SurfaceUtil.init(this.cnv, this.ctx, part.cnv);
         }
 
@@ -15080,6 +15098,10 @@ var SurfaceRender = (function () {
     }, {
         key: "overlay",
         value: function overlay(part, x, y) {
+            if ($(part.cnv).attr("data-shell-dummy") != null) return;
+            if (this.elements.length === 0) {
+                return this.base(part);
+            }
             this.elements.push({ method: "overlay", args: [part, x, y] });
             // baseのcanvasを拡大するためのキャッシュ
             var tmp = SurfaceUtil.copy(this.cnv);
@@ -15210,15 +15232,19 @@ var SurfaceRender = (function () {
     }, {
         key: "init",
         value: function init(srfCnv) {
+            console.warn("SurfaceRender#init is deprecated");
             this.elements.push({ method: "init", args: [srfCnv] });
+            this.baseWidth = srfCnv.cnv.width;
+            this.baseHeight = srfCnv.cnv.height;
             SurfaceUtil.init(this.cnv, this.ctx, srfCnv.cnv);
         }
     }, {
         key: "initImageData",
         value: function initImageData(width, height, data) {
+            console.warn("SurfaceRender#initImageData is deprecated");
             this.elements.push({ method: "initImageData", args: [width, height, data] });
-            this.cnv.width = width;
-            this.cnv.height = height;
+            this.baseWidth = this.cnv.width = width;
+            this.baseHeight = this.cnv.height = height;
             var imgdata = this.ctx.getImageData(0, 0, width, height);
             imgdata.data.set(data);
             this.ctx.putImageData(imgdata, 0, 0);
@@ -15296,6 +15322,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
 
+exports.createSurfaceCanvasDummy = createSurfaceCanvasDummy;
 exports.createSurfaceCanvasFromURL = createSurfaceCanvasFromURL;
 exports.createSurfaceCanvasFromArrayBuffer = createSurfaceCanvasFromArrayBuffer;
 exports.init = init;
@@ -15328,6 +15355,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
 var _encodingJapanese = require("encoding-japanese");
 
 var _encodingJapanese2 = _interopRequireDefault(_encodingJapanese);
+
+function createSurfaceCanvasDummy() {
+    var cnv = createCanvas();
+    $(cnv).attr("data-shell-dummy", "1");
+    return { cnv: cnv, img: null };
+}
 
 function createSurfaceCanvasFromURL(url) {
     return fetchArrayBuffer(url).then(createSurfaceCanvasFromArrayBuffer);
@@ -15743,9 +15776,551 @@ var Shell = _Shell3["default"];
 exports.Shell = Shell;
 },{"./Shell":13,"./Surface":14,"./SurfaceRender":15,"./SurfaceUtil":16}],18:[function(require,module,exports){
 arguments[4][13][0].apply(exports,arguments)
-},{"./Surface":19,"./SurfaceRender":20,"./SurfaceUtil":21,"dup":13,"eventemitter3":9,"surfaces_txt2yaml":56}],19:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"./SurfaceRender":20,"./SurfaceUtil":21,"dup":14,"eventemitter3":9,"jquery":25}],20:[function(require,module,exports){
+},{"./Surface":19,"./SurfaceRender":20,"./SurfaceUtil":21,"dup":13,"eventemitter3":9,"jquery":25,"surfaces_txt2yaml":56}],19:[function(require,module,exports){
+/// <reference path="../typings/tsd.d.ts"/>
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj["default"] = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var _SurfaceRender = require("./SurfaceRender");
+
+var _SurfaceRender2 = _interopRequireDefault(_SurfaceRender);
+
+var _SurfaceUtil = require("./SurfaceUtil");
+
+var SurfaceUtil = _interopRequireWildcard(_SurfaceUtil);
+
+var _eventemitter3 = require("eventemitter3");
+
+var _eventemitter32 = _interopRequireDefault(_eventemitter3);
+
+var _jquery = require("jquery");
+
+var _jquery2 = _interopRequireDefault(_jquery);
+
+var Surface = (function (_EventEmitter) {
+    _inherits(Surface, _EventEmitter);
+
+    function Surface(div, scopeId, surfaceId, surfaceTree) {
+        var _this = this;
+
+        _classCallCheck(this, Surface);
+
+        _get(Object.getPrototypeOf(Surface.prototype), "constructor", this).call(this);
+        this.element = div;
+        this.scopeId = scopeId;
+        this.surfaceId = surfaceId;
+        this.cnv = SurfaceUtil.createCanvas();
+        this.ctx = this.cnv.getContext("2d");
+        this.element.appendChild(this.cnv);
+        (0, _jquery2["default"])(this.element).css("position", "relative");
+        (0, _jquery2["default"])(this.cnv).css("position", "absolute");
+        this.position = "fixed";
+        this.surfaceTree = surfaceTree;
+        this.surfaceNode = this.surfaceTree[surfaceId];
+        this.bufferCanvas = SurfaceUtil.createCanvas();
+        this.talkCount = 0;
+        this.talkCounts = {};
+        this.animationsQueue = {};
+        this.backgrounds = [];
+        this.layers = [];
+        this.stopFlags = {};
+        this.destructed = false;
+        this.destructors = [];
+        this.initMouseEvent();
+        this.surfaceNode.animations.forEach(function (anim) {
+            _this.initAnimation(anim);
+        });
+        this.render();
+    }
+
+    _createClass(Surface, [{
+        key: "destructor",
+        value: function destructor() {
+            (0, _jquery2["default"])(this.element).children().remove();
+            this.destructors.forEach(function (fn) {
+                return fn();
+            });
+            this.element = null;
+            this.surfaceNode = null;
+            this.element = null;
+            this.layers = [];
+            this.animationsQueue = {};
+            this.talkCounts = {};
+            this.destructors = [];
+            this.removeAllListeners(null);
+            this.destructed = true;
+        }
+    }, {
+        key: "initMouseEvent",
+        value: function initMouseEvent() {
+            var _this2 = this;
+
+            var $elm = (0, _jquery2["default"])(this.element);
+
+            var tid = 0;
+            var touchCount = 0;
+            var touchStartTime = 0;
+            var tuples = [];
+            var processMouseEvent = function processMouseEvent(ev, type) {
+                console.log(ev, type);
+                (0, _jquery2["default"])(ev.target).css({ "cursor": "default" }); //これDOMアクセスして重いのでは←mousemoveタイミングで他のライブラリでもっとDOMアクセスしてるし気になるなら計測しろ
+
+                var _SurfaceUtil$getEventPosition = SurfaceUtil.getEventPosition(ev);
+
+                var pageX = _SurfaceUtil$getEventPosition.pageX;
+                var pageY = _SurfaceUtil$getEventPosition.pageY;
+                var clientX = _SurfaceUtil$getEventPosition.clientX;
+                var clientY = _SurfaceUtil$getEventPosition.clientY;
+
+                var _$$offset = (0, _jquery2["default"])(ev.target).offset();
+
+                var left = _$$offset.left;
+                var top = _$$offset.top;
+
+                // body直下 fixed だけにすべきかうーむ
+
+                var _ref = _this2.position !== "fixed" ? [pageX, pageY] : [clientX, clientY];
+
+                var _ref2 = _slicedToArray(_ref, 2);
+
+                var baseX = _ref2[0];
+                var baseY = _ref2[1];
+
+                var _ref3 = _this2.position !== "fixed" ? [left, top] : [left - window.scrollX, top - window.scrollY];
+
+                var _ref32 = _slicedToArray(_ref3, 2);
+
+                var _left = _ref32[0];
+                var _top = _ref32[1];
+
+                var basePosY = parseInt((0, _jquery2["default"])(_this2.cnv).css("top"), 10); // overlayでのずれた分を
+                var basePosX = parseInt((0, _jquery2["default"])(_this2.cnv).css("left"), 10); // とってくる
+                var offsetX = baseX - _left - basePosX; //canvas左上からのx座標
+                var offsetY = baseY - _top - basePosY; //canvas左上からのy座標
+                var hit = SurfaceUtil.getRegion(_this2.cnv, _this2.surfaceNode, offsetX, offsetY); //透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
+                var custom = {
+                    "type": type,
+                    "offsetX": offsetX | 0,
+                    "offsetY": offsetY | 0,
+                    "wheel": 0,
+                    "scopeId": _this2.scopeId,
+                    "region": hit.name,
+                    "button": ev.button === 2 ? 1 : 0,
+                    "transparency": !hit.isHit,
+                    "event": ev }; // onした先でpriventDefaultとかstopPropagationとかしたいので
+                if (hit.name !== "") {
+                    ev.preventDefault();
+                    if (/^touch/.test(ev.type)) {
+                        ev.stopPropagation();
+                    }
+                    // 当たり判定をゆびで撫でてる時はサーフェスのドラッグをできないようにする
+                    // ために親要素にイベント伝えない
+                    (0, _jquery2["default"])(ev.target).css({ "cursor": "pointer" }); //当たり判定でマウスポインタを指に
+                }
+                _this2.emit("mouse", custom);
+            }; // processMouseEventここまで
+            tuples.push(["contextmenu", function (ev) {
+                return processMouseEvent(ev, "mouseclick");
+            }]);
+            tuples.push(["click", function (ev) {
+                return processMouseEvent(ev, "mouseclick");
+            }]);
+            tuples.push(["dblclick", function (ev) {
+                return processMouseEvent(ev, "mousedblclick");
+            }]);
+            tuples.push(["mousedown", function (ev) {
+                return processMouseEvent(ev, "mousedown");
+            }]);
+            tuples.push(["mousemove", function (ev) {
+                return processMouseEvent(ev, "mousemove");
+            }]);
+            tuples.push(["mouseup", function (ev) {
+                return processMouseEvent(ev, "mouseup");
+            }]);
+            tuples.push(["touchmove", function (ev) {
+                return processMouseEvent(ev, "mousemove");
+            }]);
+            tuples.push(["touchend", function (ev) {
+                processMouseEvent(ev, "mouseup");
+                processMouseEvent(ev, "mouseclick");
+                if (Date.now() - touchStartTime < 500 && touchCount % 2 === 0) {
+                    processMouseEvent(ev, "mousedblclick");
+                } // ダブルタップ->ダブルクリック変換
+            }]);
+            tuples.push(["touchstart", function (ev) {
+                touchCount++;
+                touchStartTime = Date.now();
+                processMouseEvent(ev, "mousedown");
+                clearTimeout(tid);
+                tid = setTimeout(function () {
+                    return touchCount = 0;
+                }, 500);
+            }]);
+            tuples.forEach(function (_ref4) {
+                var _ref42 = _slicedToArray(_ref4, 2);
+
+                var ev = _ref42[0];
+                var handler = _ref42[1];
+                return $elm.on(ev, handler);
+            }); // イベント登録
+            $(this.element).on("click", function(ev){console.log(ev)})
+            $(this.cnv).on("click", function(ev){console.log(ev)})
+            var that = this;
+            console.log(")))))))))))ASKHKJASH", this)
+            this.destructors.push(function () {
+              console.log("logIJAOFIJFOJ", that)
+                tuples.forEach(function (_ref5) {
+                    var _ref52 = _slicedToArray(_ref5, 2);
+
+                    var ev = _ref52[0];
+                    var handler = _ref52[1];
+                    return $elm.off(ev, handler);
+                }); // イベント解除
+            });
+        }
+    }, {
+        key: "initAnimation",
+        value: function initAnimation(anim) {
+            var _this3 = this;
+
+            var animId = anim.is;
+            var interval = anim.interval;
+            var patterns = anim.patterns;
+            //isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
+
+            var _interval$split = interval.split(",");
+
+            var _interval$split2 = _toArray(_interval$split);
+
+            var _interval = _interval$split2[0];
+
+            var rest = _interval$split2.slice(1);
+
+            if (rest.length > 1) {
+                var n = Number(rest[0]);
+                if (!isFinite(n)) {
+                    console.warn("initAnimation > TypeError: surface", this.surfaceId, "animation", anim.is, "interval", interval, " argument is not finite number");
+                    n = 4;
+                }
+            } // rarelyにfaileback
+            // アニメーション描画タイミングの登録
+            var fn = function fn(nextTick) {
+                if (!_this3.destructed && !_this3.stopFlags[animId]) {
+                    _this3.play(animId, nextTick);
+                }
+            };
+            switch (_interval) {
+                // nextTickを呼ぶともう一回random
+                case "sometimes":
+                    SurfaceUtil.random(fn, 2);
+                    break;
+                case "rarely":
+                    SurfaceUtil.random(fn, 4);
+                    break;
+                case "random":
+                    SurfaceUtil.random(fn, n);
+                    break;
+                case "periodic":
+                    SurfaceUtil.periodic(fn, n);
+                    break;
+                case "always":
+                    SurfaceUtil.always(fn);
+                    break;
+                case "runonce":
+                    this.play(animId);
+                    break;
+                case "never":
+                    break;
+                case "yen-e":
+                    break;
+                case "talk":
+                    this.talkCounts[animId] = n;
+                    break;
+                default:
+                    if (/^bind/.test(interval)) {
+                        this.initBind(anim); // bindのことはinitBindにまるなげ
+                        break;
+                    }
+                    console.warn("Surface#initAnimation > unkown SERIKO or MAYURA interval:", interval, anim);
+            }
+        }
+    }, {
+        key: "initBind",
+        value: function initBind(anim) {
+            var _this4 = this;
+
+            // bind+somtimesみたいなやつを分解
+            var is = anim.is;
+            var interval = anim.interval;
+            var patterns = anim.patterns;
+            var option = anim.option;
+
+            var _interval$split3 = interval.split("+");
+
+            var _interval$split32 = _toArray(_interval$split3);
+
+            var _bind = _interval$split32[0];
+
+            var intervals = _interval$split32.slice(1);
+
+            if (intervals.length > 0) return;
+            intervals.forEach(function (interval) {
+                //sometimesみたいのはinitAnimationに丸投げ
+                _this4.initAnimation({ interval: interval, is: is, patterns: patterns, option: option });
+            });
+            var option = anim.option;
+
+            if (option === "background") {
+                this.backgrounds[is] = patterns[patterns.length - 1];
+            } else {
+                this.layers[is] = patterns[patterns.length - 1];
+            }
+            this.render();
+        }
+    }, {
+        key: "updateBind",
+        value: function updateBind(bindgroup) {
+            var _this5 = this;
+
+            // Shell.tsから呼ばれるためpublic
+            // Shell#bind,Shell#unbindで発動
+            // shell.bindgroup[scopeId][bindgroupId] が変更された時に呼ばれる
+            this.surfaceNode.animations.forEach(function (anim) {
+                //このサーフェスに定義されたアニメーションの中でintervalがbindなものｗ探す
+                var is = anim.is;
+                var interval = anim.interval;
+                var patterns = anim.patterns;
+                var option = anim.option;
+
+                if (bindgroup[_this5.scopeId] == null) return;
+                if (bindgroup[_this5.scopeId][is] == null) return;
+                if (!/^bind/.test(interval)) return;
+                if (bindgroup[_this5.scopeId][is] === true) {
+                    //現在の設定が着せ替え有効ならばinitBindにまるなげ
+                    _this5.initBind(anim);
+                } else {
+                    //現在の合成レイヤから着せ替えレイヤを削除
+                    delete _this5.layers[is];
+                    if (option === "background") {
+                        delete _this5.backgrounds[is];
+                    } else {
+                        delete _this5.layers[is];
+                    }
+                    _this5.render();
+                }
+            });
+        }
+
+        // アニメーションタイミングループの開始
+    }, {
+        key: "begin",
+        value: function begin(animationId) {
+            this.stopFlags[animationId] = false;
+            var anim = this.surfaceNode.animations[animationId];
+            this.initAnimation(anim);
+        }
+
+        // アニメーションタイミングループの開始
+    }, {
+        key: "end",
+        value: function end(animationId) {
+            this.stopFlags[animationId] = true;
+        }
+    }, {
+        key: "endAll",
+        value: function endAll() {
+            var _this6 = this;
+
+            Object.keys(this.stopFlags).forEach(function (key) {
+                _this6.stopFlags[key] = false;
+            });
+        }
+
+        // アニメーション再生
+    }, {
+        key: "play",
+        value: function play(animationId, callback) {
+            var _this7 = this;
+
+            if (this.destructed) return;
+            var anims = this.surfaceNode.animations;
+            var anim = this.surfaceNode.animations[animationId];
+            if (anim == null) return void setTimeout(callback); // そんなアニメーションはない
+            this.animationsQueue[animationId] = anim.patterns.map(function (pattern, i) {
+                return function () {
+                    var surface = pattern.surface;
+                    var wait = pattern.wait;
+                    var type = pattern.type;
+                    var x = pattern.x;
+                    var y = pattern.y;
+                    var animation_ids = pattern.animation_ids;
+
+                    switch (type) {
+                        case "start":
+                            _this7.play(animation_ids[0], nextTick);
+                            return;
+                        case "stop":
+                            _this7.stop(animation_ids[0]);
+                            setTimeout(nextTick);
+                            return;
+                        case "alternativestart":
+                            _this7.play(SurfaceUtil.choice(animation_ids), nextTick);
+                            return;
+                        case "alternativestop":
+                            _this7.stop(SurfaceUtil.choice(animation_ids));
+                            setTimeout(nextTick);
+                            return;
+                    }
+
+                    var _ref6 = /(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""];
+
+                    var _ref62 = _slicedToArray(_ref6, 3);
+
+                    var __ = _ref62[0];
+                    var a = _ref62[1];
+                    var b = _ref62[2];
+
+                    var _wait = isFinite(Number(b)) ? SurfaceUtil.randomRange(Number(a), Number(b)) : Number(a);
+                    setTimeout(function () {
+                        if (anim.option === "background") {
+                            _this7.backgrounds[animationId] = pattern;
+                        } else {
+                            _this7.layers[animationId] = pattern;
+                        }
+                        _this7.render();
+                        nextTick();
+                    }, _wait);
+                };
+            });
+            var nextTick = function nextTick() {
+                if (_this7.destructed) return;
+                var next = _this7.animationsQueue[animationId].shift();
+                if (!(next instanceof Function)) {
+                    // stop pattern animation.
+                    _this7.animationsQueue[animationId] = [];
+                    setTimeout(callback);
+                } else {
+                    next();
+                }
+            };
+            if (this.animationsQueue[animationId][0] instanceof Function) {
+                nextTick();
+            }
+        }
+    }, {
+        key: "stop",
+        value: function stop(animationId) {
+            this.animationsQueue[animationId] = []; // アニメーションキューを破棄
+        }
+    }, {
+        key: "talk",
+        value: function talk() {
+            var _this8 = this;
+
+            var animations = this.surfaceNode.animations;
+            this.talkCount++;
+            var hits = animations.filter(function (anim) {
+                return (/^talk/.test(anim.interval) && _this8.talkCount % _this8.talkCounts[anim.is] === 0
+                );
+            });
+            hits.forEach(function (anim) {
+                _this8.play(anim.is);
+            });
+        }
+    }, {
+        key: "yenE",
+        value: function yenE() {
+            var _this9 = this;
+
+            var anims = this.surfaceNode.animations;
+            anims.forEach(function (anim) {
+                // この条件式よくわからない
+                if (anim.interval === "yen-e" && _this9.talkCount % _this9.talkCounts[anim.is] === 0) {
+                    _this9.play(anim.is);
+                }
+            });
+        }
+    }, {
+        key: "composeAnimationPatterns",
+        value: function composeAnimationPatterns(layers) {
+            var _this10 = this;
+
+            var renderLayers = [];
+            layers.forEach(function (pattern, i) {
+                var surface = pattern.surface;
+                var type = pattern.type;
+                var x = pattern.x;
+                var y = pattern.y;
+
+                if (surface < 0) return; // idが-1つまり非表示指定
+                var srf = _this10.surfaceTree[surface]; // 該当のサーフェス
+                if (srf == null) {
+                    console.warn("Surface#render: surface id " + surface + " is not defined.", pattern);
+                    console.warn(surface, Object.keys(_this10.surfaceTree));
+                    return; // 対象サーフェスがないのでスキップ
+                }
+                // 対象サーフェスを構築描画する
+                var base = srf.base;
+                var elements = srf.elements;
+                var collisions = srf.collisions;
+                var animations = srf.animations;
+
+                var rndr = new _SurfaceRender2["default"](); // 対象サーフェスのbaseサーフェス(surface*.png)の上に
+                rndr.base(base);
+                rndr.composeElements(elements); // elementを合成する
+                renderLayers.push({ type: type, x: x, y: y, canvas: rndr.getSurfaceCanvas() });
+            });
+            return renderLayers;
+        }
+    }, {
+        key: "render",
+        value: function render() {
+            if (this.destructed) return;
+            var backgrounds = this.composeAnimationPatterns(this.backgrounds);
+            var base = this.surfaceNode.base;
+            var elements = this.surfaceNode.elements;
+            var fronts = this.composeAnimationPatterns(this.layers);
+            var renderLayers = [].concat(backgrounds, [{ type: "overlay", canvas: base, x: 0, y: 0 }], elements, fronts);
+            var bufRender = new _SurfaceRender2["default"](); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
+            bufRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
+            if (this.enableRegionDraw) {
+                bufRender.ctx.fillText("" + this.surfaceId, 5, 10); // surfaceIdを描画
+                bufRender.drawRegions(this.surfaceNode.collisions);
+            }
+            SurfaceUtil.init(this.cnv, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
+            (0, _jquery2["default"])(this.element).width(bufRender.baseWidth); //this.cnv.width - bufRender.basePosX);
+            (0, _jquery2["default"])(this.element).height(bufRender.baseHeight); //this.cnv.height - bufRender.basePosY);
+            (0, _jquery2["default"])(this.cnv).css("top", -bufRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
+            (0, _jquery2["default"])(this.cnv).css("left", -bufRender.basePosX);
+        }
+    }]);
+
+    return Surface;
+})(_eventemitter32["default"]);
+
+exports["default"] = Surface;
+module.exports = exports["default"];
+
+},{"./SurfaceRender":20,"./SurfaceUtil":21,"eventemitter3":9,"jquery":25}],20:[function(require,module,exports){
 arguments[4][15][0].apply(exports,arguments)
 },{"./SurfaceUtil":21,"dup":15}],21:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)

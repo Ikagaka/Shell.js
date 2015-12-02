@@ -36,7 +36,7 @@ class NamedManager extends EventEmitter
       .surface {
         user-select: none;
       }
-      .surfaceCanvas {
+      .surface canvas {
         user-select: none;
         pointer-events: auto;
       }

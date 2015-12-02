@@ -33,12 +33,12 @@ class Named extends EventEmitter
       onmouseup = => $target = null; scopeId = -1
       onmousemove = (ev)=> # https://github.com/Ikagaka/NamedManager.js/issues/16 によりbodyからキャプチャ
         if !$target? then return
-        $surfaceCanvas = $(@scopes[scopeId].element).find(".surfaceCanvas")
+        $element = $(@scopes[scopeId].element)
         # この座標はbody要素直下のfixed座標用
         {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev)
         # ブラウザのユーザから見えてる部分の大きさを取得
-        right  = window.innerWidth  - clientX - ($surfaceCanvas.width()  - relLeft)
-        bottom = window.innerHeight - clientY - ($surfaceCanvas.height() - relTop)
+        right  = window.innerWidth  - clientX - ($element.width()  - relLeft)
+        bottom = window.innerHeight - clientY - ($element.height() - relTop)
         alignment = @shell.descript["seriko.alignmenttodesktop"] || @shell.descript["#{SurfaceUtil.scope(scopeId)}.alignmenttodesktop"] || "bottom"
         switch alignment
           when "free" then break;

@@ -6,6 +6,7 @@
 Promise.all([
   NarLoader.loadFromURL("../nar/origin.nar"),
   NarLoader.loadFromURL("../nar/mobilemaster.nar")
+  //NarLoader.loadFromURL("../nar/ku-ver06.1.nar")
   //NarLoader.loadFromURL("../nar/toromi-nuru.nar")
 ]).then(function(tmp){
   var balloonNDir = tmp[0];
