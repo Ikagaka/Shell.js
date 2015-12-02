@@ -118,3 +118,102 @@ QUnit.test('surface0', function (assert) {
         return done();
     });
 });
+QUnit.test('surface overlay', function (assert) {
+    var done;
+    done = assert.async();
+    return Promise.all([SurfaceUtil.createSurfaceCanvasFromURL('src/surface0.png')]).then(function (arg) {
+        var base, frame, srf, surfaceTree;
+        base = arg[0];
+        surfaceTree = {
+            0: {
+                base: base,
+                elements: [],
+                collisions: [],
+                animations: [{
+                        is: 0,
+                        interval: 'always',
+                        patterns: [
+                            {
+                                animation_ids: [],
+                                type: 'overlay',
+                                surface: 0,
+                                wait: '50',
+                                x: 10,
+                                y: 10
+                            },
+                            {
+                                animation_ids: [],
+                                type: 'overlay',
+                                surface: 0,
+                                wait: 50,
+                                x: 20,
+                                y: 0
+                            },
+                            {
+                                animation_ids: [],
+                                type: 'overlay',
+                                surface: 0,
+                                wait: 50,
+                                x: 10,
+                                y: -10
+                            },
+                            {
+                                animation_ids: [],
+                                type: 'overlay',
+                                surface: 0,
+                                wait: 50,
+                                x: 0,
+                                y: -20
+                            },
+                            {
+                                animation_ids: [],
+                                type: 'overlay',
+                                surface: 0,
+                                wait: 50,
+                                x: -10,
+                                y: -10
+                            },
+                            {
+                                animation_ids: [],
+                                type: 'overlay',
+                                surface: 0,
+                                wait: 50,
+                                x: -20,
+                                y: 0
+                            },
+                            {
+                                animation_ids: [],
+                                type: 'overlay',
+                                surface: 0,
+                                wait: 50,
+                                x: -10,
+                                y: 10
+                            },
+                            {
+                                animation_ids: [],
+                                type: 'overlay',
+                                surface: 0,
+                                wait: 50,
+                                x: 0,
+                                y: 20
+                            }
+                        ]
+                    }]
+            }
+        };
+        srf = new Surface(document.createElement('div'), 0, 0, surfaceTree);
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok($(srf.element).width() === base.cnv.width)',
+            filepath: 'test/testSurface.js',
+            line: 194
+        }));
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok($(srf.element).height() === base.cnv.height)',
+            filepath: 'test/testSurface.js',
+            line: 195
+        }));
+        frame = craetePictureFrame('overlay テスト');
+        frame.add(srf.element, 'マリちゃんのセルフエグザイル');
+        return done();
+    });
+});

@@ -359,6 +359,7 @@ var Shell = (function (_EventEmitter) {
         }
 
         // this.directoryからfilenameなサーフェスを探す。
+        // this.cacheCanvas からも探す。
         // あったらついでにpnaも探して合成する
     }, {
         key: "getPNGFromDirectory",
@@ -609,6 +610,7 @@ var Surface = (function (_EventEmitter) {
         this.ctx = this.cnv.getContext("2d");
         this.element.appendChild(this.cnv);
         (0, _jquery2["default"])(this.element).css("position", "relative");
+        (0, _jquery2["default"])(this.element).css("display", "inline-block");
         (0, _jquery2["default"])(this.cnv).css("position", "absolute");
         this.position = "fixed";
         this.surfaceTree = surfaceTree;

@@ -43,6 +43,7 @@ export default class Surface extends EventEmitter {
 
     this.element.appendChild(this.cnv);
     $(this.element).css("position", "relative");
+    $(this.element).css("display", "inline-block");
     $(this.cnv).css("position", "absolute");
 
     this.position = "fixed";

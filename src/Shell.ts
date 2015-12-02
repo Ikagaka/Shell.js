@@ -247,6 +247,7 @@ export default class Shell extends EventEmitter {
 
 
   // this.directoryからfilenameなサーフェスを探す。
+  // this.cacheCanvas からも探す。
   // あったらついでにpnaも探して合成する
   private getPNGFromDirectory(filename: string): Promise<SurfaceCanvas> {
     var cached_filename = SurfaceUtil.find(Object.keys(this.cacheCanvas), filename)[0] || "";

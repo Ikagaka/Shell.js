@@ -98,6 +98,96 @@ QUnit.test 'surface0', (assert) ->
     frame.add srf.element, "マリちゃんの\\0\\s[0]のまばたき"
     done()
 
+
+QUnit.test 'surface overlay', (assert) ->
+  done = assert.async()
+  Promise.all([
+    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
+  ]).then ([base])->
+    surfaceTree =
+      0:
+        base: base
+        elements: []
+        collisions: []
+        animations: [
+          {
+            is: 0
+            interval: "always"
+            patterns: [
+              {
+                animation_ids: []
+                type: "overlay"
+                surface: 0
+                wait: "50"
+                x: 10
+                y: 10
+              }
+              {
+                animation_ids: []
+                type: "overlay"
+                surface: 0
+                wait: 50
+                x: 20
+                y: 0
+              }
+              {
+                animation_ids: []
+                type: "overlay"
+                surface: 0
+                wait: 50
+                x: 10
+                y: -10
+              }
+              {
+                animation_ids: []
+                type: "overlay"
+                surface: 0
+                wait: 50
+                x: 0
+                y: -20
+              }
+              {
+                animation_ids: []
+                type: "overlay"
+                surface: 0
+                wait: 50
+                x: -10
+                y: -10
+              }
+              {
+                animation_ids: []
+                type: "overlay"
+                surface: 0
+                wait: 50
+                x: -20
+                y: 0
+              }
+              {
+                animation_ids: []
+                type: "overlay"
+                surface: 0
+                wait: 50
+                x: -10
+                y: 10
+              }
+              {
+                animation_ids: []
+                type: "overlay"
+                surface: 0
+                wait: 50
+                x: 0
+                y: 20
+              }
+            ]
+          }
+        ]
+    srf = new Surface(document.createElement("div"), 0, 0, surfaceTree)
+    assert.ok $(srf.element).width() is base.cnv.width
+    assert.ok $(srf.element).height() is base.cnv.height
+    frame = craetePictureFrame("overlay テスト")
+    frame.add srf.element, "マリちゃんのセルフエグザイル"
+    done()
+
 ###
 QUnit.test '不定形当たり判定', (assert) ->
 QUnit.test 'start.alternative', (assert) ->
