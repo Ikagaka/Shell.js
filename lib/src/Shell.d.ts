@@ -10,7 +10,7 @@ export default class Shell extends EventEmitter {
         [key: string]: string;
     };
     attachedSurface: {
-        canvas: HTMLCanvasElement;
+        div: HTMLDivElement;
         surface: Surface;
     }[];
     surfacesTxt: SurfacesTxt;
@@ -36,8 +36,8 @@ export default class Shell extends EventEmitter {
     private loadAnimations();
     private hasFile(filename);
     private getPNGFromDirectory(filename);
-    attachSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number | string): Surface;
-    detachSurface(canvas: HTMLCanvasElement): void;
+    attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number | string): Surface;
+    detachSurface(div: HTMLDivElement): void;
     unload(): void;
     private hasSurface(scopeId, surfaceId);
     bind(scopeId: number, bindgroupId: number): void;

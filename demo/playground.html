@@ -2,9 +2,16 @@
 <script src="../bower_components/jszip/dist/jszip.min.js"></script>
 <script src="../bower_components/narloader/NarLoader.js"></script>
 <script src="../dist/Shell.js"></script>
+<style media="screen">
+  #wrapper {
+    position: fixed;
+    bottom: 0px;
+    left: 300px;
+  }
+</style>
+<div id="wrapper"><div id="surface"></div></div>
 <fieldset>
 <legend>サーフィステストするページ</legend>
-<canvas id="surfaceCanvas" style="float:right;"></canvas>
 <p><label>nar: <input type="file" id="nar" /></label></p>
 <p><label>shell: <select name="shellId" id="shellId"></select></label></p>
 <p><label>scope: <input type="number" name="scopeId" id="scopeId" value="0" /></label></p>
@@ -34,7 +41,6 @@ function changeNar(nanikaDir){
   console.log(nanikaDir.files);
 
   var shelllist = nanikaDir.getDirectory("shell").listChildren();
-  console.log(shelllist)
   var $frag = $(document.createDocumentFragment());
   shelllist.forEach(function(shellId){
     $("<option />").val(shellId).text(shellId).appendTo($frag);
@@ -65,7 +71,7 @@ function changeShell(nanikaDir){
 
 
     var srf = null;
-    var cnv = $("#surfaceCanvas")[0];
+    var div = $("#surface")[0];
 
     $("#surfaceId").children().remove();
     var $frag = $(document.createDocumentFragment());
@@ -129,8 +135,8 @@ function changeShell(nanikaDir){
 
       console.log("scopeId:", scopeId, "surfaceId:", surfaceId);
 
-      shell.detachSurface(cnv);
-      srf = shell.attachSurface(cnv, Number(scopeId), Number(surfaceId));
+      shell.detachSurface(div);
+      srf = shell.attachSurface(div, Number(scopeId), Number(surfaceId));
       console.log(srf);
     }
   }).catch(function(err){

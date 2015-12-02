@@ -13,6 +13,8 @@ export default class SurfaceRender implements SurfaceCanvas {
   // overlayではみ出した際canvasのリサイズがされるがその時の補正値
   basePosX: number;
   basePosY: number;
+  baseWidth: number;
+  baseHeight: number;
 
   elements: {method: string, args:any[]}[]
 
@@ -25,6 +27,8 @@ export default class SurfaceRender implements SurfaceCanvas {
     this.ctx = this.cnv.getContext("2d");
     this.basePosX = 0;
     this.basePosY = 0;
+    this.baseWidth = 0;
+    this.baseHeight = 0;
     this.elements = [];
   }
 
@@ -96,13 +100,20 @@ export default class SurfaceRender implements SurfaceCanvas {
   //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
   //着せ替え・elementでも使用できる。
   base(part: SurfaceCanvas): void {
+    if($(part.cnv).attr("data-shell-dummy") != null) return;
     this.elements.push({method: "base", args:[part]});
+    this.baseWidth = part.cnv.width;
+    this.baseHeight = part.cnv.height;
     SurfaceUtil.init(this.cnv, this.ctx, part.cnv)
   }
 
   //下位レイヤにコマを重ねる。
   //着せ替え・elementでも使用できる。
   overlay(part: SurfaceCanvas, x: number, y: number): void {
+    if($(part.cnv).attr("data-shell-dummy") != null) return;
+    if(this.elements.length === 0){
+      return this.base(part);
+    }
     this.elements.push({method: "overlay", args:[part, x, y]});
     // baseのcanvasを拡大するためのキャッシュ
     var tmp = SurfaceUtil.copy(this.cnv);
@@ -216,14 +227,18 @@ export default class SurfaceRender implements SurfaceCanvas {
   }
 
   init(srfCnv: SurfaceCanvas): void {
+    console.warn("SurfaceRender#init is deprecated");
     this.elements.push({method: "init", args:[srfCnv]});
+    this.baseWidth = srfCnv.cnv.width;
+    this.baseHeight = srfCnv.cnv.height;
     SurfaceUtil.init(this.cnv, this.ctx, srfCnv.cnv);
   }
 
   initImageData(width: number, height: number, data: Uint8ClampedArray): void {
+    console.warn("SurfaceRender#initImageData is deprecated");
     this.elements.push({method: "initImageData", args:[width, height, data]});
-    this.cnv.width = width;
-    this.cnv.height = height;
+    this.baseWidth = this.cnv.width = width;
+    this.baseHeight = this.cnv.height = height;
     var imgdata = this.ctx.getImageData(0, 0, width, height);
     (<Uint8Array><any>imgdata.data).set(data);
     this.ctx.putImageData(imgdata, 0, 0);

@@ -1,5 +1,6 @@
 /// <reference path="../../typings/tsd.d.ts" />
-import { SurfaceTreeNode } from "./Interfaces";
+import { SurfaceTreeNode, SurfaceCanvas } from "./Interfaces";
+export declare function createSurfaceCanvasDummy(): SurfaceCanvas;
 export declare function createSurfaceCanvasFromURL(url: string): Promise<{
     img: HTMLImageElement;
     cnv: HTMLCanvasElement;

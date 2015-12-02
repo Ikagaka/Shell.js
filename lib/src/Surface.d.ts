@@ -2,13 +2,12 @@
 import { SurfaceTreeNode } from "./Interfaces";
 import EventEmitter from "eventemitter3";
 export default class Surface extends EventEmitter {
-    element: HTMLCanvasElement;
+    element: HTMLDivElement;
     scopeId: number;
     surfaceId: number;
     position: string;
-    width: number;
-    height: number;
     enableRegionDraw: boolean;
+    private cnv;
     private ctx;
     private surfaceNode;
     private bufferCanvas;
@@ -21,7 +20,7 @@ export default class Surface extends EventEmitter {
     private surfaceTree;
     private destructed;
     private destructors;
-    constructor(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number, surfaceTree: {
+    constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceTree: {
         [animationId: number]: SurfaceTreeNode;
     });
     destructor(): void;

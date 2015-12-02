@@ -6,6 +6,8 @@ export default class SurfaceRender implements SurfaceCanvas {
     img: HTMLImageElement;
     basePosX: number;
     basePosY: number;
+    baseWidth: number;
+    baseHeight: number;
     elements: {
         method: string;
         args: any[];

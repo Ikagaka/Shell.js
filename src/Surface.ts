@@ -6,19 +6,16 @@ import {SurfaceLayerObject, SurfaceTreeNode, SurfaceMouseEvent} from "./Interfac
 import EventEmitter from "eventemitter3";
 import $ from "jquery";
 
-self["$"] = $;
-self["jQuery"] = $;
 
 export default class Surface extends EventEmitter {
 
-  public element: HTMLCanvasElement;
+  public element: HTMLDivElement;
   public scopeId: number;
   public surfaceId: number;
   public position: string; // fixed|absolute
-  public width: number;
-  public height: number;
   public enableRegionDraw: boolean;
 
+  private cnv: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private surfaceNode: SurfaceTreeNode
   private bufferCanvas: HTMLCanvasElement; //チラツキを抑えるためのバッファ
@@ -35,15 +32,18 @@ export default class Surface extends EventEmitter {
   private destructed: boolean;
   private destructors: Function[]; // destructor実行時に実行される関数のリスト
 
-  constructor(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number, surfaceTree: { [animationId: number]: SurfaceTreeNode }) {
+  constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceTree: { [animationId: number]: SurfaceTreeNode }) {
     super();
 
-    this.element = canvas;
+    this.element = div;
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
-    this.width = 0;
-    this.height = 0;
-    this.ctx = canvas.getContext("2d");
+    this.cnv = SurfaceUtil.createCanvas();
+    this.ctx = this.cnv.getContext("2d");
+
+    this.element.appendChild(this.cnv);
+    $(this.element).css("position", "relative");
+    $(this.cnv).css("position", "absolute");
 
     this.position = "fixed";
     this.surfaceTree = surfaceTree;
@@ -66,6 +66,7 @@ export default class Surface extends EventEmitter {
   }
 
   public destructor(): void {
+    $(this.element).children().remove();
     this.destructors.forEach((fn)=> fn());
     this.element = null;
     this.surfaceNode = null;
@@ -88,11 +89,14 @@ export default class Surface extends EventEmitter {
       $(ev.target).css({"cursor": "default"});//これDOMアクセスして重いのでは←mousemoveタイミングで他のライブラリでもっとDOMアクセスしてるし気になるなら計測しろ
       var {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev);
       var {left, top} = $(ev.target).offset();
+      // body直下 fixed だけにすべきかうーむ
       var [baseX, baseY] = this.position !== "fixed" ? [pageX, pageY]: [clientX, clientY];
       var [_left, _top]  = this.position !== "fixed" ? [left,  top]  : [left - window.scrollX, top - window.scrollY];
-      var offsetX = baseX - _left;//canvas左上からのx座標
-      var offsetY = baseY - _top;//canvas左上からのy座標
-      var hit = SurfaceUtil.getRegion(this.element, this.surfaceNode, offsetX, offsetY);//透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
+      var basePosY = parseInt($(this.cnv).css("top"), 10);  // overlayでのずれた分を
+      var basePosX = parseInt($(this.cnv).css("left"), 10); // とってくる
+      var offsetX = baseX - _left - basePosX;//canvas左上からのx座標
+      var offsetY = baseY - _top  - basePosY;//canvas左上からのy座標
+      var hit = SurfaceUtil.getRegion(this.cnv, this.surfaceNode, offsetX, offsetY);//透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
       var custom: SurfaceMouseEvent = {
         "type": type,
         "offsetX": offsetX|0,//float->int
@@ -338,8 +342,11 @@ export default class Surface extends EventEmitter {
       bufRender.ctx.fillText(""+this.surfaceId, 5, 10); // surfaceIdを描画
       bufRender.drawRegions(this.surfaceNode.collisions);
     }
-    SurfaceUtil.init(this.element, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
-    this.width = this.element.width;
-    this.height = this.element.height;
+    SurfaceUtil.init(this.cnv, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
+    $(this.element).width(bufRender.baseWidth);//this.cnv.width - bufRender.basePosX);
+    $(this.element).height(bufRender.baseHeight);//this.cnv.height - bufRender.basePosY);
+    console.log(bufRender)
+    $(this.cnv).css("top", -bufRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
+    $(this.cnv).css("left", -bufRender.basePosX);
   }
 }

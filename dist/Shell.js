@@ -42,6 +42,13 @@ var _surfaces_txt2yaml = require("surfaces_txt2yaml");
 
 var _surfaces_txt2yaml2 = _interopRequireDefault(_surfaces_txt2yaml);
 
+var _jquery = require("jquery");
+
+var _jquery2 = _interopRequireDefault(_jquery);
+
+self["$"] = _jquery2["default"];
+self["jQuery"] = _jquery2["default"];
+
 var Shell = (function (_EventEmitter) {
     _inherits(Shell, _EventEmitter);
 
@@ -264,7 +271,7 @@ var Shell = (function (_EventEmitter) {
                     return _this5.getPNGFromDirectory(file).then(function (canvas) {
                         if (!_this5.surfaceTree[n]) {
                             _this5.surfaceTree[n] = {
-                                base: { cnv: SurfaceUtil.createCanvas(), img: null },
+                                base: SurfaceUtil.createSurfaceCanvasDummy(),
                                 elements: [],
                                 collisions: [],
                                 animations: []
@@ -301,7 +308,7 @@ var Shell = (function (_EventEmitter) {
                 Object.keys(regions).forEach(function (regname) {
                     if (!_this6.surfaceTree[n]) {
                         _this6.surfaceTree[n] = {
-                            base: { cnv: SurfaceUtil.createCanvas(), img: null },
+                            base: SurfaceUtil.createSurfaceCanvasDummy(),
                             elements: [],
                             collisions: [],
                             animations: []
@@ -330,7 +337,7 @@ var Shell = (function (_EventEmitter) {
                 Object.keys(animations).forEach(function (animname) {
                     if (!_this7.surfaceTree[n]) {
                         _this7.surfaceTree[n] = {
-                            base: { cnv: SurfaceUtil.createCanvas(), img: null },
+                            base: SurfaceUtil.createSurfaceCanvasDummy(),
                             elements: [],
                             collisions: [],
                             animations: []
@@ -389,7 +396,7 @@ var Shell = (function (_EventEmitter) {
         }
     }, {
         key: "attachSurface",
-        value: function attachSurface(canvas, scopeId, surfaceId) {
+        value: function attachSurface(div, scopeId, surfaceId) {
             var _this9 = this;
 
             var type = SurfaceUtil.scope(scopeId);
@@ -401,10 +408,10 @@ var Shell = (function (_EventEmitter) {
                 var _surfaceId = surfaceId;
             } else throw new Error("TypeError: surfaceId: number|string is not match " + typeof surfaceId);
             var hits = this.attachedSurface.filter(function (_ref) {
-                var _canvas = _ref.canvas;
-                return _canvas === canvas;
+                var _div = _ref.div;
+                return _div === div;
             });
-            if (hits.length !== 0) throw new Error("ReferenceError: this HTMLCanvasElement is already attached");
+            if (hits.length !== 0) throw new Error("ReferenceError: this HTMLDivElement is already attached");
             if (scopeId < 0) {
                 throw new Error("TypeError: scopeId needs more than 0, but:" + scopeId);
             }
@@ -412,21 +419,21 @@ var Shell = (function (_EventEmitter) {
                 console.warn("surfaceId:", surfaceId, "is not defined");
                 return null;
             }
-            var srf = new _Surface2["default"](canvas, scopeId, _surfaceId, this.surfaceTree);
+            var srf = new _Surface2["default"](div, scopeId, _surfaceId, this.surfaceTree);
             srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
             srf.updateBind(this.bindgroup); // 現在の着せ替え設定の反映
             srf.on("mouse", function (ev) {
                 _this9.emit("mouse", ev); // detachSurfaceで消える
             });
-            this.attachedSurface.push({ canvas: canvas, surface: srf });
+            this.attachedSurface.push({ div: div, surface: srf });
             return srf;
         }
     }, {
         key: "detachSurface",
-        value: function detachSurface(canvas) {
+        value: function detachSurface(div) {
             var hits = this.attachedSurface.filter(function (_ref2) {
-                var _canvas = _ref2.canvas;
-                return _canvas === canvas;
+                var _div = _ref2.div;
+                return _div === div;
             });
             if (hits.length === 0) return;
             hits[0].surface.destructor(); // srf.onのリスナはここで消される
@@ -436,7 +443,7 @@ var Shell = (function (_EventEmitter) {
         key: "unload",
         value: function unload() {
             this.attachedSurface.forEach(function (_ref3) {
-                var canvas = _ref3.canvas;
+                var div = _ref3.div;
                 var surface = _ref3.surface;
 
                 surface.destructor();
@@ -475,7 +482,7 @@ var Shell = (function (_EventEmitter) {
             this.bindgroup[scopeId][bindgroupId] = true;
             this.attachedSurface.forEach(function (_ref4) {
                 var srf = _ref4.surface;
-                var canvas = _ref4.canvas;
+                var div = _ref4.div;
 
                 srf.updateBind(_this10.bindgroup);
             });
@@ -494,7 +501,7 @@ var Shell = (function (_EventEmitter) {
             this.bindgroup[scopeId][bindgroupId] = false;
             this.attachedSurface.forEach(function (_ref5) {
                 var srf = _ref5.surface;
-                var canvas = _ref5.canvas;
+                var div = _ref5.div;
 
                 srf.updateBind(_this11.bindgroup);
             });
@@ -506,7 +513,7 @@ var Shell = (function (_EventEmitter) {
         value: function render() {
             this.attachedSurface.forEach(function (_ref6) {
                 var srf = _ref6.surface;
-                var canvas = _ref6.canvas;
+                var div = _ref6.div;
 
                 srf.render();
             });
@@ -519,7 +526,7 @@ var Shell = (function (_EventEmitter) {
             this.enableRegion = true;
             this.attachedSurface.forEach(function (_ref7) {
                 var srf = _ref7.surface;
-                var canvas = _ref7.canvas;
+                var div = _ref7.div;
 
                 srf.enableRegionDraw = true;
             });
@@ -533,7 +540,7 @@ var Shell = (function (_EventEmitter) {
             this.enableRegion = false;
             this.attachedSurface.forEach(function (_ref8) {
                 var srf = _ref8.surface;
-                var canvas = _ref8.canvas;
+                var div = _ref8.div;
 
                 srf.enableRegionDraw = false;
             });
@@ -546,7 +553,7 @@ var Shell = (function (_EventEmitter) {
 
 exports["default"] = Shell;
 module.exports = exports["default"];
-},{"./Surface":3,"./SurfaceRender":4,"./SurfaceUtil":5,"eventemitter3":8,"surfaces_txt2yaml":43}],3:[function(require,module,exports){
+},{"./Surface":3,"./SurfaceRender":4,"./SurfaceUtil":5,"eventemitter3":8,"jquery":11,"surfaces_txt2yaml":43}],3:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
 "use strict";
 
@@ -586,24 +593,23 @@ var _jquery = require("jquery");
 
 var _jquery2 = _interopRequireDefault(_jquery);
 
-self["$"] = _jquery2["default"];
-self["jQuery"] = _jquery2["default"];
-
 var Surface = (function (_EventEmitter) {
     _inherits(Surface, _EventEmitter);
 
-    function Surface(canvas, scopeId, surfaceId, surfaceTree) {
+    function Surface(div, scopeId, surfaceId, surfaceTree) {
         var _this = this;
 
         _classCallCheck(this, Surface);
 
         _get(Object.getPrototypeOf(Surface.prototype), "constructor", this).call(this);
-        this.element = canvas;
+        this.element = div;
         this.scopeId = scopeId;
         this.surfaceId = surfaceId;
-        this.width = 0;
-        this.height = 0;
-        this.ctx = canvas.getContext("2d");
+        this.cnv = SurfaceUtil.createCanvas();
+        this.ctx = this.cnv.getContext("2d");
+        this.element.appendChild(this.cnv);
+        (0, _jquery2["default"])(this.element).css("position", "relative");
+        (0, _jquery2["default"])(this.cnv).css("position", "absolute");
         this.position = "fixed";
         this.surfaceTree = surfaceTree;
         this.surfaceNode = this.surfaceTree[surfaceId];
@@ -626,6 +632,7 @@ var Surface = (function (_EventEmitter) {
     _createClass(Surface, [{
         key: "destructor",
         value: function destructor() {
+            (0, _jquery2["default"])(this.element).children().remove();
             this.destructors.forEach(function (fn) {
                 return fn();
             });
@@ -664,6 +671,8 @@ var Surface = (function (_EventEmitter) {
                 var left = _$$offset.left;
                 var top = _$$offset.top;
 
+                // body直下 fixed だけにすべきかうーむ
+
                 var _ref = _this2.position !== "fixed" ? [pageX, pageY] : [clientX, clientY];
 
                 var _ref2 = _slicedToArray(_ref, 2);
@@ -678,9 +687,11 @@ var Surface = (function (_EventEmitter) {
                 var _left = _ref32[0];
                 var _top = _ref32[1];
 
-                var offsetX = baseX - _left; //canvas左上からのx座標
-                var offsetY = baseY - _top; //canvas左上からのy座標
-                var hit = SurfaceUtil.getRegion(_this2.element, _this2.surfaceNode, offsetX, offsetY); //透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
+                var basePosY = parseInt((0, _jquery2["default"])(_this2.cnv).css("top"), 10); // overlayでのずれた分を
+                var basePosX = parseInt((0, _jquery2["default"])(_this2.cnv).css("left"), 10); // とってくる
+                var offsetX = baseX - _left - basePosX; //canvas左上からのx座標
+                var offsetY = baseY - _top - basePosY; //canvas左上からのy座標
+                var hit = SurfaceUtil.getRegion(_this2.cnv, _this2.surfaceNode, offsetX, offsetY); //透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
                 var custom = {
                     "type": type,
                     "offsetX": offsetX | 0,
@@ -1065,9 +1076,12 @@ var Surface = (function (_EventEmitter) {
                 bufRender.ctx.fillText("" + this.surfaceId, 5, 10); // surfaceIdを描画
                 bufRender.drawRegions(this.surfaceNode.collisions);
             }
-            SurfaceUtil.init(this.element, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
-            this.width = this.element.width;
-            this.height = this.element.height;
+            SurfaceUtil.init(this.cnv, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
+            (0, _jquery2["default"])(this.element).width(bufRender.baseWidth); //this.cnv.width - bufRender.basePosX);
+            (0, _jquery2["default"])(this.element).height(bufRender.baseHeight); //this.cnv.height - bufRender.basePosY);
+            console.log(bufRender);
+            (0, _jquery2["default"])(this.cnv).css("top", -bufRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
+            (0, _jquery2["default"])(this.cnv).css("left", -bufRender.basePosX);
         }
     }]);
 
@@ -1107,6 +1121,8 @@ var SurfaceRender = (function () {
         this.ctx = this.cnv.getContext("2d");
         this.basePosX = 0;
         this.basePosY = 0;
+        this.baseWidth = 0;
+        this.baseHeight = 0;
         this.elements = [];
     }
 
@@ -1214,7 +1230,10 @@ var SurfaceRender = (function () {
     }, {
         key: "base",
         value: function base(part) {
+            if ($(part.cnv).attr("data-shell-dummy") != null) return;
             this.elements.push({ method: "base", args: [part] });
+            this.baseWidth = part.cnv.width;
+            this.baseHeight = part.cnv.height;
             SurfaceUtil.init(this.cnv, this.ctx, part.cnv);
         }
 
@@ -1223,6 +1242,10 @@ var SurfaceRender = (function () {
     }, {
         key: "overlay",
         value: function overlay(part, x, y) {
+            if ($(part.cnv).attr("data-shell-dummy") != null) return;
+            if (this.elements.length === 0) {
+                return this.base(part);
+            }
             this.elements.push({ method: "overlay", args: [part, x, y] });
             // baseのcanvasを拡大するためのキャッシュ
             var tmp = SurfaceUtil.copy(this.cnv);
@@ -1353,15 +1376,19 @@ var SurfaceRender = (function () {
     }, {
         key: "init",
         value: function init(srfCnv) {
+            console.warn("SurfaceRender#init is deprecated");
             this.elements.push({ method: "init", args: [srfCnv] });
+            this.baseWidth = srfCnv.cnv.width;
+            this.baseHeight = srfCnv.cnv.height;
             SurfaceUtil.init(this.cnv, this.ctx, srfCnv.cnv);
         }
     }, {
         key: "initImageData",
         value: function initImageData(width, height, data) {
+            console.warn("SurfaceRender#initImageData is deprecated");
             this.elements.push({ method: "initImageData", args: [width, height, data] });
-            this.cnv.width = width;
-            this.cnv.height = height;
+            this.baseWidth = this.cnv.width = width;
+            this.baseHeight = this.cnv.height = height;
             var imgdata = this.ctx.getImageData(0, 0, width, height);
             imgdata.data.set(data);
             this.ctx.putImageData(imgdata, 0, 0);
@@ -1439,6 +1466,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
 
+exports.createSurfaceCanvasDummy = createSurfaceCanvasDummy;
 exports.createSurfaceCanvasFromURL = createSurfaceCanvasFromURL;
 exports.createSurfaceCanvasFromArrayBuffer = createSurfaceCanvasFromArrayBuffer;
 exports.init = init;
@@ -1471,6 +1499,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
 var _encodingJapanese = require("encoding-japanese");
 
 var _encodingJapanese2 = _interopRequireDefault(_encodingJapanese);
+
+function createSurfaceCanvasDummy() {
+    var cnv = createCanvas();
+    $(cnv).attr("data-shell-dummy", "1");
+    return { cnv: cnv, img: null };
+}
 
 function createSurfaceCanvasFromURL(url) {
     return fetchArrayBuffer(url).then(createSurfaceCanvasFromArrayBuffer);

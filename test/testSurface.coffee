@@ -91,9 +91,9 @@ QUnit.test 'surface0', (assert) ->
         elements: []
         collisions: []
         animations: []
-    srf = new Surface(SurfaceUtil.createCanvas(), 0, 0, surfaceTree)
-    assert.ok srf.element.width is base.cnv.width
-    assert.ok srf.element.height is base.cnv.height
+    srf = new Surface(document.createElement("div"), 0, 0, surfaceTree)
+    assert.ok $(srf.element).width() is base.cnv.width
+    assert.ok $(srf.element).height() is base.cnv.height
     frame = craetePictureFrame("surface0")
     frame.add srf.element, "マリちゃんの\\0\\s[0]のまばたき"
     done()

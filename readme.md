@@ -25,11 +25,11 @@ NarLoader
   var shell = new Shell.Shell(shellDir);
   return shell.load();
 }).then(function(shell){
-  var cnv = document.createElement("canvas");
-  var srf = shell.attachSurface(cnv, 0, 0);
+  var div = document.createElement("div");
+  var srf = shell.attachSurface(div, 0, 0);
   console.dir(srf);
   srf.on("mouseclick", function(ev){ console.log(ev); });
-  document.body.appendChild(cnv);
+  document.body.appendChild(div);
 }).catch(function(err){
   console.error(err, err.stack);
 });
@@ -89,12 +89,12 @@ shell.load().then (shell)->
   console.log(shell.descript)
 ```
 
-#### attatchSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number|string): Surface|null
-* 指定したcanvasへscopeIdのsurfaceIdのサーフェスの描画を行います。
+#### attatchSurface(div: HTMLDivElement, scopeId: number, surfaceId: number|string): Surface|null
+* 指定したdivの中にcanvas要素を追加しscopeIdのsurfaceIdのサーフェスの描画を行います。
   * SakuraScriptでなら`\0\s[0]`に該当します。
 * surfaceIdはサーフェスエイリアスが考慮されます。
   * 該当するサーフェスが存在しなかった場合、nullが返ります。
-  * `new Sufrace(cnv, scodeId, surfaceId, shell)` との違いは、
+  * `new Sufrace(div, scodeId, surfaceId, shell)` との違いは、
     サーフェスエイリアスが考慮される点です。
 
 ```coffeescript
@@ -106,8 +106,8 @@ cnv2 = document.createElement("canvas")
 srf2 = shell.attachSurface(cnv, 0, "びっくり") # \0\s[びっくり]
 document.body.appendChild(cnv2)
 ```
-#### dettatchSurface(canvas: HTMLCanvasElement): void
-* attachSurfaceしたcanvasを描画対象から外します。
+#### dettatchSurface(div: HTMLDivElement): void
+* attachSurfaceしたdivを描画対象から外します。
 * ___サーフェスを変更する前に必ず呼び出してください___
 
 
@@ -133,7 +133,7 @@ document.body.appendChild(cnv2)
 * 透明領域のマウスイベントにも反応します。 `ev.transparency` で判定してください、。
   * これはsurface canvasレイヤが重なった時のマウスイベントの透過処理のためのフラグです。
   * 複数レイヤ間の重なりの上下順番を管理するNamedMgr.jsなどが使います。
-* ShellクラスはEventEmitter2を継承しているので`off`や`removeAllListener`などもあります
+* ShellクラスはEventEmitterを継承しているので`off`や`removeAllListener`などもあります
 ```typescript
 
 interface SurfaceMouseEvent {
@@ -155,8 +155,8 @@ interface SurfaceMouseEvent {
   * SERIKOアニメーションを再生します。
   * マウスイベントを捕捉します。
 
-#### constructor(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number, shell: Shell): Surface
-* canvas要素にサーフェスを描画します。
+#### constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, shell: Shell): Surface
+* divにcanvas要素を追加しにサーフェスを描画します。
 * このコンストラクタが呼ばれた時からアニメーションが開始されます。
 * surfaceIdはサーフェスエイリアスが考慮されません。
   * `Shell#attatchSurface`から内部的に呼び出されます。そちらをを使って下さい。

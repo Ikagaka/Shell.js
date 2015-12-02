@@ -102,14 +102,14 @@ QUnit.test('surface0', function (assert) {
                 animations: []
             }
         };
-        srf = new Surface(SurfaceUtil.createCanvas(), 0, 0, surfaceTree);
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').width, 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok(srf.element.width === base.cnv.width)',
+        srf = new Surface(document.createElement('div'), 0, 0, surfaceTree);
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok($(srf.element).width() === base.cnv.width)',
             filepath: 'test/testSurface.js',
             line: 107
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').height, 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok(srf.element.height === base.cnv.height)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok($(srf.element).height() === base.cnv.height)',
             filepath: 'test/testSurface.js',
             line: 108
         }));

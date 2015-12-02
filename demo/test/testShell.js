@@ -126,9 +126,9 @@ prmNar.then(function (nanikaDir) {
         }));
     });
     QUnit.test('shell#attachSurface (periodic)', function (assert) {
-        var cnv, srf;
-        cnv = document.createElement('canvas');
-        srf = shell.attachSurface(cnv, 0, 0);
+        var div, srf;
+        div = document.createElement('div');
+        srf = shell.attachSurface(div, 0, 0);
         srf.render();
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 0, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 0)',
@@ -141,27 +141,27 @@ prmNar.then(function (nanikaDir) {
         setPictureFrame(srf, '\u203Bs[0]\u3002periodic,5瞬き\u3001talk,4口パク\u3002');
     });
     QUnit.test('shell#attachSurface (basic element and animation)', function (assert) {
-        var cnv, srf;
-        cnv = document.createElement('canvas');
-        srf = shell.attachSurface(cnv, 0, 3);
+        var div, srf;
+        div = document.createElement('div');
+        srf = shell.attachSurface(div, 0, 3);
         console.log(srf);
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 3, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 3)',
             filepath: 'test/testShell.js',
             line: 117
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok(srf.element instanceof HTMLCanvasElement)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/object/callee/object/arguments/0/object').element, 'arguments/0/left/object/callee/object/arguments/0')), 'arguments/0/left/object/callee/object').children(), 'arguments/0/left/object')[0], 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok($(srf.element).children()[0] instanceof HTMLCanvasElement)',
             filepath: 'test/testShell.js',
             line: 118
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
-            content: 'assert.ok(srf.element.height === 445)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === 445, 'arguments/0'), {
+            content: 'assert.ok($(srf.element).height() === 445)',
             filepath: 'test/testShell.js',
             line: 119
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
-            content: 'assert.ok(srf.element.width === 182)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === 182, 'arguments/0'), {
+            content: 'assert.ok($(srf.element).width() === 182)',
             filepath: 'test/testShell.js',
             line: 120
         }));
@@ -181,26 +181,26 @@ prmNar.then(function (nanikaDir) {
         setPictureFrame(srf, '\u203B胸を腕で覆っている\u3002sometimes瞬き\u3001random,6目そらし\u3001talk,4口パク\u3002');
     });
     QUnit.test('shell#attachSurface (animation always)', function (assert) {
-        var cnv, srf;
-        cnv = document.createElement('canvas');
-        srf = shell.attachSurface(cnv, 0, 7);
+        var div, srf;
+        div = document.createElement('div');
+        srf = shell.attachSurface(div, 0, 7);
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 7, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 7)',
             filepath: 'test/testShell.js',
             line: 132
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok(srf.element instanceof HTMLCanvasElement)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLDivElement, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok(srf.element instanceof HTMLDivElement)',
             filepath: 'test/testShell.js',
             line: 133
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
-            content: 'assert.ok(srf.element.height === 445)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === 445, 'arguments/0'), {
+            content: 'assert.ok($(srf.element).height() === 445)',
             filepath: 'test/testShell.js',
             line: 134
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
-            content: 'assert.ok(srf.element.width === 182)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === 182, 'arguments/0'), {
+            content: 'assert.ok($(srf.element).width() === 182)',
             filepath: 'test/testShell.js',
             line: 135
         }));
@@ -215,53 +215,53 @@ prmNar.then(function (nanikaDir) {
         setPictureFrame(srf, '\u203B腕組み\u3002瞬き\u3001always怒り\u3001口パク\u3002');
     });
     QUnit.test('shell#attachSurface (runonce)', function (assert) {
-        var cnv, srf;
-        cnv = document.createElement('canvas');
-        srf = shell.attachSurface(cnv, 0, 401);
+        var div, srf;
+        div = document.createElement('div');
+        srf = shell.attachSurface(div, 0, 401);
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 401, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 401)',
             filepath: 'test/testShell.js',
             line: 146
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok(srf.element instanceof HTMLCanvasElement)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLDivElement, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok(srf.element instanceof HTMLDivElement)',
             filepath: 'test/testShell.js',
             line: 147
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
-            content: 'assert.ok(srf.element.height === 445)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === 445, 'arguments/0'), {
+            content: 'assert.ok($(srf.element).height() === 445)',
             filepath: 'test/testShell.js',
             line: 148
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
-            content: 'assert.ok(srf.element.width === 182)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === 182, 'arguments/0'), {
+            content: 'assert.ok($(srf.element).width() === 182)',
             filepath: 'test/testShell.js',
             line: 149
         }));
         setPictureFrame(srf, '\u203B寝ぼけ\u3002runonce口に手を当ててから直ぐ離し目パチ\u3002');
     });
     QUnit.test('shell#attachSurface ', function (assert) {
-        var cnv, srf;
-        cnv = document.createElement('canvas');
-        srf = shell.attachSurface(cnv, 0, 11);
+        var div, srf;
+        div = document.createElement('div');
+        srf = shell.attachSurface(div, 0, 11);
         console.log(srf);
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 11, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 11)',
             filepath: 'test/testShell.js',
             line: 157
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok(srf.element instanceof HTMLCanvasElement)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLDivElement, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok(srf.element instanceof HTMLDivElement)',
             filepath: 'test/testShell.js',
             line: 158
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').height, 'arguments/0/left') === 210, 'arguments/0'), {
-            content: 'assert.ok(srf.element.height === 210)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === 210, 'arguments/0'), {
+            content: 'assert.ok($(srf.element).height() === 210)',
             filepath: 'test/testShell.js',
             line: 159
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').width, 'arguments/0/left') === 230, 'arguments/0'), {
-            content: 'assert.ok(srf.element.width === 230)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === 230, 'arguments/0'), {
+            content: 'assert.ok($(srf.element).width() === 230)',
             filepath: 'test/testShell.js',
             line: 160
         }));
@@ -276,9 +276,9 @@ prmNar.then(function (nanikaDir) {
         setPictureFrame(srf, 'CRTゅう');
     });
     QUnit.test('shell#attachSurface (srf.play())', function (assert) {
-        var cnv, srf;
-        cnv = document.createElement('canvas');
-        srf = shell.attachSurface(cnv, 0, 5000);
+        var div, srf;
+        div = document.createElement('div');
+        srf = shell.attachSurface(div, 0, 5000);
         srf.play(100);
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 5000, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 5000)',
@@ -288,27 +288,27 @@ prmNar.then(function (nanikaDir) {
         setPictureFrame(srf, '\u203B１回のみ爆発アニメ\u3002');
     });
     QUnit.test('shell#attachSurface (error filepath handle)', function (assert) {
-        var cnv, srf;
-        cnv = document.createElement('canvas');
-        srf = shell.attachSurface(cnv, 0, 5001);
+        var div, srf;
+        div = document.createElement('div');
+        srf = shell.attachSurface(div, 0, 5001);
         srf.render();
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 5001, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 5001)',
             filepath: 'test/testShell.js',
             line: 180
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok(srf.element instanceof HTMLCanvasElement)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLDivElement, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok(srf.element instanceof HTMLDivElement)',
             filepath: 'test/testShell.js',
             line: 181
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').height, 'arguments/0/left') === 300, 'arguments/0'), {
-            content: 'assert.ok(srf.element.height === 300)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === 300, 'arguments/0'), {
+            content: 'assert.ok($(srf.element).height() === 300)',
             filepath: 'test/testShell.js',
             line: 182
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object').element, 'arguments/0/left/object').width, 'arguments/0/left') === 300, 'arguments/0'), {
-            content: 'assert.ok(srf.element.width === 300)',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === 300, 'arguments/0'), {
+            content: 'assert.ok($(srf.element).width() === 300)',
             filepath: 'test/testShell.js',
             line: 183
         }));

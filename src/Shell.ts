@@ -6,14 +6,17 @@ import * as SurfaceUtil from "./SurfaceUtil";
 import {SurfaceTreeNode, SurfaceCanvas, SurfaceMouseEvent} from "./Interfaces";
 import EventEmitter from "eventemitter3";
 import SurfacesTxt2Yaml from "surfaces_txt2yaml";
+import $ from "jquery";
 
+self["$"] = $;
+self["jQuery"] = $;
 
 export default class Shell extends EventEmitter {
   //public
 
   public directory: { [filepath: string]: ArrayBuffer; } // filepathに対応するファイルのArrayBuffer
   public descript: { [key: string]: string; }; // descript.txtをcsvと解釈した時の値
-  public attachedSurface: { canvas: HTMLCanvasElement, surface: Surface }[]; // 現在このシェルが実DOM上にレンダリングしているcanvasとそのsurface一覧
+  public attachedSurface: { div: HTMLDivElement, surface: Surface }[]; // 現在このシェルが実DOM上にレンダリングしているcanvasとそのsurface一覧
   public surfacesTxt: SurfacesTxt; // SurfacesTxt2Yamlの内容
   public surfaceTree: SurfaceTreeNode[]; // このshell.jsが解釈しているShellのリソースツリー
   private cacheCanvas: { [key: string]: SurfaceCanvas; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
@@ -172,7 +175,7 @@ export default class Shell extends EventEmitter {
         return this.getPNGFromDirectory(file).then((canvas)=>{
           if(!this.surfaceTree[n]){
             this.surfaceTree[n] = {
-              base: {cnv:SurfaceUtil.createCanvas(), img:null},
+              base: SurfaceUtil.createSurfaceCanvasDummy(),
               elements: [],
               collisions: [],
               animations: []
@@ -203,7 +206,7 @@ export default class Shell extends EventEmitter {
       Object.keys(regions).forEach((regname)=>{
         if(!this.surfaceTree[n]){
           this.surfaceTree[n] = {
-            base: {cnv:SurfaceUtil.createCanvas(), img:null},
+            base: SurfaceUtil.createSurfaceCanvasDummy(),
             elements: [],
             collisions: [],
             animations: []
@@ -225,7 +228,7 @@ export default class Shell extends EventEmitter {
       Object.keys(animations).forEach((animname)=>{
         if(!this.surfaceTree[n]){
           this.surfaceTree[n] = {
-            base: {cnv:SurfaceUtil.createCanvas(), img:null},
+            base: SurfaceUtil.createSurfaceCanvasDummy(),
             elements: [],
             collisions: [],
             animations: []
@@ -277,7 +280,7 @@ export default class Shell extends EventEmitter {
     });
   }
 
-  public attachSurface(canvas: HTMLCanvasElement, scopeId: number, surfaceId: number|string): Surface {
+  public attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number|string): Surface {
     var type = SurfaceUtil.scope(scopeId);
     if(typeof surfaceId === "string"){
       if(!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]){
@@ -286,8 +289,8 @@ export default class Shell extends EventEmitter {
     }else if(typeof surfaceId === "number"){
       var _surfaceId = surfaceId;
     }else throw new Error("TypeError: surfaceId: number|string is not match " + typeof surfaceId);
-    var hits = this.attachedSurface.filter(({canvas: _canvas})=> _canvas === canvas);
-    if(hits.length !== 0) throw new Error("ReferenceError: this HTMLCanvasElement is already attached");
+    var hits = this.attachedSurface.filter(({div: _div})=> _div === div);
+    if(hits.length !== 0) throw new Error("ReferenceError: this HTMLDivElement is already attached");
     if(scopeId < 0){
       throw new Error("TypeError: scopeId needs more than 0, but:" + scopeId);
     }
@@ -295,25 +298,25 @@ export default class Shell extends EventEmitter {
       console.warn("surfaceId:", surfaceId, "is not defined");
       return null;
     }
-    var srf = new Surface(canvas, scopeId, _surfaceId, this.surfaceTree);
+    var srf = new Surface(div, scopeId, _surfaceId, this.surfaceTree);
     srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
     srf.updateBind(this.bindgroup); // 現在の着せ替え設定の反映
     srf.on("mouse", (ev: SurfaceMouseEvent)=>{
       this.emit("mouse", ev); // detachSurfaceで消える
     });
-    this.attachedSurface.push({canvas, surface:srf});
+    this.attachedSurface.push({div, surface:srf});
     return srf;
   }
 
-  public detachSurface(canvas: HTMLCanvasElement): void {
-    var hits = this.attachedSurface.filter(({canvas: _canvas})=> _canvas === canvas);
+  public detachSurface(div: HTMLDivElement): void {
+    var hits = this.attachedSurface.filter(({div: _div})=> _div === div);
     if(hits.length === 0) return;
     hits[0].surface.destructor(); // srf.onのリスナはここで消される
     this.attachedSurface.splice(this.attachedSurface.indexOf(hits[0]), 1);
   }
 
   public unload(): void {
-    this.attachedSurface.forEach(function({canvas, surface}){
+    this.attachedSurface.forEach(function({div, surface}){
       surface.destructor();
     });
     this.removeAllListeners(null);
@@ -342,7 +345,7 @@ export default class Shell extends EventEmitter {
       return;
     }
     this.bindgroup[scopeId][bindgroupId] = true;
-    this.attachedSurface.forEach(({surface:srf, canvas})=>{
+    this.attachedSurface.forEach(({surface:srf, div})=>{
       srf.updateBind(this.bindgroup);
     });
   }
@@ -354,14 +357,14 @@ export default class Shell extends EventEmitter {
       return;
     }
     this.bindgroup[scopeId][bindgroupId] = false;
-    this.attachedSurface.forEach(({surface:srf, canvas})=>{
+    this.attachedSurface.forEach(({surface:srf, div})=>{
       srf.updateBind(this.bindgroup);
     });
   }
 
   // 全サーフェス強制再描画
   private render(): void {
-    this.attachedSurface.forEach(({surface:srf, canvas})=>{
+    this.attachedSurface.forEach(({surface:srf, div})=>{
       srf.render();
     });
   }
@@ -369,7 +372,7 @@ export default class Shell extends EventEmitter {
   //当たり判定表示
   public showRegion(): void {
     this.enableRegion = true;
-    this.attachedSurface.forEach(({surface:srf, canvas})=>{
+    this.attachedSurface.forEach(({surface:srf, div})=>{
       srf.enableRegionDraw = true;
     });
     this.render();
@@ -378,7 +381,7 @@ export default class Shell extends EventEmitter {
   //当たり判定非表示
   public hideRegion(): void {
     this.enableRegion = false;
-    this.attachedSurface.forEach(({surface:srf, canvas})=>{
+    this.attachedSurface.forEach(({surface:srf, div})=>{
       srf.enableRegionDraw = false;
     });
     this.render();

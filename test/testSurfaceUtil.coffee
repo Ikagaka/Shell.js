@@ -277,9 +277,6 @@ QUnit.test "SurfaceUtil.init", (assert)->
 QUnit.test "SurfaceUtil.log", (assert)->
   assert.ok false, "まだ書いてない"
 
-QUnit.test "SurfaceUtil.recursiveElementFromPoint, SurfaceUtil.eventPropagationSim", (assert)->
-  assert.ok false, "まだ書いてない"
-
 QUnit.test "SurfaceUtil.getRegion", (assert)->
   assert.ok false, "まだ書いてない"
 

@@ -1,7 +1,13 @@
 /// <reference path="../typings/tsd.d.ts"/>
 
-import {SurfaceTreeNode} from "./Interfaces";
+import {SurfaceTreeNode, SurfaceCanvas} from "./Interfaces";
 import Encoding from "encoding-japanese";
+
+export function createSurfaceCanvasDummy(): SurfaceCanvas{
+  var cnv = createCanvas();
+  $(cnv).attr("data-shell-dummy", "1");
+  return {cnv, img: null};
+}
 
 export function createSurfaceCanvasFromURL(url: string): Promise<{img:HTMLImageElement, cnv:HTMLCanvasElement}> {
   return fetchArrayBuffer(url)

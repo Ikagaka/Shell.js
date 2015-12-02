@@ -610,9 +610,6 @@ QUnit.test('SurfaceUtil.init', function (assert) {
 QUnit.test('SurfaceUtil.log', function (assert) {
     return assert.ok(false, 'まだ書いてない');
 });
-QUnit.test('SurfaceUtil.recursiveElementFromPoint, SurfaceUtil.eventPropagationSim', function (assert) {
-    return assert.ok(false, 'まだ書いてない');
-});
 QUnit.test('SurfaceUtil.getRegion', function (assert) {
     return assert.ok(false, 'まだ書いてない');
 });
@@ -650,7 +647,7 @@ QUnit.test('SurfaceUtil.randomRange', function (assert) {
         return assert.ok(assert._expr(assert._capt(assert._capt(5 <= assert._capt(parsent, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(parsent, 'arguments/0/right/left') <= 15, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(5 <= parsent && parsent <= 15, i)',
             filepath: 'test/testSurfaceUtil.js',
-            line: 417
+            line: 413
         }), i);
     });
 });

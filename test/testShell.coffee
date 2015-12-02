@@ -87,8 +87,8 @@ prmNar.then (nanikaDir) ->
     assert.ok shell.surfacesTxt.descript.version == 1
     return
   QUnit.test 'shell#attachSurface (periodic)', (assert) ->
-    cnv = document.createElement('canvas')
-    srf = shell.attachSurface(cnv, 0, 0)
+    div = document.createElement('div')
+    srf = shell.attachSurface(div, 0, 0)
     srf.render()
     assert.ok srf.surfaceId == 0
     setInterval (->
@@ -98,13 +98,13 @@ prmNar.then (nanikaDir) ->
     setPictureFrame srf, '※s[0]。periodic,5瞬き、talk,4口パク。'
     return
   QUnit.test 'shell#attachSurface (basic element and animation)', (assert) ->
-    cnv = document.createElement('canvas')
-    srf = shell.attachSurface(cnv, 0, 3)
+    div = document.createElement('div')
+    srf = shell.attachSurface(div, 0, 3)
     console.log srf
     assert.ok srf.surfaceId == 3
-    assert.ok srf.element instanceof HTMLCanvasElement
-    assert.ok srf.element.height == 445
-    assert.ok srf.element.width == 182
+    assert.ok $(srf.element).children()[0] instanceof HTMLCanvasElement
+    assert.ok $(srf.element).height() == 445
+    assert.ok $(srf.element).width() == 182
     assert.ok srf.surfaceNode.collisions[0].name == 'Head'
     assert.ok srf.surfaceNode.animations[0].interval == 'sometimes'
     setInterval (->
@@ -114,12 +114,12 @@ prmNar.then (nanikaDir) ->
     setPictureFrame srf, '※胸を腕で覆っている。sometimes瞬き、random,6目そらし、talk,4口パク。'
     return
   QUnit.test 'shell#attachSurface (animation always)', (assert) ->
-    cnv = document.createElement('canvas')
-    srf = shell.attachSurface(cnv, 0, 7)
+    div = document.createElement('div')
+    srf = shell.attachSurface(div, 0, 7)
     assert.ok srf.surfaceId == 7
-    assert.ok srf.element instanceof HTMLCanvasElement
-    assert.ok srf.element.height == 445
-    assert.ok srf.element.width == 182
+    assert.ok srf.element instanceof HTMLDivElement
+    assert.ok $(srf.element).height() == 445
+    assert.ok $(srf.element).width() == 182
     assert.ok srf.surfaceNode.collisions[0].name == 'Head'
     setInterval (->
       srf.talk()
@@ -128,22 +128,22 @@ prmNar.then (nanikaDir) ->
     setPictureFrame srf, '※腕組み。瞬き、always怒り、口パク。'
     return
   QUnit.test 'shell#attachSurface (runonce)', (assert) ->
-    cnv = document.createElement('canvas')
-    srf = shell.attachSurface(cnv, 0, 401)
+    div = document.createElement('div')
+    srf = shell.attachSurface(div, 0, 401)
     assert.ok srf.surfaceId == 401
-    assert.ok srf.element instanceof HTMLCanvasElement
-    assert.ok srf.element.height == 445
-    assert.ok srf.element.width == 182
+    assert.ok srf.element instanceof HTMLDivElement
+    assert.ok $(srf.element).height() == 445
+    assert.ok $(srf.element).width() == 182
     setPictureFrame srf, '※寝ぼけ。runonce口に手を当ててから直ぐ離し目パチ。'
     return
   QUnit.test 'shell#attachSurface ', (assert) ->
-    cnv = document.createElement('canvas')
-    srf = shell.attachSurface(cnv, 0, 11)
+    div = document.createElement('div')
+    srf = shell.attachSurface(div, 0, 11)
     console.log srf
     assert.ok srf.surfaceId == 11
-    assert.ok srf.element instanceof HTMLCanvasElement
-    assert.ok srf.element.height == 210
-    assert.ok srf.element.width == 230
+    assert.ok srf.element instanceof HTMLDivElement
+    assert.ok $(srf.element).height() == 210
+    assert.ok $(srf.element).width() == 230
     assert.ok srf.surfaceNode.collisions[0].name == 'Screen'
     setInterval (->
       srf.talk()
@@ -152,20 +152,20 @@ prmNar.then (nanikaDir) ->
     setPictureFrame srf, 'CRTゅう'
     return
   QUnit.test 'shell#attachSurface (srf.play())', (assert) ->
-    cnv = document.createElement('canvas')
-    srf = shell.attachSurface(cnv, 0, 5000)
+    div = document.createElement('div')
+    srf = shell.attachSurface(div, 0, 5000)
     srf.play 100
     assert.ok srf.surfaceId == 5000
     setPictureFrame srf, '※１回のみ爆発アニメ。'
     return
   QUnit.test 'shell#attachSurface (error filepath handle)', (assert) ->
-    cnv = document.createElement('canvas')
-    srf = shell.attachSurface(cnv, 0, 5001)
+    div = document.createElement('div')
+    srf = shell.attachSurface(div, 0, 5001)
     srf.render()
     assert.ok srf.surfaceId == 5001
-    assert.ok srf.element instanceof HTMLCanvasElement
-    assert.ok srf.element.height == 300
-    assert.ok srf.element.width == 300
+    assert.ok srf.element instanceof HTMLDivElement
+    assert.ok $(srf.element).height() == 300
+    assert.ok $(srf.element).width() == 300
     setPictureFrame srf, '※透明です。ファイル名エラー補正のテスト。'
     return
   return
