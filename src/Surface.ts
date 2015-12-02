@@ -345,7 +345,6 @@ export default class Surface extends EventEmitter {
     SurfaceUtil.init(this.cnv, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
     $(this.element).width(bufRender.baseWidth);//this.cnv.width - bufRender.basePosX);
     $(this.element).height(bufRender.baseHeight);//this.cnv.height - bufRender.basePosY);
-    console.log(bufRender)
     $(this.cnv).css("top", -bufRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
     $(this.cnv).css("left", -bufRender.basePosX);
   }
