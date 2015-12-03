@@ -6,6 +6,7 @@ setPictureFrame = (element, description) ->
   fieldset.appendChild legend
   fieldset.appendChild element
   fieldset.style.display = 'inline-block'
+  fieldset.style.backgroundColor = "#D2E0E6"
   document.body.appendChild fieldset
   return
 
@@ -264,9 +265,7 @@ QUnit.test "SurfaceUtil.createSurfaceCanvasFromURL, SurfaceUtil.createSurfaceCan
 
 QUnit.test "SurfaceUtil.init", (assert)->
   done = assert.async()
-  img = new Image()
-  img.src = "src/surface0.png"
-  img.onload = ->
+  SurfaceUtil.fetchImageFromURL("src/surface0.png").then (img)->
     cnv = SurfaceUtil.createCanvas()
     ctx = cnv.getContext("2d")
     SurfaceUtil.init(cnv, ctx, img)
@@ -274,12 +273,17 @@ QUnit.test "SurfaceUtil.init", (assert)->
     assert.ok cnv.height is 445
     done()
 
+###
 QUnit.test "SurfaceUtil.log", (assert)->
   assert.ok false, "まだ書いてない"
 
 QUnit.test "SurfaceUtil.getRegion", (assert)->
   assert.ok false, "まだ書いてない"
 
+createSurfaceCanvasDummy
+createSurfaceCanvasFromURL
+createSurfaceCanvasFromArrayBuffer
+###
 
 QUnit.test "SurfaceUtil.randomRange", (assert)->
   assert.expect(10)
@@ -288,3 +292,16 @@ QUnit.test "SurfaceUtil.randomRange", (assert)->
   histgram.forEach (arr, i)->
     parsent = arr.length/10
     assert.ok 5 <= parsent <= 15, i
+
+
+QUnit.test "SurfaceUtil.pna", (assert)->
+  done = assert.async()
+  Promise.all([
+    SurfaceUtil.fetchImageFromURL("src/surface0730.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.pna")
+  ]).then ([png, pna])->
+    srfCnv = SurfaceUtil.pna({cnv:null, png, pna})
+    assert.ok srfCnv.cnv.width is 80
+    assert.ok srfCnv.cnv.height is 90
+    setPictureFrame(srfCnv.cnv, "pna")
+    done()

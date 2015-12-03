@@ -18,20 +18,21 @@ export default class Surface extends EventEmitter {
     private animationsQueue;
     private stopFlags;
     private surfaceTree;
+    private bindgroup;
     private destructed;
     private destructors;
     constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceTree: {
         [animationId: number]: SurfaceTreeNode;
+    }, bindgroup: {
+        [charId: number]: {
+            [bindgroupId: number]: boolean;
+        };
     });
     destructor(): void;
     private initMouseEvent();
     private initAnimation(anim);
     private initBind(anim);
-    updateBind(bindgroup: {
-        [charId: number]: {
-            [bindgroupId: number]: boolean;
-        };
-    }): void;
+    updateBind(): void;
     begin(animationId: number): void;
     end(animationId: number): void;
     endAll(): void;

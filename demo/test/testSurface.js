@@ -38,12 +38,27 @@ QUnit.test('surface0', function (assert) {
     var done;
     done = assert.async();
     return Promise.all([
-        SurfaceUtil.createSurfaceCanvasFromURL('src/surface0.png'),
-        SurfaceUtil.createSurfaceCanvasFromURL('src/surface100.png'),
-        SurfaceUtil.createSurfaceCanvasFromURL('src/surface101.png')
+        SurfaceUtil.fetchImageFromURL('src/surface0.png'),
+        SurfaceUtil.fetchImageFromURL('src/surface100.png'),
+        SurfaceUtil.fetchImageFromURL('src/surface101.png')
     ]).then(function (arg) {
-        var base, frame, srf, srf100, srf101, surfaceTree;
-        base = arg[0], srf100 = arg[1], srf101 = arg[2];
+        var _base, _srf100, _srf101, base, srf, srf100, srf101, surfaceTree;
+        _base = arg[0], _srf100 = arg[1], _srf101 = arg[2];
+        base = {
+            cnv: null,
+            png: _base,
+            pna: null
+        };
+        srf100 = {
+            cnv: null,
+            png: _srf100,
+            pna: null
+        };
+        srf101 = {
+            cnv: null,
+            png: _srf101,
+            pna: null
+        };
         surfaceTree = {
             0: {
                 base: base,
@@ -55,7 +70,6 @@ QUnit.test('surface0', function (assert) {
                         option: '5',
                         patterns: [
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 100,
                                 wait: '50-3000',
@@ -63,7 +77,6 @@ QUnit.test('surface0', function (assert) {
                                 y: 100
                             },
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 101,
                                 wait: 50,
@@ -71,7 +84,6 @@ QUnit.test('surface0', function (assert) {
                                 y: 100
                             },
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 100,
                                 wait: 50,
@@ -79,7 +91,6 @@ QUnit.test('surface0', function (assert) {
                                 y: 100
                             },
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: -1,
                                 wait: 50,
@@ -103,27 +114,35 @@ QUnit.test('surface0', function (assert) {
             }
         };
         srf = new Surface(document.createElement('div'), 0, 0, surfaceTree);
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok($(srf.element).width() === base.cnv.width)',
-            filepath: 'test/testSurface.js',
-            line: 107
-        }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
-            content: 'assert.ok($(srf.element).height() === base.cnv.height)',
-            filepath: 'test/testSurface.js',
-            line: 108
-        }));
-        frame = craetePictureFrame('surface0');
-        frame.add(srf.element, 'マリちゃんの\\0\\s[0]のまばたき');
-        return done();
+        return setTimeout(function () {
+            var frame;
+            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
+                content: 'assert.ok($(srf.element).width() === base.cnv.width)',
+                filepath: 'test/testSurface.js',
+                line: 120
+            }));
+            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
+                content: 'assert.ok($(srf.element).height() === base.cnv.height)',
+                filepath: 'test/testSurface.js',
+                line: 121
+            }));
+            frame = craetePictureFrame('surface0');
+            frame.add(srf.element, 'マリちゃんの\\0\\s[0]のまばたき');
+            return done();
+        });
     });
 });
 QUnit.test('surface overlay', function (assert) {
     var done;
     done = assert.async();
-    return Promise.all([SurfaceUtil.createSurfaceCanvasFromURL('src/surface0.png')]).then(function (arg) {
-        var base, frame, srf, surfaceTree;
-        base = arg[0];
+    return Promise.all([SurfaceUtil.fetchImageFromURL('src/surface0.png')]).then(function (arg) {
+        var _base, base, frame, srf, surfaceTree;
+        _base = arg[0];
+        base = {
+            cnv: null,
+            png: _base,
+            pna: null
+        };
         surfaceTree = {
             0: {
                 base: base,
@@ -134,7 +153,6 @@ QUnit.test('surface overlay', function (assert) {
                         interval: 'always',
                         patterns: [
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 0,
                                 wait: '50',
@@ -142,7 +160,6 @@ QUnit.test('surface overlay', function (assert) {
                                 y: 10
                             },
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 0,
                                 wait: 50,
@@ -150,7 +167,6 @@ QUnit.test('surface overlay', function (assert) {
                                 y: 0
                             },
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 0,
                                 wait: 50,
@@ -158,7 +174,6 @@ QUnit.test('surface overlay', function (assert) {
                                 y: -10
                             },
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 0,
                                 wait: 50,
@@ -166,7 +181,6 @@ QUnit.test('surface overlay', function (assert) {
                                 y: -20
                             },
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 0,
                                 wait: 50,
@@ -174,7 +188,6 @@ QUnit.test('surface overlay', function (assert) {
                                 y: -10
                             },
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 0,
                                 wait: 50,
@@ -182,7 +195,6 @@ QUnit.test('surface overlay', function (assert) {
                                 y: 0
                             },
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 0,
                                 wait: 50,
@@ -190,7 +202,6 @@ QUnit.test('surface overlay', function (assert) {
                                 y: 10
                             },
                             {
-                                animation_ids: [],
                                 type: 'overlay',
                                 surface: 0,
                                 wait: 50,
@@ -205,15 +216,90 @@ QUnit.test('surface overlay', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).width() === base.cnv.width)',
             filepath: 'test/testSurface.js',
-            line: 194
+            line: 205
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).height() === base.cnv.height)',
             filepath: 'test/testSurface.js',
-            line: 195
+            line: 206
         }));
         frame = craetePictureFrame('overlay テスト');
         frame.add(srf.element, 'マリちゃんのセルフエグザイル');
+        return done();
+    });
+});
+QUnit.test('surface overlay negative', function (assert) {
+    var done;
+    done = assert.async();
+    return Promise.all([SurfaceUtil.fetchImageFromURL('src/surface0.png')]).then(function (arg) {
+        var _base, base, frame, srf, surfaceTree;
+        _base = arg[0];
+        base = {
+            cnv: null,
+            png: _base,
+            pna: null
+        };
+        surfaceTree = {
+            0: {
+                base: base,
+                elements: [],
+                collisions: [],
+                animations: [{
+                        is: 0,
+                        interval: 'always',
+                        patterns: [
+                            {
+                                type: 'overlay',
+                                surface: 0,
+                                wait: '30',
+                                x: -10,
+                                y: -10
+                            },
+                            {
+                                type: 'overlay',
+                                surface: 0,
+                                wait: '30',
+                                x: -20,
+                                y: -20
+                            },
+                            {
+                                type: 'overlay',
+                                surface: 0,
+                                wait: '30',
+                                x: -30,
+                                y: -30
+                            },
+                            {
+                                type: 'overlay',
+                                surface: 0,
+                                wait: '30',
+                                x: -40,
+                                y: -40
+                            },
+                            {
+                                type: 'overlay',
+                                surface: 0,
+                                wait: '30',
+                                x: -50,
+                                y: -50
+                            }
+                        ]
+                    }]
+            }
+        };
+        srf = new Surface(document.createElement('div'), 0, 0, surfaceTree);
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok($(srf.element).width() === base.cnv.width)',
+            filepath: 'test/testSurface.js',
+            line: 271
+        }));
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
+            content: 'assert.ok($(srf.element).height() === base.cnv.height)',
+            filepath: 'test/testSurface.js',
+            line: 272
+        }));
+        frame = craetePictureFrame('overlay テスト');
+        frame.add(srf.element, 'マリちゃんが左上へ向かう');
         return done();
     });
 });

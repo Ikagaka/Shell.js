@@ -1,6 +1,7 @@
 export interface SurfaceCanvas {
     cnv: HTMLCanvasElement;
-    img: HTMLImageElement;
+    png: HTMLImageElement;
+    pna: HTMLImageElement;
 }
 export interface SurfaceMouseEvent {
     button: number;

@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "text-encoding/text-encoding.d.ts": {
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+      "ref": "78d36dd49b6b55b9fdfe61776a12bf05c8b07777"
     },
     "encoding-japanese/encoding.d.ts": {
       "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
@@ -31,10 +31,10 @@
       "path": "surfaces_txt2yaml.d.ts"
     },
     "jquery/jquery.d.ts": {
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+      "ref": "78d36dd49b6b55b9fdfe61776a12bf05c8b07777"
     },
     "touch-events/touch-events.d.ts": {
-      "ref": "708609e0764daeb5eb64104af7aca50c520c4e6e"
+      "ref": "78d36dd49b6b55b9fdfe61776a12bf05c8b07777"
     }
   }
 }

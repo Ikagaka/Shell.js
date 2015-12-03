@@ -1,6 +1,9 @@
+
+
 export interface SurfaceCanvas {
-  cnv: HTMLCanvasElement; // 色抜き後のサーフェス
-  img: HTMLImageElement; // 色抜き前の素材
+  cnv: HTMLCanvasElement; // 色抜き後のサーフェス。初期状態ではnull。使われるごとにキャッシュされる
+  png: HTMLImageElement; // 色抜き前の素材。cnvがあればnullable
+  pna: HTMLImageElement; // 色抜き前の素材。SurfaceUtil.pna しないかぎり nullable
 }
 
 

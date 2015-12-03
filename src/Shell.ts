@@ -175,7 +175,7 @@ export default class Shell extends EventEmitter {
         return this.getPNGFromDirectory(file).then((canvas)=>{
           if(!this.surfaceTree[n]){
             this.surfaceTree[n] = {
-              base: SurfaceUtil.createSurfaceCanvasDummy(),
+              base: {cnv:null, png: null, pna: null},
               elements: [],
               collisions: [],
               animations: []
@@ -206,7 +206,7 @@ export default class Shell extends EventEmitter {
       Object.keys(regions).forEach((regname)=>{
         if(!this.surfaceTree[n]){
           this.surfaceTree[n] = {
-            base: SurfaceUtil.createSurfaceCanvasDummy(),
+            base: {cnv:null, png: null, pna: null},
             elements: [],
             collisions: [],
             animations: []
@@ -228,7 +228,7 @@ export default class Shell extends EventEmitter {
       Object.keys(animations).forEach((animname)=>{
         if(!this.surfaceTree[n]){
           this.surfaceTree[n] = {
-            base: SurfaceUtil.createSurfaceCanvasDummy(),
+            base: {cnv:null, png: null, pna: null},
             elements: [],
             collisions: [],
             animations: []
@@ -246,15 +246,16 @@ export default class Shell extends EventEmitter {
   }
 
 
-  // this.directoryからfilenameなサーフェスを探す。
-  // this.cacheCanvas からも探す。
-  // あったらついでにpnaも探して合成する
+  // this.cacheCanvas から filename な SurfaceCanvas を探す。
+  // なければ this.directory から探し this.cacheCanvas にキャッシュする
+  // 非同期の理由：img.onload = blob url
   private getPNGFromDirectory(filename: string): Promise<SurfaceCanvas> {
     var cached_filename = SurfaceUtil.find(Object.keys(this.cacheCanvas), filename)[0] || "";
     if(cached_filename !== ""){
       return Promise.resolve(this.cacheCanvas[cached_filename]);
     }
     if(!this.hasFile(filename)){
+      // 我々は心優しいので寛大にも拡張子つけ忘れに対応してあげる
       filename += ".png";
       if(!this.hasFile(filename)){
         return Promise.reject<SurfaceCanvas>(new Error("no such file in directory: " + filename.replace(/\.png$/i, "")));
@@ -266,16 +267,15 @@ export default class Shell extends EventEmitter {
     var _pnafilename = SurfaceUtil.find(Object.keys(this.directory), pnafilename)[0] || "";
     var pngbuf = this.directory[_filename];
 
-    return SurfaceUtil.createSurfaceCanvasFromArrayBuffer(pngbuf).then((pngsrfcnv)=>{
+    return SurfaceUtil.fetchImageFromArrayBuffer(pngbuf).then((png)=>{
+      // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
       if(_pnafilename === ""){
-        this.cacheCanvas[_filename] = pngsrfcnv;
+        this.cacheCanvas[_filename] = {cnv:null, png, pna: null};
         return this.cacheCanvas[_filename];
       }
       var pnabuf = this.directory[_pnafilename];
-      return SurfaceUtil.createSurfaceCanvasFromArrayBuffer(pnabuf).then((pnasrfcnv)=>{
-        var render = new SurfaceRender();
-        render.pna(pngsrfcnv, pnasrfcnv);
-        this.cacheCanvas[_filename] = render.getSurfaceCanvas();
+      return SurfaceUtil.fetchImageFromArrayBuffer(pnabuf).then((pna)=>{
+        this.cacheCanvas[_filename] = {cnv:null, png, pna};
         return this.cacheCanvas[_filename];
       });
     });
@@ -299,9 +299,8 @@ export default class Shell extends EventEmitter {
       console.warn("surfaceId:", surfaceId, "is not defined");
       return null;
     }
-    var srf = new Surface(div, scopeId, _surfaceId, this.surfaceTree);
+    var srf = new Surface(div, scopeId, _surfaceId, this.surfaceTree, this.bindgroup);
     srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
-    srf.updateBind(this.bindgroup); // 現在の着せ替え設定の反映
     srf.on("mouse", (ev: SurfaceMouseEvent)=>{
       this.emit("mouse", ev); // detachSurfaceで消える
     });
@@ -347,7 +346,7 @@ export default class Shell extends EventEmitter {
     }
     this.bindgroup[scopeId][bindgroupId] = true;
     this.attachedSurface.forEach(({surface:srf, div})=>{
-      srf.updateBind(this.bindgroup);
+      srf.updateBind();
     });
   }
 
@@ -359,7 +358,7 @@ export default class Shell extends EventEmitter {
     }
     this.bindgroup[scopeId][bindgroupId] = false;
     this.attachedSurface.forEach(({surface:srf, div})=>{
-      srf.updateBind(this.bindgroup);
+      srf.updateBind();
     });
   }
 

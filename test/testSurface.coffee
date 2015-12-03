@@ -31,10 +31,13 @@ QUnit.module 'Shell.Surface'
 QUnit.test 'surface0', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface100.png")
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface101.png")
-  ]).then ([base, srf100, srf101])->
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+    SurfaceUtil.fetchImageFromURL("src/surface100.png")
+    SurfaceUtil.fetchImageFromURL("src/surface101.png")
+  ]).then ([_base, _srf100, _srf101])->
+    base = {cnv: null, png: _base, pna: null}
+    srf100 = {cnv: null, png: _srf100, pna: null}
+    srf101 = {cnv: null, png: _srf101, pna: null}
     surfaceTree =
       0:
         base: base
@@ -47,7 +50,6 @@ QUnit.test 'surface0', (assert) ->
             option: "5"
             patterns: [
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 100
                 wait: "50-3000"
@@ -55,7 +57,6 @@ QUnit.test 'surface0', (assert) ->
                 y: 100
               }
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 101
                 wait: 50
@@ -63,7 +64,6 @@ QUnit.test 'surface0', (assert) ->
                 y: 100
               }
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 100
                 wait: 50
@@ -71,7 +71,6 @@ QUnit.test 'surface0', (assert) ->
                 y: 100
               }
               {
-                animation_ids: []
                 type: "overlay"
                 surface: -1
                 wait: 50
@@ -92,18 +91,20 @@ QUnit.test 'surface0', (assert) ->
         collisions: []
         animations: []
     srf = new Surface(document.createElement("div"), 0, 0, surfaceTree)
-    assert.ok $(srf.element).width() is base.cnv.width
-    assert.ok $(srf.element).height() is base.cnv.height
-    frame = craetePictureFrame("surface0")
-    frame.add srf.element, "マリちゃんの\\0\\s[0]のまばたき"
-    done()
+    setTimeout ->
+      assert.ok $(srf.element).width() is base.cnv.width
+      assert.ok $(srf.element).height() is base.cnv.height
+      frame = craetePictureFrame("surface0")
+      frame.add srf.element, "マリちゃんの\\0\\s[0]のまばたき"
+      done()
 
 
 QUnit.test 'surface overlay', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-  ]).then ([base])->
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+  ]).then ([_base])->
+    base = {cnv: null, png: _base, pna: null}
     surfaceTree =
       0:
         base: base
@@ -115,7 +116,6 @@ QUnit.test 'surface overlay', (assert) ->
             interval: "always"
             patterns: [
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 0
                 wait: "50"
@@ -123,7 +123,6 @@ QUnit.test 'surface overlay', (assert) ->
                 y: 10
               }
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 0
                 wait: 50
@@ -131,7 +130,6 @@ QUnit.test 'surface overlay', (assert) ->
                 y: 0
               }
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 0
                 wait: 50
@@ -139,7 +137,6 @@ QUnit.test 'surface overlay', (assert) ->
                 y: -10
               }
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 0
                 wait: 50
@@ -147,7 +144,6 @@ QUnit.test 'surface overlay', (assert) ->
                 y: -20
               }
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 0
                 wait: 50
@@ -155,7 +151,6 @@ QUnit.test 'surface overlay', (assert) ->
                 y: -10
               }
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 0
                 wait: 50
@@ -163,7 +158,6 @@ QUnit.test 'surface overlay', (assert) ->
                 y: 0
               }
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 0
                 wait: 50
@@ -171,7 +165,6 @@ QUnit.test 'surface overlay', (assert) ->
                 y: 10
               }
               {
-                animation_ids: []
                 type: "overlay"
                 surface: 0
                 wait: 50
@@ -186,6 +179,67 @@ QUnit.test 'surface overlay', (assert) ->
     assert.ok $(srf.element).height() is base.cnv.height
     frame = craetePictureFrame("overlay テスト")
     frame.add srf.element, "マリちゃんのセルフエグザイル"
+    done()
+
+QUnit.test 'surface overlay negative', (assert) ->
+  done = assert.async()
+  Promise.all([
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+  ]).then ([_base])->
+    base = {cnv: null, png: _base, pna: null}
+    surfaceTree =
+      0:
+        base: base
+        elements: []
+        collisions: []
+        animations: [
+          {
+            is: 0
+            interval: "always"
+            patterns: [
+              {
+                type: "overlay"
+                surface: 0
+                wait: "30"
+                x: -10
+                y: -10
+              }
+              {
+                type: "overlay"
+                surface: 0
+                wait: "30"
+                x: -20
+                y: -20
+              }
+              {
+                type: "overlay"
+                surface: 0
+                wait: "30"
+                x: -30
+                y: -30
+              }
+              {
+                type: "overlay"
+                surface: 0
+                wait: "30"
+                x: -40
+                y: -40
+              }
+              {
+                type: "overlay"
+                surface: 0
+                wait: "30"
+                x: -50
+                y: -50
+              }
+            ]
+          }
+        ]
+    srf = new Surface(document.createElement("div"), 0, 0, surfaceTree)
+    assert.ok $(srf.element).width() is base.cnv.width
+    assert.ok $(srf.element).height() is base.cnv.height
+    frame = craetePictureFrame("overlay テスト")
+    frame.add srf.element, "マリちゃんが左上へ向かう"
     done()
 
 ###

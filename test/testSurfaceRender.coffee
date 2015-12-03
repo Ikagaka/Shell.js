@@ -1,4 +1,5 @@
 window.SurfaceRender = Shell.SurfaceRender
+SurfaceRender.prototype.debug = true;
 window.SurfaceUtil = Shell.SurfaceUtil
 
 $ -> $("<style />").html("canvas,img{border:1px solid black;}").appendTo($("body"))
@@ -28,57 +29,41 @@ QUnit.module 'Shell.SurfaceRender'
 QUnit.test 'SurfaceRender#clear', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0730.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.png")
   ]).then ([png])->
     render = new SurfaceRender()
-    render.base(png)
-    ctx = render.ctx
+    render.base({cnv: null, png, pna: null})
+    {cnv, ctx} = render
     ctx.fillStyle = "black"
     ctx.rect(10,10,80,80)
     ctx.fill()
     render.clear()
-    imagedata = ctx.getImageData(50, 50, png.cnv.width, png.cnv.height)
+    imagedata = ctx.getImageData(50, 50, cnv.width, cnv.height)
     alpha = imagedata.data[3]
     assert.ok alpha is 0
     done()
 
-QUnit.test 'SurfaceRender#pna', (assert) ->
+QUnit.test 'SurfaceRender#base', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0730.png")
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0730.pna")
-  ]).then ([png, pna])->
-    render = new SurfaceRender()
-    render.pna(png, pna)
-    imagedata = render.ctx.getImageData(0, 0, render.cnv.width, render.cnv.height)
-    alpha = imagedata.data[3]
-    assert.ok alpha is 0
-    frame = craetePictureFrame("SurfaceRender#pna")
-    frame.add render.cnv, "result"
-    frame.add $("<img src='src/surface0730.result.png' />")[0], "expected"
-    done()
-
-QUnit.test 'SurfaceRender#base, SurfaceRender#init', (assert) ->
-  done = assert.async()
-  Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
   ]).then ([png])->
     render = new SurfaceRender()
-    render.base(png)
-    assert.ok render.cnv.width is 182
-    assert.ok render.cnv.height is 445
+    render.base({cnv: null, png, pna: null})
+    {cnv, ctx} = render
+    assert.ok cnv.width is 182
+    assert.ok cnv.height is 445
     done()
 
 QUnit.test 'SurfaceRender#overlay', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0730.png")
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0730.pna")
-  ]).then ([base, png, pna])->
-    megane_render = new SurfaceRender()
-    megane_render.pna(png, pna)
-    megane = megane_render.getSurfaceCanvas()
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.pna")
+  ]).then ([img, png, pna])->
+    base = {cnv: null, png:img, pna: null}
+    megane = {cnv: null, png, pna}
     megane_on_base_render = new SurfaceRender()
     megane_on_base_render.base(base)
     base_on_megane_render = new SurfaceRender()
@@ -110,8 +95,9 @@ QUnit.test 'SurfaceRender#overlay', (assert) ->
 QUnit.test 'SurfaceRender#overlayfast', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-  ]).then ([base])->
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+  ]).then ([img])->
+    base = {cnv: null, png:img, pna: null}
     render = new SurfaceRender()
     render.base(base)
     transparent = render.getSurfaceCanvas()
@@ -126,8 +112,9 @@ QUnit.test 'SurfaceRender#overlayfast', (assert) ->
 QUnit.test 'SurfaceRender#interpolate', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-  ]).then ([base])->
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+  ]).then ([img])->
+    base = {cnv: null, png:img, pna: null}
     render = new SurfaceRender()
     render.base(base)
     transparent = render.getSurfaceCanvas()
@@ -142,8 +129,9 @@ QUnit.test 'SurfaceRender#interpolate', (assert) ->
 QUnit.test 'SurfaceRender#replace', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-  ]).then ([base])->
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+  ]).then ([img])->
+    base = {cnv: null, png:img, pna: null}
     render = new SurfaceRender()
     render.base(base)
     transparent = render.getSurfaceCanvas()
@@ -158,8 +146,9 @@ QUnit.test 'SurfaceRender#replace', (assert) ->
 QUnit.test 'SurfaceRender#move', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-  ]).then ([base])->
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+  ]).then ([img])->
+    base = {cnv: null, png:img, pna: null}
     render = new SurfaceRender()
     render.base(base)
     render.move(50, 50)
@@ -173,8 +162,9 @@ QUnit.test 'SurfaceRender#move', (assert) ->
 QUnit.test 'SurfaceRender#reduce', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-  ]).then ([base])->
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+  ]).then ([img])->
+    base = {cnv: null, png:img, pna: null}
     cnv = document.createElement("canvas")
     cnv.width = cnv.height = 100
     ctx = cnv.getContext("2d");
@@ -196,8 +186,9 @@ QUnit.test 'SurfaceRender#reduce', (assert) ->
 QUnit.test 'SurfaceRender#asis', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-  ]).then ([base])->
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+  ]).then ([img])->
+    base = {cnv: null, png:img, pna: null}
     render = new SurfaceRender()
     render.base(base)
     render.asis(base, 50, 50)
@@ -208,30 +199,18 @@ QUnit.test 'SurfaceRender#asis', (assert) ->
     frame.add $("<img src='src/asis.png' />")[0], "expected"
     done()
 
-QUnit.test 'SurfaceRender#initImageData', (assert) ->
-  done = assert.async()
-  Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-  ]).then ([base])->
-    ctx = base.cnv.getContext("2d")
-    imgdata = ctx.getImageData(0, 0, base.cnv.width, base.cnv.height)
-    render = new SurfaceRender()
-    render.initImageData(base.cnv.width, base.cnv.height, imgdata.data)
-    assert.ok render.cnv.width is 182
-    assert.ok render.cnv.height is 445
-    done()
+
 
 
 QUnit.test 'SurfaceRender#composeElements', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0730.png")
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0730.pna")
-  ]).then ([base, png, pna])->
-    megane_render = new SurfaceRender()
-    megane_render.pna(png, pna)
-    megane = megane_render.getSurfaceCanvas()
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.pna")
+  ]).then ([img, png, pna])->
+    base = {cnv: null, png:img, pna: null}
+    megane = {cnv: null, png, pna}
     render = new SurfaceRender()
     render.composeElements [
       {canvas: base, type: "base", x: 0, y: 0}
@@ -246,8 +225,9 @@ QUnit.test 'SurfaceRender#composeElements', (assert) ->
 QUnit.test 'SurfaceRender#drawRegions', (assert) ->
   done = assert.async()
   Promise.all([
-    SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png")
-  ]).then ([base, png, pna])->
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+  ]).then ([img])->
+    base = {cnv: null, png:img, pna: null}
     render = new SurfaceRender()
     render.composeElements [
       {canvas: base, type: "base", x: 0, y: 0}
@@ -270,4 +250,73 @@ QUnit.test 'SurfaceRender#drawRegions', (assert) ->
     frame = craetePictureFrame("SurfaceRender#drawRegions")
     frame.add render.cnv, "result"
     frame.add $("<img src='src/drawRegions.png' />")[0], "expected"
+    done()
+
+
+
+QUnit.test 'SurfaceRender#overlay negative', (assert) ->
+  done = assert.async()
+  Promise.all([
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.pna")
+  ]).then ([img, png, pna])->
+    base = {cnv: null, png:img, pna: null}
+    megane = {cnv: null, png, pna}
+    render = new SurfaceRender()
+    render.debug = true;
+    render.composeElements [
+      {canvas: base, type: "base", x: 0, y: 0}
+      {canvas: megane, type: "overlay", x: -100, y: -100}
+      {canvas: megane, type: "overlay", x: -50, y: -50}
+      {canvas: megane, type: "overlay", x: 0, y: 0}
+    ]
+    assert.ok true
+    frame = craetePictureFrame("SurfaceRender#overlay negative")
+    frame.add render.cnv, "result"
+    done()
+
+
+QUnit.test 'SurfaceRender#overlay base on megane', (assert) ->
+  done = assert.async()
+  Promise.all([
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.pna")
+  ]).then ([img, png, pna])->
+    base = {cnv: null, png:img, pna: null}
+    megane = {cnv: null, png, pna}
+    render = new SurfaceRender()
+    render.debug = true;
+    render.composeElements [
+      {canvas: megane, type: "base", x: 0, y: 0}
+      {canvas: base, type: "overlay", x: -100, y: -100}
+    ]
+    assert.ok true
+    frame = craetePictureFrame("SurfaceRender#overlay negative")
+    frame.add render.cnv, "result"
+    done()
+
+
+QUnit.test 'SurfaceRender#overlay base on megane super', (assert) ->
+  done = assert.async()
+  Promise.all([
+    SurfaceUtil.fetchImageFromURL("src/surface0.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.png")
+    SurfaceUtil.fetchImageFromURL("src/surface0730.pna")
+  ]).then ([img, png, pna])->
+    base = {cnv: null, png:img, pna: null}
+    megane = {cnv: null, png, pna}
+    render = new SurfaceRender()
+    render.debug = true;
+    render.composeElements [
+      {canvas: megane, type: "base", x: 0, y: 0}
+      {canvas: megane, type: "overlay", x: -50, y: -50} # 左上
+      {canvas: megane, type: "overlay", x: 50, y: -50} # 右上
+      {canvas: megane, type: "overlay", x: -50, y: 50} # 左下
+      {canvas: megane, type: "overlay", x: 50, y: 50} # 右下
+    ]
+    assert.ok true
+    frame = craetePictureFrame("SurfaceRender#overlay negative")
+    frame.add render.cnv, "result"
     done()

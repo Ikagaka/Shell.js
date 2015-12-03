@@ -1,3 +1,5 @@
+// todo: anim collision
+
 /// <reference path="../typings/tsd.d.ts"/>
 
 import SurfaceRender from "./SurfaceRender";
@@ -28,11 +30,12 @@ export default class Surface extends EventEmitter {
   private animationsQueue: { [animationId: number]: Function[] }; // key:animationId, 再生中のアニメーションのコマごとのキュー。アニメーションの強制停止に使う
   private stopFlags:       { [animationId: number]: boolean };//keyがfalseのアニメーションの"自発的"再生を停止する、sometimesみたいのを止める。bindには関係ない
   private surfaceTree:     { [animationId: number]: SurfaceTreeNode };
+  private bindgroup:       { [charId: number]: { [bindgroupId: number]: boolean } }
 
   private destructed: boolean;
   private destructors: Function[]; // destructor実行時に実行される関数のリスト
 
-  constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceTree: { [animationId: number]: SurfaceTreeNode }) {
+  constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceTree: { [animationId: number]: SurfaceTreeNode }, bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }) {
     super();
 
     this.element = div;
@@ -46,10 +49,12 @@ export default class Surface extends EventEmitter {
     $(this.element).css("display", "inline-block");
     $(this.cnv).css("position", "absolute");
 
+    this.bindgroup = bindgroup;
     this.position = "fixed";
     this.surfaceTree = surfaceTree;
     this.surfaceNode = this.surfaceTree[surfaceId];
     this.bufferCanvas = SurfaceUtil.createCanvas();
+
 
     this.talkCount = 0;
     this.talkCounts = {};
@@ -71,6 +76,8 @@ export default class Surface extends EventEmitter {
     this.destructors.forEach((fn)=> fn());
     this.element = null;
     this.surfaceNode = null;
+    this.surfaceTree = null;
+    this.bindgroup = null;
     this.element = null;
     this.layers = [];
     this.animationsQueue = {};
@@ -145,7 +152,7 @@ export default class Surface extends EventEmitter {
   }
 
   private initAnimation(anim: SurfaceAnimation): void {
-    var {is:animId, interval, patterns} = anim;//isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
+    var {is:animId, interval, patterns, option} = anim;//isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
     var [_interval, ...rest] = interval.split(",");
     if(rest.length > 1){
       var n = Number(rest[0]);
@@ -154,69 +161,70 @@ export default class Surface extends EventEmitter {
         n = 4; } } // rarelyにfaileback
     // アニメーション描画タイミングの登録
     var fn = (nextTick: Function) => {
-      if (!this.destructed && !this.stopFlags[animId]) {
-        this.play(animId, nextTick); } }
+      if (this.destructed) return;
+      if (this.stopFlags[animId]) return;
+      this.play(animId, nextTick);
+    }
+    // アニメーションを止めるための準備
+    this.stopFlags[animId] = false;
     switch (_interval) {
       // nextTickを呼ぶともう一回random
-      case "sometimes":SurfaceUtil.random(fn, 2); break;
-      case "rarely":   SurfaceUtil.random(fn, 4); break;
-      case "random":   SurfaceUtil.random(fn, n); break;
-      case "periodic": SurfaceUtil.periodic(fn, n); break;
-      case "always":   SurfaceUtil.always(fn); break;
-      case "runonce": this.play(animId); break;
-      case "never": break;
-      case "yen-e": break;
-      case "talk": this.talkCounts[animId] = n; break;
+      case "sometimes": return SurfaceUtil.random(fn, 2);
+      case "rarely":    return SurfaceUtil.random(fn, 4);
+      case "random":    return SurfaceUtil.random(fn, n);
+      case "periodic":  return SurfaceUtil.periodic(fn, n);
+      case "always":    return SurfaceUtil.always(fn);
+      case "runonce":   return this.play(animId);
+      case "never":     return;
+      case "yen-e":     return;
+      case "talk": this.talkCounts[animId] = n; return;
       default:
         if(/^bind/.test(interval)){
-          this.initBind(anim); // bindのことはinitBindにまるなげ
-          break; }
-        console.warn("Surface#initAnimation > unkown SERIKO or MAYURA interval:", interval, anim);
+          this.initBind(anim);
+          return;
+        }
     }
+    console.warn("Surface#initAnimation > unkown interval:", interval, anim);
   }
 
   private initBind(anim: SurfaceAnimation): void {
+    var {is:animId, interval, patterns, option} = anim;
     // bind+somtimesみたいなやつを分解
-    var {is, interval, patterns, option} = anim;
     var [_bind, ...intervals] = interval.split("+");
-    if(intervals.length > 0) return;
-    intervals.forEach((interval)=>{
-      //sometimesみたいのはinitAnimationに丸投げ
-      this.initAnimation({interval, is, patterns, option});
-    });
-    var {option} = anim;
+    if (this.bindgroup[this.scopeId] == null) return;
+    if (this.bindgroup[this.scopeId][animId] == null) return;
+    if (this.bindgroup[this.scopeId][animId] === true){
+      // 現在有効な bind
+      intervals.forEach((interval)=>{
+        //sometimesみたいのはinitAnimationに丸投げ
+        this.initAnimation({interval, is: animId, patterns, option});
+      });
+
+      if(option === "background"){
+        this.backgrounds[animId] = patterns[patterns.length-1];
+      }else{
+        this.layers[animId] = patterns[patterns.length-1];
+      }
+      // bind+sometimsなどを殺す
+      this.end(animId);
+      // bindは即座に反映
+      this.render();
+      return;
+    }
+    //現在の合成レイヤから着せ替えレイヤを削除
     if(option === "background"){
-      this.backgrounds[is] = patterns[patterns.length-1];
+      delete this.backgrounds[animId];
     }else{
-      this.layers[is] = patterns[patterns.length-1];
+      delete this.layers[animId];
     }
     this.render();
+    return;
   }
 
-  public updateBind(bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }): void {
+  public updateBind(): void {
     // Shell.tsから呼ばれるためpublic
     // Shell#bind,Shell#unbindで発動
-    // shell.bindgroup[scopeId][bindgroupId] が変更された時に呼ばれる
-    this.surfaceNode.animations.forEach((anim)=>{
-      //このサーフェスに定義されたアニメーションの中でintervalがbindなものｗ探す
-      var {is, interval, patterns, option} = anim;
-      if (bindgroup[this.scopeId] == null) return;
-      if (bindgroup[this.scopeId][is] == null) return;
-      if (!/^bind/.test(interval)) return;
-      if (bindgroup[this.scopeId][is] === true){
-        //現在の設定が着せ替え有効ならばinitBindにまるなげ
-        this.initBind(anim);
-      }else{
-        //現在の合成レイヤから着せ替えレイヤを削除
-        delete this.layers[is];
-        if(option === "background"){
-          delete this.backgrounds[is];
-        }else{
-          delete this.layers[is];
-        }
-        this.render();
-      }
-    });
+    this.surfaceNode.animations.forEach((anim)=>{ this.initBind(anim); });
   }
 
   // アニメーションタイミングループの開始
@@ -232,8 +240,8 @@ export default class Surface extends EventEmitter {
   }
 
   public endAll(): void {
-    Object.keys(this.stopFlags).forEach((key)=>{
-      this.stopFlags[key] = false;
+    Object.keys(this.stopFlags).forEach((animationId)=>{
+      this.end(<number><any>animationId);
     })
   }
 
@@ -289,7 +297,7 @@ export default class Surface extends EventEmitter {
     var animations = this.surfaceNode.animations;
     this.talkCount++;
     var hits = animations.filter((anim)=>
-        /^talk/.test(anim.interval) && this.talkCount % this.talkCounts[anim.is] === 0);
+        /talk/.test(anim.interval) && this.talkCount % this.talkCounts[anim.is] === 0);
     hits.forEach((anim)=>{
       this.play(anim.is);
     });
@@ -299,7 +307,7 @@ export default class Surface extends EventEmitter {
     var anims = this.surfaceNode.animations;
     anims.forEach((anim)=>{
       // この条件式よくわからない
-      if (anim.interval === "yen-e" && this.talkCount % this.talkCounts[anim.is] === 0) {
+      if (anim.interval === "yen-e") {
         this.play(anim.is);
       }
     });
@@ -312,15 +320,14 @@ export default class Surface extends EventEmitter {
       if(surface < 0) return; // idが-1つまり非表示指定
       var srf = this.surfaceTree[surface]; // 該当のサーフェス
       if(srf == null){
-        console.warn("Surface#render: surface id "+surface + " is not defined.", pattern);
+        console.warn("Surface#composeAnimationPatterns: surface id "+surface + " is not defined.", pattern);
         console.warn(surface, Object.keys(this.surfaceTree));
         return; // 対象サーフェスがないのでスキップ
       }
       // 対象サーフェスを構築描画する
       var {base, elements, collisions, animations} = srf;
       var rndr = new SurfaceRender();// 対象サーフェスのbaseサーフェス(surface*.png)の上に
-      rndr.base(base)
-      rndr.composeElements(elements); // elementを合成する
+      rndr.composeElements([{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements)); // elementを合成する
       renderLayers.push({type, x, y, canvas: rndr.getSurfaceCanvas()});
     });
     return renderLayers;
@@ -332,20 +339,39 @@ export default class Surface extends EventEmitter {
     var base = this.surfaceNode.base;
     var elements = this.surfaceNode.elements;
     var fronts = this.composeAnimationPatterns(this.layers);
+
     var renderLayers: SurfaceLayerObject[] = [].concat(
-      backgrounds,
-      [{type: "overlay", canvas: base, x: 0, y: 0}],
-      elements,
-      fronts);
+      // よめきつね対策
+      // ukadoc上ではbackgroundの上にbaseがくるとのことだｋが
+      // SSPの挙動を見る限りbackgroundがあるときはbaseが無視されているので
+      backgrounds.length > 0 ? backgrounds: [{type: "overlay", canvas: base, x: 0, y: 0}],
+      elements);
     var bufRender = new SurfaceRender(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
     bufRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
+    // elementまでがベースサーフェス扱い
+    var baseWidth = bufRender.cnv.width;
+    var baseHeight = bufRender.cnv.height;
+    // アニメーションレイヤーは別腹
+    bufRender.composeElements(fronts);
     if (this.enableRegionDraw) { // 当たり判定を描画
       bufRender.ctx.fillText(""+this.surfaceId, 5, 10); // surfaceIdを描画
       bufRender.drawRegions(this.surfaceNode.collisions);
     }
+    /*
+    console.log(bufRender.log);
+    SurfaceUtil.log(bufRender.cnv);
+    document.body.scrollTop = 9999;
+    this.endAll();
+    debugger;
+    */
+
+
     SurfaceUtil.init(this.cnv, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
-    $(this.element).width(bufRender.baseWidth);//this.cnv.width - bufRender.basePosX);
-    $(this.element).height(bufRender.baseHeight);//this.cnv.height - bufRender.basePosY);
+    // SSPでのjuda.narを見る限り合成後のサーフェスはベースサーフェスの大きさではなく合成されたサーフェスの大きさになるようだ
+    // juda-systemの\s[1050]のアニメーションはrunonceを同時実行しており、この場合の座標の原点の計算方法が不明。
+    // これは未定義動作の可能性が高い。
+    $(this.element).width(baseWidth);//this.cnv.width - bufRender.basePosX);
+    $(this.element).height(baseHeight);//this.cnv.height - bufRender.basePosY);
     $(this.cnv).css("top", -bufRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
     $(this.cnv).css("left", -bufRender.basePosX);
   }
