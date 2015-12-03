@@ -153,6 +153,14 @@ export default class Surface extends EventEmitter {
 
   private initAnimation(anim: SurfaceAnimation): void {
     var {is:animId, interval, patterns, option} = anim;//isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
+    var __intervals = interval.split("+"); // sometimes+talk
+    if(__intervals.length > 1){
+      // 分解して再実行
+      __intervals.forEach((interval)=>{
+        this.initAnimation({interval, is: animId, patterns, option});
+      });
+      return;
+    }
     var [_interval, ...rest] = interval.split(",");
     if(rest.length > 1){
       var n = Number(rest[0]);
@@ -179,7 +187,7 @@ export default class Surface extends EventEmitter {
       case "yen-e":     return;
       case "talk": this.talkCounts[animId] = n; return;
       default:
-        if(/^bind/.test(interval)){
+        if(/^bind$/.test(interval)){
           this.initBind(anim);
           return;
         }
@@ -189,17 +197,10 @@ export default class Surface extends EventEmitter {
 
   private initBind(anim: SurfaceAnimation): void {
     var {is:animId, interval, patterns, option} = anim;
-    // bind+somtimesみたいなやつを分解
-    var [_bind, ...intervals] = interval.split("+");
     if (this.bindgroup[this.scopeId] == null) return;
     if (this.bindgroup[this.scopeId][animId] == null) return;
     if (this.bindgroup[this.scopeId][animId] === true){
       // 現在有効な bind
-      intervals.forEach((interval)=>{
-        //sometimesみたいのはinitAnimationに丸投げ
-        this.initAnimation({interval, is: animId, patterns, option});
-      });
-
       if(option === "background"){
         this.backgrounds[animId] = patterns[patterns.length-1];
       }else{
@@ -306,7 +307,6 @@ export default class Surface extends EventEmitter {
   public yenE(): void {
     var anims = this.surfaceNode.animations;
     anims.forEach((anim)=>{
-      // この条件式よくわからない
       if (anim.interval === "yen-e") {
         this.play(anim.is);
       }
@@ -354,8 +354,7 @@ export default class Surface extends EventEmitter {
     // アニメーションレイヤーは別腹
     bufRender.composeElements(fronts);
     if (this.enableRegionDraw) { // 当たり判定を描画
-      bufRender.ctx.fillText(""+this.surfaceId, 5, 10); // surfaceIdを描画
-      bufRender.drawRegions(this.surfaceNode.collisions);
+      bufRender.drawRegions(this.surfaceNode.collisions, ""+this.surfaceId);
     }
     /*
     console.log(bufRender.log);

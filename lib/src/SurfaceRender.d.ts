@@ -38,6 +38,6 @@ export default class SurfaceRender {
     reduce(part: SurfaceCanvas, x: number, y: number): void;
     init(srfCnv: SurfaceCanvas): void;
     initImageData(width: number, height: number, data: Uint8ClampedArray): void;
-    drawRegions(regions: SurfaceRegion[]): void;
+    drawRegions(regions: SurfaceRegion[], description: string): void;
     drawRegion(region: SurfaceRegion): void;
 }

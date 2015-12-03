@@ -292,7 +292,13 @@ export default class SurfaceRender {
     this.ctx.putImageData(imgdata, 0, 0);
   }
 
-  drawRegions(regions: SurfaceRegion[]): void {
+  drawRegions(regions: SurfaceRegion[], description: string): void {
+    this.ctx.font = "35px";
+    this.ctx.lineWidth = 4;
+    this.ctx.strokeStyle = "white";
+    this.ctx.strokeText(description, 5, 10);
+    this.ctx.fillStyle = "black";
+    this.ctx.fillText(description, 5, 10); // surfaceIdを描画
     regions.forEach((col)=>{
       this.drawRegion(col);
     });
@@ -301,12 +307,13 @@ export default class SurfaceRender {
   drawRegion(region: SurfaceRegion): void {
     if(this.debug) this.log.push({method: "drawRegion", args:[region]});
     var {type="", name="", left=0, top=0, right=0, bottom=0, coordinates=[], radius=0, center_x=0, center_y=0} = region;
-    left += this.basePosX
-    top += this.basePosY
-    right += this.basePosX
-    bottom += this.basePosY
-    center_x += this.basePosX
-    center_y += this.basePosY
+    left += this.basePosX;
+    top += this.basePosY;
+    right += this.basePosX;
+    bottom += this.basePosY;
+    center_x += this.basePosX;
+    center_y += this.basePosY;
+    this.ctx.lineWidth = 1;
     this.ctx.strokeStyle = "#00FF00";
     switch (type) {
       case "rect":
@@ -318,6 +325,7 @@ export default class SurfaceRender {
     }
     this.ctx.stroke();
     this.ctx.font = "35px";
+    this.ctx.lineWidth = 4;
     this.ctx.strokeStyle = "white";
     this.ctx.strokeText(type + ":" + name, left + 5, top + 10);
     this.ctx.fillStyle = "black";
