@@ -616,6 +616,8 @@ var Surface = (function (_EventEmitter) {
         this.stopFlags = {};
         this.destructed = false;
         this.destructors = [];
+        // GCの発生を抑えるためレンダラはこれ１つを使いまわす
+        this.bufferRender = new _SurfaceRender2["default"]();
         this.initMouseEvent();
         this.surfaceNode.animations.forEach(function (anim) {
             _this.initAnimation(anim);
@@ -1009,21 +1011,22 @@ var Surface = (function (_EventEmitter) {
     }, {
         key: "composeAnimationPatterns",
         value: function composeAnimationPatterns(layers) {
-            var _this9 = this;
-
             var renderLayers = [];
-            layers.forEach(function (pattern, i) {
+            var keys = Object.keys(layers);
+            // forEachからfor文へ
+            for (var j = 0; j < keys.length; j++) {
+                var pattern = layers[keys[j]];
                 var surface = pattern.surface;
                 var type = pattern.type;
                 var x = pattern.x;
                 var y = pattern.y;
 
-                if (surface < 0) return; // idが-1つまり非表示指定
-                var srf = _this9.surfaceTree[surface]; // 該当のサーフェス
+                if (surface < 0) continue; // idが-1つまり非表示指定
+                var srf = this.surfaceTree[surface]; // 該当のサーフェス
                 if (srf == null) {
                     console.warn("Surface#composeAnimationPatterns: surface id " + surface + " is not defined.", pattern);
-                    console.warn(surface, Object.keys(_this9.surfaceTree));
-                    return; // 対象サーフェスがないのでスキップ
+                    console.warn(surface, Object.keys(this.surfaceTree));
+                    continue; // 対象サーフェスがないのでスキップ
                 }
                 // 対象サーフェスを構築描画する
                 var base = srf.base;
@@ -1031,10 +1034,10 @@ var Surface = (function (_EventEmitter) {
                 var collisions = srf.collisions;
                 var animations = srf.animations;
 
-                var rndr = new _SurfaceRender2["default"](); // 対象サーフェスのbaseサーフェス(surface*.png)の上に
-                rndr.composeElements([{ type: "overlay", canvas: base, x: 0, y: 0 }].concat(elements)); // elementを合成する
-                renderLayers.push({ type: type, x: x, y: y, canvas: rndr.getSurfaceCanvas() });
-            });
+                this.bufferRender.reset(); // 対象サーフェスのbaseサーフェス(surface*.png)の上に
+                this.bufferRender.composeElements([{ type: "overlay", canvas: base, x: 0, y: 0 }].concat(elements)); // elementを合成する
+                renderLayers.push({ type: type, x: x, y: y, canvas: this.bufferRender.getSurfaceCanvas() });
+            }
             return renderLayers;
         }
     }, {
@@ -1050,15 +1053,15 @@ var Surface = (function (_EventEmitter) {
             // ukadoc上ではbackgroundの上にbaseがくるとのことだｋが
             // SSPの挙動を見る限りbackgroundがあるときはbaseが無視されているので
             backgrounds.length > 0 ? backgrounds : [{ type: "overlay", canvas: base, x: 0, y: 0 }], elements);
-            var bufRender = new _SurfaceRender2["default"](); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
-            bufRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
+            this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
+            this.bufferRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
             // elementまでがベースサーフェス扱い
-            var baseWidth = bufRender.cnv.width;
-            var baseHeight = bufRender.cnv.height;
+            var baseWidth = this.bufferRender.cnv.width;
+            var baseHeight = this.bufferRender.cnv.height;
             // アニメーションレイヤーは別腹
-            bufRender.composeElements(fronts);
+            this.bufferRender.composeElements(fronts);
             if (this.enableRegionDraw) {
-                bufRender.drawRegions(this.surfaceNode.collisions, "" + this.surfaceId);
+                this.bufferRender.drawRegions(this.surfaceNode.collisions, "" + this.surfaceId);
             }
             /*
             console.log(bufRender.log);
@@ -1067,14 +1070,14 @@ var Surface = (function (_EventEmitter) {
             this.endAll();
             debugger;
             */
-            SurfaceUtil.init(this.cnv, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
+            SurfaceUtil.init(this.cnv, this.ctx, this.bufferRender.cnv); // バッファから実DOMTree上のcanvasへ描画
             // SSPでのjuda.narを見る限り合成後のサーフェスはベースサーフェスの大きさではなく合成されたサーフェスの大きさになるようだ
             // juda-systemの\s[1050]のアニメーションはrunonceを同時実行しており、この場合の座標の原点の計算方法が不明。
             // これは未定義動作の可能性が高い。
             (0, _jquery2["default"])(this.element).width(baseWidth); //this.cnv.width - bufRender.basePosX);
             (0, _jquery2["default"])(this.element).height(baseHeight); //this.cnv.height - bufRender.basePosY);
-            (0, _jquery2["default"])(this.cnv).css("top", -bufRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
-            (0, _jquery2["default"])(this.cnv).css("left", -bufRender.basePosX);
+            (0, _jquery2["default"])(this.cnv).css("top", -this.bufferRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
+            (0, _jquery2["default"])(this.cnv).css("left", -this.bufferRender.basePosX);
         }
     }]);
 
@@ -1112,6 +1115,8 @@ var SurfaceRender = (function () {
         this.use_self_alpha = false;
         this.cnv = SurfaceUtil.createCanvas();
         this.ctx = this.cnv.getContext("2d");
+        this.tmpcnv = SurfaceUtil.createCanvas();
+        this.tmpctx = this.tmpcnv.getContext("2d");
         this.basePosX = 0;
         this.basePosY = 0;
         this.baseWidth = 0;
@@ -1120,6 +1125,19 @@ var SurfaceRender = (function () {
     }
 
     _createClass(SurfaceRender, [{
+        key: "reset",
+        value: function reset() {
+            this.cnv.width = 1;
+            this.cnv.height = 1;
+            this.tmpcnv.width = 1;
+            this.tmpcnv.height = 1;
+            this.basePosX = 0;
+            this.basePosY = 0;
+            this.baseWidth = 0;
+            this.baseHeight = 0;
+            this.log = [];
+        }
+    }, {
         key: "getSurfaceCanvas",
         value: function getSurfaceCanvas() {
             return { cnv: SurfaceUtil.copy(this.cnv), png: null, pna: null };
@@ -1132,16 +1150,17 @@ var SurfaceRender = (function () {
     }, {
         key: "composeElements",
         value: function composeElements(elements) {
-            var _this = this;
+            // V8による最適化のためfor文に
+            var keys = Object.keys(elements);
+            for (var i = 0; i < keys.length; i++) {
+                var _elements$keys$i = elements[keys[i]];
+                var canvas = _elements$keys$i.canvas;
+                var type = _elements$keys$i.type;
+                var x = _elements$keys$i.x;
+                var y = _elements$keys$i.y;
 
-            elements.forEach(function (_ref, id) {
-                var canvas = _ref.canvas;
-                var type = _ref.type;
-                var x = _ref.x;
-                var y = _ref.y;
-
-                _this.composeElement(canvas, type, x, y);
-            });
+                this.composeElement(canvas, type, x, y);
+            }
         }
     }, {
         key: "composeElement",
@@ -1218,7 +1237,7 @@ var SurfaceRender = (function () {
         key: "prepareOverlay",
         value: function prepareOverlay(part, x, y) {
             // baseのcanvasを拡大するためのキャッシュ
-            var tmp = SurfaceUtil.copy(this.cnv);
+            var tmp = SurfaceUtil.fastcopy(this.cnv, this.tmpcnv, this.tmpctx);
             var offsetX = 0;
             var offsetY = 0;
             // もしパーツが右下へはみだす
@@ -1269,13 +1288,7 @@ var SurfaceRender = (function () {
                 this.ctx.fillStyle = "lime";
                 this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
             }
-            //console.log("x", "y","|", "offsetX", "offsetY", "|","basePosX", "basePosY")
-            //console.log(x, y,"|", offsetX, offsetY, "|",this.basePosX, this.basePosY)
-            //SurfaceUtil.log(SurfaceUtil.copy(part.cnv), "part");
-            //SurfaceUtil.log(SurfaceUtil.copy(tmp), "tmp");
-            //SurfaceUtil.log(SurfaceUtil.copy(this.cnv), "cnv");
             this.ctx.drawImage(tmp, offsetX, offsetY); //下位レイヤ再描画
-            //SurfaceUtil.log(SurfaceUtil.copy(this.cnv), "cnv2");
         }
 
         //下位レイヤにコマを重ねる。
@@ -1432,7 +1445,7 @@ var SurfaceRender = (function () {
     }, {
         key: "drawRegions",
         value: function drawRegions(regions, description) {
-            var _this2 = this;
+            var _this = this;
 
             this.ctx.font = "35px";
             this.ctx.lineWidth = 4;
@@ -1441,7 +1454,7 @@ var SurfaceRender = (function () {
             this.ctx.fillStyle = "black";
             this.ctx.fillText(description, 5, 10); // surfaceIdを描画
             regions.forEach(function (col) {
-                _this2.drawRegion(col);
+                _this.drawRegion(col);
             });
         }
     }, {
@@ -1527,6 +1540,7 @@ exports.find = find;
 exports.fastfind = fastfind;
 exports.choice = choice;
 exports.copy = copy;
+exports.fastcopy = fastcopy;
 exports.fetchPNGUint8ClampedArrayFromArrayBuffer = fetchPNGUint8ClampedArrayFromArrayBuffer;
 exports.fetchImageFromArrayBuffer = fetchImageFromArrayBuffer;
 exports.fetchImageFromURL = fetchImageFromURL;
@@ -1769,6 +1783,15 @@ function copy(cnv) {
     _copy.height = cnv.height;
     ctx.drawImage(cnv, 0, 0); // type hack
     return _copy;
+}
+
+// tmpcnvにコピー
+
+function fastcopy(cnv, tmpcnv, tmpctx) {
+    tmpcnv.width = cnv.width;
+    tmpcnv.height = cnv.height;
+    tmpctx.drawImage(cnv, 0, 0); // type hack
+    return tmpcnv;
 }
 
 function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf, pnabuf) {

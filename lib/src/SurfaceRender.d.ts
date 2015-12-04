@@ -3,6 +3,8 @@ import { SurfaceCanvas } from "./Interfaces";
 export default class SurfaceRender {
     cnv: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
+    tmpcnv: HTMLCanvasElement;
+    tmpctx: CanvasRenderingContext2D;
     basePosX: number;
     basePosY: number;
     baseWidth: number;
@@ -16,6 +18,7 @@ export default class SurfaceRender {
     constructor(opt?: {
         use_self_alpha: boolean;
     });
+    reset(): void;
     getSurfaceCanvas(): SurfaceCanvas;
     composeElements(elements: {
         canvas: SurfaceCanvas;

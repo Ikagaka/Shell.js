@@ -21,6 +21,7 @@ export default class Surface extends EventEmitter {
     private bindgroup;
     private destructed;
     private destructors;
+    private bufferRender;
     constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceTree: {
         [animationId: number]: SurfaceTreeNode;
     }, bindgroup: {

@@ -212,6 +212,14 @@ export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement
   return _copy;
 }
 
+// tmpcnvにコピー
+export function fastcopy(cnv: HTMLCanvasElement|HTMLImageElement, tmpcnv:HTMLCanvasElement , tmpctx: CanvasRenderingContext2D) {
+  tmpcnv.width = cnv.width;
+  tmpcnv.height = cnv.height;
+  tmpctx.drawImage(<HTMLCanvasElement>cnv, 0, 0); // type hack
+  return tmpcnv;
+}
+
 export function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf: ArrayBuffer, pnabuf?: ArrayBuffer): Promise<{width:number, height:number, data:Uint8ClampedArray}> {
   console.warn("SurfaceUtil.fetchPNGUint8ClampedArrayFromArrayBuffer is deprecated");
   return new Promise((resolve,reject)=>{

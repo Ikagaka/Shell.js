@@ -22,7 +22,7 @@
 <p>collision: <input type="checkbox" id="collisionDraw" /></p>
 </fieldset>
 <script>
-Shell.SurfaceRender.prototype.debug = true;//実際メモリの危機
+Shell.SurfaceRender.prototype.debug = false;//実際メモリの危機,GC多発
 
 //NarLoader.loadFromURL("../nar/raychel_second.nar").then(changeNar)
 NarLoader.loadFromURL("../nar/mobilemaster.nar").then(changeNar)

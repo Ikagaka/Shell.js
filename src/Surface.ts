@@ -35,6 +35,8 @@ export default class Surface extends EventEmitter {
   private destructed: boolean;
   private destructors: Function[]; // destructor実行時に実行される関数のリスト
 
+  private bufferRender: SurfaceRender;
+
   constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceTree: { [animationId: number]: SurfaceTreeNode }, bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }) {
     super();
 
@@ -65,6 +67,9 @@ export default class Surface extends EventEmitter {
 
     this.destructed = false;
     this.destructors = [];
+
+    // GCの発生を抑えるためレンダラはこれ１つを使いまわす
+    this.bufferRender = new SurfaceRender();
 
     this.initMouseEvent();
     this.surfaceNode.animations.forEach((anim)=>{ this.initAnimation(anim); });
@@ -315,21 +320,24 @@ export default class Surface extends EventEmitter {
 
   private composeAnimationPatterns(layers: SurfaceAnimationPattern[]): SurfaceLayerObject[] {
     var renderLayers: SurfaceLayerObject[] = [];
-    layers.forEach((pattern, i)=>{
+    var keys = Object.keys(layers);
+    // forEachからfor文へ
+    for(let j=0; j<keys.length; j++){
+      var pattern: SurfaceAnimationPattern = layers[keys[j]];
       var {surface, type, x, y} = pattern;
-      if(surface < 0) return; // idが-1つまり非表示指定
+      if(surface < 0) continue; // idが-1つまり非表示指定
       var srf = this.surfaceTree[surface]; // 該当のサーフェス
       if(srf == null){
         console.warn("Surface#composeAnimationPatterns: surface id "+surface + " is not defined.", pattern);
         console.warn(surface, Object.keys(this.surfaceTree));
-        return; // 対象サーフェスがないのでスキップ
+        continue; // 対象サーフェスがないのでスキップ
       }
       // 対象サーフェスを構築描画する
       var {base, elements, collisions, animations} = srf;
-      var rndr = new SurfaceRender();// 対象サーフェスのbaseサーフェス(surface*.png)の上に
-      rndr.composeElements([{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements)); // elementを合成する
-      renderLayers.push({type, x, y, canvas: rndr.getSurfaceCanvas()});
-    });
+      this.bufferRender.reset();// 対象サーフェスのbaseサーフェス(surface*.png)の上に
+      this.bufferRender.composeElements([{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements)); // elementを合成する
+      renderLayers.push({type, x, y, canvas: this.bufferRender.getSurfaceCanvas()});
+    }
     return renderLayers;
   }
 
@@ -346,15 +354,15 @@ export default class Surface extends EventEmitter {
       // SSPの挙動を見る限りbackgroundがあるときはbaseが無視されているので
       backgrounds.length > 0 ? backgrounds: [{type: "overlay", canvas: base, x: 0, y: 0}],
       elements);
-    var bufRender = new SurfaceRender(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
-    bufRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
+    this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
+    this.bufferRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
     // elementまでがベースサーフェス扱い
-    var baseWidth = bufRender.cnv.width;
-    var baseHeight = bufRender.cnv.height;
+    var baseWidth = this.bufferRender.cnv.width;
+    var baseHeight = this.bufferRender.cnv.height;
     // アニメーションレイヤーは別腹
-    bufRender.composeElements(fronts);
+    this.bufferRender.composeElements(fronts);
     if (this.enableRegionDraw) { // 当たり判定を描画
-      bufRender.drawRegions(this.surfaceNode.collisions, ""+this.surfaceId);
+      this.bufferRender.drawRegions(this.surfaceNode.collisions, ""+this.surfaceId);
     }
     /*
     console.log(bufRender.log);
@@ -365,13 +373,13 @@ export default class Surface extends EventEmitter {
     */
 
 
-    SurfaceUtil.init(this.cnv, this.ctx, bufRender.cnv); // バッファから実DOMTree上のcanvasへ描画
+    SurfaceUtil.init(this.cnv, this.ctx, this.bufferRender.cnv); // バッファから実DOMTree上のcanvasへ描画
     // SSPでのjuda.narを見る限り合成後のサーフェスはベースサーフェスの大きさではなく合成されたサーフェスの大きさになるようだ
     // juda-systemの\s[1050]のアニメーションはrunonceを同時実行しており、この場合の座標の原点の計算方法が不明。
     // これは未定義動作の可能性が高い。
     $(this.element).width(baseWidth);//this.cnv.width - bufRender.basePosX);
     $(this.element).height(baseHeight);//this.cnv.height - bufRender.basePosY);
-    $(this.cnv).css("top", -bufRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
-    $(this.cnv).css("left", -bufRender.basePosX);
+    $(this.cnv).css("top", -this.bufferRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
+    $(this.cnv).css("left", -this.bufferRender.basePosX);
   }
 }

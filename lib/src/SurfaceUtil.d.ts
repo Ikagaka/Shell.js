@@ -23,6 +23,7 @@ export declare function find(paths: string[], filename: string): string[];
 export declare function fastfind(paths: string[], filename: string): string;
 export declare function choice<T>(arr: T[]): T;
 export declare function copy(cnv: HTMLCanvasElement | HTMLImageElement): HTMLCanvasElement;
+export declare function fastcopy(cnv: HTMLCanvasElement | HTMLImageElement, tmpcnv: HTMLCanvasElement, tmpctx: CanvasRenderingContext2D): HTMLCanvasElement;
 export declare function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf: ArrayBuffer, pnabuf?: ArrayBuffer): Promise<{
     width: number;
     height: number;

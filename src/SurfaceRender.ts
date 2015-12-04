@@ -8,6 +8,9 @@ export default class SurfaceRender {
   // baseCanvas
   cnv: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  // GCの発生を抑えるためバッファを使いまわす
+  tmpcnv: HTMLCanvasElement;
+  tmpctx: CanvasRenderingContext2D;
 
   // overlayではみ出した際canvasのリサイズがされるがその時の補正値
   basePosX: number;
@@ -28,6 +31,20 @@ export default class SurfaceRender {
     this.use_self_alpha = false;
     this.cnv = SurfaceUtil.createCanvas();
     this.ctx = this.cnv.getContext("2d");
+    this.tmpcnv = SurfaceUtil.createCanvas();
+    this.tmpctx = this.tmpcnv.getContext("2d");
+    this.basePosX = 0;
+    this.basePosY = 0;
+    this.baseWidth = 0;
+    this.baseHeight = 0;
+    this.log = [];
+  }
+
+  reset(): void {
+    this.cnv.width = 1;
+    this.cnv.height = 1;
+    this.tmpcnv.width = 1;
+    this.tmpcnv.height = 1;
     this.basePosX = 0;
     this.basePosY = 0;
     this.baseWidth = 0;
@@ -44,9 +61,12 @@ export default class SurfaceRender {
   //  {canvas: srfCnv2, type: "overlay", x: 50, y: 50}
   // ]
   composeElements(elements: {canvas: SurfaceCanvas, type: string, x: number, y: number}[]): void {
-    elements.forEach(({canvas, type, x, y}, id)=>{
+    // V8による最適化のためfor文に
+    var keys = Object.keys(elements);
+    for(let i=0; i<keys.length; i++){
+      var {canvas, type, x, y} = elements[keys[i]];
       this.composeElement(canvas, type, x, y);
-    });
+    }
   }
 
   composeElement(canvas: SurfaceCanvas, type: string, x: number, y: number): void {
@@ -98,7 +118,7 @@ export default class SurfaceRender {
 
   prepareOverlay(part: SurfaceCanvas, x: number, y: number): void {
     // baseのcanvasを拡大するためのキャッシュ
-    var tmp = SurfaceUtil.copy(this.cnv);
+    var tmp = SurfaceUtil.fastcopy(this.cnv, this.tmpcnv, this.tmpctx);
     var offsetX = 0;
     var offsetY = 0;
     // もしパーツが右下へはみだす
@@ -144,20 +164,15 @@ export default class SurfaceRender {
       }else{
         this.cnv.height = this.cnv.height - y;
         this.basePosY = -y;
-        offsetY = this.cnv.height - tmp.height
+        offsetY = this.cnv.height - tmp.height;
       }
     }
     if(this.debug){
       this.ctx.fillStyle = "lime";
       this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
     }
-    //console.log("x", "y","|", "offsetX", "offsetY", "|","basePosX", "basePosY")
-    //console.log(x, y,"|", offsetX, offsetY, "|",this.basePosX, this.basePosY)
-    //SurfaceUtil.log(SurfaceUtil.copy(part.cnv), "part");
-    //SurfaceUtil.log(SurfaceUtil.copy(tmp), "tmp");
-    //SurfaceUtil.log(SurfaceUtil.copy(this.cnv), "cnv");
     this.ctx.drawImage(tmp, offsetX, offsetY); //下位レイヤ再描画
-    //SurfaceUtil.log(SurfaceUtil.copy(this.cnv), "cnv2");
+
   }
 
   //下位レイヤにコマを重ねる。
