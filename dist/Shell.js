@@ -792,7 +792,7 @@ var Surface = (function (_EventEmitter) {
 
             var rest = _interval$split2.slice(1);
 
-            if (rest.length > 1) {
+            if (rest.length > 0) {
                 var n = Number(rest[0]);
                 if (!isFinite(n)) {
                     console.warn("initAnimation > TypeError: surface", this.surfaceId, "animation", anim.is, "interval", interval, " argument is not finite number");
