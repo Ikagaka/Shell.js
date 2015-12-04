@@ -351,7 +351,7 @@ var Shell = (function (_EventEmitter) {
     }, {
         key: "hasFile",
         value: function hasFile(filename) {
-            return SurfaceUtil.find(Object.keys(this.directory), filename).length > 0;
+            return SurfaceUtil.fastfind(Object.keys(this.directory), filename) !== "";
         }
 
         // this.cacheCanvas から filename な SurfaceCanvas を探す。
@@ -362,7 +362,7 @@ var Shell = (function (_EventEmitter) {
         value: function getPNGFromDirectory(filename) {
             var _this8 = this;
 
-            var cached_filename = SurfaceUtil.find(Object.keys(this.cacheCanvas), filename)[0] || "";
+            var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
             if (cached_filename !== "") {
                 return Promise.resolve(this.cacheCanvas[cached_filename]);
             }
@@ -374,9 +374,9 @@ var Shell = (function (_EventEmitter) {
                 }
                 console.warn("element file " + filename + " need '.png' extension");
             }
-            var _filename = SurfaceUtil.find(Object.keys(this.directory), filename)[0];
+            var _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
             var pnafilename = _filename.replace(/\.png$/i, ".pna");
-            var _pnafilename = SurfaceUtil.find(Object.keys(this.directory), pnafilename)[0] || "";
+            var _pnafilename = SurfaceUtil.fastfind(Object.keys(this.directory), pnafilename);
             var pngbuf = this.directory[_filename];
             return SurfaceUtil.fetchImageFromArrayBuffer(pngbuf).then(function (png) {
                 // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
@@ -1524,6 +1524,7 @@ exports.parseDescript = parseDescript;
 exports.fetchArrayBuffer = fetchArrayBuffer;
 exports.convert = convert;
 exports.find = find;
+exports.fastfind = fastfind;
 exports.choice = choice;
 exports.copy = copy;
 exports.fetchPNGUint8ClampedArrayFromArrayBuffer = fetchPNGUint8ClampedArrayFromArrayBuffer;
@@ -1734,6 +1735,21 @@ function find(paths, filename) {
         return reg.test(key);
     });
     return hits;
+}
+
+// find filename that matches arg "filename" from arg "paths"
+// filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
+
+function fastfind(paths, filename) {
+    filename = filename.split("\\").join("/");
+    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
+    for (var i = 0; i < paths.length; i++) {
+        if (reg.test(paths[i])) {
+            return paths[i];
+        }
+    }
+    return "";
 }
 
 // [1,2,3] -> 1 or 2 or 3 as 33% probability

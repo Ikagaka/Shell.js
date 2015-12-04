@@ -179,6 +179,22 @@ export function find(paths: string[], filename: string): string[] {
   return hits;
 }
 
+// find filename that matches arg "filename" from arg "paths"
+// filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
+export function fastfind(paths: string[], filename: string): string {
+  filename = filename.split("\\").join("/");
+  if(filename.slice(0,2) === "./") filename = filename.slice(2);
+  var reg = new RegExp("^"+filename.replace(".", "\.")+"$", "i");
+  for(let i=0; i < paths.length; i++){
+    if (reg.test(paths[i])){
+      return paths[i];
+    }
+  }
+  return "";
+}
+
+
+
 // [1,2,3] -> 1 or 2 or 3 as 33% probability
 export function choice<T>(arr: T[]): T {
   return arr[(Math.random()*100*(arr.length)|0)%arr.length];

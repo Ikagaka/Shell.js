@@ -20,6 +20,7 @@ export declare function parseDescript(text: string): {
 export declare function fetchArrayBuffer(url: string): Promise<ArrayBuffer>;
 export declare function convert(buffer: ArrayBuffer): string;
 export declare function find(paths: string[], filename: string): string[];
+export declare function fastfind(paths: string[], filename: string): string;
 export declare function choice<T>(arr: T[]): T;
 export declare function copy(cnv: HTMLCanvasElement | HTMLImageElement): HTMLCanvasElement;
 export declare function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf: ArrayBuffer, pnabuf?: ArrayBuffer): Promise<{

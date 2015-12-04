@@ -242,7 +242,7 @@ export default class Shell extends EventEmitter {
   }
 
   private hasFile(filename: string): boolean {
-    return SurfaceUtil.find(Object.keys(this.directory), filename).length > 0;
+    return SurfaceUtil.fastfind(Object.keys(this.directory), filename) !== "";
   }
 
 
@@ -250,7 +250,7 @@ export default class Shell extends EventEmitter {
   // なければ this.directory から探し this.cacheCanvas にキャッシュする
   // 非同期の理由：img.onload = blob url
   private getPNGFromDirectory(filename: string): Promise<SurfaceCanvas> {
-    var cached_filename = SurfaceUtil.find(Object.keys(this.cacheCanvas), filename)[0] || "";
+    var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
     if(cached_filename !== ""){
       return Promise.resolve(this.cacheCanvas[cached_filename]);
     }
@@ -262,9 +262,9 @@ export default class Shell extends EventEmitter {
       }
       console.warn("element file " + filename + " need '.png' extension");
     }
-    var _filename = SurfaceUtil.find(Object.keys(this.directory), filename)[0];
+    var _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
     var pnafilename = _filename.replace(/\.png$/i, ".pna");
-    var _pnafilename = SurfaceUtil.find(Object.keys(this.directory), pnafilename)[0] || "";
+    var _pnafilename = SurfaceUtil.fastfind(Object.keys(this.directory), pnafilename);
     var pngbuf = this.directory[_filename];
 
     return SurfaceUtil.fetchImageFromArrayBuffer(pngbuf).then((png)=>{
