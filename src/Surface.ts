@@ -167,7 +167,7 @@ export default class Surface extends EventEmitter {
       return;
     }
     var [_interval, ...rest] = interval.split(",");
-    if(rest.length > 1){
+    if(rest.length > 0){
       var n = Number(rest[0]);
       if(!isFinite(n)){
         console.warn("initAnimation > TypeError: surface", this.surfaceId, "animation", anim.is, "interval", interval, " argument is not finite number");
