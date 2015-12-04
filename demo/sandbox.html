@@ -1,8 +1,13 @@
 <script src="../bower_components/encoding-japanese/encoding.js"></script>
 <script src="../bower_components/jszip/dist/jszip.min.js"></script>
 <script src="../bower_components/narloader/NarLoader.js"></script>
+<script src="../bower_components/ikagaka.shell.js/dist/shell.js"></script>
+<script src="../bower_components/ikagaka.balloon.js/dist/balloon.js"></script>
 <script src="../dist/NamedManager.js"></script>
 <script>
+var Shell = Shell.Shell;
+var Balloon = Balloon.Balloon;
+var NamedManager = NamedManager.NamedManager;
 Promise.all([
   NarLoader.loadFromURL("../nar/origin.nar"),
   NarLoader.loadFromURL("../nar/mobilemaster.nar")
@@ -13,12 +18,12 @@ Promise.all([
   var shellNDir = tmp[1];
   var balloonDir = balloonNDir.asArrayBuffer();
   var shellDir = shellNDir.getDirectory("shell/master").asArrayBuffer();
-  var shell = new NamedManager.Shell(shellDir);
-  var shell2 = new NamedManager.Shell(shellDir);
-  var shell3 = new NamedManager.Shell(shellDir);
-  var balloon = new NamedManager.Balloon(balloonDir);
-  var balloon2 = new NamedManager.Balloon(balloonDir);
-  var balloon3 = new NamedManager.Balloon(balloonDir);
+  var shell = new Shell(shellDir);
+  var shell2 = new Shell(shellDir);
+  var shell3 = new Shell(shellDir);
+  var balloon = new Balloon(balloonDir);
+  var balloon2 = new Balloon(balloonDir);
+  var balloon3 = new Balloon(balloonDir);
   return Promise.all([
     shell.load(),
     balloon.load(),
@@ -34,7 +39,7 @@ Promise.all([
   var balloon2 = tmp[3];
   var shell3 = tmp[4];
   var balloon3 = tmp[5];
-  var nmdmgr = new NamedManager.NamedManager();
+  var nmdmgr = new NamedManager();
   document.body.appendChild(nmdmgr.element);
 
   shell2.bindgroup.forEach(function (arr, i){
