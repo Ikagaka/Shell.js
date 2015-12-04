@@ -75,11 +75,13 @@ eventPropagationSim = (target, ev)->
       return console.warn(ua, "does not support document.createTouch")
     if !(document.createTouchList instanceof Function)
       return console.warn(ua, "does not support document.createTouchList")
+
+    tev = document.createEvent("TouchEvent")
+
     if !(tev["initTouchEvent"] instanceof Function)
       return console.warn(ua, "does not support TouchEvent#initTouchEvent")
     {pageX, pageY, clientX, clientY, screenX, screenY} = SurfaceUtil.getEventPosition(ev)
 
-    tev = document.createEvent("TouchEvent");
     touch = document.createTouch(
       document.defaultView,
       ev.target,
