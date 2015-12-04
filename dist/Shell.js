@@ -774,7 +774,6 @@ var Surface = (function (_EventEmitter) {
             var option = anim.option;
             //isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
             var __intervals = interval.split("+"); // sometimes+talk
-            console.log(__intervals);
             if (__intervals.length > 1) {
                 // 分解して再実行
                 __intervals.forEach(function (interval) {
