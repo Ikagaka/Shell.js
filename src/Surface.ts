@@ -345,7 +345,10 @@ export default class Surface extends EventEmitter {
     var hits = animations.filter((anim)=>
         /talk/.test(anim.interval) && this.talkCount % this.talkCounts[anim.is] === 0);
     hits.forEach((anim)=>{
-      this.play(anim.is);
+      // そのアニメーションは再生が終了しているか？
+      if(this.animationsQueue[anim.is].length === 0){
+        this.play(anim.is);
+      }
     });
   }
 
