@@ -87,10 +87,14 @@ export default class Surface extends EventEmitter {
     $(this.element).children().remove();
     this.destructors.forEach((fn)=> fn());
     this.element = null;
-    this.surfaceNode = null;
-    this.surfaceTree = null;
-    this.bindgroup = null;
-    this.element = null;
+    this.surfaceNode = {
+      base:  {cnv: null, png: null, pna: null},
+      elements: [],
+      collisions: [],
+      animations: []
+    };
+    this.surfaceTree = [];
+    this.bindgroup = [];
     this.layers = [];
     this.animationsQueue = {};
     this.talkCounts = {};
