@@ -93,7 +93,6 @@ class Named extends EventEmitter
           top:  pageY - relTop
           right: ""
           bottom: ""
-        $target.css({right, bottom, top: "", left: ""})
       $(document.body).on("mouseup", onmouseup)
       $(document.body).on("mousemove", onmousemove)
       $(document.body).on("touchmove", onmousemove)
