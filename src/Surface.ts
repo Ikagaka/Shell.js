@@ -55,7 +55,12 @@ export default class Surface extends EventEmitter {
     this.bindgroup = bindgroup;
     this.position = "fixed";
     this.surfaceTree = surfaceTree;
-    this.surfaceNode = this.surfaceTree[surfaceId];
+    this.surfaceNode = this.surfaceTree[surfaceId] || {
+      base:  {cnv: null, png: null, pna: null},
+      elements: [],
+      collisions: [],
+      animations: []
+    };
     this.bufferCanvas = SurfaceUtil.createCanvas();
 
     this.exclusive = -1;
