@@ -165,7 +165,7 @@ export default class Surface extends EventEmitter {
 
   private initAnimation(anim: SurfaceAnimation): void {
     var {is:animId, interval, patterns, option} = anim;//isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
-    if (option != null && /^background$|^exclusive|/.test(option)){
+    if (option != null && !/^background$|^exclusive$/.test(option)){
       console.warn("Surfaces#initAnimation", "unsupportted option", option, animId, anim);
     }
     var __intervals = interval.split("+"); // sometimes+talk
@@ -279,7 +279,7 @@ export default class Surface extends EventEmitter {
     var anim = this.surfaceNode.animations[animationId];
     if(anim == null) return void setTimeout(callback); // そんなアニメーションはない
     var {is:animId, interval, patterns, option} = anim;
-    if (option != null && /^background$|^exclusive|/.test(option)){
+    if (option != null && !/^background$|^exclusive$/.test(option)){
       console.warn("Surface#play", "unsupportted option", option, animationId, anim);
     }
     this.animationsQueue[animationId] = patterns.map((pattern, i)=> ()=>{
