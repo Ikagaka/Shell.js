@@ -293,7 +293,12 @@
 
     Named.prototype.scope = function(scopeId) {
       if (scopeId == null) {
-        return this.currentScope;
+        if (this.currentScope instanceof Scope) {
+          return this.currentScope;
+        } else {
+          console.error("Named#scope", "currentScope has not been defined yet, failback to scope 0", scopeId, this.currentScope, this);
+          return this.currentScope = this.scopes[0];
+        }
       }
       if (typeof scopeId !== "number") {
         console.warn("scopeId:", scopeId, "is not a number");

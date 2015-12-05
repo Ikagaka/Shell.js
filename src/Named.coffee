@@ -49,7 +49,7 @@ class Named extends EventEmitter
       $(document.body).on("mousemove", onmousemove)
       $(document.body).on("touchmove", onmousemove)
       $(document.body).on("touchend", onmouseup)
-      @destructors.push ->
+      @destructors.push =>
         $(document.body).off("mouseup", onmouseup)
         $(document.body).off("mousemove", onmousemove)
         $(document.body).off("touchmove", onmousemove)
@@ -140,7 +140,12 @@ class Named extends EventEmitter
     return
 
   scope: (scopeId)->
-    unless scopeId? then return @currentScope
+    unless scopeId?
+      if @currentScope instanceof Scope
+      then return @currentScope
+      else
+        console.error("Named#scope", "currentScope has not been defined yet, failback to scope 0", scopeId, @currentScope, @);
+        return @currentScope = @scopes[0];
     unless typeof scopeId is "number"
       console.warn("scopeId:", scopeId, "is not a number")
       return @currentScope
