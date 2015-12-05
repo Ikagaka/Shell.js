@@ -141,7 +141,8 @@ export function parseDescript(text: string): {[key:string]:string}{
 
 // XMLHttpRequest, xhr.responseType = "arraybuffer"
 export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
-  return new Promise(function(resolve, reject) {
+  console.warn("SurfaceUtil.fetchArrayBuffer is deprecated");
+  return new Promise<ArrayBuffer>(function(resolve, reject) {
     var xhr = new XMLHttpRequest();
     xhr.addEventListener("load", function() {
       if (200 <= xhr.status && xhr.status < 300) {
@@ -158,6 +159,32 @@ export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
     xhr["responseType"] = "arraybuffer";
     return xhr["send"]();
   });
+}
+
+// XMLHttpRequest, xhr.responseType = "arraybuffer"
+export function getArrayBuffer(url: string, cb: (err: any, buffer: ArrayBuffer)=> any): void {
+  var xhr = new XMLHttpRequest();
+  var _cb = (a: any, b: ArrayBuffer)=>{
+    cb(a, b);
+    cb = (a, b)=>{ console.warn("SurfaceUtil.getArrayBuffer", url, a, b); };
+  };
+  xhr.addEventListener("load", function() {
+    if (200 <= xhr.status && xhr.status < 300) {
+      if (xhr.response.error == null) {
+        _cb(null, xhr.response);
+      } else {
+        _cb(new Error("message: "+ xhr.response.error.message), null);
+      }
+    } else {
+      _cb(new Error("status: "+xhr.status), null);
+    }
+  });
+  xhr.addEventListener("error", function() {
+    _cb(new Error("error: "+ xhr.response.error.message), null);
+  });
+  xhr["open"]("GET", url);
+  xhr["responseType"] = "arraybuffer";
+  return xhr["send"]();
 }
 
 
@@ -179,8 +206,7 @@ export function find(paths: string[], filename: string): string[] {
   return hits;
 }
 
-// find filename that matches arg "filename" from arg "paths"
-// filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
+// 検索打ち切って高速化
 export function fastfind(paths: string[], filename: string): string {
   filename = filename.split("\\").join("/");
   if(filename.slice(0,2) === "./") filename = filename.slice(2);
@@ -192,7 +218,6 @@ export function fastfind(paths: string[], filename: string): string {
   }
   return "";
 }
-
 
 
 // [1,2,3] -> 1 or 2 or 3 as 33% probability
@@ -220,49 +245,10 @@ export function fastcopy(cnv: HTMLCanvasElement|HTMLImageElement, tmpcnv:HTMLCan
   return tmpcnv;
 }
 
-export function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf: ArrayBuffer, pnabuf?: ArrayBuffer): Promise<{width:number, height:number, data:Uint8ClampedArray}> {
-  console.warn("SurfaceUtil.fetchPNGUint8ClampedArrayFromArrayBuffer is deprecated");
-  return new Promise((resolve,reject)=>{
-    reject("deplicated");
-    /*
-    var reader = new PNGReader(pngbuf);
-    var png = reader.parse();
-    var dataA = png.getUint8ClampedArray();
-    if(typeof pnabuf === "undefined"){
-      var r = dataA[0], g = dataA[1], b = dataA[2], a = dataA[3];
-      var i = 0;
-      if (a !== 0) {
-        while (i < dataA.length) {
-          if (r === dataA[i] && g === dataA[i + 1] && b === dataA[i + 2]) {
-            dataA[i + 3] = 0;
-          }
-          i += 4;
-        }
-      }
-      return resolve(Promise.resolve({width: png.width, height: png.height, data: dataA}));
-    }
-    var pnareader = new PNGReader(pnabuf);
-    var pna = pnareader.parse();
-    var dataB = pna.getUint8ClampedArray();
-    if(dataA.length !== dataB.length){
-      return reject("fetchPNGUint8ClampedArrayFromArrayBuffer TypeError: png" +
-      png.width+"x"+png.height+" and  pna"+pna.width+"x"+pna.height +
-      " do not match both sizes");
-    }
-    var j = 0;
-    while (j < dataA.length) {
-      dataA[j + 3] = dataB[j];
-      j += 4;
-    }
-    return resolve(Promise.resolve({width: png.width, height: png.height, data: dataA}));
-    */
-  }).catch((err)=>{
-    return Promise.reject("fetchPNGUint8ClampedArrayFromArrayBuffer msg:"+err+", reason: "+err.stack);
-  });
-}
 
 // ArrayBuffer -> HTMLImageElement
 export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string): Promise<HTMLImageElement> {
+  console.warn("SurfaceUtil.fetchImageFromArrayBuffer is deprecated");
   var url = URL.createObjectURL(new Blob([buffer], {type: mimetype || "image/png"}));
   return fetchImageFromURL(url).then((img)=>{
     URL.revokeObjectURL(url);
@@ -272,8 +258,19 @@ export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string)
   });
 }
 
+// ArrayBuffer -> HTMLImageElement
+export function getImageFromArrayBuffer(buffer: ArrayBuffer, cb: (err: any, img: HTMLImageElement)=> any): void {
+  var url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
+  getImageFromURL(url, (err, img)=>{
+    URL.revokeObjectURL(url);
+    if (err == null) cb(null, img);
+    else             cb(err, null);
+  });
+}
+
 // URL -> HTMLImageElement
 export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
+  console.warn("SurfaceUtil.fetchImageFromURL is deprecated");
   var img = new Image();
   img.src = url;
   return new Promise<HTMLImageElement>((resolve, reject)=>{
@@ -287,6 +284,19 @@ export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
   });
 }
 
+// URL -> HTMLImageElement
+export function getImageFromURL(url: string, cb: (err: any, img: HTMLImageElement)=> any): void {
+  var img = new Image();
+  img.src = url;
+  img.addEventListener("load", function() {
+    cb(null, img);
+  });
+  img.addEventListener("error", function(ev) {
+    console.error("SurfaceUtil.getImageFromURL", ev);
+    cb(ev, null);
+  });
+}
+
 // random(func, n) means call func 1/n per sec
 export function random(callback: (nextTick: () => void) => void, probability: number): void {
   setTimeout((() =>{
@@ -296,6 +306,7 @@ export function random(callback: (nextTick: () => void) => void, probability: nu
   }), 1000);
 }
 
+// cron
 export function periodic(callback: (callback: () => void) => void, sec: number): void {
   setTimeout((() =>
     callback(()=>
@@ -303,10 +314,12 @@ export function periodic(callback: (callback: () => void) => void, sec: number):
   ), sec * 1000);
 }
 
+// 非同期ループするだけ
 export function always(  callback: (callback: () => void) => void): void {
   callback(() => always(callback) );
 }
 
+// canvasの座標のアルファチャンネルが不透明ならtrue
 export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
   if(!(x > 0 && y > 0)) return false;
   // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
@@ -317,7 +330,9 @@ export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
   return data[data.length - 1] !== 0;
 }
 
+// $().offset() の移植
 export function offset(element: Element): {left: number, top: number, width: number, height: number} {
+  console.warn("SurfaceUtil.offset is deprecated, please use jQuery#offset()");
   var obj = element.getBoundingClientRect();
   return {
     left: obj.left + window.pageXOffset,
@@ -327,6 +342,7 @@ export function offset(element: Element): {left: number, top: number, width: num
   };
 }
 
+// 1x1の canvas を作るだけ
 export function createCanvas(): HTMLCanvasElement {
   var cnv = document.createElement("canvas");
   cnv.width = 1;
@@ -348,6 +364,7 @@ export function unscope(charId: string): number {
        : Number(/^char(\d+)/.exec(charId)[1]);
 }
 
+// JQueryEventObject からタッチ・マウスを正規化して座標値を抜き出す便利関数
 export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY: number, clientX: number, clientY: number, screenX: number, screenY: number} {
   if (/^touch/.test(ev.type) && (<TouchEvent>ev.originalEvent).touches.length > 0){
     var pageX = (<TouchEvent>ev.originalEvent).touches[0].pageX;
@@ -367,13 +384,13 @@ export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY
   return {pageX, pageY, clientX, clientY, screenX, screenY};
 }
 
-
+// min-max 間のランダム値
 export function randomRange(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
 }
 
-
-
+// このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
+// 透明領域でなければ isHit: true, collision設定されていれば name: "hoge"
 export function getRegion(element: HTMLCanvasElement, surfaceNode: SurfaceTreeNode, offsetX: number, offsetY: number): {isHit:boolean, name:string} {
   // canvas左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べるメソッド
   if(isHit(element, offsetX, offsetY)){

@@ -18,19 +18,17 @@ export declare function parseDescript(text: string): {
     [key: string]: string;
 };
 export declare function fetchArrayBuffer(url: string): Promise<ArrayBuffer>;
+export declare function getArrayBuffer(url: string, cb: (err: any, buffer: ArrayBuffer) => any): void;
 export declare function convert(buffer: ArrayBuffer): string;
 export declare function find(paths: string[], filename: string): string[];
 export declare function fastfind(paths: string[], filename: string): string;
 export declare function choice<T>(arr: T[]): T;
 export declare function copy(cnv: HTMLCanvasElement | HTMLImageElement): HTMLCanvasElement;
 export declare function fastcopy(cnv: HTMLCanvasElement | HTMLImageElement, tmpcnv: HTMLCanvasElement, tmpctx: CanvasRenderingContext2D): HTMLCanvasElement;
-export declare function fetchPNGUint8ClampedArrayFromArrayBuffer(pngbuf: ArrayBuffer, pnabuf?: ArrayBuffer): Promise<{
-    width: number;
-    height: number;
-    data: Uint8ClampedArray;
-}>;
 export declare function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?: string): Promise<HTMLImageElement>;
+export declare function getImageFromArrayBuffer(buffer: ArrayBuffer, cb: (err: any, img: HTMLImageElement) => any): void;
 export declare function fetchImageFromURL(url: string): Promise<HTMLImageElement>;
+export declare function getImageFromURL(url: string, cb: (err: any, img: HTMLImageElement) => any): void;
 export declare function random(callback: (nextTick: () => void) => void, probability: number): void;
 export declare function periodic(callback: (callback: () => void) => void, sec: number): void;
 export declare function always(callback: (callback: () => void) => void): void;

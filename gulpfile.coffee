@@ -1,7 +1,7 @@
 gulp = require 'gulp'
 ts = require 'gulp-typescript'
 rename = require 'gulp-rename'
-babel = require 'gulp-babel'
+#babel = require 'gulp-babel'
 espower = require 'gulp-espower'
 coffee = require 'gulp-coffee'
 tslint = require 'gulp-tslint'
@@ -16,7 +16,7 @@ gulp.task 'build:ts', ->
   tsProject.src()
     .pipe ts(tsProject)
     .pipe rename (p) -> p.dirname = p.dirname.replace('src', ''); p
-    .pipe babel()
+    #.pipe babel()
     .pipe gulp.dest 'lib'
 
 gulp.task 'build:test', ->

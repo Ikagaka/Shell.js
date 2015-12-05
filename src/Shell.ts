@@ -296,7 +296,7 @@ export default class Shell extends EventEmitter {
       throw new Error("TypeError: scopeId needs more than 0, but:" + scopeId);
     }
     if(!this.surfaceTree[surfaceId]){
-      console.warn("surfaceId:", surfaceId, "is not defined");
+      console.warn("surfaceId:", surfaceId, "is not defined", this.surfaceTree);
       return null;
     }
     var srf = new Surface(div, scopeId, _surfaceId, this.surfaceTree, this.bindgroup);
