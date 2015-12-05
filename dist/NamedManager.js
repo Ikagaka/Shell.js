@@ -483,6 +483,7 @@
     Scope.prototype.destructor = function() {};
 
     Scope.prototype.surface = function(surfaceId) {
+      var tmp;
       if (surfaceId == null) {
         return this.currentSurface;
       }
@@ -495,7 +496,10 @@
         return this.currentSurface;
       }
       this.shell.detachSurface(this.$surface[0]);
-      this.currentSurface = this.shell.attachSurface(this.$surface[0], this.scopeId, surfaceId);
+      tmp = this.shell.attachSurface(this.$surface[0], this.scopeId, surfaceId);
+      if (tmp != null) {
+        this.currentSurface = tmp;
+      }
       this.$scope.width(this.$surface.width());
       this.$scope.height(this.$surface.height());
       this.$surface.show();

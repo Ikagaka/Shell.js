@@ -45,7 +45,9 @@ class Scope
       console.warn("Scope#surface > ReferenceError: surfaceId", surfaceId, "is not defined")
       return @currentSurface
     @shell.detachSurface(@$surface[0])
-    @currentSurface = @shell.attachSurface(@$surface[0], @scopeId, surfaceId)
+    tmp = @shell.attachSurface(@$surface[0], @scopeId, surfaceId)
+    if tmp?
+      @currentSurface = tmp
     # スコープのラッパ要素をサーフェスと同じ大きさにすることで
     # バルーンの位置計算をしやすくしている
     @$scope.width(this.$surface.width())
