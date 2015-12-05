@@ -54,6 +54,7 @@ class Named extends EventEmitter
         $(document.body).off("mousemove", onmousemove)
         $(document.body).off("touchmove", onmousemove)
         $(document.body).off("touchend", onmouseup)
+        @shell.off("mouse")
       @shell.on "mouse", (ev)=>
         if ev.transparency is true and
            ev.type isnt "mousemove" # mousemoveおよびmouseenterはループするので
@@ -102,6 +103,7 @@ class Named extends EventEmitter
         $(document.body).off("mousemove", onmousemove)
         $(document.body).off("touchmove", onmousemove)
         $(document.body).off("touchend", onmouseup)
+        @balloon.off "mouse"
       @balloon.on "mouse", (ev)=>
         $scope = $(@scopes[ev.scopeId].element)
         switch ev.type
@@ -129,6 +131,8 @@ class Named extends EventEmitter
         return
     @balloon.on "select", (ev)=>
       @emit("balloon_select", ev)
+    @destructors.push ->
+      @balloon.off "select"
     return
 
   destructor: ->
