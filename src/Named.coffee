@@ -62,7 +62,7 @@ class Named extends EventEmitter
           # それが拾われるのを待つ
           return
         switch ev.type
-          when "mousedown"
+          when "mousedown", "touchstart"
             scopeId = ev.scopeId
             $target = $scope = $(@scopes[ev.scopeId].element)
             {top, left} = $target.offset()
@@ -78,25 +78,36 @@ class Named extends EventEmitter
       # バルーン移動
       relLeft = relTop = 0
       $target = null
+      scopeId = -1
+      onmouseup = => $target = null; scopeId = -1
+      onmousemove = (ev)=>
+        if !$target? then return
+        # この座標はbody要素直下のfixed座標用
+        {pageX, pageY, clientX, clientY, screenX, screenY} = SurfaceUtil.getEventPosition(ev)
+        $scope = $(@scopes[scopeId].element)
+        if pageX - relLeft + $scope.width()/2 > 0
+        then @scope(scopeId).blimp().right()
+        else @scope(scopeId).blimp().left()
+        $target.css
+          left: pageX - relLeft
+          top:  pageY - relTop
+          right: ""
+          bottom: ""
+        $target.css({right, bottom, top: "", left: ""})
+      $(document.body).on("mouseup", onmouseup)
+      $(document.body).on("mousemove", onmousemove)
+      $(document.body).on("touchmove", onmousemove)
+      $(document.body).on("touchend", onmouseup)
+      @destructors.push ->
+        $(document.body).off("mouseup", onmouseup)
+        $(document.body).off("mousemove", onmousemove)
+        $(document.body).off("touchmove", onmousemove)
+        $(document.body).off("touchend", onmouseup)
       @balloon.on "mouse", (ev)=>
         $scope = $(@scopes[ev.scopeId].element)
         switch ev.type
-          when "mouseup"
-            $target = null
-          when "mousemove"
-            if $target?
-              # この座標はbody要素直下のfixed座標用
-              {pageX, pageY, clientX, clientY, screenX, screenY} = SurfaceUtil.getEventPosition(ev.event)
-              $scope = $(@scopes[ev.scopeId].element)
-              if pageX - relLeft + $scope.width()/2 > 0
-              then @scope(ev.scopeId).blimp().right()
-              else @scope(ev.scopeId).blimp().left()
-              $target.css
-                left: pageX - relLeft
-                top:  pageY - relTop
-                right: ""
-                bottom: ""
-          when "mousedown"
+          when "mousedown", "touchstart"
+            scopeId = ev.scopeId
             $scope = $(@scopes[ev.scopeId].element)
             $target = $scope.find(".blimp")
             {top, left} = $target.offset()
