@@ -13,6 +13,7 @@ export default class Surface extends EventEmitter {
     private bufferCanvas;
     private backgrounds;
     private layers;
+    private exclusive;
     private talkCount;
     private talkCounts;
     private animationsQueue;

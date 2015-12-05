@@ -1,5 +1,5 @@
 // todo: anim collision
-
+// todo: background+exclusive,(1,3,5)
 /// <reference path="../typings/tsd.d.ts"/>
 
 import SurfaceRender from "./SurfaceRender";
@@ -25,6 +25,7 @@ export default class Surface extends EventEmitter {
   private backgrounds:     SurfaceAnimationPattern[];//背景レイヤ
   private layers:          SurfaceAnimationPattern[];//アニメーションIDの現在のレイヤ。アニメで言う動画セル。
 
+  private exclusive: number; // 現在排他実行中のアニメションID
   private talkCount: number;
   private talkCounts:      { [animationId: number]: number };//key:タイミングがtalkのアニメーションid、number:talkCountの閾値
   private animationsQueue: { [animationId: number]: Function[] }; // key:animationId, 再生中のアニメーションのコマごとのキュー。アニメーションの強制停止に使う
@@ -57,7 +58,7 @@ export default class Surface extends EventEmitter {
     this.surfaceNode = this.surfaceTree[surfaceId];
     this.bufferCanvas = SurfaceUtil.createCanvas();
 
-
+    this.exclusive = -1;
     this.talkCount = 0;
     this.talkCounts = {};
     this.animationsQueue = {};
@@ -70,6 +71,7 @@ export default class Surface extends EventEmitter {
 
     // GCの発生を抑えるためレンダラはこれ１つを使いまわす
     this.bufferRender = new SurfaceRender();
+    //this.bufferRender.debug = true;
 
     this.initMouseEvent();
     this.surfaceNode.animations.forEach((anim)=>{ this.initAnimation(anim); });
@@ -158,9 +160,17 @@ export default class Surface extends EventEmitter {
 
   private initAnimation(anim: SurfaceAnimation): void {
     var {is:animId, interval, patterns, option} = anim;//isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
+    if (option != null && /^background$|^exclusive|/.test(option)){
+      console.warn("Surfaces#initAnimation", "unsupportted option", option, animId, anim);
+    }
     var __intervals = interval.split("+"); // sometimes+talk
+    if(/^bind/.test(interval)){
+      // bindから始まる場合は initBind にまるなげ
+      this.initBind(anim);
+      return;
+    }
     if(__intervals.length > 1){
-      // 分解して再実行
+      // bind+でなければ分解して再実行
       __intervals.forEach((interval)=>{
         this.initAnimation({interval, is: animId, patterns, option});
       });
@@ -191,11 +201,6 @@ export default class Surface extends EventEmitter {
       case "never":     return;
       case "yen-e":     return;
       case "talk": this.talkCounts[animId] = n; return;
-      default:
-        if(/^bind$/.test(interval)){
-          this.initBind(anim);
-          return;
-        }
     }
     console.warn("Surface#initAnimation > unkown interval:", interval, anim);
   }
@@ -206,38 +211,49 @@ export default class Surface extends EventEmitter {
     if (this.bindgroup[this.scopeId][animId] == null) return;
     if (this.bindgroup[this.scopeId][animId] === true){
       // 現在有効な bind
+      var [_, ...intervals] = interval.split("+"); // bind+sometimes
+      if(intervals.length > 0){
+        // bind+hogeは着せ替え付随アニメーション。
+        // bind+sometimesを分解して実行
+        intervals.forEach((interval)=>{
+          this.initAnimation({interval, is: animId, patterns, option});
+        });
+        return;
+      }
+      // bind単体はレイヤーを重ねる着せ替え。
       if(option === "background"){
         this.backgrounds[animId] = patterns[patterns.length-1];
       }else{
         this.layers[animId] = patterns[patterns.length-1];
       }
+      return;
+    }else{
+      //現在の合成レイヤから着せ替えレイヤを削除
+      if(option === "background"){
+        delete this.backgrounds[animId];
+      }else{
+        delete this.layers[animId];
+      }
       // bind+sometimsなどを殺す
       this.end(animId);
-      // bindは即座に反映
-      this.render();
       return;
     }
-    //現在の合成レイヤから着せ替えレイヤを削除
-    if(option === "background"){
-      delete this.backgrounds[animId];
-    }else{
-      delete this.layers[animId];
-    }
-    this.render();
-    return;
   }
 
   public updateBind(): void {
     // Shell.tsから呼ばれるためpublic
     // Shell#bind,Shell#unbindで発動
     this.surfaceNode.animations.forEach((anim)=>{ this.initBind(anim); });
+    // 即時に反映
+    this.render();
   }
 
-  // アニメーションタイミングループの開始
+  // アニメーションタイミングループの開始要請
   public begin(animationId: number): void {
     this.stopFlags[animationId] = false;
     var anim = this.surfaceNode.animations[animationId];
     this.initAnimation(anim);
+    this.render();
   }
 
   // アニメーションタイミングループの開始
@@ -257,7 +273,11 @@ export default class Surface extends EventEmitter {
     var anims = this.surfaceNode.animations;
     var anim = this.surfaceNode.animations[animationId];
     if(anim == null) return void setTimeout(callback); // そんなアニメーションはない
-    this.animationsQueue[animationId] = anim.patterns.map((pattern, i)=> ()=>{
+    var {is:animId, interval, patterns, option} = anim;
+    if (option != null && /^background$|^exclusive|/.test(option)){
+      console.warn("Surface#play", "unsupportted option", option, animationId, anim);
+    }
+    this.animationsQueue[animationId] = patterns.map((pattern, i)=> ()=>{
       var {surface, wait, type, x, y, animation_ids} = pattern;
       switch(type){
         case "start":            this.play(animation_ids[0], nextTick); return;
@@ -270,21 +290,41 @@ export default class Surface extends EventEmitter {
                 ? SurfaceUtil.randomRange(Number(a), Number(b))
                 : Number(a);
       setTimeout(()=>{
-        if(anim.option === "background"){
+        // 現在のコマをレイヤーに追加
+        if(option === "background"){
           this.backgrounds[animationId] = pattern;
         }else{
           this.layers[animationId] = pattern;
         }
-        this.render();
+        if(this.exclusive >= 0){
+          // -1 以上なら排他再生中
+          if(this.exclusive === animationId){
+            // 自分が排他実行中
+            this.render();
+          }
+        }else{
+          // 通常
+          this.render();
+        }
+
         nextTick();
       }, _wait);
     });
+    if(option === "exclusive"){
+      this.animationsQueue[animationId].unshift(()=>{
+        this.exclusive = animationId;
+      });
+      this.animationsQueue[animationId].push(()=>{
+        this.exclusive = -1;
+      });
+    }
     var nextTick = ()=>{
       if(this.destructed) return;
       var next = this.animationsQueue[animationId].shift();
       if(!(next instanceof Function) ){  // アニメーションキューを破棄されてるor これで終わり
         // stop pattern animation.
         this.animationsQueue[animationId] = [];
+        this.exclusive = -1;
         setTimeout(callback);
       }else{
         next();
@@ -349,11 +389,9 @@ export default class Surface extends EventEmitter {
     var fronts = this.composeAnimationPatterns(this.layers);
 
     var renderLayers: SurfaceLayerObject[] = [].concat(
-      // よめきつね対策
-      // ukadoc上ではbackgroundの上にbaseがくるとのことだｋが
-      // SSPの挙動を見る限りbackgroundがあるときはbaseが無視されているので
-      backgrounds.length > 0 ? backgrounds: [{type: "overlay", canvas: base, x: 0, y: 0}],
-      elements);
+      backgrounds,
+      elements.length > 0 ? elements : [{type: "overlay", canvas: base, x: 0, y: 0}]
+    );
     this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
     this.bufferRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
     // elementまでがベースサーフェス扱い
@@ -364,13 +402,13 @@ export default class Surface extends EventEmitter {
     if (this.enableRegionDraw) { // 当たり判定を描画
       this.bufferRender.drawRegions(this.surfaceNode.collisions, ""+this.surfaceId);
     }
-    /*
-    console.log(bufRender.log);
-    SurfaceUtil.log(bufRender.cnv);
-    document.body.scrollTop = 9999;
-    this.endAll();
-    debugger;
-    */
+
+    //console.log(this.bufferRender.log);
+    //SurfaceUtil.log(SurfaceUtil.copy(this.bufferRender.cnv));
+    //document.body.scrollTop += 100 + document.body.scrollTop;
+    //this.endAll();
+    //debugger;
+
 
 
     SurfaceUtil.init(this.cnv, this.ctx, this.bufferRender.cnv); // バッファから実DOMTree上のcanvasへ描画

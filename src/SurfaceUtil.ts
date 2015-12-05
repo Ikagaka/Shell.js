@@ -91,7 +91,7 @@ export function chromakey_snipet(data: Uint8ClampedArray): void { // side effect
 
 export function log(element: Element, description=""){
   if(element instanceof HTMLCanvasElement || element instanceof HTMLImageElement){
-    description += (element.width+"x"+element.height);
+    description += "("+element.width+"x"+element.height+")";
   }
   var fieldset = document.createElement('fieldset');
   var legend = document.createElement('legend');

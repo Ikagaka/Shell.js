@@ -74,6 +74,7 @@ export default class SurfaceRender {
       // element 合成のみで作られるサーフェスの base は dummy SurfaceCanvas
       return;
     }
+    //SurfaceUtil.log(canvas.cnv||canvas.png, type+"("+x+","+y+")");
     switch (type) {
       case "base":        this.base(canvas);              break;
       case "overlay":     this.overlay(canvas, x, y);     break;
