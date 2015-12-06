@@ -10,6 +10,7 @@ before_script:
 script:
   - phantomjs test/run-qunit.js demo/testSurface.html
 after_script:
+  - rm -rf bower_components
   - git config remote.origin.fetch "+refs/heads/gh-pages:refs/remotes/origin/gh-pages"
   - git fetch origin gh-pages
   - git checkout gh-pages
