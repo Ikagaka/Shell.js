@@ -77,7 +77,7 @@ if Worker?
       assert.ok TotalPutImageDataTime
       assert.ok TotalChromakeyTime
       done()
-    .catch (err)-> console.error(err);done()
+    .catch (err)-> console.error(err, err.stack); done()
 
 QUnit.test 'SurfaceUtil.extend', (assert) ->
   original = {a: 0, b: {c: 0, d: 0}}
@@ -163,7 +163,7 @@ QUnit.test "SurfaceUtil.fetchImageFromURL, SurfaceUtil.fetchImageFromArrayBuffer
     assert.ok img.height is 445
     setPictureFrame(img, "SurfaceUtil.fetchImageFromURL")
     done()
-  .catch (err)-> done()
+  .catch (err)-> console.error(err, err.stack); done()
 
 QUnit.test "SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10 sec)", (assert)->
   done = assert.async()
