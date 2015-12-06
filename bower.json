@@ -5,10 +5,7 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "qunit": "*",
     "narloader": "*",
-    "qunit-tap": "*",
-    "empower": "*",
     "power-assert-formatter": "*",
     "ikagaka.shell.js": "ikagaka/Shell.js#master",
     "ikagaka.balloon.js": "ikagaka/Balloon.js#master"
