@@ -1,8 +1,9 @@
 language: node_js
 node_js:
   - 5.0.0
-before_install:
-  - npm install -g phantomjs
+branches:
+  only: 'master'
+# before_install:
 before_script:
   - npm run init
 script:
@@ -10,10 +11,6 @@ script:
   - phantomjs test/run-qunit.js demo/testSurfaceRender.html
   - phantomjs test/run-qunit.js demo/testSurface.html
   - phantomjs test/run-qunit.js demo/testShell.html
-after_script:
-after_succses:
-after_failure:
-notifications:
-  emails:
- on_success: change
- on_failure: change
+#after_script:
+#after_succses:
+#after_failure:
