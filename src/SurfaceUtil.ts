@@ -1,7 +1,7 @@
 /// <reference path="../typings/tsd.d.ts"/>
 
 import {SurfaceTreeNode, SurfaceCanvas} from "./Interfaces";
-import Encoding from "encoding-japanese";
+import Encoding = require("encoding-japanese");
 
 export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
   var {cnv, png, pna} = srfCnv;
@@ -104,6 +104,7 @@ export function log(element: Element, description=""){
 
 // extend deep like jQuery $.extend(true, target, source)
 export function extend(target: any, source: any): void {
+  //console.warn("SurfaceUtil.extend is deprecated", "please use $.extend(true, a, b)");
   for(var key in source){
     if (typeof source[key] === "object" && Object.getPrototypeOf(source[key]) === Object.prototype) {
       target[key] = target[key] || {};

@@ -5,8 +5,8 @@
 import SurfaceRender from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
 import {SurfaceLayerObject, SurfaceTreeNode, SurfaceMouseEvent} from "./Interfaces";
-import EventEmitter from "eventemitter3";
-import $ from "jquery";
+import EventEmitter = require("eventemitter3");
+import $ = require("jquery");
 
 
 export default class Surface extends EventEmitter {
@@ -402,7 +402,12 @@ export default class Surface extends EventEmitter {
 
     var renderLayers: SurfaceLayerObject[] = [].concat(
       backgrounds,
-      elements.length > 0 ? elements : [{type: "overlay", canvas: base, x: 0, y: 0}]
+      // element0 or base
+      elements[0] != null ?
+        // element0, element1...
+        elements :
+        // base, element1, element2...
+        [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements.slice(1))
     );
     this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
     this.bufferRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成

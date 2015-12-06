@@ -1,19 +1,22 @@
 {
     "version": "1.6.2",
     "compilerOptions": {
-        "target": "es5",
+        "target": "ES5",
         "module": "commonjs",
+        "moduleResolution": "node",
         "declaration": true,
         "noImplicitAny": true,
         "noEmitOnError": false,
         "removeComments": false,
         "noLib": false,
+        "newLine": "LF",
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true,
         "outDir": "../lib",
         "rootDir": "../",
         "listFiles": true,
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "experimentalAsyncFunctions": true
     },
     "compileOnSave": true,
     "formatCodeOptions": {

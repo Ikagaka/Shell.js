@@ -4,9 +4,9 @@ import Surface from './Surface';
 import SurfaceRender from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
 import {SurfaceTreeNode, SurfaceCanvas, SurfaceMouseEvent} from "./Interfaces";
-import EventEmitter from "eventemitter3";
-import SurfacesTxt2Yaml from "surfaces_txt2yaml";
-import $ from "jquery";
+import SurfacesTxt2Yaml = require("surfaces_txt2yaml");
+import EventEmitter = require("eventemitter3");
+import $ = require("jquery");
 
 self["$"] = $;
 self["jQuery"] = $;
@@ -140,60 +140,68 @@ export default class Shell extends EventEmitter {
   }
 
   // this.directory から surface*.png と surface*.pna を読み込んで this.surfaceTree に反映
-  private loadSurfacePNG(): Promise<Shell> {
+  private loadSurfacePNG(): Promise<Shell>{
     var surface_names = Object.keys(this.directory).filter((filename)=> /^surface(\d+)\.png$/i.test(filename));
-    var prms = surface_names.map((filename)=>{
-      var n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
-      return this.getPNGFromDirectory(filename).then((cnv)=>{
-        if(!this.surfaceTree[n]){
-          this.surfaceTree[n] = {
-            base: cnv,
-            elements: [],
-            collisions: [],
-            animations: []
-          };
-        }else{
-          this.surfaceTree[n].base = cnv;
-        }
-      }).catch((err)=>{
-        console.warn("Shell#loadSurfacePNG > " + err);
-        return Promise.resolve();
+    return new Promise<Shell>((resolve, reject)=>{
+      var i = surface_names.length;
+      surface_names.forEach((filename)=>{
+        var n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
+        this.getPNGFromDirectory(filename, (err, cnv)=>{
+          if(err != null){
+            console.warn("Shell#loadSurfacePNG > " + err);
+          }else{
+            if(!this.surfaceTree[n]){
+              // surfaces.txtで未定義なら追加
+              this.surfaceTree[n] = {
+                base: cnv,
+                elements: [],
+                collisions: [],
+                animations: []
+              };
+            }else{
+              // surfaces.txtで定義済み
+              this.surfaceTree[n].base = cnv;
+            }
+          }
+          if(--i <= 0){
+            resolve(this);
+          }
+        });
       });
     });
-    return Promise.all(prms).then(()=> Promise.resolve(this));
   }
 
   // this.surfacesTxt から element を読み込んで this.surfaceTree に反映
   private loadElements(): Promise<Shell>{
     var srfs = this.surfacesTxt.surfaces;
     var hits = Object.keys(srfs).filter((name)=> !!srfs[name].elements);
-    var prms = hits.map((defname)=>{
-      var n = srfs[defname].is;
-      var elms = srfs[defname].elements;
-      var _prms = Object.keys(elms).map((elmname)=>{
-        var {is, type, file, x, y} = elms[elmname];
-        return this.getPNGFromDirectory(file).then((canvas)=>{
-          if(!this.surfaceTree[n]){
-            this.surfaceTree[n] = {
-              base: {cnv:null, png: null, pna: null},
-              elements: [],
-              collisions: [],
-              animations: []
-            };
-          }
-          this.surfaceTree[n].elements[is] = {type, canvas, x, y};
-          return Promise.resolve(this);
-        }).catch((err)=>{
-          console.warn("Shell#loadElements > " + err);
-          return Promise.resolve(this);
+    return new Promise<Shell>((resolve, reject)=>{
+      var i = hits.length;
+      hits.forEach((defname)=>{
+        var n = srfs[defname].is;
+        var elms = srfs[defname].elements;
+        var _prms = Object.keys(elms).map((elmname)=>{
+          var {is, type, file, x, y} = elms[elmname];
+          this.getPNGFromDirectory(file, (err, canvas)=>{
+            if( err != null){
+              console.warn("Shell#loadElements > " + err);
+            }else{
+              if(!this.surfaceTree[n]){
+                this.surfaceTree[n] = {
+                  base: {cnv:null, png: null, pna: null},
+                  elements: [],
+                  collisions: [],
+                  animations: []
+                };
+              }
+              this.surfaceTree[n].elements[is] = {type, canvas, x, y};
+            }
+            if(--i <= 0){
+              resolve(this);
+            }
+          });
         });
       });
-      return Promise.all(_prms).then(()=> {
-        return Promise.resolve(this);
-      });
-    });
-    return Promise.all(prms).then(()=> {
-      return Promise.resolve(this);
     });
   }
 
@@ -245,11 +253,48 @@ export default class Shell extends EventEmitter {
     return SurfaceUtil.fastfind(Object.keys(this.directory), filename) !== "";
   }
 
+  private getPNGFromDirectory(filename: string, cb: (err: any, srfCnv: SurfaceCanvas)=> any): void {
+    var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
+    if(cached_filename !== ""){
+      cb(null, this.cacheCanvas[cached_filename]);
+      return;
+    }
+    if(!this.hasFile(filename)){
+      // 我々は心優しいので寛大にも拡張子つけ忘れに対応してあげる
+      filename += ".png";
+      if(!this.hasFile(filename)){
+        cb(new Error("no such file in directory: " + filename.replace(/\.png$/i, "")), null);
+        return;
+      }
+      console.warn("element file " + filename + " need '.png' extension");
+    }
+    var _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
+    var pnafilename = _filename.replace(/\.png$/i, ".pna");
+    var _pnafilename = SurfaceUtil.fastfind(Object.keys(this.directory), pnafilename);
+    var pngbuf = this.directory[_filename];
+
+    SurfaceUtil.getImageFromArrayBuffer(pngbuf, (err, png)=>{
+      if(err != null) return cb(err, null);
+      // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
+      if(_pnafilename === ""){
+        this.cacheCanvas[_filename] = {cnv:null, png, pna: null};
+        cb(null, this.cacheCanvas[_filename]);
+        return;
+      }
+      var pnabuf = this.directory[_pnafilename];
+      SurfaceUtil.getImageFromArrayBuffer(pnabuf, (err, pna)=>{
+        if(err != null) return cb(err, null);
+        this.cacheCanvas[_filename] = {cnv:null, png, pna};
+        cb(null, this.cacheCanvas[_filename]);
+      });
+    });
+  }
 
   // this.cacheCanvas から filename な SurfaceCanvas を探す。
   // なければ this.directory から探し this.cacheCanvas にキャッシュする
   // 非同期の理由：img.onload = blob url
-  private getPNGFromDirectory(filename: string): Promise<SurfaceCanvas> {
+  private fetchPNGFromDirectory(filename: string): Promise<SurfaceCanvas> {
+    console.warn("Shell#fetchPNGFromDirectory is deprecated");
     var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
     if(cached_filename !== ""){
       return Promise.resolve(this.cacheCanvas[cached_filename]);

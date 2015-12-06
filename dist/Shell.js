@@ -9,11 +9,11 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var Surface_1 = require('./Surface');
 var SurfaceUtil = require("./SurfaceUtil");
-var eventemitter3_1 = require("eventemitter3");
-var surfaces_txt2yaml_1 = require("surfaces_txt2yaml");
-var jquery_1 = require("jquery");
-self["$"] = jquery_1.default;
-self["jQuery"] = jquery_1.default;
+var SurfacesTxt2Yaml = require("surfaces_txt2yaml");
+var EventEmitter = require("eventemitter3");
+var $ = require("jquery");
+self["$"] = $;
+self["jQuery"] = $;
 var Shell = (function (_super) {
     __extends(Shell, _super);
     function Shell(directory) {
@@ -100,7 +100,7 @@ var Shell = (function (_super) {
         else {
             surfaces_text_names.forEach(function (filename) {
                 var text = SurfaceUtil.convert(_this.directory[filename]);
-                var srfs = surfaces_txt2yaml_1.default.txt_to_data(text, { compatible: 'ssp-lazy' });
+                var srfs = SurfacesTxt2Yaml.txt_to_data(text, { compatible: 'ssp-lazy' });
                 SurfaceUtil.extend(_this.surfacesTxt, srfs);
             });
             //{ expand inherit and remove
@@ -136,59 +136,69 @@ var Shell = (function (_super) {
     Shell.prototype.loadSurfacePNG = function () {
         var _this = this;
         var surface_names = Object.keys(this.directory).filter(function (filename) { return /^surface(\d+)\.png$/i.test(filename); });
-        var prms = surface_names.map(function (filename) {
-            var n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
-            return _this.getPNGFromDirectory(filename).then(function (cnv) {
-                if (!_this.surfaceTree[n]) {
-                    _this.surfaceTree[n] = {
-                        base: cnv,
-                        elements: [],
-                        collisions: [],
-                        animations: []
-                    };
-                }
-                else {
-                    _this.surfaceTree[n].base = cnv;
-                }
-            }).catch(function (err) {
-                console.warn("Shell#loadSurfacePNG > " + err);
-                return Promise.resolve();
+        return new Promise(function (resolve, reject) {
+            var i = surface_names.length;
+            surface_names.forEach(function (filename) {
+                var n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
+                _this.getPNGFromDirectory(filename, function (err, cnv) {
+                    if (err != null) {
+                        console.warn("Shell#loadSurfacePNG > " + err);
+                    }
+                    else {
+                        if (!_this.surfaceTree[n]) {
+                            // surfaces.txtで未定義なら追加
+                            _this.surfaceTree[n] = {
+                                base: cnv,
+                                elements: [],
+                                collisions: [],
+                                animations: []
+                            };
+                        }
+                        else {
+                            // surfaces.txtで定義済み
+                            _this.surfaceTree[n].base = cnv;
+                        }
+                    }
+                    if (--i <= 0) {
+                        resolve(_this);
+                    }
+                });
             });
         });
-        return Promise.all(prms).then(function () { return Promise.resolve(_this); });
     };
     // this.surfacesTxt から element を読み込んで this.surfaceTree に反映
     Shell.prototype.loadElements = function () {
         var _this = this;
         var srfs = this.surfacesTxt.surfaces;
         var hits = Object.keys(srfs).filter(function (name) { return !!srfs[name].elements; });
-        var prms = hits.map(function (defname) {
-            var n = srfs[defname].is;
-            var elms = srfs[defname].elements;
-            var _prms = Object.keys(elms).map(function (elmname) {
-                var _a = elms[elmname], is = _a.is, type = _a.type, file = _a.file, x = _a.x, y = _a.y;
-                return _this.getPNGFromDirectory(file).then(function (canvas) {
-                    if (!_this.surfaceTree[n]) {
-                        _this.surfaceTree[n] = {
-                            base: { cnv: null, png: null, pna: null },
-                            elements: [],
-                            collisions: [],
-                            animations: []
-                        };
-                    }
-                    _this.surfaceTree[n].elements[is] = { type: type, canvas: canvas, x: x, y: y };
-                    return Promise.resolve(_this);
-                }).catch(function (err) {
-                    console.warn("Shell#loadElements > " + err);
-                    return Promise.resolve(_this);
+        return new Promise(function (resolve, reject) {
+            var i = hits.length;
+            hits.forEach(function (defname) {
+                var n = srfs[defname].is;
+                var elms = srfs[defname].elements;
+                var _prms = Object.keys(elms).map(function (elmname) {
+                    var _a = elms[elmname], is = _a.is, type = _a.type, file = _a.file, x = _a.x, y = _a.y;
+                    _this.getPNGFromDirectory(file, function (err, canvas) {
+                        if (err != null) {
+                            console.warn("Shell#loadElements > " + err);
+                        }
+                        else {
+                            if (!_this.surfaceTree[n]) {
+                                _this.surfaceTree[n] = {
+                                    base: { cnv: null, png: null, pna: null },
+                                    elements: [],
+                                    collisions: [],
+                                    animations: []
+                                };
+                            }
+                            _this.surfaceTree[n].elements[is] = { type: type, canvas: canvas, x: x, y: y };
+                        }
+                        if (--i <= 0) {
+                            resolve(_this);
+                        }
+                    });
                 });
             });
-            return Promise.all(_prms).then(function () {
-                return Promise.resolve(_this);
-            });
-        });
-        return Promise.all(prms).then(function () {
-            return Promise.resolve(_this);
         });
     };
     // this.surfacesTxt から collision を読み込んで this.surfaceTree に反映
@@ -238,11 +248,50 @@ var Shell = (function (_super) {
     Shell.prototype.hasFile = function (filename) {
         return SurfaceUtil.fastfind(Object.keys(this.directory), filename) !== "";
     };
+    Shell.prototype.getPNGFromDirectory = function (filename, cb) {
+        var _this = this;
+        var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
+        if (cached_filename !== "") {
+            cb(null, this.cacheCanvas[cached_filename]);
+            return;
+        }
+        if (!this.hasFile(filename)) {
+            // 我々は心優しいので寛大にも拡張子つけ忘れに対応してあげる
+            filename += ".png";
+            if (!this.hasFile(filename)) {
+                cb(new Error("no such file in directory: " + filename.replace(/\.png$/i, "")), null);
+                return;
+            }
+            console.warn("element file " + filename + " need '.png' extension");
+        }
+        var _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
+        var pnafilename = _filename.replace(/\.png$/i, ".pna");
+        var _pnafilename = SurfaceUtil.fastfind(Object.keys(this.directory), pnafilename);
+        var pngbuf = this.directory[_filename];
+        SurfaceUtil.getImageFromArrayBuffer(pngbuf, function (err, png) {
+            if (err != null)
+                return cb(err, null);
+            // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
+            if (_pnafilename === "") {
+                _this.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
+                cb(null, _this.cacheCanvas[_filename]);
+                return;
+            }
+            var pnabuf = _this.directory[_pnafilename];
+            SurfaceUtil.getImageFromArrayBuffer(pnabuf, function (err, pna) {
+                if (err != null)
+                    return cb(err, null);
+                _this.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
+                cb(null, _this.cacheCanvas[_filename]);
+            });
+        });
+    };
     // this.cacheCanvas から filename な SurfaceCanvas を探す。
     // なければ this.directory から探し this.cacheCanvas にキャッシュする
     // 非同期の理由：img.onload = blob url
-    Shell.prototype.getPNGFromDirectory = function (filename) {
+    Shell.prototype.fetchPNGFromDirectory = function (filename) {
         var _this = this;
+        console.warn("Shell#fetchPNGFromDirectory is deprecated");
         var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
         if (cached_filename !== "") {
             return Promise.resolve(this.cacheCanvas[cached_filename]);
@@ -394,7 +443,7 @@ var Shell = (function (_super) {
         this.render();
     };
     return Shell;
-})(eventemitter3_1.default);
+})(EventEmitter);
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Shell;
 
@@ -409,8 +458,8 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var SurfaceRender_1 = require("./SurfaceRender");
 var SurfaceUtil = require("./SurfaceUtil");
-var eventemitter3_1 = require("eventemitter3");
-var jquery_1 = require("jquery");
+var EventEmitter = require("eventemitter3");
+var $ = require("jquery");
 var Surface = (function (_super) {
     __extends(Surface, _super);
     function Surface(div, scopeId, surfaceId, surfaceTree, bindgroup) {
@@ -422,9 +471,9 @@ var Surface = (function (_super) {
         this.cnv = SurfaceUtil.createCanvas();
         this.ctx = this.cnv.getContext("2d");
         this.element.appendChild(this.cnv);
-        jquery_1.default(this.element).css("position", "relative");
-        jquery_1.default(this.element).css("display", "inline-block");
-        jquery_1.default(this.cnv).css("position", "absolute");
+        $(this.element).css("position", "relative");
+        $(this.element).css("display", "inline-block");
+        $(this.cnv).css("position", "absolute");
         this.bindgroup = bindgroup;
         this.position = "fixed";
         this.surfaceTree = surfaceTree;
@@ -452,7 +501,7 @@ var Surface = (function (_super) {
         this.render();
     }
     Surface.prototype.destructor = function () {
-        jquery_1.default(this.element).children().remove();
+        $(this.element).children().remove();
         this.destructors.forEach(function (fn) { return fn(); });
         this.element = null;
         this.surfaceNode = {
@@ -472,20 +521,20 @@ var Surface = (function (_super) {
     };
     Surface.prototype.initMouseEvent = function () {
         var _this = this;
-        var $elm = jquery_1.default(this.element);
+        var $elm = $(this.element);
         var tid = 0;
         var touchCount = 0;
         var touchStartTime = 0;
         var tuples = [];
         var processMouseEvent = function (ev, type) {
-            jquery_1.default(ev.target).css({ "cursor": "default" }); //これDOMアクセスして重いのでは←mousemoveタイミングで他のライブラリでもっとDOMアクセスしてるし気になるなら計測しろ
+            $(ev.target).css({ "cursor": "default" }); //これDOMアクセスして重いのでは←mousemoveタイミングで他のライブラリでもっとDOMアクセスしてるし気になるなら計測しろ
             var _a = SurfaceUtil.getEventPosition(ev), pageX = _a.pageX, pageY = _a.pageY, clientX = _a.clientX, clientY = _a.clientY;
-            var _b = jquery_1.default(ev.target).offset(), left = _b.left, top = _b.top;
+            var _b = $(ev.target).offset(), left = _b.left, top = _b.top;
             // body直下 fixed だけにすべきかうーむ
             var _c = _this.position !== "fixed" ? [pageX, pageY] : [clientX, clientY], baseX = _c[0], baseY = _c[1];
             var _d = _this.position !== "fixed" ? [left, top] : [left - window.scrollX, top - window.scrollY], _left = _d[0], _top = _d[1];
-            var basePosY = parseInt(jquery_1.default(_this.cnv).css("top"), 10); // overlayでのずれた分を
-            var basePosX = parseInt(jquery_1.default(_this.cnv).css("left"), 10); // とってくる
+            var basePosY = parseInt($(_this.cnv).css("top"), 10); // overlayでのずれた分を
+            var basePosX = parseInt($(_this.cnv).css("left"), 10); // とってくる
             var offsetX = baseX - _left - basePosX; //canvas左上からのx座標
             var offsetY = baseY - _top - basePosY; //canvas左上からのy座標
             var hit = SurfaceUtil.getRegion(_this.cnv, _this.surfaceNode, offsetX, offsetY); //透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
@@ -506,7 +555,7 @@ var Surface = (function (_super) {
                 }
                 // 当たり判定をゆびで撫でてる時はサーフェスのドラッグをできないようにする
                 // ために親要素にイベント伝えない
-                jquery_1.default(ev.target).css({ "cursor": "pointer" }); //当たり判定でマウスポインタを指に
+                $(ev.target).css({ "cursor": "pointer" }); //当たり判定でマウスポインタを指に
             }
             _this.emit("mouse", custom);
         }; // processMouseEventここまで
@@ -799,7 +848,13 @@ var Surface = (function (_super) {
         var base = this.surfaceNode.base;
         var elements = this.surfaceNode.elements;
         var fronts = this.composeAnimationPatterns(this.layers);
-        var renderLayers = [].concat(backgrounds, elements.length > 0 ? elements : [{ type: "overlay", canvas: base, x: 0, y: 0 }]);
+        var renderLayers = [].concat(backgrounds, 
+        // element0 or base
+        elements[0] != null ?
+            // element0, element1...
+            elements :
+            // base, element1, element2...
+            [{ type: "overlay", canvas: base, x: 0, y: 0 }].concat(elements.slice(1)));
         this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
         this.bufferRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
         // elementまでがベースサーフェス扱い
@@ -819,13 +874,13 @@ var Surface = (function (_super) {
         // SSPでのjuda.narを見る限り合成後のサーフェスはベースサーフェスの大きさではなく合成されたサーフェスの大きさになるようだ
         // juda-systemの\s[1050]のアニメーションはrunonceを同時実行しており、この場合の座標の原点の計算方法が不明。
         // これは未定義動作の可能性が高い。
-        jquery_1.default(this.element).width(baseWidth); //this.cnv.width - bufRender.basePosX);
-        jquery_1.default(this.element).height(baseHeight); //this.cnv.height - bufRender.basePosY);
-        jquery_1.default(this.cnv).css("top", -this.bufferRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
-        jquery_1.default(this.cnv).css("left", -this.bufferRender.basePosX);
+        $(this.element).width(baseWidth); //this.cnv.width - bufRender.basePosX);
+        $(this.element).height(baseHeight); //this.cnv.height - bufRender.basePosY);
+        $(this.cnv).css("top", -this.bufferRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
+        $(this.cnv).css("left", -this.bufferRender.basePosX);
     };
     return Surface;
-})(eventemitter3_1.default);
+})(EventEmitter);
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Surface;
 
@@ -1189,7 +1244,7 @@ SurfaceRender.prototype.debug = false;
 
 },{"./SurfaceUtil":5}],5:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
-var encoding_japanese_1 = require("encoding-japanese");
+var Encoding = require("encoding-japanese");
 function pna(srfCnv) {
     var cnv = srfCnv.cnv, png = srfCnv.png, pna = srfCnv.pna;
     if (cnv != null) {
@@ -1292,6 +1347,7 @@ function log(element, description) {
 exports.log = log;
 // extend deep like jQuery $.extend(true, target, source)
 function extend(target, source) {
+    //console.warn("SurfaceUtil.extend is deprecated", "please use $.extend(true, a, b)");
     for (var key in source) {
         if (typeof source[key] === "object" && Object.getPrototypeOf(source[key]) === Object.prototype) {
             target[key] = target[key] || {};
@@ -1386,7 +1442,7 @@ exports.getArrayBuffer = getArrayBuffer;
 // TODO: use text-enconding & charset detection code
 function convert(buffer) {
     //return new TextDecoder('shift_jis').decode(buffer);
-    return encoding_japanese_1.default.codeToString(encoding_japanese_1.default.convert(new Uint8Array(buffer), 'UNICODE', 'AUTO'));
+    return Encoding.codeToString(Encoding.convert(new Uint8Array(buffer), 'UNICODE', 'AUTO'));
 }
 exports.convert = convert;
 // find filename that matches arg "filename" from arg "paths"
