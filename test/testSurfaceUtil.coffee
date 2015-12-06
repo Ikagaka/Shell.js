@@ -11,72 +11,73 @@ setPictureFrame = (element, description) ->
   return
 
 QUnit.module 'SurfaceUtil'
-
-QUnit.test 'chromakey_snipet speed test', (assert) ->
-  done = assert.async()
-  Promise.all([
-    SurfaceUtil.fetchImageFromURL("src/surface0.png")
-    SurfaceUtil.fetchArrayBuffer("src/surface0.png")
-  ]).then ([img, buffer])->
-    workers = [1..2].map ->
-      new InlineServerWorker [
-        "../bower_components/jszip/dist/jszip.min.js"
-        "../bower_components/PNG.ts/dist/PNG.js"
-      ], (conn)->
-        conn.on "getImageData", (buffer, reply)->
-          reader = new PNG.PNGReader(buffer)
-          reader.deflate = JSZip.compressions.DEFLATE.uncompress
-          decoded = reader.parse().getUint8ClampedArray()
-          reply(decoded, [decoded.buffer]);
-    return Promise.all(
-      workers.map (worker)-> worker.load()
-    ).then (workers)->
-      start = performance.now()
+if WebWorker?
+  console.log "WebWorker", WebWorker
+  QUnit.test 'chromakey_snipet speed test', (assert) ->
+    done = assert.async()
+    Promise.all([
+      SurfaceUtil.fetchImageFromURL("src/surface0.png")
+      SurfaceUtil.fetchArrayBuffer("src/surface0.png")
+    ]).then ([img, buffer])->
+      workers = [1..2].map ->
+        new InlineServerWorker [
+          "../bower_components/jszip/dist/jszip.min.js"
+          "../bower_components/PNG.ts/dist/PNG.js"
+        ], (conn)->
+          conn.on "getImageData", (buffer, reply)->
+            reader = new PNG.PNGReader(buffer)
+            reader.deflate = JSZip.compressions.DEFLATE.uncompress
+            decoded = reader.parse().getUint8ClampedArray()
+            reply(decoded, [decoded.buffer]);
       return Promise.all(
-        [1..100].map (i)-> workers[i%workers.length].request("getImageData", buffer)
-      ).then (results)->
+        workers.map (worker)-> worker.load()
+      ).then (workers)->
+        start = performance.now()
+        return Promise.all(
+          [1..100].map (i)-> workers[i%workers.length].request("getImageData", buffer)
+        ).then (results)->
+          stop = performance.now()
+          TotalWorkerTime = stop - start
+          assert.ok TotalWorkerTime, "Worker並列数2でPNG.ts deflate"
+          return [img, buffer]
+    .then ([img, buffer])->
+      test = ->
+        start = performance.now()
+        reader = new PNG.PNGReader(buffer)
+        reader.deflate = JSZip.compressions.DEFLATE.uncompress
+        decoded = reader.parse().getUint8ClampedArray()
         stop = performance.now()
-        TotalWorkerTime = stop - start
-        assert.ok TotalWorkerTime, "Worker並列数2でPNG.ts deflate"
-        return [img, buffer]
-  .then ([img, buffer])->
-    test = ->
-      start = performance.now()
-      reader = new PNG.PNGReader(buffer)
-      reader.deflate = JSZip.compressions.DEFLATE.uncompress
-      decoded = reader.parse().getUint8ClampedArray()
-      stop = performance.now()
-      PNGTSTime = stop - start
-      cnv = SurfaceUtil.copy(img)
-      ctx = cnv.getContext("2d")
-      start = performance.now()
-      imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
-      stop = performance.now()
-      getImageDataTime = stop - start
-      start = performance.now()
-      SurfaceUtil.chromakey_snipet(imgdata.data)
-      stop = performance.now()
-      chromakeyTime = stop - start
-      start = performance.now()
-      ctx.putImageData(imgdata, 0, 0)
-      stop = performance.now()
-      putImageDataTime = stop - start
-      {PNGTSTime, getImageDataTime, chromakeyTime, putImageDataTime}
-    results = [1..100].map -> test()
-    PNGTSTimes = results.map (a)-> a.PNGTSTime
-    getImageDataTimes = results.map (a)-> a.getImageDataTime
-    putImageDataTimes = results.map (a)-> a.putImageDataTime
-    chromakeyTimes = results.map (a)-> a.chromakeyTime
-    TotalPNGTSTime = PNGTSTimes.reduce (a,b)-> a+b
-    TotalGetImageDataTime = getImageDataTimes.reduce (a,b)-> a+b
-    TotalPutImageDataTime = putImageDataTimes.reduce (a,b)-> a+b
-    TotalChromakeyTime = chromakeyTimes.reduce (a,b)-> a+b
-    assert.ok TotalPNGTSTime, "UIスレッドでPNG.ts deflate"
-    assert.ok TotalGetImageDataTime, "UIスレッドでgetImageData"
-    assert.ok TotalPutImageDataTime
-    assert.ok TotalChromakeyTime
-    done()
-  .catch (err)-> console.error(err);done()
+        PNGTSTime = stop - start
+        cnv = SurfaceUtil.copy(img)
+        ctx = cnv.getContext("2d")
+        start = performance.now()
+        imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+        stop = performance.now()
+        getImageDataTime = stop - start
+        start = performance.now()
+        SurfaceUtil.chromakey_snipet(imgdata.data)
+        stop = performance.now()
+        chromakeyTime = stop - start
+        start = performance.now()
+        ctx.putImageData(imgdata, 0, 0)
+        stop = performance.now()
+        putImageDataTime = stop - start
+        {PNGTSTime, getImageDataTime, chromakeyTime, putImageDataTime}
+      results = [1..100].map -> test()
+      PNGTSTimes = results.map (a)-> a.PNGTSTime
+      getImageDataTimes = results.map (a)-> a.getImageDataTime
+      putImageDataTimes = results.map (a)-> a.putImageDataTime
+      chromakeyTimes = results.map (a)-> a.chromakeyTime
+      TotalPNGTSTime = PNGTSTimes.reduce (a,b)-> a+b
+      TotalGetImageDataTime = getImageDataTimes.reduce (a,b)-> a+b
+      TotalPutImageDataTime = putImageDataTimes.reduce (a,b)-> a+b
+      TotalChromakeyTime = chromakeyTimes.reduce (a,b)-> a+b
+      assert.ok TotalPNGTSTime, "UIスレッドでPNG.ts deflate"
+      assert.ok TotalGetImageDataTime, "UIスレッドでgetImageData"
+      assert.ok TotalPutImageDataTime
+      assert.ok TotalChromakeyTime
+      done()
+    .catch (err)-> console.error(err);done()
 
 QUnit.test 'SurfaceUtil.extend', (assert) ->
   original = {a: 0, b: {c: 0, d: 0}}
