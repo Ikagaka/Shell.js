@@ -4,12 +4,18 @@ node_js:
 branches:
   only: 'master'
 before_install:
-  - npm install -g bower
+  - npm install -g bower coffee-script browserify
 before_script:
   - bower update
+  - npm run build
 script:
   - echo "nothing"
 after_script:
+  - mkdir tmp
+  - mkdir tmp/demo
+  - mkdir tmp/dist
+  - \cp -f -R demo/* tmp/demo
+  - \cp -f -R dist/cuttlebone.js tmp/dist
   - rm -rf bower_components
   - git config remote.origin.fetch "+refs/heads/gh-pages:refs/remotes/origin/gh-pages"
   - git fetch origin gh-pages
