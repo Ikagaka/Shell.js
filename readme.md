@@ -1,7 +1,7 @@
 # Shell.js
 
 [![npm](https://img.shields.io/npm/v/ikagaka.shell.js.svg?style=flat)](https://npmjs.com/package/ikagaka.shell.js) [![bower](https://img.shields.io/bower/v/ikagaka.shell.js.svg)](http://bower.io/search/?q=ikagaka)
-[![Build Status](https://travis-ci.org/ikagaka/Shell.js.svg?branch=master)](https://travis-ci.org/ikagaka/Shell.js)
+[![Build Status](https://travis-ci.org/Ikagaka/Shell.js.svg?branch=master)](https://travis-ci.org/ikagaka/Shell.js)
 
 Ukagaka Shell Renderer for Web Browser
 
