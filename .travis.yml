@@ -4,7 +4,7 @@ node_js:
 branches:
   only: 'master'
 before_install:
-  - npm install -g dtsm browserify bower
+  - npm install -g bower
 before_script:
   - bower update
 script:
