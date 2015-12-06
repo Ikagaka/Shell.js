@@ -98,7 +98,7 @@ class Named extends EventEmitter
       $(document.body).on("mousemove", onmousemove)
       $(document.body).on("touchmove", onmousemove)
       $(document.body).on("touchend", onmouseup)
-      @destructors.push ->
+      @destructors.push =>
         $(document.body).off("mouseup", onmouseup)
         $(document.body).off("mousemove", onmousemove)
         $(document.body).off("touchmove", onmousemove)
@@ -131,7 +131,7 @@ class Named extends EventEmitter
         return
     @balloon.on "select", (ev)=>
       @emit("balloon_select", ev)
-    @destructors.push ->
+    @destructors.push =>
       @balloon.off "select"
     return
 
