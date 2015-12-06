@@ -8,13 +8,10 @@ before_install:
 before_script:
   - bower update
 script:
-  - phantomjs test/run-qunit.js demo/testSurfaceUtil.html
-  - phantomjs test/run-qunit.js demo/testSurfaceRender.html
   - phantomjs test/run-qunit.js demo/testSurface.html
-  - phantomjs test/run-qunit.js demo/testShell.html
 after_script:
   - git config remote.origin.fetch "+refs/heads/gh-pages:refs/remotes/origin/gh-pages"
-  - git fetch --unshallow
+  - git fetch origin gh-pages
   - bower update
   - \cp -f -R bower_components/ikagaka.shell.js/demo/* demo/
   - \cp -f -R bower_components/ikagaka.shell.js/dist/Shell.js dist
