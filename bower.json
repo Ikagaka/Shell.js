@@ -1,16 +1,12 @@
 {
-  "name": "ikagaka.namedmanager.js",
-  "version": "4.1.13",
-  "description": "Ikagaka Window Manager",
+  "name": "ikagaka.namedmanager.js-demo",
   "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {
+  "dependencies": {
     "narloader": "*",
     "power-assert-formatter": "*",
     "ikagaka.shell.js": "ikagaka/Shell.js#master",
     "ikagaka.balloon.js": "ikagaka/Balloon.js#master"
   },
-  "main": "./dist/NamedManager.js",
   "ignore": [
     "**/.*",
     "bower_components",
