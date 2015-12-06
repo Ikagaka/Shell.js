@@ -13,18 +13,18 @@ script:
   - phantomjs test/run-qunit.js demo/testSurface.html
   - phantomjs test/run-qunit.js demo/testShell.html
 after_script:
-  - echo "after_script"
-  - git fetch origin gh-pages
-  - git checkout gh-pages
+  - git config remote.origin.fetch "+refs/heads/gh-pages:refs/remotes/origin/gh-pages"
+  - git fetch --unshallow
   - bower update
   - \cp -f -R bower_components/ikagaka.shell.js/demo/* demo/
   - \cp -f -R bower_components/ikagaka.shell.js/dist/Shell.js dist
+  - git status
   - git commit -am "update-travis"
-  - '[ "$TRAVIS_BRANCH" == "master" ] && [ $GH_TOKEN ] && git push --quiet https://$GH_TOKEN@github.com/Ikagaka/Shell.js.git gh-pages 2> /dev/null'
+  - '[ "$TRAVIS_BRANCH" == "master" ] && [ $GH_TOKEN ] && git push --quiet "https://${GH_TOKEN}@github.com/Ikagaka/Shell.js.git" gh-pages:gh-pages > /dev/null 2>&1
 env:
   global:
     - GIT_COMMITTER_NAME=legokichi
-    - GIT_COMMITTER_EMAIL=legokichi@duxca.com
+    - GIT_COMMITTER_EMAIL=legokichi@gmail.com
     - GIT_AUTHOR_NAME=legokichi
-    - GIT_AUTHOR_EMAIL=legokichi@duxca.com
+    - GIT_AUTHOR_EMAIL=legokichi@gmail.com
     - secure: "Qb4ImvPXMDvTX4tVQ16BxfaZZ8NUGWFsmwDT/Zgb4L2rWT8mPb4SXPe9wjazmzqW9AdxnQ4V1reuVfVhIxcu21nxzYDxnc1+IyJ4dhISRoi80994iOfhllfjztZLUDzRZBcyO475IEgpD+v2V5KzAbafpfoZRLgemIxFQmjvhOw="
