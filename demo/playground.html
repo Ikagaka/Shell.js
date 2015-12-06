@@ -25,9 +25,9 @@
 Shell.SurfaceRender.prototype.debug = false;//実際メモリの危機,GC多発
 
 //NarLoader.loadFromURL("../nar/raychel_second.nar").then(changeNar)
-//NarLoader.loadFromURL("../nar/mobilemaster.nar").then(changeNar)
+NarLoader.loadFromURL("../nar/mobilemaster.nar").then(changeNar)
 //NarLoader.loadFromURL("../nar/Juda.zip").then(changeNar)
-NarLoader.loadFromURL("../nar/yomefox.nar").then(changeNar)
+//NarLoader.loadFromURL("../nar/yomefox.nar").then(changeNar)
 //NarLoader.loadFromURL("../nar/ku-ver06.1.nar").then(changeNar)
 $("#nar").change(function(ev){
   NarLoader.loadFromBlob($(this).prop("files")[0]).then(changeNar);
