@@ -4,7 +4,7 @@ node_js:
 branches:
   only: 'master'
 before_install:
-  - npm install -g bower coffee-script browserify
+  - npm install -g bower coffee-script browserify dtsm
 before_script:
   - npm run init
 script:
