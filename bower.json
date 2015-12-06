@@ -8,6 +8,7 @@
     "duxca.serverworker.js": "legokichi/ServerWorker"
   },
   "devDependencies": {
+    "bluebird": "*",
     "qunit": "*",
     "narloader": "*",
     "qunit-tap": "*",
