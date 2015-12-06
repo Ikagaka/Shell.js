@@ -155,7 +155,7 @@ if (typeof Worker !== 'undefined' && Worker !== null) {
             }));
             return done();
         })['catch'](function (err) {
-            console.error(err, err.stack);
+            console.info(err, err.stack);
             return done();
         });
     });
@@ -223,7 +223,7 @@ QUnit.test('SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer', function (assert
         }));
         return done();
     })['catch'](function (err) {
-        console.error(err, err.stack);
+        console.info(err, err.stack);
         return done();
     });
 });
@@ -348,7 +348,7 @@ QUnit.test('SurfaceUtil.fetchImageFromURL, SurfaceUtil.fetchImageFromArrayBuffer
         setPictureFrame(img, 'SurfaceUtil.fetchImageFromURL');
         return done();
     })['catch'](function (err) {
-        console.error(err, err.stack);
+        console.info(err, err.stack);
         return done();
     });
 });
