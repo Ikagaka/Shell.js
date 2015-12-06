@@ -11,8 +11,8 @@ setPictureFrame = (element, description) ->
   return
 
 QUnit.module 'SurfaceUtil'
-if WebWorker?
-  console.log "WebWorker", WebWorker
+console.info "Worker:", Worker
+if Worker?
   QUnit.test 'chromakey_snipet speed test', (assert) ->
     done = assert.async()
     Promise.all([
@@ -116,6 +116,7 @@ QUnit.test "SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer", (assert)->
     txt = SurfaceUtil.convert(buffer)
     assert.ok txt.match(/フリーシェル 「窗子」（MADOKO）を改変の上使用しています。/) isnt null
     done()
+  .catch (err)-> console.error(err, err,stack); done()
 
 QUnit.test "SurfaceUtil.find", (assert)->
   paths = [
