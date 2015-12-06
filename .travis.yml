@@ -18,7 +18,7 @@ after_script:
   - \cp -f -R bower_components/ikagaka.shell.js/demo/* demo/
   - \cp -f -R bower_components/ikagaka.shell.js/dist/Shell.js dist
   - git status
-  - git commit -am "update-travis"
+  - git commit -am "travis-auto-update"
   - '[ "$TRAVIS_BRANCH" == "master" ] && [ $GH_TOKEN ] && git push --quiet "https://${GH_TOKEN}@github.com/Ikagaka/Shell.js.git" gh-pages:gh-pages > /dev/null 2>&1'
 env:
   global:
