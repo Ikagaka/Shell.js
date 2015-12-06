@@ -223,7 +223,7 @@ QUnit.test('SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer', function (assert
         }));
         return done();
     })['catch'](function (err) {
-        console.error(err, err, stack);
+        console.error(err, err.stack);
         return done();
     });
 });
