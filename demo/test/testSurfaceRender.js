@@ -477,7 +477,6 @@ QUnit.test('SurfaceRender#drawRegions', function (assert) {
             }
         ]);
         assert.ok(true);
-        assert.ok(false, '不定形当たり判定の描画がまだです');
         frame = craetePictureFrame('SurfaceRender#drawRegions');
         frame.add(render.cnv, 'result');
         frame.add($('<img src=\'src/drawRegions.png\' />')[0], 'expected');
