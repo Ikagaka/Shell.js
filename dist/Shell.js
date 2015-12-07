@@ -31,18 +31,13 @@ var Shell = (function (_super) {
         var _this = this;
         return Promise.resolve(this)
             .then(function () { return _this.loadDescript(); }) // 1st // ←なにこれ（自問自
-            .then(function () { return console.log("a"); })
             .then(function () { return _this.loadBindGroup(); }) // 2nd // 依存関係的なやつだと思われ
             .then(function () { return _this.loadSurfacesTxt(); }) // 1st
             .then(function () { return _this.loadSurfaceTable(); }) // 1st
-            .then(function () { return console.log("b"); })
             .then(function () { return _this.loadSurfacePNG(); }) // 2nd
             .then(function () { return _this.loadCollisions(); }) // 3rd
             .then(function () { return _this.loadAnimations(); }) // 3rd
-            .then(function () { return console.log("c"); })
             .then(function () { return _this.loadElements(); }) // 3rd
-            .then(function () { return console.log("d"); })
-            .then(function () { return _this; })
             .catch(function (err) {
             console.error("Shell#load > ", err);
             return Promise.reject(err);
@@ -142,9 +137,10 @@ var Shell = (function (_super) {
         var _this = this;
         var surface_names = Object.keys(this.directory).filter(function (filename) { return /^surface(\d+)\.png$/i.test(filename); });
         return new Promise(function (resolve, reject) {
-            var i = surface_names.length;
+            var i = 0;
             surface_names.forEach(function (filename) {
                 var n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
+                i++;
                 _this.getPNGFromDirectory(filename, function (err, cnv) {
                     if (err != null) {
                         console.warn("Shell#loadSurfacePNG > " + err);
@@ -178,7 +174,6 @@ var Shell = (function (_super) {
         var hits = Object.keys(srfs).filter(function (name) { return !!srfs[name].elements; });
         return new Promise(function (resolve, reject) {
             var i = 0;
-            console.log("hoge", hits);
             if (hits.length === 0)
                 return resolve();
             hits.forEach(function (defname) {
@@ -187,7 +182,6 @@ var Shell = (function (_super) {
                 var _prms = Object.keys(elms).map(function (elmname) {
                     var _a = elms[elmname], is = _a.is, type = _a.type, file = _a.file, x = _a.x, y = _a.y;
                     i++;
-                    console.log(i, type, file);
                     _this.getPNGFromDirectory(file, function (err, canvas) {
                         if (err != null) {
                             console.warn("Shell#loadElements > " + err);
@@ -203,7 +197,6 @@ var Shell = (function (_super) {
                             }
                             _this.surfaceTree[n].elements[is] = { type: type, canvas: canvas, x: x, y: y };
                         }
-                        console.log("huga", i);
                         if (--i <= 0) {
                             resolve(_this);
                         }

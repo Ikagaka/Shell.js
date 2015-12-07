@@ -39,18 +39,13 @@ export default class Shell extends EventEmitter {
   public load(): Promise<Shell> {
     return Promise.resolve(this)
     .then(()=> this.loadDescript()) // 1st // ←なにこれ（自問自
-    .then(()=> console.log("a"))
     .then(()=> this.loadBindGroup()) // 2nd // 依存関係的なやつだと思われ
     .then(()=> this.loadSurfacesTxt()) // 1st
     .then(()=> this.loadSurfaceTable()) // 1st
-    .then(()=> console.log("b"))
     .then(()=> this.loadSurfacePNG())   // 2nd
     .then(()=> this.loadCollisions()) // 3rd
     .then(()=> this.loadAnimations()) // 3rd
-    .then(()=> console.log("c"))
     .then(()=> this.loadElements()) // 3rd
-    .then(()=> console.log("d"))
-    .then(()=> this)
     .catch((err)=>{
       console.error("Shell#load > ", err);
       return Promise.reject(err);
@@ -148,9 +143,10 @@ export default class Shell extends EventEmitter {
   private loadSurfacePNG(): Promise<Shell>{
     var surface_names = Object.keys(this.directory).filter((filename)=> /^surface(\d+)\.png$/i.test(filename));
     return new Promise<Shell>((resolve, reject)=>{
-      var i = surface_names.length;
+      var i = 0;
       surface_names.forEach((filename)=>{
         var n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
+        i++;
         this.getPNGFromDirectory(filename, (err, cnv)=>{
           if(err != null){
             console.warn("Shell#loadSurfacePNG > " + err);
@@ -182,7 +178,6 @@ export default class Shell extends EventEmitter {
     var hits = Object.keys(srfs).filter((name)=> !!srfs[name].elements);
     return new Promise<Shell>((resolve, reject)=>{
       var i = 0;
-      console.log("hoge", hits)
       if(hits.length === 0) return resolve();
       hits.forEach((defname)=>{
         var n = srfs[defname].is;
@@ -190,7 +185,6 @@ export default class Shell extends EventEmitter {
         var _prms = Object.keys(elms).map((elmname)=>{
           var {is, type, file, x, y} = elms[elmname];
           i++;
-          console.log(i, type, file)
           this.getPNGFromDirectory(file, (err, canvas)=>{
             if( err != null){
               console.warn("Shell#loadElements > " + err);
@@ -205,7 +199,6 @@ export default class Shell extends EventEmitter {
               }
               this.surfaceTree[n].elements[is] = {type, canvas, x, y};
             }
-            console.log("huga", i)
             if(--i <= 0){
               resolve(this);
             }
