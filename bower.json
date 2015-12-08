@@ -1,6 +1,6 @@
 {
   "name": "ikagaka.shell.js",
-  "version": "4.2.13",
+  "version": "4.2.14",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "dependencies": {
