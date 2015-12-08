@@ -179,7 +179,7 @@ export default class Shell extends EventEmitter {
     var hits = Object.keys(srfs).filter((name)=> !!srfs[name].elements);
     return new Promise<Shell>((resolve, reject)=>{
       var i = 0;
-      if(hits.length === 0) return resolve();
+      if(hits.length === 0) return resolve(this);
       hits.forEach((defname)=>{
         var n = srfs[defname].is;
         var elms = srfs[defname].elements;
@@ -332,20 +332,17 @@ export default class Shell extends EventEmitter {
 
   public attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number|string): Surface {
     var type = SurfaceUtil.scope(scopeId);
-    if(typeof surfaceId === "string"){
-      if(!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]){
-        var _surfaceId = SurfaceUtil.choice<number>(this.surfacesTxt.aliases[type][surfaceId]);
-      }else throw new Error("ReferenceError: surface alias scope:" + type+ ", id:" + surfaceId + " is not defined.");
-    }else if(typeof surfaceId === "number"){
-      var _surfaceId = surfaceId;
-    }else throw new Error("TypeError: surfaceId: number|string is not match " + typeof surfaceId);
     var hits = this.attachedSurface.filter(({div: _div})=> _div === div);
-    if(hits.length !== 0) throw new Error("ReferenceError: this HTMLDivElement is already attached");
+    if(hits.length !== 0) throw new Error("Shell#attachSurface > ReferenceError: this HTMLDivElement is already attached");
     if(scopeId < 0){
-      throw new Error("TypeError: scopeId needs more than 0, but:" + scopeId);
+      throw new Error("Shell#attachSurface > TypeError: scopeId needs more than 0, but:" + scopeId);
     }
-    if(!this.surfaceTree[surfaceId]){
-      console.warn("surfaceId:", surfaceId, "is not defined", this.surfaceTree);
+    var _surfaceId = this.getSurfaceAlias(scopeId, surfaceId);
+    if(_surfaceId !== surfaceId){
+      console.info("Shell#attachSurface", "surface alias is decided on", _surfaceId, "as", type, surfaceId);
+    }
+    if(!this.surfaceTree[_surfaceId]){
+      console.warn("surfaceId:", _surfaceId, "is not defined in surfaceTree", this.surfaceTree);
       return null;
     }
     var srf = new Surface(div, scopeId, _surfaceId, this.surfaceTree, this.bindgroup);
@@ -372,19 +369,27 @@ export default class Shell extends EventEmitter {
     Shell.call(this, {}); // 初期化
   }
 
+  private getSurfaceAlias(scopeId: number, surfaceId: number|string): number {
+    var type = SurfaceUtil.scope(scopeId);
+    if(typeof surfaceId === "string" || typeof surfaceId === "number"){
+      if(!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]){
+        // まずエイリアスを探す
+        var _surfaceId = SurfaceUtil.choice<number>(this.surfacesTxt.aliases[type][surfaceId]);
+      }else if(typeof surfaceId === "number"){
+        // 通常の処理
+        var _surfaceId = surfaceId;
+      }
+    }else{
+      // そんなサーフェスはない
+      console.warn("Shell#hasSurface > surface alias scope:", scopeId + "as" + type+ ", id:" + surfaceId + " is not defined.");
+      var _surfaceId = -1;
+    }
+    return _surfaceId;
+  }
+
   // サーフェスエイリアス込みでサーフェスが存在するか確認
   private hasSurface(scopeId: number, surfaceId: number|string): boolean {
-    var type = SurfaceUtil.scope(scopeId);
-    if(typeof surfaceId === "string"){
-      if(!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]){
-        var _surfaceId = SurfaceUtil.choice<number>(this.surfacesTxt.aliases[type][surfaceId]);
-      }else{
-        throw new Error("RuntimeError: surface alias scope:" + type+ ", id:" + surfaceId + " is not defined.");
-      }
-    }else if(typeof surfaceId === "number"){
-      var _surfaceId = surfaceId;
-    }else throw new Error("TypeError: surfaceId: number|string is not match " + typeof surfaceId);
-    return this.surfaceTree[_surfaceId] != null;
+    return this.getSurfaceAlias(scopeId, surfaceId) >= 0;
   }
 
   // 着せ替えオン
