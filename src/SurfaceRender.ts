@@ -74,6 +74,11 @@ export default class SurfaceRender {
       // element 合成のみで作られるサーフェスの base は dummy SurfaceCanvas
       return;
     }
+    if(this.baseWidth === 0 || this.baseHeight === 0){
+      // このサーフェスはまだ base を持たない
+      this.base(canvas);
+      return;
+    }
     //SurfaceUtil.log(canvas.cnv||canvas.png, type+"("+x+","+y+")");
     switch (type) {
       case "base":        this.base(canvas);              break;
@@ -180,10 +185,6 @@ export default class SurfaceRender {
   //着せ替え・elementでも使用できる。
   overlay(part: SurfaceCanvas, x: number, y: number): void {
     if(!this.use_self_alpha) part = SurfaceUtil.pna(part);
-    if(this.baseWidth === 0 || this.baseHeight === 0){
-      // このサーフェスはまだ base を持たない
-      return this.base(part);
-    }
     if(this.debug) this.log.push({method: "overlay", args:[part, x, y]});
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "source-over";
