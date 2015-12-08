@@ -10,7 +10,7 @@
   "devDependencies": {
     "bluebird": "*",
     "qunit": "*",
-    "narloader": "*",
+    "narloader": "legokichi/NarLoader#issue12",
     "qunit-tap": "*",
     "empower": "*",
     "power-assert-formatter": "*"

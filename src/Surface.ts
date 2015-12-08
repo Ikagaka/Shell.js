@@ -1,3 +1,4 @@
+// todo: insert
 // todo: anim collision
 // todo: background+exclusive,(1,3,5)
 /// <reference path="../typings/tsd.d.ts"/>
@@ -232,6 +233,33 @@ export default class Surface extends EventEmitter {
         return;
       }
       // bind単体はレイヤーを重ねる着せ替え。
+      /*となりの羽山さんsurface4
+      animation52.interval,bind
+animation52.pattern0,add,2171,2,0,110
+animation52.pattern1,insert,0,0,185
+animation52.pattern2,insert,0,0,186
+animation52.pattern3,insert,0,0,187
+animation52.pattern4,insert,0,0,188
+animation52.pattern5,insert,0,0,189
+animation52.pattern6,insert,0,0,184
+animation52.pattern7,insert,0,0,183
+animation52.pattern14,insert,0,0,255
+animation52.pattern15,insert,0,0,256
+animation52.pattern16,insert,0,0,257
+animation52.pattern20,add,3111,2,40,125
+
+      var layers = this.composeAnimationPatterns(patterns);
+      this.bufferRender.clear();
+      this.bufferRender.composeElements(layers)
+
+      var layer = {
+        animation_ids: [];
+        type: overlay,
+        surface: this.bufferRender.cnv,
+        wait: 0;
+        x: this.bufferRender.basePosX;
+        y: this.bufferRender.basePosY;
+      };*/
       if(option === "background"){
         this.backgrounds[animId] = patterns[patterns.length-1];
       }else{
@@ -289,12 +317,14 @@ export default class Surface extends EventEmitter {
       console.warn("Surface#play", "unsupportted option", option, animationId, anim);
     }
     this.animationsQueue[animationId] = patterns.map((pattern, i)=> ()=>{
-      var {surface, wait, type, x, y, animation_ids} = pattern;
+      var {surface, wait, type, x, y, animation_ids, animation_id} = pattern;
       switch(type){
-        case "start":            this.play(animation_ids[0], nextTick); return;
-        case "stop":             this.stop(animation_ids[0]); setTimeout(nextTick); return;
+        case "start":            this.play(Number((/\d+/.exec(animation_id) || ["", "-1"])[1]), nextTick); return;
+        case "stop":             this.stop(Number((/\d+/.exec(animation_id) || ["", "-1"])[1])); setTimeout(nextTick); return;
         case "alternativestart": this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
         case "alternativestop":  this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
+        case "insert":
+          console.warn("Surface#play", "unsupportted animation type:", type, pattern);
       }
       var [__, a, b] = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]);
       var _wait = isFinite(Number(b))
@@ -388,14 +418,29 @@ export default class Surface extends EventEmitter {
       }
       // 対象サーフェスを構築描画する
       var {base, elements, collisions, animations} = srf;
+
       this.bufferRender.reset();// 対象サーフェスのbaseサーフェス(surface*.png)の上に
-      this.bufferRender.composeElements([{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements)); // elementを合成する
-      if(type === "base"){
-        // 新しい ベースサーフェス
-        // 12pattern0,300,30,base,0,0 みたいなの
-        this.dynamicBase = {type, x, y, canvas: this.bufferRender.getSurfaceCanvas()};
+      // elementを合成する
+      var _renderLayers: SurfaceLayerObject[] = [].concat(
+        // element0 or base
+        elements[0] != null ?
+          // element0, element1...
+          elements :
+          // base, element1, element2...
+          [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements)
+      );
+      this.bufferRender.composeElements(_renderLayers); // 現在有効な ベースサーフェスのレイヤを合成
+
+      renderLayers.push({type, x, y, canvas: this.bufferRender.getSurfaceCanvas()});
+    }
+    // 構築した新しいサーフェスはベースサーフェス
+    if(type === "base"){
+      // 新しい ベースサーフェス
+      // 12pattern0,300,30,base,0,0 みたいなの
+      if(pattern.surface < 0){
+        this.dynamicBase = null;
       }else{
-        renderLayers.push({type, x, y, canvas: this.bufferRender.getSurfaceCanvas()});
+        this.dynamicBase = {type, x, y, canvas: this.bufferRender.getSurfaceCanvas()};
       }
     }
     return renderLayers;
@@ -420,7 +465,7 @@ export default class Surface extends EventEmitter {
           // element0, element1...
           elements :
           // base, element1, element2...
-          [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements.slice(1))
+          [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements)
       );
       this.bufferRender.composeElements(renderLayers); // 現在有効な ベースサーフェスのレイヤを合成
     }

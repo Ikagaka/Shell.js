@@ -41,7 +41,8 @@ export interface SurfaceAnimation {
 }
 
 export interface SurfaceAnimationPattern {
-  animation_ids: number[];
+  animation_ids: number[]; //alternativestart, alternativestop
+  animation_id: string; // insert', 'start', 'stop'
   type: string;
   surface: number;
   wait: string;
