@@ -131,9 +131,10 @@ export default class Shell extends EventEmitter {
   private loadSurfaceTable(): Promise<Shell> {
     var surfacetable_name = Object.keys(this.directory).filter((name)=> /^surfacetable.*\.txt$/i.test(name))[0] || "";
     if(surfacetable_name === ""){
-      console.info("surfacetable.txt is not found.")
+      console.info("Shell#loadSurfaceTable", "surfacetable.txt is not found.");
     }else{
       var txt = SurfaceUtil.convert(this.directory[surfacetable_name]);
+      console.info("Shell#loadSurfaceTable", "surfacetable.txt not support yet.");
       // TODO
     }
     return Promise.resolve(this);
@@ -269,7 +270,7 @@ export default class Shell extends EventEmitter {
         cb(new Error("no such file in directory: " + filename.replace(/\.png$/i, "")), null);
         return;
       }
-      console.warn("element file " + filename + " need '.png' extension");
+      console.warn("Shell#getPNGFromDirectory", "element file " + filename.substr(0, filename.length - ".png".length) + " need '.png' extension");
     }
     var _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
     var pnafilename = _filename.replace(/\.png$/i, ".pna");
