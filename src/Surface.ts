@@ -32,6 +32,7 @@ export default class Surface extends EventEmitter {
   private stopFlags:       { [animationId: number]: boolean };//keyがfalseのアニメーションの"自発的"再生を停止する、sometimesみたいのを止める。bindには関係ない
   private surfaceTree:     { [animationId: number]: SurfaceTreeNode };
   private bindgroup:       { [charId: number]: { [bindgroupId: number]: boolean } }
+  private dynamicBase:     {type: string, x: number, y: number, canvas: {cnv: HTMLCanvasElement, png: HTMLImageElement, pna: HTMLImageElement}};
 
   private destructed: boolean;
   private destructors: Function[]; // destructor実行時に実行される関数のリスト
@@ -70,6 +71,7 @@ export default class Surface extends EventEmitter {
     this.backgrounds = []
     this.layers = [];
     this.stopFlags = {};
+    this.dynamicBase = null;
 
     this.destructed = false;
     this.destructors = [];
@@ -388,7 +390,13 @@ export default class Surface extends EventEmitter {
       var {base, elements, collisions, animations} = srf;
       this.bufferRender.reset();// 対象サーフェスのbaseサーフェス(surface*.png)の上に
       this.bufferRender.composeElements([{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements)); // elementを合成する
-      renderLayers.push({type, x, y, canvas: this.bufferRender.getSurfaceCanvas()});
+      if(type === "base"){
+        // 新しい ベースサーフェス
+        // 12pattern0,300,30,base,0,0 みたいなの
+        this.dynamicBase = {type, x, y, canvas: this.bufferRender.getSurfaceCanvas()};
+      }else{
+        renderLayers.push({type, x, y, canvas: this.bufferRender.getSurfaceCanvas()});
+      }
     }
     return renderLayers;
   }
@@ -400,17 +408,22 @@ export default class Surface extends EventEmitter {
     var elements = this.surfaceNode.elements;
     var fronts = this.composeAnimationPatterns(this.layers);
 
-    var renderLayers: SurfaceLayerObject[] = [].concat(
-      backgrounds,
-      // element0 or base
-      elements[0] != null ?
-        // element0, element1...
-        elements :
-        // base, element1, element2...
-        [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements.slice(1))
-    );
     this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
-    this.bufferRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
+    if(this.dynamicBase != null){
+      // pattern base があればそちらを使用
+      this.bufferRender.composeElements([this.dynamicBase]);
+    } else {
+      var renderLayers: SurfaceLayerObject[] = [].concat(
+        backgrounds,
+        // element0 or base
+        elements[0] != null ?
+          // element0, element1...
+          elements :
+          // base, element1, element2...
+          [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements.slice(1))
+      );
+      this.bufferRender.composeElements(renderLayers); // 現在有効な ベースサーフェスのレイヤを合成
+    }
     // elementまでがベースサーフェス扱い
     var baseWidth = this.bufferRender.cnv.width;
     var baseHeight = this.bufferRender.cnv.height;

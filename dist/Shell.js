@@ -496,6 +496,7 @@ var Surface = (function (_super) {
         this.backgrounds = [];
         this.layers = [];
         this.stopFlags = {};
+        this.dynamicBase = null;
         this.destructed = false;
         this.destructors = [];
         // GCの発生を抑えるためレンダラはこれ１つを使いまわす
@@ -842,7 +843,14 @@ var Surface = (function (_super) {
             var base = srf.base, elements = srf.elements, collisions = srf.collisions, animations = srf.animations;
             this.bufferRender.reset(); // 対象サーフェスのbaseサーフェス(surface*.png)の上に
             this.bufferRender.composeElements([{ type: "overlay", canvas: base, x: 0, y: 0 }].concat(elements)); // elementを合成する
-            renderLayers.push({ type: type, x: x, y: y, canvas: this.bufferRender.getSurfaceCanvas() });
+            if (type === "base") {
+                // 新しい ベースサーフェス
+                // 12pattern0,300,30,base,0,0 みたいなの
+                this.dynamicBase = { type: type, x: x, y: y, canvas: this.bufferRender.getSurfaceCanvas() };
+            }
+            else {
+                renderLayers.push({ type: type, x: x, y: y, canvas: this.bufferRender.getSurfaceCanvas() });
+            }
         }
         return renderLayers;
     };
@@ -853,15 +861,21 @@ var Surface = (function (_super) {
         var base = this.surfaceNode.base;
         var elements = this.surfaceNode.elements;
         var fronts = this.composeAnimationPatterns(this.layers);
-        var renderLayers = [].concat(backgrounds, 
-        // element0 or base
-        elements[0] != null ?
-            // element0, element1...
-            elements :
-            // base, element1, element2...
-            [{ type: "overlay", canvas: base, x: 0, y: 0 }].concat(elements.slice(1)));
         this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
-        this.bufferRender.composeElements(renderLayers); // 現在有効なアニメーションのレイヤを合成
+        if (this.dynamicBase != null) {
+            // pattern base があればそちらを使用
+            this.bufferRender.composeElements([this.dynamicBase]);
+        }
+        else {
+            var renderLayers = [].concat(backgrounds, 
+            // element0 or base
+            elements[0] != null ?
+                // element0, element1...
+                elements :
+                // base, element1, element2...
+                [{ type: "overlay", canvas: base, x: 0, y: 0 }].concat(elements.slice(1)));
+            this.bufferRender.composeElements(renderLayers); // 現在有効な ベースサーフェスのレイヤを合成
+        }
         // elementまでがベースサーフェス扱い
         var baseWidth = this.bufferRender.cnv.width;
         var baseHeight = this.bufferRender.cnv.height;
