@@ -46,6 +46,7 @@ export default class Shell extends EventEmitter {
     .then(()=> this.loadCollisions()) // 3rd
     .then(()=> this.loadAnimations()) // 3rd
     .then(()=> this.loadElements()) // 3rd
+    .then(()=> this) // 3rd
     .catch((err)=>{
       console.error("Shell#load > ", err);
       return Promise.reject(err);
