@@ -43,7 +43,7 @@ function changeNar(nanikaDir){
   shelllist.forEach(function(shellId){
     $("<option />").val(shellId).text(shellId).appendTo($frag);
   });
-  $("#shellId").children().remove().end().append($frag).change(function(){ changeShell(nanikaDir); });
+  $("#shellId").children().remove().end().append($frag).unbind().change(function(){ changeShell(nanikaDir); });
   if(shelllist.length === 0) return console.warn("this nar does not have any shell");
   if(shelllist.indexOf("master") !== -1) {
     $("#shellId").val("master").change();
