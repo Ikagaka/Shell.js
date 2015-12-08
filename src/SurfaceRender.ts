@@ -69,7 +69,7 @@ export default class SurfaceRender {
     }
   }
 
-  composeElement(canvas: SurfaceCanvas, type: string, x: number, y: number): void {
+  composeElement(canvas: SurfaceCanvas, type: string, x=0, y=0): void {
     if (canvas.cnv == null && canvas.png == null){
       // element 合成のみで作られるサーフェスの base は dummy SurfaceCanvas
       return;

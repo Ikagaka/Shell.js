@@ -431,17 +431,20 @@ animation52.pattern20,add,3111,2,40,125
       );
       this.bufferRender.composeElements(_renderLayers); // 現在有効な ベースサーフェスのレイヤを合成
 
-      renderLayers.push({type, x, y, canvas: this.bufferRender.getSurfaceCanvas()});
-    }
-    // 構築した新しいサーフェスはベースサーフェス
-    if(type === "base"){
-      // 新しい ベースサーフェス
-      // 12pattern0,300,30,base,0,0 みたいなの
-      if(pattern.surface < 0){
-        this.dynamicBase = null;
+      // 構築したこのレイヤーのサーフェスはベースサーフェス指定
+      if(type === "base"){
+        // 新しい ベースサーフェス
+        // 12pattern0,300,30,base,0,0 みたいなの
+        if(pattern.surface < 0){
+          this.dynamicBase = null;
+        }else{
+          this.dynamicBase = {type, x, y, canvas: this.bufferRender.getSurfaceCanvas()};
+        }
+        // baseの場合はthis.dynamicBaseにまかせて何も返さない
       }else{
-        this.dynamicBase = {type, x, y, canvas: this.bufferRender.getSurfaceCanvas()};
+        renderLayers.push({type, x, y, canvas: this.bufferRender.getSurfaceCanvas()});
       }
+      SurfaceUtil.log(this.bufferRender.getSurfaceCanvas().cnv)
     }
     return renderLayers;
   }
@@ -484,12 +487,8 @@ animation52.pattern20,add,3111,2,40,125
     //this.endAll();
     //debugger;
 
-
-
     SurfaceUtil.init(this.cnv, this.ctx, this.bufferRender.cnv); // バッファから実DOMTree上のcanvasへ描画
-    // SSPでのjuda.narを見る限り合成後のサーフェスはベースサーフェスの大きさではなく合成されたサーフェスの大きさになるようだ
-    // juda-systemの\s[1050]のアニメーションはrunonceを同時実行しており、この場合の座標の原点の計算方法が不明。
-    // これは未定義動作の可能性が高い。
+
     $(this.element).width(baseWidth);//this.cnv.width - bufRender.basePosX);
     $(this.element).height(baseHeight);//this.cnv.height - bufRender.basePosY);
     $(this.cnv).css("top", -this.bufferRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
