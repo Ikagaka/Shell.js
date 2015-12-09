@@ -760,10 +760,10 @@ var Surface = (function (_super) {
             var surface = pattern.surface, wait = pattern.wait, type = pattern.type, x = pattern.x, y = pattern.y, animation_ids = pattern.animation_ids, animation_id = pattern.animation_id;
             switch (type) {
                 case "start":
-                    _this.play(Number((/\d+/.exec(animation_id) || ["", "-1"])[1]), nextTick);
+                    _this.play(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]), nextTick);
                     return;
                 case "stop":
-                    _this.stop(Number((/\d+/.exec(animation_id) || ["", "-1"])[1]));
+                    _this.stop(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]));
                     setTimeout(nextTick);
                     return;
                 case "alternativestart":
@@ -28663,7 +28663,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":12}],45:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.shell.js",
-  "version": "4.2.15",
+  "version": "4.2.16",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "url": "https://github.com/ikagaka/Shell.js",
@@ -28683,7 +28683,7 @@ module.exports={
     "dtsm-fetch": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git fetch",
     "dtsm-search": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline search",
     "dtsm-update": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline update",
-    "patch": "mversion patch -m"
+    "patch": "mversion patch"
   },
   "repository": {
     "type": "git",

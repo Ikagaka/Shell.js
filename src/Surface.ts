@@ -320,9 +320,10 @@ export default class Surface extends EventEmitter {
     }
     this.animationsQueue[animationId] = patterns.map((pattern, i)=> ()=>{
       var {surface, wait, type, x, y, animation_ids, animation_id} = pattern;
+
       switch(type){
-        case "start":            this.play(Number((/\d+/.exec(animation_id) || ["", "-1"])[1]), nextTick); return;
-        case "stop":             this.stop(Number((/\d+/.exec(animation_id) || ["", "-1"])[1])); setTimeout(nextTick); return;
+        case "start":            this.play(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]), nextTick); return;
+        case "stop":             this.stop(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1])); setTimeout(nextTick); return;
         case "alternativestart": this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
         case "alternativestop":  this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
       }
