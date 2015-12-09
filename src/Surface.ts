@@ -5,7 +5,7 @@
 
 import SurfaceRender from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
-import {SurfaceLayerObject, SurfaceTreeNode, SurfaceMouseEvent} from "./Interfaces";
+import {SurfaceLayerObject, SurfaceTreeNode, SurfaceMouseEvent, SurfaceLayer} from "./Interfaces";
 import EventEmitter = require("eventemitter3");
 import $ = require("jquery");
 
@@ -23,8 +23,8 @@ export default class Surface extends EventEmitter {
   private surfaceNode: SurfaceTreeNode
   private bufferCanvas: HTMLCanvasElement; //チラツキを抑えるためのバッファ
 
-  private backgrounds:     SurfaceAnimationPattern[];//背景レイヤ
-  private layers:          SurfaceAnimationPattern[];//アニメーションIDの現在のレイヤ。アニメで言う動画セル。
+  private backgrounds:     SurfaceLayer[];//背景レイヤ
+  private layers:          SurfaceLayer[];//アニメーションIDの現在のレイヤ。アニメで言う動画セル。
 
   private exclusive: number; // 現在排他実行中のアニメションID
   private talkCount: number;
@@ -175,6 +175,10 @@ export default class Surface extends EventEmitter {
     if (option != null && !/^background$|^exclusive$/.test(option)){
       console.warn("Surfaces#initAnimation", "unsupportted option", option, animId, anim);
     }
+    if(typeof interval !== "string"){
+      console.warn("Surface#initAnimation", "animation interval is not defined. failback to never.", anim)
+      interval = "never";
+    }
     var __intervals = interval.split("+"); // sometimes+talk
     if(/^bind/.test(interval)){
       // bindから始まる場合は initBind にまるなげ
@@ -235,35 +239,33 @@ export default class Surface extends EventEmitter {
       // bind単体はレイヤーを重ねる着せ替え。
       /*となりの羽山さんsurface4
       animation52.interval,bind
-animation52.pattern0,add,2171,2,0,110
-animation52.pattern1,insert,0,0,185
-animation52.pattern2,insert,0,0,186
-animation52.pattern3,insert,0,0,187
-animation52.pattern4,insert,0,0,188
-animation52.pattern5,insert,0,0,189
-animation52.pattern6,insert,0,0,184
-animation52.pattern7,insert,0,0,183
-animation52.pattern14,insert,0,0,255
-animation52.pattern15,insert,0,0,256
-animation52.pattern16,insert,0,0,257
-animation52.pattern20,add,3111,2,40,125
-
-      var layers = this.composeAnimationPatterns(patterns);
-      this.bufferRender.clear();
-      this.bufferRender.composeElements(layers)
-
-      var layer = {
-        animation_ids: [];
-        type: overlay,
-        surface: this.bufferRender.cnv,
-        wait: 0;
-        x: this.bufferRender.basePosX;
-        y: this.bufferRender.basePosY;
-      };*/
+      animation52.pattern0,add,2171,2,0,110
+      animation52.pattern1,insert,0,0,185
+      animation52.pattern2,insert,0,0,186
+      animation52.pattern3,insert,0,0,187
+      animation52.pattern4,insert,0,0,188
+      animation52.pattern5,insert,0,0,189
+      animation52.pattern6,insert,0,0,184
+      animation52.pattern7,insert,0,0,183
+      animation52.pattern14,insert,0,0,255
+      animation52.pattern15,insert,0,0,256
+      animation52.pattern16,insert,0,0,257
+      animation52.pattern20,add,3111,2,40,125
+      */
+      var mayura_layer:SurfaceLayer = {
+        mayura: patterns,
+        animation_id: null,
+        animation_ids: null,
+        type: null,
+        surface: null,
+        wait: null,
+        x: null,
+        y: null
+      };
       if(option === "background"){
-        this.backgrounds[animId] = patterns[patterns.length-1];
+        this.backgrounds[animId] = mayura_layer;
       }else{
-        this.layers[animId] = patterns[patterns.length-1];
+        this.layers[animId] = mayura_layer;
       }
       return;
     }else{
@@ -323,8 +325,6 @@ animation52.pattern20,add,3111,2,40,125
         case "stop":             this.stop(Number((/\d+/.exec(animation_id) || ["", "-1"])[1])); setTimeout(nextTick); return;
         case "alternativestart": this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
         case "alternativestop":  this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
-        case "insert":
-          console.warn("Surface#play", "unsupportted animation type:", type, pattern);
       }
       var [__, a, b] = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]);
       var _wait = isFinite(Number(b))
@@ -333,9 +333,9 @@ animation52.pattern20,add,3111,2,40,125
       setTimeout(()=>{
         // 現在のコマをレイヤーに追加
         if(option === "background"){
-          this.backgrounds[animationId] = pattern;
+          this.backgrounds[animationId] = <SurfaceLayer>pattern;
         }else{
-          this.layers[animationId] = pattern;
+          this.layers[animationId] = <SurfaceLayer>pattern;
         }
         if(this.exclusive >= 0){
           // -1 以上なら排他再生中
@@ -402,18 +402,41 @@ animation52.pattern20,add,3111,2,40,125
     });
   }
 
-  private composeAnimationPatterns(layers: SurfaceAnimationPattern[]): SurfaceLayerObject[] {
+  private composeAnimationPatterns(layers: SurfaceLayer[]): SurfaceLayerObject[] {
     var renderLayers: SurfaceLayerObject[] = [];
     var keys = Object.keys(layers);
     // forEachからfor文へ
     for(let j=0; j<keys.length; j++){
-      var pattern: SurfaceAnimationPattern = layers[keys[j]];
-      var {surface, type, x, y} = pattern;
+      var pattern: SurfaceLayer = layers[keys[j]];
+      var {surface, type, x, y, mayura, animation_id} = pattern;
+      if(Array.isArray(mayura)){
+        // 着せ替え定義の場合はこのkeys[j]番レイヤーに着せ替えパターンを展開する
+        var __renderLayers = this.composeAnimationPatterns(mayura);
+        renderLayers = renderLayers.concat(__renderLayers);
+        continue;
+      }
+      if(type === "insert"){
+        // insertの場合は対象のIDをとってくる
+        // animation_id = animationN,x,y
+        var [a,b,c] = animation_id.split(",");
+        var animId = Number(c);
+        // 対象の着せ替えが有効かどうか判定
+        if (this.bindgroup[this.scopeId] == null) continue;
+        if (this.bindgroup[this.scopeId][animId] == null) continue;
+        if (this.bindgroup[this.scopeId][animId] === false) continue;
+        var anim = this.surfaceNode.animations[animId];
+        if(anim == null){
+          console.warn("Surface#composeAnimationPatterns: insert id", animation_id, "is wrong target.", this.surfaceNode);
+          continue;
+        }
+        var __renderLayers = this.composeAnimationPatterns(<SurfaceLayer[]>anim.patterns)
+        renderLayers = renderLayers.concat(__renderLayers);
+        continue;
+      }
       if(surface < 0) continue; // idが-1つまり非表示指定
       var srf = this.surfaceTree[surface]; // 該当のサーフェス
       if(srf == null){
         console.warn("Surface#composeAnimationPatterns: surface id "+surface + " is not defined.", pattern);
-        console.warn(surface, Object.keys(this.surfaceTree));
         continue; // 対象サーフェスがないのでスキップ
       }
       // 対象サーフェスを構築描画する
@@ -444,7 +467,7 @@ animation52.pattern20,add,3111,2,40,125
       }else{
         renderLayers.push({type, x, y, canvas: this.bufferRender.getSurfaceCanvas()});
       }
-      SurfaceUtil.log(this.bufferRender.getSurfaceCanvas().cnv)
+      //SurfaceUtil.log(this.bufferRender.getSurfaceCanvas().cnv)
     }
     return renderLayers;
   }
@@ -483,9 +506,8 @@ animation52.pattern20,add,3111,2,40,125
 
     //console.log(this.bufferRender.log);
     //SurfaceUtil.log(SurfaceUtil.copy(this.bufferRender.cnv));
-    //document.body.scrollTop += 100 + document.body.scrollTop;
+    //document.body.scrollTop = 99999;
     //this.endAll();
-    //debugger;
 
     SurfaceUtil.init(this.cnv, this.ctx, this.bufferRender.cnv); // バッファから実DOMTree上のcanvasへ描画
 

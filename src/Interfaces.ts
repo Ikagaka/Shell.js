@@ -50,6 +50,11 @@ export interface SurfaceAnimationPattern {
   y: number;
 }
 
+export interface SurfaceLayer extends SurfaceAnimationPattern {
+  mayura: SurfaceAnimationPattern[];
+}
+
+
 
 export interface SurfaceTreeNode {
   base:  SurfaceCanvas,
