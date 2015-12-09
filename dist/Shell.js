@@ -1790,12 +1790,14 @@ var SurfaceRender_1 = require("./SurfaceRender");
 var _SurfaceUtil = require("./SurfaceUtil");
 var Surface_1 = require('./Surface');
 var Shell_1 = require("./Shell");
+var _package = require("../package.json");
 exports.SurfaceRender = SurfaceRender_1.default;
 exports.SurfaceUtil = _SurfaceUtil;
 exports.Surface = Surface_1.default;
 exports.Shell = Shell_1.default;
+exports.version = _package.version;
 
-},{"./Shell":2,"./Surface":3,"./SurfaceRender":4,"./SurfaceUtil":5}],7:[function(require,module,exports){
+},{"../package.json":45,"./Shell":2,"./Surface":3,"./SurfaceRender":4,"./SurfaceUtil":5}],7:[function(require,module,exports){
 /**
  * Encoding.js
  *
@@ -28653,5 +28655,63 @@ if (typeof exports !== "undefined" && exports !== null) {
   exports.txt_to_yaml = SurfacesTxt2Yaml.txt_to_yaml;
 }
 
-},{"js-yaml":12}]},{},[6])(6)
+},{"js-yaml":12}],45:[function(require,module,exports){
+module.exports={
+  "name": "ikagaka.shell.js",
+  "version": "4.2.15",
+  "description": "Ukagaka Shell Renderer for Web Browser",
+  "license": "MIT",
+  "url": "https://github.com/ikagaka/Shell.js",
+  "keywords": [
+    "ikagaka",
+    "nar",
+    "ikagaka",
+    "ukagaka"
+  ],
+  "scripts": {
+    "init": "npm run update; npm run build",
+    "update": "rm -rf bower_components typeings; npm update; bower update; dtsm fetch; dtsm update --save",
+    "clean": "rm lib/*.js dist/*.js demo/test/*.js",
+    "start": "http-server --silent -p 8000 & gulp watch & watchify lib/index.js --standalone Shell -o dist/Shell.js -v",
+    "stop": "killall -- node */http-server -p 8000",
+    "build": "npm run clean; gulp build; browserify lib/index.js --outfile dist/Shell.js --standalone Shell",
+    "dtsm-fetch": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git fetch",
+    "dtsm-search": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline search",
+    "dtsm-update": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline update",
+    "patch": "mversion patch -m"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ikagaka/ikagaka/Shell.js.git"
+  },
+  "dependencies": {
+    "encoding-japanese": "*",
+    "eventemitter3": "*",
+    "jquery": "*",
+    "surfaces_txt2yaml": "legokichi/surfaces_txt2yaml#master",
+    "text-encoding": "*"
+  },
+  "devDependencies": {
+    "coffee-script": "^1.10.0",
+    "gulp": "^3.9.0",
+    "gulp-coffee": "^2.3.1",
+    "gulp-babel": "^5.2.1",
+    "gulp-espower": "^1.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-tslint": "^3.3.0",
+    "gulp-typescript": "^2.9.2",
+    "typescript": "^1.6.2"
+  },
+  "bugs": {
+    "url": "https://github.com/Ikagaka/Shell.js/issues"
+  },
+  "typings": "./lib/src/index.d.ts",
+  "main": "./lib/index.js",
+  "author": "Ikagaka",
+  "contributors": [
+    "legokichi"
+  ]
+}
+
+},{}]},{},[6])(6)
 });

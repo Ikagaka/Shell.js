@@ -12,7 +12,7 @@
 </style>
 <div id="wrapper"><div id="surface"></div></div>
 <fieldset>
-<legend>surface test</legend>
+<legend id="version">surface test</legend>
 <p><label>nar: <input type="file" id="nar" /></label></p>
 <p><label>shell: <select name="shellId" id="shellId"></select></label></p>
 <p><label>scope: <input type="number" name="scopeId" id="scopeId" value="0" /></label></p>
@@ -22,6 +22,7 @@
 <p>collision: <input type="checkbox" id="collisionDraw" /></p>
 </fieldset>
 <script>
+$("#version").append("(Shell@"+Shell.version+")");
 Shell.SurfaceRender.prototype.debug = false;//実際メモリの危機,GC多発
 
 //NarLoader.loadFromURL("../nar/raychel_second.nar").then(changeNar)
