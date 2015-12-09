@@ -868,8 +868,7 @@ var Surface = (function (_super) {
             if (type === "insert") {
                 // insertの場合は対象のIDをとってくる
                 // animation_id = animationN,x,y
-                var _a = animation_id.split(","), a = _a[0], b = _a[1], c = _a[2];
-                var animId = Number(c);
+                var animId = Number((/\d+$/.exec(animation_id) || ["", "-1"]));
                 // 対象の着せ替えが有効かどうか判定
                 if (this.bindgroup[this.scopeId] == null)
                     continue;

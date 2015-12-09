@@ -418,8 +418,7 @@ export default class Surface extends EventEmitter {
       if(type === "insert"){
         // insertの場合は対象のIDをとってくる
         // animation_id = animationN,x,y
-        var [a,b,c] = animation_id.split(",");
-        var animId = Number(c);
+        var animId = Number((/\d+$/.exec(animation_id) || ["", "-1"]));
         // 対象の着せ替えが有効かどうか判定
         if (this.bindgroup[this.scopeId] == null) continue;
         if (this.bindgroup[this.scopeId][animId] == null) continue;
