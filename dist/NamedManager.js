@@ -29396,7 +29396,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":19}],51:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.namedmanager.js",
-  "version": "4.1.15",
+  "version": "4.1.16",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [
