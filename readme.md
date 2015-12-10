@@ -198,10 +198,10 @@ interface FileDropEvent {
 ##### on(event: "mousedblclick", callback: (ev: SurfaceMouseEvent)=> void): void
 ##### on(event: "balloonclick", callback: (ev: BalloonMouseEvent)=> void): void
 ##### on(event: "balloondblclick", callback: (ev: BalloonMouseEvent)=> void): void
-##### on(event: "anchorselect", callback: (ev: SelectEvent)=> void): void
-##### on(event: "choiceselect", callback: (ev: SelectEvent)=> void): void
-##### on(event: "userinput", callback: (ev: InputEvent)=> void): void
-##### on(event: "communicateinput", callback: (ev: InputEvent)=> void): void
+##### on(event: "anchorselect", callback: (ev: BalloonSelectEvent)=> void): void
+##### on(event: "choiceselect", callback: (ev: BalloonSelectEvent)=> void): void
+##### on(event: "userinput", callback: (ev: BalloonInputEvent)=> void): void
+##### on(event: "communicateinput", callback: (ev: BalloonInputEvent)=> void): void
 ##### on(event: "filedrop", callback: (ev: FileDropEvent)=> void): void
 
 
