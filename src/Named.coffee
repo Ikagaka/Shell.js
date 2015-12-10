@@ -2,9 +2,7 @@
 {SurfaceUtil} = require("ikagaka.shell.js")
 Scope = require("./Scope")
 EventEmitter = require("eventemitter3")
-require("jquery-contextmenu")
-$ = require("jquery")
-
+$ = require("./jq")
 
 class Named extends EventEmitter
 
