@@ -108,9 +108,9 @@
 
   EventEmitter = require("eventemitter3");
 
-  $ = require("jquery");
-
   require("jquery-contextmenu");
+
+  $ = require("jquery");
 
   Named = (function(superClass) {
     extend(Named, superClass);
