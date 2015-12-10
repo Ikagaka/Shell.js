@@ -76,6 +76,7 @@ class Named extends EventEmitter
               @$named.append($scope) # このnamedの中のscopeの中で最前面に
               @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
             ), 300)
+        ev.scope = ev.scopeId # 互換
         @emit(ev.type, ev)
         return
     do =>
@@ -130,11 +131,13 @@ class Named extends EventEmitter
               @$named.append($scope) # namedの中のscopeの中で最前面に
               @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
             ), wait)
+        ev.scope = ev.scopeId # 互換
         switch ev.type
           when "click"    then ev.type = "balloonclick";    @emit("balloonclick",    ev)
           when "dblclick" then ev.type = "balloondblclick"; @emit("balloondblclick", ev)
         return
     @balloon.on "select", (ev)=>
+      ev.scope = ev.scopeId # 互換
       switch ev.type
         when "choiceselect" then @emit("choiceselect", ev)
         when "anchorselect" then @emit("anchorselect", ev)
@@ -147,10 +150,12 @@ class Named extends EventEmitter
     @$named.on "dragleave", (ev)-> ev.preventDefault(); ev.stopPropagation();
     @$named.on "dragover", (ev)->
       ev.preventDefault(); ev.stopPropagation();
-      that.emit("filedropping", {type: "filedropping", scopeId: Number($(@).attr("scopeId")), event: ev})
+      scopeId = Number($(@).attr("scopeId")) # 互換
+      that.emit("filedropping", {type: "filedropping", scopeId, scope: scopeId, event: ev})
     @$named.on "drop", ".scope", (ev)->
       ev.preventDefault(); ev.stopPropagation();
-      that.emit("filedrop", {type: "filedrop", scopeId: Number($(@).attr("scopeId")), event: ev})
+      scopeId = Number($(@).attr("scopeId")) # 互換
+      that.emit("filedrop", {type: "filedrop", scopeId, scope: scopeId, event: ev})
     return
 
   destructor: ->

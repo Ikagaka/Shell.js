@@ -204,6 +204,7 @@
                   return _this.$named.appendTo(_this.nmdmgr.element);
                 }), 300);
             }
+            ev.scope = ev.scopeId;
             _this.emit(ev.type, ev);
           });
         });
@@ -273,6 +274,7 @@
                   return _this.$named.appendTo(_this.nmdmgr.element);
                 }), wait);
             }
+            ev.scope = ev.scopeId;
             switch (ev.type) {
               case "click":
                 ev.type = "balloonclick";
@@ -287,6 +289,7 @@
       })(this)();
       this.balloon.on("select", (function(_this) {
         return function(ev) {
+          ev.scope = ev.scopeId;
           switch (ev.type) {
             case "choiceselect":
               _this.emit("choiceselect", ev);
@@ -312,20 +315,26 @@
         return ev.stopPropagation();
       });
       this.$named.on("dragover", function(ev) {
+        var scopeId;
         ev.preventDefault();
         ev.stopPropagation();
+        scopeId = Number($(this).attr("scopeId"));
         return that.emit("filedropping", {
           type: "filedropping",
-          scopeId: Number($(this).attr("scopeId")),
+          scopeId: scopeId,
+          scope: scopeId,
           event: ev
         });
       });
       this.$named.on("drop", ".scope", function(ev) {
+        var scopeId;
         ev.preventDefault();
         ev.stopPropagation();
+        scopeId = Number($(this).attr("scopeId"));
         return that.emit("filedrop", {
           type: "filedrop",
-          scopeId: Number($(this).attr("scopeId")),
+          scopeId: scopeId,
+          scope: scopeId,
           event: ev
         });
       });
