@@ -1,6 +1,7 @@
 Named = require("./Named")
 EventEmitter = require("eventemitter3")
-$ = window["jQuery"] || require("jquery")
+$ = require("jquery")
+
 
 class NamedManager extends EventEmitter
   constructor: ->

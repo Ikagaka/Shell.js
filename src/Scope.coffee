@@ -1,4 +1,4 @@
-$ = window["jQuery"] || require("jquery")
+$ = require("jquery")
 
 class Scope
 

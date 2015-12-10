@@ -15,7 +15,7 @@
   },
   "scripts": {
     "init": "npm run update; npm run build",
-    "update": "rm -rf bower_components node_modules; npm update; bower update",
+    "update": "rm -rf bower_components; npm update; bower update",
     "clean": "rm lib/*.js dist/*.js",
     "start": "http-server --silent -p 8000 & watchify lib/index.js --standalone NamedManager -o dist/NamedManager.js -v & coffee -c -w -o lib src/*.coffee",
     "stop": "killall -- node */http-server -p 8000",
