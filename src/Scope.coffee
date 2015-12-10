@@ -13,7 +13,7 @@ class Scope
 
   initDOMStructure: ->
     @$scope = $(@element).addClass("scope").attr("scopeId", @scopeId)
-    @$surface = $("<div />").addClass("surface").appendTo(@$scope)
+    @$surface = $("<div />").addClass("surface").attr("scopeId", @scopeId).addClass("context-menu").appendTo(@$scope)
     @$blimp = $("<div />").addClass("blimp").appendTo(@$scope)
 
     # set default position

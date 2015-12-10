@@ -1,6 +1,6 @@
 {
   "name": "ikagaka.namedmanager.js",
-  "version": "4.1.17",
+  "version": "4.1.18",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [
@@ -24,8 +24,9 @@
   },
   "dependencies": {
     "eventemitter3": "*",
-    "jquery": "*",
-    "ikagaka.shell.js": "ikagaka/Shell.js#master"
+    "ikagaka.shell.js": "ikagaka/Shell.js#master",
+    "jquery": "^1.8.2",
+    "jquery-contextmenu": "^1.10.3"
   },
   "devDependencies": {},
   "main": "./lib/index.js",

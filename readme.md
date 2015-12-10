@@ -150,7 +150,29 @@ npm run build
 #### openCommunicateBox(placeHolder?: string): void
 * communicateboxを表示します。
 
-#### on(event: string, callback: (ev: Event)=> void): void
+#### contextmenu((ev: ContextMenuEvent)=> ContextMenuObject): void
+* 内部で  [swisnl/jQuery-contextMenu](https://github.com/swisnl/jQuery-contextMenu) を使っています
+
+```typescript
+interface ContextMenuEvent {
+  type: string;
+  scopeId: number;
+  event: UIEvent;
+}
+interface ContextMenuObject {
+  callback: (key: string)=> void;
+  items: {[key: string]: Item|SubGroup}
+}
+interface Item {
+  name: string;
+}
+interface SubGroup {
+  name: string;
+  items: {[key: string]: Item|SubGroup};
+}
+```
+
+#### on(event: string, callback: (ev: {type: string})=> void): void
 
 ```typescript
 interface SurfaceMouseEvent {

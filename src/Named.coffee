@@ -3,6 +3,7 @@
 Scope = require("./Scope")
 EventEmitter = require("eventemitter3")
 $ = require("jquery")
+require("jquery-contextmenu")
 
 class Named extends EventEmitter
 
@@ -13,6 +14,7 @@ class Named extends EventEmitter
     @scopes = []
     @currentScope = null
     @destructors = []
+    @contextmenuHandler = null
 
     @initDOMStructure()
     @initEventListener()
@@ -24,7 +26,19 @@ class Named extends EventEmitter
     @$named = $(@element).addClass("named")
     return
 
+  contextmenu: (@contextmenuHandler)->
+
   initEventListener: ->
+    do =>
+      # コンテキストメニュー
+      $.contextMenu
+        selector: ".context-menu"
+        build: ($trigger, ev)=>
+          ev.preventDefault()
+          scopeId = $trigger.attr("scopeId")
+          if @contextmenuHandler?
+          then return @contextmenuHandler({type: "contextmenu", scopeId, scope: scopeId, event: ev})
+          else return {items:{sep1:"---"}}
     do =>
       # Shell Mouse Event
       # サーフェス移動
@@ -57,31 +71,29 @@ class Named extends EventEmitter
         $(document.body).off("touchend", onmouseup)
         @shell.off("mouse")
       @shell.on "mouse", (ev)=>
-        if ev.button is 1 and ev.type is "mouseclick"
-          # 右クリック
-          ev.event.preventDefault()
-          console.log("contextmenu")
-        if ev.button > 0 then return # 左クリック以外は無視
         if ev.transparency is true and
            ev.type isnt "mousemove" # mousemoveおよびmouseenterはループするので
+          ev.event.preventDefault()
           recursiveElementFromPoint(ev.event, @nmdmgr.element, ev.event.target)
           # 透明領域の下要素にイベントが投げられたので
           # それが拾われるのを待つ
           return
-        switch ev.type
-          when "mousedown"
-            scopeId = ev.scopeId
-            $target = $scope = $(@scopes[ev.scopeId].element)
-            {top, left} = $target.offset()
-            {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev.event)
-            # この座標はbody要素直下のfixed座標用
-            relLeft = clientX - (left - window.scrollX) # サーフェス左上を起点としたマウスの相対座標
-            relTop  = clientY - (top  - window.scrollY)
-            if $(@element).children().last()[0] isnt $scope[0]
-              @$named.append($scope) # このnamedの中のscopeの中で最前面に
-            if $(@nmdmgr.element).children().last()[0] isnt @element
-              @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
-        ev.scope = ev.scopeId # 互換
+        switch ev.button
+          when 0
+            switch ev.type
+              when "mousedown"
+                scopeId = ev.scopeId
+                $target = $scope = $(@scopes[ev.scopeId].element)
+                {top, left} = $target.offset()
+                {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev.event)
+                # この座標はbody要素直下のfixed座標用
+                relLeft = clientX - (left - window.scrollX) # サーフェス左上を起点としたマウスの相対座標
+                relTop  = clientY - (top  - window.scrollY)
+                if $(@element).children().last()[0] isnt $scope[0]
+                  @$named.append($scope) # このnamedの中のscopeの中で最前面に
+                if $(@nmdmgr.element).children().last()[0] isnt @element
+                  @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
+        ev.scope = ev.scopeId # cuttlebone@0.2互換
         @emit(ev.type, ev)
         return
       return
@@ -116,25 +128,27 @@ class Named extends EventEmitter
         $(document.body).off("touchend", onmouseup)
         @balloon.off "mouse"
       @balloon.on "mouse", (ev)=>
-        if ev.button > 0 then return # 左クリック以外は無視
-        $scope = $(@scopes[ev.scopeId].element)
-        switch ev.type
-          when "mousedown"
-            scopeId = ev.scopeId
+        # balloon.js の ev 見直す必要あるな？
+        switch ev.event.button
+          when 0
             $scope = $(@scopes[ev.scopeId].element)
-            $target = $scope.find(".blimp")
-            {top, left} = $target.offset()
-            offsetY = parseInt($target.css("left"), 10)
-            offsetX = parseInt($target.css("top"), 10)
-            {pageX, pageY, clientX, clientY, screenX, screenY} = SurfaceUtil.getEventPosition(ev.event)
-            # この座標はbody要素直下のfixed座標用
-            relLeft = pageX - offsetY
-            relTop  = pageY - offsetX
-            if $(@element).children().last()[0] isnt $scope[0]
-              @$named.append($scope) # このnamedの中のscopeの中で最前面に
-            if $(@nmdmgr.element).children().last()[0] isnt @element
-              @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
-        ev.scope = ev.scopeId # 互換
+            switch ev.type
+              when "mousedown"
+                scopeId = ev.scopeId
+                $scope = $(@scopes[ev.scopeId].element)
+                $target = $scope.find(".blimp")
+                {top, left} = $target.offset()
+                offsetY = parseInt($target.css("left"), 10)
+                offsetX = parseInt($target.css("top"), 10)
+                {pageX, pageY, clientX, clientY, screenX, screenY} = SurfaceUtil.getEventPosition(ev.event)
+                # この座標はbody要素直下のfixed座標用
+                relLeft = pageX - offsetY
+                relTop  = pageY - offsetX
+                if $(@element).children().last()[0] isnt $scope[0]
+                  @$named.append($scope) # このnamedの中のscopeの中で最前面に
+                if $(@nmdmgr.element).children().last()[0] isnt @element
+                  @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
+        ev.scope = ev.scopeId # cuttlebone@0.2互換
         switch ev.type
           # なんでmouseclickじゃないのかはBalloon.jsに文句を言って
           when "click"    then ev.type = "balloonclick";    @emit("balloonclick",    ev)

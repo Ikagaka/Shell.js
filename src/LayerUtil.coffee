@@ -51,7 +51,7 @@ recursiveElementFromPoint = (ev, parent, target)->
 eventPropagationSim = (target, ev)->
   ev.preventDefault()
   ev.stopPropagation()
-  if /^mouse|click$/.test(ev.type) # マウスイベントをシミュレーション
+  if /^mouse|contextmenu|click$/.test(ev.type) # マウスイベントをシミュレーション
     mev = new MouseEvent(ev.type, {
       screenX: ev.screenX,
       screenY: ev.screenY,
