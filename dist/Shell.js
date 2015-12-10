@@ -1791,14 +1791,17 @@ var SurfaceRender_1 = require("./SurfaceRender");
 var _SurfaceUtil = require("./SurfaceUtil");
 var Surface_1 = require('./Surface');
 var Shell_1 = require("./Shell");
+var $ = require("jquery");
 var _package = require("../package.json");
 exports.SurfaceRender = SurfaceRender_1.default;
 exports.SurfaceUtil = _SurfaceUtil;
 exports.Surface = Surface_1.default;
 exports.Shell = Shell_1.default;
 exports.version = _package.version;
+window["$"] = window["$"] || $;
+window["jQuery"] = window["jQuery"] || $;
 
-},{"../package.json":45,"./Shell":2,"./Surface":3,"./SurfaceRender":4,"./SurfaceUtil":5}],7:[function(require,module,exports){
+},{"../package.json":45,"./Shell":2,"./Surface":3,"./SurfaceRender":4,"./SurfaceUtil":5,"jquery":11}],7:[function(require,module,exports){
 /**
  * Encoding.js
  *
