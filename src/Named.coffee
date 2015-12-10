@@ -26,6 +26,7 @@ class Named extends EventEmitter
 
   initEventListener: ->
     do =>
+      # Shell Mouse Event
       # サーフェス移動
       relLeft = relTop = 0
       $target = null
@@ -56,6 +57,11 @@ class Named extends EventEmitter
         $(document.body).off("touchend", onmouseup)
         @shell.off("mouse")
       @shell.on "mouse", (ev)=>
+        if ev.button is 1 and ev.type is "mouseclick"
+          # 右クリック
+          ev.event.preventDefault()
+          console.log("contextmenu")
+        if ev.button > 0 then return # 左クリック以外は無視
         if ev.transparency is true and
            ev.type isnt "mousemove" # mousemoveおよびmouseenterはループするので
           recursiveElementFromPoint(ev.event, @nmdmgr.element, ev.event.target)
@@ -63,7 +69,7 @@ class Named extends EventEmitter
           # それが拾われるのを待つ
           return
         switch ev.type
-          when "mousedown", "touchstart"
+          when "mousedown"
             scopeId = ev.scopeId
             $target = $scope = $(@scopes[ev.scopeId].element)
             {top, left} = $target.offset()
@@ -71,15 +77,16 @@ class Named extends EventEmitter
             # この座標はbody要素直下のfixed座標用
             relLeft = clientX - (left - window.scrollX) # サーフェス左上を起点としたマウスの相対座標
             relTop  = clientY - (top  - window.scrollY)
-            # mouseclick 発動させるために 待つ
-            setTimeout((=>
+            if $(@element).children().last()[0] isnt $scope[0]
               @$named.append($scope) # このnamedの中のscopeの中で最前面に
+            if $(@nmdmgr.element).children().last()[0] isnt @element
               @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
-            ), 300)
         ev.scope = ev.scopeId # 互換
         @emit(ev.type, ev)
         return
+      return
     do =>
+      # Ballon Mouse Event
       # バルーン移動
       relLeft = relTop = 0
       $target = null
@@ -109,9 +116,10 @@ class Named extends EventEmitter
         $(document.body).off("touchend", onmouseup)
         @balloon.off "mouse"
       @balloon.on "mouse", (ev)=>
+        if ev.button > 0 then return # 左クリック以外は無視
         $scope = $(@scopes[ev.scopeId].element)
         switch ev.type
-          when "mousedown", "touchstart"
+          when "mousedown"
             scopeId = ev.scopeId
             $scope = $(@scopes[ev.scopeId].element)
             $target = $scope.find(".blimp")
@@ -122,40 +130,47 @@ class Named extends EventEmitter
             # この座標はbody要素直下のfixed座標用
             relLeft = pageX - offsetY
             relTop  = pageY - offsetX
-            if $(ev.event.target).hasClass("ikagaka-choice") || $(ev.event.target).hasClass("ikagaka-anchor")
-            then wait = 500 # selectを発火させるため
-            else wait = 300 # clickを発火させるため
-            setTimeout((=>
-              # @balloon.on "select"が balloonをdelegateしているため、
-              # 一旦"select"を発火させてからDOMツリーを変更する必要がある
-              @$named.append($scope) # namedの中のscopeの中で最前面に
+            if $(@element).children().last()[0] isnt $scope[0]
+              @$named.append($scope) # このnamedの中のscopeの中で最前面に
+            if $(@nmdmgr.element).children().last()[0] isnt @element
               @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
-            ), wait)
         ev.scope = ev.scopeId # 互換
         switch ev.type
+          # なんでmouseclickじゃないのかはBalloon.jsに文句を言って
           when "click"    then ev.type = "balloonclick";    @emit("balloonclick",    ev)
           when "dblclick" then ev.type = "balloondblclick"; @emit("balloondblclick", ev)
         return
-    @balloon.on "select", (ev)=>
-      ev.scope = ev.scopeId # 互換
-      switch ev.type
-        when "choiceselect" then @emit("choiceselect", ev)
-        when "anchorselect" then @emit("anchorselect", ev)
       return
-    @destructors.push =>
-      @balloon.off("select")
-      @$named.off("drop")
-    that = @
-    @$named.on "dragenter", (ev)-> ev.preventDefault(); ev.stopPropagation();
-    @$named.on "dragleave", (ev)-> ev.preventDefault(); ev.stopPropagation();
-    @$named.on "dragover", (ev)->
-      ev.preventDefault(); ev.stopPropagation();
-      scopeId = Number($(@).attr("scopeId")) # 互換
-      that.emit("filedropping", {type: "filedropping", scopeId, scope: scopeId, event: ev})
-    @$named.on "drop", ".scope", (ev)->
-      ev.preventDefault(); ev.stopPropagation();
-      scopeId = Number($(@).attr("scopeId")) # 互換
-      that.emit("filedrop", {type: "filedrop", scopeId, scope: scopeId, event: ev})
+    do =>
+      # BalloonSelect
+      @balloon.on "select", (ev)=>
+        ev.scope = ev.scopeId # 互換
+        switch ev.type
+          when "choiceselect" then @emit("choiceselect", ev)
+          when "anchorselect" then @emit("anchorselect", ev)
+        return
+      @destructors.push =>
+        @balloon.off("select")
+      return
+    do =>
+      # FileDrop
+      that = @
+      @$named.on "dragenter", (ev)-> ev.preventDefault(); ev.stopPropagation();
+      @$named.on "dragleave", (ev)-> ev.preventDefault(); ev.stopPropagation();
+      @$named.on "dragover", (ev)->
+        ev.preventDefault(); ev.stopPropagation();
+        scopeId = Number($(@).attr("scopeId")) # 互換
+        that.emit("filedropping", {type: "filedropping", scopeId, scope: scopeId, event: ev})
+      @$named.on "drop", ".scope", (ev)->
+        ev.preventDefault(); ev.stopPropagation();
+        scopeId = Number($(@).attr("scopeId")) # 互換
+        that.emit("filedrop", {type: "filedrop", scopeId, scope: scopeId, event: ev})
+      @destructors.push =>
+        @$named.off("dragenter")
+        @$named.off("dragleave")
+        @$named.off("dragover")
+        @$named.off("drop")
+      return
     return
 
   destructor: ->

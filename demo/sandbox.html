@@ -80,6 +80,9 @@ function wait(ms, callback) {
 }
 
 function talk(named, id){
+  //named.on("mousemove", function(ev){ console.log(ev.type, ev); });
+  named.on("mousedown", function(ev){ console.log(ev.type, ev); });
+  named.on("mouseup", function(ev){ console.log(ev.type, ev); });
   named.on("mouseclick", function(ev){ console.log(ev.type, ev); });
   named.on("mousedblclick", function(ev){ console.log(ev.type, ev); });
   named.on("balloonclick", function(ev){ console.log(ev.type, ev); });
