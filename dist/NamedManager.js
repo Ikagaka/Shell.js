@@ -32443,7 +32443,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":20}],52:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.namedmanager.js",
-  "version": "4.1.18",
+  "version": "4.1.19",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [
