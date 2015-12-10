@@ -12,7 +12,7 @@ class Scope
     @initSurface()
 
   initDOMStructure: ->
-    @$scope = $(@element).addClass("scope")
+    @$scope = $(@element).addClass("scope").attr("scopeId", @scopeId)
     @$surface = $("<div />").addClass("surface").appendTo(@$scope)
     @$blimp = $("<div />").addClass("blimp").appendTo(@$scope)
 

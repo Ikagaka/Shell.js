@@ -135,6 +135,7 @@
     };
 
     Named.prototype.initEventListener = function() {
+      var that;
       (function(_this) {
         return (function() {
           var $target, onmousemove, onmouseup, relLeft, relTop, scopeId;
@@ -198,10 +199,12 @@
                 ref1 = SurfaceUtil.getEventPosition(ev.event), pageX = ref1.pageX, pageY = ref1.pageY, clientX = ref1.clientX, clientY = ref1.clientY;
                 relLeft = clientX - (left - window.scrollX);
                 relTop = clientY - (top - window.scrollY);
-                _this.$named.append($scope);
-                _this.$named.appendTo(_this.nmdmgr.element);
+                setTimeout((function() {
+                  _this.$named.append($scope);
+                  return _this.$named.appendTo(_this.nmdmgr.element);
+                }), 300);
             }
-            _this.emit("shell_mouse", ev);
+            _this.emit(ev.type, ev);
           });
         });
       })(this)();
@@ -263,27 +266,69 @@
                 if ($(ev.event.target).hasClass("ikagaka-choice") || $(ev.event.target).hasClass("ikagaka-anchor")) {
                   wait = 500;
                 } else {
-                  wait = 0;
+                  wait = 300;
                 }
                 setTimeout((function() {
                   _this.$named.append($scope);
                   return _this.$named.appendTo(_this.nmdmgr.element);
                 }), wait);
             }
-            _this.emit("balloon_mouse", ev);
+            switch (ev.type) {
+              case "click":
+                ev.type = "balloonclick";
+                _this.emit("balloonclick", ev);
+                break;
+              case "dblclick":
+                ev.type = "balloondblclick";
+                _this.emit("balloondblclick", ev);
+            }
           });
         });
       })(this)();
       this.balloon.on("select", (function(_this) {
         return function(ev) {
-          return _this.emit("balloon_select", ev);
+          switch (ev.type) {
+            case "choiceselect":
+              _this.emit("choiceselect", ev);
+              break;
+            case "anchorselect":
+              _this.emit("anchorselect", ev);
+          }
         };
       })(this));
       this.destructors.push((function(_this) {
         return function() {
-          return _this.balloon.off("select");
+          _this.balloon.off("select");
+          return _this.$named.off("drop");
         };
       })(this));
+      that = this;
+      this.$named.on("dragenter", function(ev) {
+        ev.preventDefault();
+        return ev.stopPropagation();
+      });
+      this.$named.on("dragleave", function(ev) {
+        ev.preventDefault();
+        return ev.stopPropagation();
+      });
+      this.$named.on("dragover", function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        return that.emit("filedropping", {
+          type: "filedropping",
+          scopeId: Number($(this).attr("scopeId")),
+          event: ev
+        });
+      });
+      this.$named.on("drop", ".scope", function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        return that.emit("filedrop", {
+          type: "filedrop",
+          scopeId: Number($(this).attr("scopeId")),
+          event: ev
+        });
+      });
     };
 
     Named.prototype.destructor = function() {
@@ -296,6 +341,10 @@
       });
       this.$named.children().remove();
       this.$named.remove();
+    };
+
+    Named.prototype.load = function() {
+      return Promise.resolbe(this);
     };
 
     Named.prototype.scope = function(scopeId) {
@@ -329,7 +378,7 @@
         "id": id,
         "content": prompt("UserInput", text)
       };
-      this.emit("balloon_input", event);
+      this.emit("userinput", event);
     };
 
     Named.prototype.openCommunicateBox = function(text) {
@@ -342,7 +391,7 @@
         "sender": "user",
         "content": prompt("Communicate", text)
       };
-      this.emit("balloon_input", event);
+      this.emit("communicateinput", event);
     };
 
     return Named;
@@ -463,7 +512,7 @@
     }
 
     Scope.prototype.initDOMStructure = function() {
-      this.$scope = $(this.element).addClass("scope");
+      this.$scope = $(this.element).addClass("scope").attr("scopeId", this.scopeId);
       this.$surface = $("<div />").addClass("surface").appendTo(this.$scope);
       this.$blimp = $("<div />").addClass("blimp").appendTo(this.$scope);
       this.$scope.css({
@@ -13637,10 +13686,10 @@ var Surface = (function (_super) {
             var surface = pattern.surface, wait = pattern.wait, type = pattern.type, x = pattern.x, y = pattern.y, animation_ids = pattern.animation_ids, animation_id = pattern.animation_id;
             switch (type) {
                 case "start":
-                    _this.play(Number((/\d+/.exec(animation_id) || ["", "-1"])[1]), nextTick);
+                    _this.play(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]), nextTick);
                     return;
                 case "stop":
-                    _this.stop(Number((/\d+/.exec(animation_id) || ["", "-1"])[1]));
+                    _this.stop(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]));
                     setTimeout(nextTick);
                     return;
                 case "alternativestart":
@@ -13762,8 +13811,13 @@ var Surface = (function (_super) {
                 renderLayers = renderLayers.concat(__renderLayers);
                 continue;
             }
-            if (surface < 0)
-                continue; // idが-1つまり非表示指定
+            if (surface < 0) {
+                // idが-1つまり非表示指定
+                if (type === "base") {
+                    this.dynamicBase = null;
+                }
+                continue;
+            }
             var srf = this.surfaceTree[surface]; // 該当のサーフェス
             if (srf == null) {
                 console.warn("Surface#composeAnimationPatterns: surface id " + surface + " is not defined.", pattern);
@@ -14683,7 +14737,7 @@ module.exports={
     ]
   ],
   "_from": "ikagaka/Shell.js#master",
-  "_id": "ikagaka.shell.js@4.2.15",
+  "_id": "ikagaka.shell.js@4.2.16",
   "_inCache": true,
   "_installable": true,
   "_location": "/ikagaka.shell.js",
@@ -14708,8 +14762,8 @@ module.exports={
   "_requiredBy": [
     "/"
   ],
-  "_resolved": "git://github.com/ikagaka/Shell.js.git#415e3fc89f980251001eb7481265a34a36749750",
-  "_shasum": "f5c3a408a605e8f266c5d654463f02c97549e98f",
+  "_resolved": "git://github.com/ikagaka/Shell.js.git#ac4e474eb5aa2d315ea6a575c75ea8ddad0de233",
+  "_shasum": "15524536b19a77d477e9ad0c66f82e93119f2a6c",
   "_shrinkwrap": null,
   "_spec": "github:ikagaka/Shell.js#master",
   "_where": "/Users/yohsukeino/GitHub/Ikagaka/NamedManager.js",
@@ -14743,7 +14797,7 @@ module.exports={
     "gulp-typescript": "^2.9.2",
     "typescript": "^1.6.2"
   },
-  "gitHead": "415e3fc89f980251001eb7481265a34a36749750",
+  "gitHead": "ac4e474eb5aa2d315ea6a575c75ea8ddad0de233",
   "keywords": [
     "ikagaka",
     "ikagaka",
@@ -14767,14 +14821,14 @@ module.exports={
     "dtsm-search": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline search",
     "dtsm-update": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline update",
     "init": "npm run update; npm run build",
-    "patch": "mversion patch -m",
+    "patch": "mversion patch",
     "start": "http-server --silent -p 8000 & gulp watch & watchify lib/index.js --standalone Shell -o dist/Shell.js -v",
     "stop": "killall -- node */http-server -p 8000",
     "update": "rm -rf bower_components typeings; npm update; bower update; dtsm fetch; dtsm update --save"
   },
   "typings": "./lib/src/index.d.ts",
   "url": "https://github.com/ikagaka/Shell.js",
-  "version": "4.2.15"
+  "version": "4.2.16"
 }
 
 },{}],16:[function(require,module,exports){
@@ -29342,7 +29396,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":19}],51:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.namedmanager.js",
-  "version": "4.1.14",
+  "version": "4.1.15",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [
@@ -29362,7 +29416,7 @@ module.exports={
     "start": "http-server --silent -p 8000 & watchify lib/index.js --standalone NamedManager -o dist/NamedManager.js -v & coffee -c -w -o lib src/*.coffee",
     "stop": "killall -- node */http-server -p 8000",
     "build": "coffee -c -o lib src/*.coffee; browserify lib/index.js --standalone NamedManager -o dist/NamedManager.js",
-    "patch": "mversion patch -m"
+    "patch": "mversion patch"
   },
   "dependencies": {
     "eventemitter3": "*",

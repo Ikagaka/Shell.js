@@ -6,6 +6,8 @@
 <script src="../dist/NamedManager.js"></script>
 <script>
 var _NamedManager = NamedManager;
+var _Shell = Shell;
+var _Balloon = Balloon;
 var Shell = Shell.Shell;
 var Balloon = Balloon.Balloon;
 var NamedManager = NamedManager.NamedManager;
@@ -78,10 +80,15 @@ function wait(ms, callback) {
 }
 
 function talk(named, id){
-  named.on("shell_mouse", function(ev){ if(ev.type==="mousemove")return; console.log("shell_mouse", ev); });
-  named.on("balloon_mouse", function(ev){ if(ev.type==="mousemove")return; console.log("balloon_mouse", ev); });
-  named.on("balloon_select", function(ev){ console.log("balloon_select", ev); });
-  named.on("balloon_input", function(ev){ console.log("balloon_input", ev); });
+  named.on("mouseclick", function(ev){ console.log(ev.type, ev); });
+  named.on("mousedblclick", function(ev){ console.log(ev.type, ev); });
+  named.on("balloonclick", function(ev){ console.log(ev.type, ev); });
+  named.on("balloondblclick", function(ev){ console.log(ev.type, ev); });
+  named.on("anchorselect", function(ev){ console.log(ev.type, ev); });
+  named.on("choiceselect", function(ev){ console.log(ev.type, ev); });
+  named.on("userinput", function(ev){ console.log(ev.type, ev); });
+  named.on("communicateinput", function(ev){ console.log(ev.type, ev); });
+  named.on("filedrop", function(ev){ console.log(ev.type, ev); });
   console.log(named.scope(1).position(), id);
   Promise.resolve(named)
   .then(wait(0, function(named) { named.scope(0); }))

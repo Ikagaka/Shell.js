@@ -71,9 +71,12 @@ class Named extends EventEmitter
             # この座標はbody要素直下のfixed座標用
             relLeft = clientX - (left - window.scrollX) # サーフェス左上を起点としたマウスの相対座標
             relTop  = clientY - (top  - window.scrollY)
-            @$named.append($scope) # このnamedの中のscopeの中で最前面に
-            @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
-        @emit("shell_mouse", ev)
+            # mouseclick 発動させるために 待つ
+            setTimeout((=>
+              @$named.append($scope) # このnamedの中のscopeの中で最前面に
+              @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
+            ), 300)
+        @emit(ev.type, ev)
         return
     do =>
       # バルーン移動
@@ -119,20 +122,35 @@ class Named extends EventEmitter
             relLeft = pageX - offsetY
             relTop  = pageY - offsetX
             if $(ev.event.target).hasClass("ikagaka-choice") || $(ev.event.target).hasClass("ikagaka-anchor")
-            then wait = 500
-            else wait = 0
+            then wait = 500 # selectを発火させるため
+            else wait = 300 # clickを発火させるため
             setTimeout((=>
               # @balloon.on "select"が balloonをdelegateしているため、
               # 一旦"select"を発火させてからDOMツリーを変更する必要がある
               @$named.append($scope) # namedの中のscopeの中で最前面に
               @$named.appendTo(@nmdmgr.element) # すべてのnamedの中で最前面に
             ), wait)
-        @emit("balloon_mouse", ev)
+        switch ev.type
+          when "click"    then ev.type = "balloonclick";    @emit("balloonclick",    ev)
+          when "dblclick" then ev.type = "balloondblclick"; @emit("balloondblclick", ev)
         return
     @balloon.on "select", (ev)=>
-      @emit("balloon_select", ev)
+      switch ev.type
+        when "choiceselect" then @emit("choiceselect", ev)
+        when "anchorselect" then @emit("anchorselect", ev)
+      return
     @destructors.push =>
-      @balloon.off "select"
+      @balloon.off("select")
+      @$named.off("drop")
+    that = @
+    @$named.on "dragenter", (ev)-> ev.preventDefault(); ev.stopPropagation();
+    @$named.on "dragleave", (ev)-> ev.preventDefault(); ev.stopPropagation();
+    @$named.on "dragover", (ev)->
+      ev.preventDefault(); ev.stopPropagation();
+      that.emit("filedropping", {type: "filedropping", scopeId: Number($(@).attr("scopeId")), event: ev})
+    @$named.on "drop", ".scope", (ev)->
+      ev.preventDefault(); ev.stopPropagation();
+      that.emit("filedrop", {type: "filedrop", scopeId: Number($(@).attr("scopeId")), event: ev})
     return
 
   destructor: ->
@@ -142,6 +160,9 @@ class Named extends EventEmitter
     @$named.children().remove()
     @$named.remove()
     return
+
+  load: ()->
+    Promise.resolbe(this)
 
   scope: (scopeId)->
     unless scopeId?
@@ -166,7 +187,7 @@ class Named extends EventEmitter
       "id": id
       "content": prompt("UserInput", text)
     # 将来的にはballoon.jsにレンダリングさせる
-    @emit("balloon_input", event)
+    @emit("userinput", event)
     return
 
   openCommunicateBox: (text="")->
@@ -176,7 +197,7 @@ class Named extends EventEmitter
       "sender": "user"
       "content": prompt("Communicate", text)
     # 将来的にはballoon.jsにレンダリングさせる
-    @emit("balloon_input", event)
+    @emit("communicateinput", event)
     return
 
 module.exports = Named

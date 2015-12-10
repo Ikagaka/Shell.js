@@ -150,17 +150,60 @@ npm run build
 #### openCommunicateBox(placeHolder?: string): void
 * communicateboxを表示します。
 
-#### on(event: "balloon_select", callback: (ev: BalloonSelectEvent)=> void): EventEmitter
-* アンカーか選択肢が押された時
+#### on(event: string, callback: (ev: Event)=> void): void
 
-#### on(event: "balloon_input", callback: (ev: BalloonInputEvent)=> void): EventEmitter
-* ユーザーインプットかコミュニケートがあった時
+```typescript
+interface SurfaceMouseEvent {
+  type: string; // mousedown|mousemove|mouseup|mouseclick|mousedblclick のどれか
+  transparency: boolean; // true
+  button: number; // マウスのボタン。 https://developer.mozilla.org/ja/docs/Web/API/MouseEvent/button
+  offsetX: number; // canvas左上からのx座標
+  offsetY: number; // canvas左上からのy座標
+  region: string; // collisionの名前,"Bust","Head","Face"など
+  scopeId: number; // このサーフェスのスコープ番号
+  wheel: number; // mousewheel実装したら使われるかも
+  event: UIEvent // 生のDOMイベント。 https://developer.mozilla.org/ja/docs/Web/API/UIEvent
+}
 
-#### on(event: "shell_mouse", callback: (ev: ShellMouseEvent)=> void): EventEmitter
-* サーフェスが触られた時
+interface BalloonMouseEvent {
+  type: string; // click|dblclikck|mousemove|mouseup|mousedown
+  scopeId: number; // \p[n]
+  balloonId: number; // \b[n]
+}
 
-#### on(event: "balloon_mouse", callback: (ev: BalloonMouseEvent)=> void): EventEmitter
-* バルーンが触られた時
+interface BalloonInputEvent {
+  type: string; //userinput|communicateinput
+  id: string;
+  content: string;
+}
+
+interface BalloonSelectEvent {
+  type: string; //anchorselect|choiceselect
+  id: string;
+  text: string;
+  args: string[];
+}
+
+interface FileDropEvent {
+  type: string; //filedrop
+  scopeId: number;
+  event: UIEvent;
+}
+```
+
+##### on(event: "mousedown", callback: (ev: SurfaceMouseEvent)=> void): void
+##### on(event: "mousemove", callback: (ev: SurfaceMouseEvent)=> void): void
+##### on(event: "mouseup", callback: (ev: SurfaceMouseEvent)=> void): void
+##### on(event: "mouseclick", callback: (ev: SurfaceMouseEvent)=> void): void
+##### on(event: "mousedblclick", callback: (ev: SurfaceMouseEvent)=> void): void
+##### on(event: "balloonclick", callback: (ev: BalloonMouseEvent)=> void): void
+##### on(event: "balloondblclick", callback: (ev: BalloonMouseEvent)=> void): void
+##### on(event: "anchorselect", callback: (ev: SelectEvent)=> void): void
+##### on(event: "choiceselect", callback: (ev: SelectEvent)=> void): void
+##### on(event: "userinput", callback: (ev: InputEvent)=> void): void
+##### on(event: "communicateinput", callback: (ev: InputEvent)=> void): void
+##### on(event: "filedrop", callback: (ev: FileDropEvent)=> void): void
+
 
 ### Scope Class
 
