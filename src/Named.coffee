@@ -162,7 +162,7 @@ class Named extends EventEmitter
     return
 
   load: ()->
-    Promise.resolbe(this)
+    Promise.resolve(this)
 
   scope: (scopeId)->
     unless scopeId?

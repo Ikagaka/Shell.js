@@ -344,7 +344,7 @@
     };
 
     Named.prototype.load = function() {
-      return Promise.resolbe(this);
+      return Promise.resolve(this);
     };
 
     Named.prototype.scope = function(scopeId) {
