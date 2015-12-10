@@ -108,7 +108,7 @@
 
   EventEmitter = require("eventemitter3");
 
-  $ = require("jquery");
+  $ = window["jQuery"] || require("jquery");
 
   require("jquery-contextmenu");
 
@@ -468,7 +468,7 @@
 
   EventEmitter = require("eventemitter3");
 
-  $ = require("jquery");
+  $ = window["jQuery"] || require("jquery");
 
   NamedManager = (function(superClass) {
     extend(NamedManager, superClass);
@@ -550,7 +550,7 @@
 (function() {
   var $, Scope;
 
-  $ = require("jquery");
+  $ = window["jQuery"] || require("jquery");
 
   Scope = (function() {
     function Scope(scopeId, shell, balloon, named) {
