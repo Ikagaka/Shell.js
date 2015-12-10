@@ -11,9 +11,6 @@ var Surface_1 = require('./Surface');
 var SurfaceUtil = require("./SurfaceUtil");
 var SurfacesTxt2Yaml = require("surfaces_txt2yaml");
 var EventEmitter = require("eventemitter3");
-var $ = require("jquery");
-self["$"] = $;
-self["jQuery"] = $;
 var Shell = (function (_super) {
     __extends(Shell, _super);
     function Shell(directory) {
@@ -450,8 +447,7 @@ var Shell = (function (_super) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Shell;
 
-},{"./Surface":3,"./SurfaceUtil":5,"eventemitter3":8,"jquery":11,"surfaces_txt2yaml":43}],3:[function(require,module,exports){
-// todo: insert
+},{"./Surface":3,"./SurfaceUtil":5,"eventemitter3":8,"surfaces_txt2yaml":43}],3:[function(require,module,exports){
 // todo: anim collision
 // todo: background+exclusive,(1,3,5)
 /// <reference path="../typings/tsd.d.ts"/>

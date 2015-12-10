@@ -8,9 +8,6 @@ import SurfacesTxt2Yaml = require("surfaces_txt2yaml");
 import EventEmitter = require("eventemitter3");
 import $ = require("jquery");
 
-self["$"] = $;
-self["jQuery"] = $;
-
 export default class Shell extends EventEmitter {
   //public
 

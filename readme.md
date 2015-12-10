@@ -95,8 +95,7 @@ shell.load().then (shell)->
   * SakuraScriptでなら`\0\s[0]`に該当します。
 * surfaceIdはサーフェスエイリアスが考慮されます。
   * 該当するサーフェスが存在しなかった場合、nullが返ります。
-  * `new Sufrace(div, scodeId, surfaceId, shell)` との違いは、
-    サーフェスエイリアスが考慮される点です。
+
 
 ```coffeescript
 
@@ -112,12 +111,12 @@ document.body.appendChild(cnv2)
 * ___サーフェスを変更する前に必ず呼び出してください___
 
 
-#### bind(charaId: number, bindgroupId: number): void
-* `charaId` 番目のキャラクターの`bindgroupId`の着せ替えを着せます。
+#### bind(scopeId: number, bindgroupId: number): void
+* `scopeId` 番目のキャラクターの`bindgroupId`の着せ替えを着せます。
 
 
-#### unbind(charaId: number, bindgroupId: number): void
-* `charaId` 番目のキャラクターの`bindgroupId`の着せ替えを脱がせます。
+#### unbind(scopeId: number, bindgroupId: number): void
+* `scopeId` 番目のキャラクターの`bindgroupId`の着せ替えを脱がせます。
 
 #### showRegion(): void
 * このシェルの当たり判定を表示します。
@@ -130,7 +129,7 @@ document.body.appendChild(cnv2)
 * 対応しているイベントは以下の通りです。
   * `mouse`
     * タッチイベントとマウスイベントの区別は現状していません。
-    * mousewheelまだー？
+    * mousewheelまだ
 * 透明領域のマウスイベントにも反応します。 `ev.transparency` で判定してください、。
   * これはsurface canvasレイヤが重なった時のマウスイベントの透過処理のためのフラグです。
   * 複数レイヤ間の重なりの上下順番を管理するNamedMgr.jsなどが使います。
@@ -155,15 +154,6 @@ interface SurfaceMouseEvent {
 * canvas要素にサーフェスを描画します。
   * SERIKOアニメーションを再生します。
   * マウスイベントを捕捉します。
-
-#### constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, shell: Shell): Surface
-* divにcanvas要素を追加しにサーフェスを描画します。
-* このコンストラクタが呼ばれた時からアニメーションが開始されます。
-* surfaceIdはサーフェスエイリアスが考慮されません。
-  * `Shell#attatchSurface`から内部的に呼び出されます。そちらをを使って下さい。
-```coffeescript
-srf = new Sufrace(cnv, 0, 0, shell) # \0\s[0]
-```
 
 #### width: number
 * サーフェスの横幅px
