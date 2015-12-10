@@ -25,8 +25,7 @@
   "dependencies": {
     "eventemitter3": "*",
     "ikagaka.shell.js": "ikagaka/Shell.js#master",
-    "jquery": "^1.8.2",
-    "jquery-contextmenu": "^1.10.3"
+    "jquery": "^1.8.2"
   },
   "devDependencies": {},
   "main": "./lib/index.js",
