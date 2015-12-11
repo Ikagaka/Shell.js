@@ -22,14 +22,14 @@ class Named extends EventEmitter
     Promise.resolve(@)
 
   initDOMStructure: ->
-    @$named = $(@element).addClass("named")
+    @$named = $(@element).addClass("named").attr("namedId", @namedId)
     return
 
   initEventListener: ->
     do =>
       # コンテキストメニュー
       $.contextMenu
-        selector: ".context-menu"
+        selector: ".namedMgr .named[namedId=#{@namedId}] .context-menu"
         build: ($trigger, ev)=>
           ev.preventDefault()
           scopeId = $trigger.attr("scopeId")

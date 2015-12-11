@@ -1981,14 +1981,14 @@ module.exports = function ($) {
     }
 
     Named.prototype.initDOMStructure = function() {
-      this.$named = $(this.element).addClass("named");
+      this.$named = $(this.element).addClass("named").attr("namedId", this.namedId);
     };
 
     Named.prototype.initEventListener = function() {
       (function(_this) {
         return (function() {
           $.contextMenu({
-            selector: ".context-menu",
+            selector: ".namedMgr .named[namedId=" + _this.namedId + "] .context-menu",
             build: function($trigger, ev) {
               var scopeId;
               ev.preventDefault();
