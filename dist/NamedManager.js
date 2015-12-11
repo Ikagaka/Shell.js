@@ -1991,7 +1991,7 @@ module.exports = function ($) {
     Named.prototype.initEventListener = function() {
       (function(_this) {
         return (function() {
-          return $.contextMenu({
+          $.contextMenu({
             selector: ".context-menu",
             build: function($trigger, ev) {
               var scopeId;
@@ -2012,6 +2012,9 @@ module.exports = function ($) {
                 };
               }
             }
+          });
+          _this.destructors.push(function() {
+            return _this.$named.find(".context-menu").contextMenu(false);
           });
         });
       })(this)();
@@ -32467,8 +32470,7 @@ module.exports={
   "dependencies": {
     "eventemitter3": "*",
     "ikagaka.shell.js": "ikagaka/Shell.js#master",
-    "jquery": "^1.8.2",
-    "jquery-contextmenu": "^1.10.3"
+    "jquery": "^1.8.2"
   },
   "devDependencies": {},
   "main": "./lib/index.js",

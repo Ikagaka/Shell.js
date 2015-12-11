@@ -38,6 +38,9 @@ class Named extends EventEmitter
           if @contextmenuHandler?
           then return @contextmenuHandler({type: "contextmenu", scopeId, scope: scopeId, event: ev})
           else return {items:{sep1:"---"}}
+      @destructors.push =>
+        @$named.find(".context-menu").contextMenu(false)
+      return
     do =>
       # Shell Mouse Event
       # サーフェス移動
