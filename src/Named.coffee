@@ -37,7 +37,7 @@ class Named extends EventEmitter
           then return @contextmenuHandler({type: "contextmenu", scopeId, scope: scopeId, event: ev})
           else return {items:{sep1:"---"}}
       @destructors.push =>
-        @$named.find(".context-menu").contextMenu(false)
+        @$named.find(".context-menu").contextMenu("destroy")
       return
     do =>
       # Shell Mouse Event

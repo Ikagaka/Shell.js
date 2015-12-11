@@ -2010,7 +2010,7 @@ module.exports = function ($) {
             }
           });
           _this.destructors.push(function() {
-            return _this.$named.find(".context-menu").contextMenu(false);
+            return _this.$named.find(".context-menu").contextMenu("destroy");
           });
         });
       })(this)();
