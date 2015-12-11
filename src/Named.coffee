@@ -25,8 +25,6 @@ class Named extends EventEmitter
     @$named = $(@element).addClass("named")
     return
 
-  contextmenu: (@contextmenuHandler)->
-
   initEventListener: ->
     do =>
       # コンテキストメニュー
@@ -192,6 +190,7 @@ class Named extends EventEmitter
   destructor: ->
     @scopes.forEach (scope)-> scope.destructor()
     @scopes = []
+    @contextmenuHandler = null
     @destructors.forEach (fn)-> fn()
     @$named.children().remove()
     @$named.remove()
@@ -235,5 +234,7 @@ class Named extends EventEmitter
     # 将来的にはballoon.jsにレンダリングさせる
     @emit("communicateinput", event)
     return
+
+  contextmenu: (@contextmenuHandler)->
 
 module.exports = Named

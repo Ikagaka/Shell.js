@@ -1984,10 +1984,6 @@ module.exports = function ($) {
       this.$named = $(this.element).addClass("named");
     };
 
-    Named.prototype.contextmenu = function(contextmenuHandler) {
-      this.contextmenuHandler = contextmenuHandler;
-    };
-
     Named.prototype.initEventListener = function() {
       (function(_this) {
         return (function() {
@@ -2241,6 +2237,7 @@ module.exports = function ($) {
         return scope.destructor();
       });
       this.scopes = [];
+      this.contextmenuHandler = null;
       this.destructors.forEach(function(fn) {
         return fn();
       });
@@ -2297,6 +2294,10 @@ module.exports = function ($) {
         "content": prompt("Communicate", text)
       };
       this.emit("communicateinput", event);
+    };
+
+    Named.prototype.contextmenu = function(contextmenuHandler) {
+      this.contextmenuHandler = contextmenuHandler;
     };
 
     return Named;
