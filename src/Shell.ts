@@ -52,11 +52,11 @@ export default class Shell extends EventEmitter {
 
   // this.directoryからdescript.txtを探してthis.descriptに入れる
   private loadDescript(): Promise<Shell> {
-    var dir = this.directory;
-    var getName = (dic: {[key: string]: any}, reg: RegExp)=>{
+    let dir = this.directory;
+    let getName = (dic: {[key: string]: any}, reg: RegExp)=>{
       return Object.keys(dic).filter((name)=> reg.test(name))[0] || "";
     };
-    var descript_name = getName(dir, /^descript\.txt$/i);
+    let descript_name = getName(dir, /^descript\.txt$/i);
     if (descript_name === "") {
       console.info("descript.txt is not found");
       this.descript = {};
@@ -68,17 +68,17 @@ export default class Shell extends EventEmitter {
 
   // descript.txtからbindgroup探してデフォルト値を反映
   private loadBindGroup(): Promise<Shell> {
-    var descript = this.descript;
-    var grep = (dic:{[key:string]:any}, reg: RegExp)=>
+    let descript = this.descript;
+    let grep = (dic:{[key:string]:any}, reg: RegExp)=>
       Object.keys(dic).filter((key)=> reg.test(key))
-    var reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)(?:\.(default))?/;
+    let reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)(?:\.(default))?/;
     grep(descript, reg).forEach((key)=>{
-      var [_, charId, bindgroupId, dflt] = reg.exec(key);
-      var _charId = charId === "sakura" ? "0" :
+      let [_, charId, bindgroupId, dflt] = reg.exec(key);
+      let _charId = charId === "sakura" ? "0" :
                                "kero"   ? "1" :
                                (/char(\d+)/.exec(charId)||["", Number.NaN])[1];
-      var maybeNumCharId = Number(_charId);
-      var maybeNumBindgroupId = Number(bindgroupId);
+      let maybeNumCharId = Number(_charId);
+      let maybeNumBindgroupId = Number(bindgroupId);
       if(isFinite(maybeNumCharId) && isFinite(maybeNumBindgroupId)){
         this.bindgroup[maybeNumCharId] = this.bindgroup[maybeNumCharId] || [];
         if(dflt === "default"){
@@ -95,20 +95,20 @@ export default class Shell extends EventEmitter {
 
   // surfaces.txtを読んでthis.surfacesTxtに反映
   private loadSurfacesTxt(): Promise<Shell> {
-    var surfaces_text_names = Object.keys(this.directory).filter((name)=> /^surfaces.*\.txt$|^alias\.txt$/i.test(name));
+    let surfaces_text_names = Object.keys(this.directory).filter((name)=> /^surfaces.*\.txt$|^alias\.txt$/i.test(name));
     if(surfaces_text_names.length === 0) {
       console.info("surfaces.txt is not found");
       this.surfacesTxt = <SurfacesTxt>{surfaces:{}, descript: {}, aliases: {}, regions: {}};
     } else {
       // cat surfaces*.txt
-      var text = surfaces_text_names.reduce((text, filename)=> text+SurfaceUtil.convert(this.directory[filename]), "");
+      let text = surfaces_text_names.reduce((text, filename)=> text + SurfaceUtil.convert(this.directory[filename]), "");
       this.surfacesTxt = SurfacesTxt2Yaml.txt_to_data(text, {compatible: 'ssp-lazy'});
       // SurfacesTxt2Yamlの継承の expand と remove
       Object.keys(this.surfacesTxt.surfaces).forEach((name)=>{
         if(typeof this.surfacesTxt.surfaces[name].is === "number"
            && Array.isArray(this.surfacesTxt.surfaces[name].base)){
           this.surfacesTxt.surfaces[name].base.forEach((key)=>{
-            SurfaceUtil.extend(this.surfacesTxt.surfaces[name], this.surfacesTxt.surfaces[key]);
+            $.extend(true, this.surfacesTxt.surfaces[name], this.surfacesTxt.surfaces[key]);
           });
           delete this.surfacesTxt.surfaces[name].base;
         }
@@ -119,18 +119,25 @@ export default class Shell extends EventEmitter {
         }
       });
       // expand ここまで
+      this.surfacesTxt.descript = this.surfacesTxt.descript || <SurfaceDescript>{};
+      if(typeof this.surfacesTxt.descript["collision-sort"] === "string"){
+        console.warn("Shell#loadSurfacesTxt", "collision-sort is not supported yet.");
+      }
+      if(typeof this.surfacesTxt.descript["collision-sort"] === "string"){
+        console.warn("Shell#loadSurfacesTxt", "animation-sort is not supported yet.");
+      }
     }
     return Promise.resolve(this);
   }
 
   // surfacetable.txtを読む予定
   private loadSurfaceTable(): Promise<Shell> {
-    var surfacetable_name = Object.keys(this.directory).filter((name)=> /^surfacetable.*\.txt$/i.test(name))[0] || "";
+    let surfacetable_name = Object.keys(this.directory).filter((name)=> /^surfacetable.*\.txt$/i.test(name))[0] || "";
     if(surfacetable_name === ""){
       console.info("Shell#loadSurfaceTable", "surfacetable.txt is not found.");
     }else{
-      var txt = SurfaceUtil.convert(this.directory[surfacetable_name]);
-      console.info("Shell#loadSurfaceTable", "surfacetable.txt not support yet.");
+      let txt = SurfaceUtil.convert(this.directory[surfacetable_name]);
+      console.info("Shell#loadSurfaceTable", "surfacetable.txt is not supported yet.");
       // TODO
     }
     return Promise.resolve(this);
@@ -138,11 +145,11 @@ export default class Shell extends EventEmitter {
 
   // this.directory から surface*.png と surface*.pna を読み込んで this.surfaceTree に反映
   private loadSurfacePNG(): Promise<Shell>{
-    var surface_names = Object.keys(this.directory).filter((filename)=> /^surface(\d+)\.png$/i.test(filename));
+    let surface_names = Object.keys(this.directory).filter((filename)=> /^surface(\d+)\.png$/i.test(filename));
     return new Promise<Shell>((resolve, reject)=>{
-      var i = 0;
+      let i = 0;
       surface_names.forEach((filename)=>{
-        var n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
+        let n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
         i++;
         this.getPNGFromDirectory(filename, (err, cnv)=>{
           if(err != null){
@@ -171,16 +178,16 @@ export default class Shell extends EventEmitter {
 
   // this.surfacesTxt から element を読み込んで this.surfaceTree に反映
   private loadElements(): Promise<Shell>{
-    var srfs = this.surfacesTxt.surfaces;
-    var hits = Object.keys(srfs).filter((name)=> !!srfs[name].elements);
+    let srfs = this.surfacesTxt.surfaces;
+    let hits = Object.keys(srfs).filter((name)=> !!srfs[name].elements);
     return new Promise<Shell>((resolve, reject)=>{
-      var i = 0;
+      let i = 0;
       if(hits.length === 0) return resolve(this);
       hits.forEach((defname)=>{
-        var n = srfs[defname].is;
-        var elms = srfs[defname].elements;
-        var _prms = Object.keys(elms).map((elmname)=>{
-          var {is, type, file, x, y} = elms[elmname];
+        let n = srfs[defname].is;
+        let elms = srfs[defname].elements;
+        let _prms = Object.keys(elms).map((elmname)=>{
+          let {is, type, file, x, y} = elms[elmname];
           i++;
           this.getPNGFromDirectory(file, (err, canvas)=>{
             if( err != null){
@@ -207,10 +214,10 @@ export default class Shell extends EventEmitter {
 
   // this.surfacesTxt から collision を読み込んで this.surfaceTree に反映
   private loadCollisions(): Promise<Shell>{
-    var srfs = this.surfacesTxt.surfaces;
+    let srfs = this.surfacesTxt.surfaces;
     Object.keys(srfs).filter((name)=> !!srfs[name].regions).forEach((defname)=>{
-      var n = srfs[defname].is;
-      var regions = srfs[defname].regions;
+      let n = srfs[defname].is;
+      let regions = srfs[defname].regions;
       Object.keys(regions).forEach((regname)=>{
         if(!this.surfaceTree[n]){
           this.surfaceTree[n] = {
@@ -220,7 +227,7 @@ export default class Shell extends EventEmitter {
             animations: []
           };
         }
-        var {is} = regions[regname];
+        let {is} = regions[regname];
         this.surfaceTree[n].collisions[is] = regions[regname];
       });
     });
@@ -229,11 +236,11 @@ export default class Shell extends EventEmitter {
 
   // this.surfacesTxt から animation を読み込んで this.surfaceTree に反映
   private loadAnimations(): Promise<Shell>{
-    var srfs = this.surfacesTxt.surfaces;
+    let srfs = this.surfacesTxt.surfaces;
     Object.keys(srfs).filter((name)=> !!srfs[name].animations).forEach((defname)=>{
-      var n = srfs[defname].is;
-      var animations = srfs[defname].animations;
-      Object.keys(animations).forEach((animname)=>{
+      let n = srfs[defname].is;
+      let animations = srfs[defname].animations;
+      Object.keys(animations).forEach((animId)=>{
         if(!this.surfaceTree[n]){
           this.surfaceTree[n] = {
             base: {cnv:null, png: null, pna: null},
@@ -242,8 +249,27 @@ export default class Shell extends EventEmitter {
             animations: []
           };
         }
-        var {is, interval} = animations[animname];
-        this.surfaceTree[n].animations[is] = animations[animname];
+        let {is, interval="never", option="", patterns=[], regions=<{ [key: string]: SurfaceRegion; }>{}} = animations[animId];
+        // animation*.option,* の展開
+        // animation*.option,exclusive+background,(1,3,5)
+        let [_option, ...opt_args] = option.split(",");
+        let _opt_args = opt_args.map((str)=> str.replace("(", "").replace(")", "").trim());
+        let options = option.split("+");
+        let _options = options.map<[string, string[]]>((option)=> [option.trim(), _opt_args]);
+        let [_interval, ...int_args] = interval.split(",");
+        let _int_args = int_args.map((str)=> str.trim());
+        let intervals = _interval.split("+"); // sometimes+talk
+        let _intervals = intervals.map<[string, string[]]>((interval)=> [interval.trim(), _int_args]);
+        let _regions: SurfaceRegion[] = [];
+        Object.keys(regions).forEach((key)=>{
+          _regions[regions[key].is] = regions[key];
+        });
+        this.surfaceTree[n].animations[is] = {
+          options: _options,
+          intervals: _intervals,
+          regions: _regions,
+          is, patterns, interval
+        };
       });
     });
     return Promise.resolve(this);
@@ -253,8 +279,11 @@ export default class Shell extends EventEmitter {
     return SurfaceUtil.fastfind(Object.keys(this.directory), filename) !== "";
   }
 
+  // this.cacheCanvas から filename な SurfaceCanvas を探す。
+  // なければ this.directory から探し this.cacheCanvas にキャッシュする
+  // 非同期の理由：img.onload = blob url
   private getPNGFromDirectory(filename: string, cb: (err: any, srfCnv: SurfaceCanvas)=> any): void {
-    var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
+    let cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
     if(cached_filename !== ""){
       cb(null, this.cacheCanvas[cached_filename]);
       return;
@@ -268,10 +297,10 @@ export default class Shell extends EventEmitter {
       }
       console.warn("Shell#getPNGFromDirectory", "element file " + filename.substr(0, filename.length - ".png".length) + " need '.png' extension");
     }
-    var _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
-    var pnafilename = _filename.replace(/\.png$/i, ".pna");
-    var _pnafilename = SurfaceUtil.fastfind(Object.keys(this.directory), pnafilename);
-    var pngbuf = this.directory[_filename];
+    let _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
+    let pnafilename = _filename.replace(/\.png$/i, ".pna");
+    let _pnafilename = SurfaceUtil.fastfind(Object.keys(this.directory), pnafilename);
+    let pngbuf = this.directory[_filename];
 
     SurfaceUtil.getImageFromArrayBuffer(pngbuf, (err, png)=>{
       if(err != null) return cb(err, null);
@@ -281,7 +310,7 @@ export default class Shell extends EventEmitter {
         cb(null, this.cacheCanvas[_filename]);
         return;
       }
-      var pnabuf = this.directory[_pnafilename];
+      let pnabuf = this.directory[_pnafilename];
       SurfaceUtil.getImageFromArrayBuffer(pnabuf, (err, pna)=>{
         if(err != null) return cb(err, null);
         this.cacheCanvas[_filename] = {cnv:null, png, pna};
@@ -290,50 +319,14 @@ export default class Shell extends EventEmitter {
     });
   }
 
-  // this.cacheCanvas から filename な SurfaceCanvas を探す。
-  // なければ this.directory から探し this.cacheCanvas にキャッシュする
-  // 非同期の理由：img.onload = blob url
-  private fetchPNGFromDirectory(filename: string): Promise<SurfaceCanvas> {
-    console.warn("Shell#fetchPNGFromDirectory is deprecated");
-    var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
-    if(cached_filename !== ""){
-      return Promise.resolve(this.cacheCanvas[cached_filename]);
-    }
-    if(!this.hasFile(filename)){
-      // 我々は心優しいので寛大にも拡張子つけ忘れに対応してあげる
-      filename += ".png";
-      if(!this.hasFile(filename)){
-        return Promise.reject<SurfaceCanvas>(new Error("no such file in directory: " + filename.replace(/\.png$/i, "")));
-      }
-      console.warn("element file " + filename + " need '.png' extension");
-    }
-    var _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
-    var pnafilename = _filename.replace(/\.png$/i, ".pna");
-    var _pnafilename = SurfaceUtil.fastfind(Object.keys(this.directory), pnafilename);
-    var pngbuf = this.directory[_filename];
-
-    return SurfaceUtil.fetchImageFromArrayBuffer(pngbuf).then((png)=>{
-      // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
-      if(_pnafilename === ""){
-        this.cacheCanvas[_filename] = {cnv:null, png, pna: null};
-        return this.cacheCanvas[_filename];
-      }
-      var pnabuf = this.directory[_pnafilename];
-      return SurfaceUtil.fetchImageFromArrayBuffer(pnabuf).then((pna)=>{
-        this.cacheCanvas[_filename] = {cnv:null, png, pna};
-        return this.cacheCanvas[_filename];
-      });
-    });
-  }
-
   public attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number|string): Surface {
-    var type = SurfaceUtil.scope(scopeId);
-    var hits = this.attachedSurface.filter(({div: _div})=> _div === div);
+    let type = SurfaceUtil.scope(scopeId);
+    let hits = this.attachedSurface.filter(({div: _div})=> _div === div);
     if(hits.length !== 0) throw new Error("Shell#attachSurface > ReferenceError: this HTMLDivElement is already attached");
     if(scopeId < 0){
       throw new Error("Shell#attachSurface > TypeError: scopeId needs more than 0, but:" + scopeId);
     }
-    var _surfaceId = this.getSurfaceAlias(scopeId, surfaceId);
+    let _surfaceId = this.getSurfaceAlias(scopeId, surfaceId);
     if(_surfaceId !== surfaceId){
       console.info("Shell#attachSurface", "surface alias is decided on", _surfaceId, "as", type, surfaceId);
     }
@@ -341,8 +334,11 @@ export default class Shell extends EventEmitter {
       console.warn("surfaceId:", _surfaceId, "is not defined in surfaceTree", this.surfaceTree);
       return null;
     }
-    var srf = new Surface(div, scopeId, _surfaceId, this.surfaceTree, this.bindgroup);
+    let srf = new Surface(div, scopeId, _surfaceId, this.surfaceTree, this.bindgroup);
     srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
+    if(this.enableRegion){
+      srf.render();
+    }
     srf.on("mouse", (ev: SurfaceMouseEvent)=>{
       this.emit("mouse", ev); // detachSurfaceで消える
     });
@@ -351,7 +347,7 @@ export default class Shell extends EventEmitter {
   }
 
   public detachSurface(div: HTMLDivElement): void {
-    var hits = this.attachedSurface.filter(({div: _div})=> _div === div);
+    let hits = this.attachedSurface.filter(({div: _div})=> _div === div);
     if(hits.length === 0) return;
     hits[0].surface.destructor(); // srf.onのリスナはここで消される
     this.attachedSurface.splice(this.attachedSurface.indexOf(hits[0]), 1);
@@ -366,7 +362,7 @@ export default class Shell extends EventEmitter {
   }
 
   private getSurfaceAlias(scopeId: number, surfaceId: number|string): number {
-    var type = SurfaceUtil.scope(scopeId);
+    let type = SurfaceUtil.scope(scopeId);
     if(typeof surfaceId === "string" || typeof surfaceId === "number"){
       if(!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]){
         // まずエイリアスを探す

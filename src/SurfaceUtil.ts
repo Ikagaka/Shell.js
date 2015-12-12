@@ -45,11 +45,6 @@ export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
   return srfCnv;
 }
 
-export function createSurfaceCanvasDummy(): SurfaceCanvas{
-  console.warn("SurfaceUtil.createSurfaceCanvasDummy is deprecated");
-  return {cnv:null, png: null, pna: null};
-}
-
 export function createSurfaceCanvasFromURL(url: string): Promise<{img:HTMLImageElement, cnv:HTMLCanvasElement}> {
   console.warn("SurfaceUtil.createSurfaceCanvasFromURL is deprecated");
   return fetchArrayBuffer(url)
@@ -102,22 +97,6 @@ export function log(element: Element, description=""){
   document.body.appendChild(fieldset);
 }
 
-// extend deep like jQuery $.extend(true, target, source)
-export function extend(target: any, source: any): void {
-  //console.warn("SurfaceUtil.extend is deprecated", "please use $.extend(true, a, b)");
-  for(let key in source){
-    if (typeof source[key] === "object" && Object.getPrototypeOf(source[key]) === Object.prototype) {
-      target[key] = target[key] || {};
-      extend(target[key], source[key]);
-    } else if (Array.isArray(source[key])) {
-      target[key] = target[key] || [];
-      extend(target[key], source[key]);
-    } else if (source[key] !== undefined) {
-      target[key] = source[key];
-    }
-  }
-}
-
 // "hoge.huga, foo, bar\n" to {"hoge.huga": "foo, bar"}
 export function parseDescript(text: string): {[key:string]:string}{
   text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
@@ -142,23 +121,11 @@ export function parseDescript(text: string): {[key:string]:string}{
 
 // XMLHttpRequest, xhr.responseType = "arraybuffer"
 export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
-  console.warn("SurfaceUtil.fetchArrayBuffer is deprecated");
-  return new Promise<ArrayBuffer>(function(resolve, reject) {
-    let xhr = new XMLHttpRequest();
-    xhr.addEventListener("load", function() {
-      if (200 <= xhr.status && xhr.status < 300) {
-        if (xhr.response.error == null) {
-          return resolve(xhr.response);
-        } else {
-          return reject(new Error("message: "+ xhr.response.error.message));
-        }
-      } else {
-        return reject(new Error("status: "+xhr.status));
-      }
+  return new Promise<ArrayBuffer>((resolve, reject)=>{
+    getArrayBuffer(url, (err, buffer)=>{
+      if(!!err) reject(err);
+      else      resolve(buffer);
     });
-    xhr["open"]("GET", url);
-    xhr["responseType"] = "arraybuffer";
-    return xhr["send"]();
   });
 }
 
@@ -183,11 +150,10 @@ export function getArrayBuffer(url: string, cb: (err: any, buffer: ArrayBuffer)=
   xhr.addEventListener("error", function() {
     _cb(new Error("error: "+ xhr.response.error.message), null);
   });
-  xhr["open"]("GET", url);
-  xhr["responseType"] = "arraybuffer";
-  return xhr["send"]();
+  xhr.open("GET", url);
+  xhr.responseType = "arraybuffer";
+  return xhr.send();
 }
-
 
 // convert some encoding txt file arraybuffer to js string
 // TODO: use text-enconding & charset detection code
@@ -195,7 +161,6 @@ export function convert(buffer: ArrayBuffer):string{
   //return new TextDecoder('shift_jis').decode(buffer);
   return Encoding.codeToString(Encoding.convert(new Uint8Array(buffer), 'UNICODE', 'AUTO'));
 }
-
 
 // find filename that matches arg "filename" from arg "paths"
 // filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
@@ -219,7 +184,6 @@ export function fastfind(paths: string[], filename: string): string {
   }
   return "";
 }
-
 
 // [1,2,3] -> 1 or 2 or 3 as 33% probability
 export function choice<T>(arr: T[]): T {
@@ -246,16 +210,13 @@ export function fastcopy(cnv: HTMLCanvasElement|HTMLImageElement, tmpcnv:HTMLCan
   return tmpcnv;
 }
 
-
 // ArrayBuffer -> HTMLImageElement
 export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string): Promise<HTMLImageElement> {
-  console.warn("SurfaceUtil.fetchImageFromArrayBuffer is deprecated");
-  let url = URL.createObjectURL(new Blob([buffer], {type: mimetype || "image/png"}));
-  return fetchImageFromURL(url).then((img)=>{
-    URL.revokeObjectURL(url);
-    return Promise.resolve(img);
-  }).catch((err)=>{
-    return Promise.reject("fetchImageFromArrayBuffer > "+err);
+  return new Promise<HTMLImageElement>((resolve, reject)=>{
+    getImageFromArrayBuffer(buffer, (err, img)=>{
+      if(!!err) reject(err);
+      else      resolve(img);
+    })
   });
 }
 
@@ -271,16 +232,10 @@ export function getImageFromArrayBuffer(buffer: ArrayBuffer, cb: (err: any, img:
 
 // URL -> HTMLImageElement
 export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
-  console.warn("SurfaceUtil.fetchImageFromURL is deprecated");
-  let img = new Image();
-  img.src = url;
   return new Promise<HTMLImageElement>((resolve, reject)=>{
-    img.addEventListener("load", function() {
-      resolve(Promise.resolve(img)); // type hack
-    });
-    img.addEventListener("error", function(ev) {
-      console.error("fetchImageFromURL", ev);
-      reject("fetchImageFromURL ");
+    getImageFromURL(url, (err, img)=>{
+      if(!!err) reject(err);
+      else      resolve(img);
     });
   });
 }
@@ -331,18 +286,6 @@ export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
   return data[data.length - 1] !== 0;
 }
 
-// $().offset() の移植
-export function offset(element: Element): {left: number, top: number, width: number, height: number} {
-  console.warn("SurfaceUtil.offset is deprecated, please use jQuery#offset()");
-  let obj = element.getBoundingClientRect();
-  return {
-    left: obj.left + window.pageXOffset,
-    top: obj.top + window.pageYOffset,
-    width: Math.round(obj.width),
-    height: Math.round(obj.height)
-  };
-}
-
 // 1x1の canvas を作るだけ
 export function createCanvas(): HTMLCanvasElement {
   let cnv = document.createElement("canvas");
@@ -391,55 +334,53 @@ export function randomRange(min: number, max: number): number {
 }
 
 // このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
-// 透明領域でなければ isHit: true, collision設定されていれば name: "hoge"
-export function getRegion(element: HTMLCanvasElement, surfaceNode: SurfaceTreeNode, offsetX: number, offsetY: number): {isHit:boolean, name:string} {
+// collision設定されていれば name"hoge"
+export function getRegion(element: HTMLCanvasElement, collisions: SurfaceRegion[], offsetX: number, offsetY: number): string {
   // canvas左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べるメソッド
-  if(isHit(element, offsetX, offsetY)){
-    let hitCols = surfaceNode.collisions.filter((collision, colId)=>{
-      let {type, name} = collision;
-      switch(collision.type){
-        case "rect":
-          var {left, top, right, bottom} = <SurfaceRegionRect>collision;
-          return (left < offsetX && offsetX < right && top < offsetY && offsetY < bottom) ||
-                 (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
-        case "ellipse":
-          var {left, top, right, bottom} = <SurfaceRegionEllipse>collision;
-          let width = Math.abs(right - left);
-          let height = Math.abs(bottom - top);
-          return Math.pow((offsetX-(left+width/2))/(width/2), 2) +
-                 Math.pow((offsetY-(top+height/2))/(height/2), 2) < 1;
-        case "circle":
-          let {radius, center_x, center_y} = <SurfaceRegionCircle>collision;
-          return Math.pow((offsetX-center_x)/radius, 2)+Math.pow((offsetY-center_y)/radius, 2) < 1;
-        case "polygon":
-          let {coordinates} = <SurfaceRegionPolygon>collision;
-          let ptC = {x:offsetX, y:offsetY};
-          let tuples = coordinates.reduce(((arr, {x, y}, i)=>{
-            arr.push([
-              coordinates[i],
-              (!!coordinates[i+1] ? coordinates[i+1] : coordinates[0])
-            ]);
-            return arr;
-          }), []);
-          let deg = tuples.reduce(((sum, [ptA, ptB])=>{
-            let vctA = [ptA.x-ptC.x, ptA.y-ptC.y];
-            let vctB = [ptB.x-ptC.x, ptB.y-ptC.y];
-            let dotP = vctA[0]*vctB[0] + vctA[1]*vctB[1];
-            let absA = Math.sqrt(vctA.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
-            let absB = Math.sqrt(vctB.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
-            let rad = Math.acos(dotP/(absA*absB))
-            return sum + rad;
-          }), 0)
-          return deg/(2*Math.PI) >= 1;
-        default:
-          console.warn("unkown collision type:", this.surfaceId, colId, name, collision);
-          return false;
-      }
-    });
-    if(hitCols.length > 0)
-      return {isHit:true, name:hitCols[hitCols.length-1].name};
-    return {isHit:true, name:""};
-  }else{
-    return {isHit:false, name:""};
+
+  let hitCols = collisions.filter((collision, colId)=>{
+    let {type, name} = collision;
+    switch(collision.type){
+      case "rect":
+        var {left, top, right, bottom} = <SurfaceRegionRect>collision;
+        return (left < offsetX && offsetX < right && top < offsetY && offsetY < bottom) ||
+               (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
+      case "ellipse":
+        var {left, top, right, bottom} = <SurfaceRegionEllipse>collision;
+        let width = Math.abs(right - left);
+        let height = Math.abs(bottom - top);
+        return Math.pow((offsetX-(left+width/2))/(width/2), 2) +
+               Math.pow((offsetY-(top+height/2))/(height/2), 2) < 1;
+      case "circle":
+        let {radius, center_x, center_y} = <SurfaceRegionCircle>collision;
+        return Math.pow((offsetX-center_x)/radius, 2)+Math.pow((offsetY-center_y)/radius, 2) < 1;
+      case "polygon":
+        let {coordinates} = <SurfaceRegionPolygon>collision;
+        let ptC = {x:offsetX, y:offsetY};
+        let tuples = coordinates.reduce(((arr, {x, y}, i)=>{
+          arr.push([
+            coordinates[i],
+            (!!coordinates[i+1] ? coordinates[i+1] : coordinates[0])
+          ]);
+          return arr;
+        }), []);
+        let deg = tuples.reduce(((sum, [ptA, ptB])=>{
+          let vctA = [ptA.x-ptC.x, ptA.y-ptC.y];
+          let vctB = [ptB.x-ptC.x, ptB.y-ptC.y];
+          let dotP = vctA[0]*vctB[0] + vctA[1]*vctB[1];
+          let absA = Math.sqrt(vctA.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
+          let absB = Math.sqrt(vctB.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
+          let rad = Math.acos(dotP/(absA*absB))
+          return sum + rad;
+        }), 0)
+        return deg/(2*Math.PI) >= 1;
+      default:
+        console.warn("unkown collision type:", this.surfaceId, colId, name, collision);
+        return false;
+    }
+  });
+  if(hitCols.length > 0){
+    return hitCols[hitCols.length-1].name;
   }
+  return "";
 }

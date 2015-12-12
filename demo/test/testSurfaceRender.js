@@ -42,11 +42,11 @@ QUnit.test('SurfaceRender#clear', function (assert) {
         var alpha, cnv, ctx, imagedata, png, render;
         png = arg[0];
         render = new SurfaceRender();
-        render.base({
+        render.base(SurfaceUtil.pna({
             cnv: null,
             png: png,
             pna: null
-        });
+        }));
         cnv = render.cnv, ctx = render.ctx;
         ctx.fillStyle = 'black';
         ctx.rect(10, 10, 80, 80);
@@ -69,11 +69,11 @@ QUnit.test('SurfaceRender#base', function (assert) {
         var cnv, ctx, png, render;
         png = arg[0];
         render = new SurfaceRender();
-        render.base({
+        render.base(SurfaceUtil.pna({
             cnv: null,
             png: png,
             pna: null
-        });
+        }));
         cnv = render.cnv, ctx = render.ctx;
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
             content: 'assert.ok(cnv.width === 182)',
@@ -98,16 +98,16 @@ QUnit.test('SurfaceRender#overlay', function (assert) {
     ]).then(function (arg) {
         var base, base_on_megane_negative_render, base_on_megane_render, frame, img, megane, megane_on_base_negative_render, megane_on_base_render, pna, png;
         img = arg[0], png = arg[1], pna = arg[2];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
-        megane = {
+        });
+        megane = SurfaceUtil.pna({
             cnv: null,
             png: png,
             pna: pna
-        };
+        });
         megane_on_base_render = new SurfaceRender();
         megane_on_base_render.base(base);
         base_on_megane_render = new SurfaceRender();
@@ -175,11 +175,11 @@ QUnit.test('SurfaceRender#overlayfast', function (assert) {
     return Promise.all([SurfaceUtil.fetchImageFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, img, render, transparent;
         img = arg[0];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
+        });
         render = new SurfaceRender();
         render.base(base);
         transparent = render.getSurfaceCanvas();
@@ -198,11 +198,11 @@ QUnit.test('SurfaceRender#interpolate', function (assert) {
     return Promise.all([SurfaceUtil.fetchImageFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, img, render, transparent;
         img = arg[0];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
+        });
         render = new SurfaceRender();
         render.base(base);
         transparent = render.getSurfaceCanvas();
@@ -221,11 +221,11 @@ QUnit.test('SurfaceRender#replace', function (assert) {
     return Promise.all([SurfaceUtil.fetchImageFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, img, render, transparent;
         img = arg[0];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
+        });
         render = new SurfaceRender();
         render.base(base);
         transparent = render.getSurfaceCanvas();
@@ -244,11 +244,11 @@ QUnit.test('SurfaceRender#move', function (assert) {
     return Promise.all([SurfaceUtil.fetchImageFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, img, render;
         img = arg[0];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
+        });
         render = new SurfaceRender();
         render.base(base);
         render.move(50, 50);
@@ -266,11 +266,11 @@ QUnit.test('SurfaceRender#reduce', function (assert) {
     return Promise.all([SurfaceUtil.fetchImageFromURL('src/surface0.png')]).then(function (arg) {
         var base, cnv, ctx, filter, frame, img, render;
         img = arg[0];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
+        });
         cnv = document.createElement('canvas');
         cnv.width = cnv.height = 100;
         ctx = cnv.getContext('2d');
@@ -299,11 +299,11 @@ QUnit.test('SurfaceRender#asis', function (assert) {
     return Promise.all([SurfaceUtil.fetchImageFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, img, render;
         img = arg[0];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
+        });
         render = new SurfaceRender();
         render.base(base);
         render.asis(base, 50, 50);
@@ -325,11 +325,11 @@ QUnit.test('SurfaceRender#composeElements', function (assert) {
     ]).then(function (arg) {
         var base, frame, img, megane, pna, png, render;
         img = arg[0], png = arg[1], pna = arg[2];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
+        });
         megane = {
             cnv: null,
             png: png,
@@ -363,11 +363,11 @@ QUnit.test('SurfaceRender#drawRegions', function (assert) {
     return Promise.all([SurfaceUtil.fetchImageFromURL('src/surface0.png')]).then(function (arg) {
         var base, frame, img, render;
         img = arg[0];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
+        });
         render = new SurfaceRender();
         render.composeElements([{
                 canvas: base,
@@ -477,12 +477,59 @@ QUnit.test('SurfaceRender#drawRegions', function (assert) {
             },
             {
                 is: 11,
-                type: 'circ',
+                type: 'circle',
                 name: 'neji',
-                left: 129,
-                top: 52,
-                right: 151,
-                bottom: 179
+                radius: 5,
+                center_x: 59,
+                center_y: 303
+            },
+            {
+                is: 12,
+                type: 'ellipse',
+                name: 'xxx',
+                left: 73,
+                top: 263,
+                right: 95,
+                bottom: 313
+            },
+            {
+                is: 13,
+                type: 'polygon',
+                name: 'Iron',
+                coordinates: [
+                    {
+                        x: 90,
+                        y: 253
+                    },
+                    {
+                        x: 107,
+                        y: 310
+                    },
+                    {
+                        x: 130,
+                        y: 310
+                    },
+                    {
+                        x: 160,
+                        y: 300
+                    },
+                    {
+                        x: 170,
+                        y: 280
+                    },
+                    {
+                        x: 160,
+                        y: 260
+                    },
+                    {
+                        x: 120,
+                        y: 280
+                    },
+                    {
+                        x: 100,
+                        y: 253
+                    }
+                ]
             }
         ]);
         assert.ok(true);
@@ -502,16 +549,16 @@ QUnit.test('SurfaceRender#overlay negative', function (assert) {
     ]).then(function (arg) {
         var base, frame, img, megane, pna, png, render;
         img = arg[0], png = arg[1], pna = arg[2];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
-        megane = {
+        });
+        megane = SurfaceUtil.pna({
             cnv: null,
             png: png,
             pna: pna
-        };
+        });
         render = new SurfaceRender();
         render.debug = true;
         render.composeElements([
@@ -556,16 +603,16 @@ QUnit.test('SurfaceRender#overlay base on megane', function (assert) {
     ]).then(function (arg) {
         var base, frame, img, megane, pna, png, render;
         img = arg[0], png = arg[1], pna = arg[2];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
-        megane = {
+        });
+        megane = SurfaceUtil.pna({
             cnv: null,
             png: png,
             pna: pna
-        };
+        });
         render = new SurfaceRender();
         render.debug = true;
         render.composeElements([
@@ -598,16 +645,16 @@ QUnit.test('SurfaceRender#overlay base on megane super', function (assert) {
     ]).then(function (arg) {
         var base, frame, img, megane, pna, png, render;
         img = arg[0], png = arg[1], pna = arg[2];
-        base = {
+        base = SurfaceUtil.pna({
             cnv: null,
             png: img,
             pna: null
-        };
-        megane = {
+        });
+        megane = SurfaceUtil.pna({
             cnv: null,
             png: png,
             pna: pna
-        };
+        });
         render = new SurfaceRender();
         render.debug = true;
         render.composeElements([

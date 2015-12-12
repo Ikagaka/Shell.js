@@ -80,13 +80,6 @@ console.info "Worker:", Worker
     .catch (err)-> console.info(err, err.stack); done()
 ###
 
-QUnit.test 'SurfaceUtil.extend', (assert) ->
-  original = {a: 0, b: {c: 0, d: 0}}
-  SurfaceUtil.extend(original, {a: 1, b: {c: 1}})
-  assert.ok original.a is 1
-  assert.ok original.b.c is 1
-  assert.ok original.b.d is 0
-
 QUnit.test 'SurfaceUtil.parseDescript', (assert) ->
   text = """
   charset,Shift_JIS
@@ -211,13 +204,6 @@ QUnit.test "SurfaceUtil.isHit", (assert)->
   assert.ok SurfaceUtil.isHit(cnv, 50, 50) is true
   setPictureFrame(cnv, "SurfaceUtil.isHit cnv")
 
-QUnit.test "SurfaceUtil.offset", (assert)->
-  {left, top, width, height} = SurfaceUtil.offset(document.body)
-  assert.ok 0 < left
-  assert.ok 0 < top
-  assert.ok 0 < width
-  assert.ok 0 < height
-
 QUnit.test "SurfaceUtil.createCanvas", (assert)->
   cnv = SurfaceUtil.createCanvas()
   assert.ok cnv instanceof HTMLCanvasElement
@@ -255,17 +241,6 @@ QUnit.test "SurfaceUtil.getEventPosition", (assert)->
     pageY: 100
   })
 
-QUnit.test "SurfaceUtil.createSurfaceCanvasFromURL, SurfaceUtil.createSurfaceCanvasFromArrayBuffer", (assert)->
-  done = assert.async()
-  SurfaceUtil.createSurfaceCanvasFromURL("src/surface0.png").then (base)->
-    assert.ok base.cnv instanceof HTMLCanvasElement
-    assert.ok base.img instanceof HTMLImageElement
-    assert.ok base.cnv.width is 182
-    assert.ok base.cnv.height is 445
-    assert.ok base.img.width is 182
-    assert.ok base.img.height is 445
-    done()
-
 QUnit.test "SurfaceUtil.init", (assert)->
   done = assert.async()
   SurfaceUtil.fetchImageFromURL("src/surface0.png").then (img)->
@@ -282,10 +257,10 @@ QUnit.test "SurfaceUtil.log", (assert)->
 
 QUnit.test "SurfaceUtil.getRegion", (assert)->
   assert.ok false, "まだ書いてない"
+fastcopy
 
-createSurfaceCanvasDummy
-createSurfaceCanvasFromURL
-createSurfaceCanvasFromArrayBuffer
+fastfind
+chromakey_snipet
 ###
 
 QUnit.test "SurfaceUtil.randomRange", (assert)->

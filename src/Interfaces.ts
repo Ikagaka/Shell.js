@@ -6,7 +6,6 @@ export interface SurfaceCanvas {
   pna: HTMLImageElement; // 色抜き前の素材。SurfaceUtil.pna しないかぎり nullable
 }
 
-
 export interface SurfaceMouseEvent {
   button: number; // マウスのボタン
   offsetX: number; // canvas左上からのx座標
@@ -19,18 +18,23 @@ export interface SurfaceMouseEvent {
   event: JQueryEventObject;
 }
 
-export interface SurfaceLayer extends SurfaceAnimationPattern {
-  mayura: SurfaceAnimationPattern[];
-}
-
 export interface SurfaceTreeNode {
   base:  SurfaceCanvas,
-  elements: SurfaceLayerObject[],
+  elements: SurfaceElement[],
   collisions: SurfaceRegion[],
-  animations: SurfaceAnimation[]
+  animations: SurfaceAnimationEx[]
 }
 
-export interface SurfaceLayerObject {
+export interface SurfaceAnimationEx {
+  interval: string;
+  intervals: [string, string[]][]; // [command, args]
+  options: [string, string[]][]; // [command, args]
+  is: number;
+  patterns: SurfaceAnimationPattern[];
+  regions: SurfaceRegion[];
+}
+
+export interface SurfaceElement {
   canvas: SurfaceCanvas;
   type: string;
   x: number;

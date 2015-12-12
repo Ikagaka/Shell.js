@@ -155,12 +155,6 @@ interface SurfaceMouseEvent {
   * SERIKOアニメーションを再生します。
   * マウスイベントを捕捉します。
 
-#### width: number
-* サーフェスの横幅px
-
-#### height: number
-* サーフェスの縦幅px
-
 #### render(): void
 * サーフェスを再描画します。
 
@@ -177,3 +171,6 @@ interface SurfaceMouseEvent {
 #### talk(): void
 * talkタイミングのカウンタを進め、
   指定回数呼び出されるとtalkタイミングのアニメーションを再生します。
+
+#### getSurfaceSize(): {width: number, height: number}
+* 現在のベースサーフェスの大きさを返します
