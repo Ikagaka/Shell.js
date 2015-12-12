@@ -474,6 +474,15 @@ QUnit.test('SurfaceRender#drawRegions', function (assert) {
                 top: 52,
                 right: 151,
                 bottom: 179
+            },
+            {
+                is: 11,
+                type: 'circ',
+                name: 'neji',
+                left: 129,
+                top: 52,
+                right: 151,
+                bottom: 179
             }
         ]);
         assert.ok(true);

@@ -14,10 +14,10 @@ export default class Shell extends EventEmitter {
   public directory: { [filepath: string]: ArrayBuffer; } // filepathに対応するファイルのArrayBuffer
   public descript: { [key: string]: string; }; // descript.txtをcsvと解釈した時の値
   public attachedSurface: { div: HTMLDivElement, surface: Surface }[]; // 現在このシェルが実DOM上にレンダリングしているcanvasとそのsurface一覧
-  public surfacesTxt: SurfacesTxt; // SurfacesTxt2Yamlの内容
-  public surfaceTree: SurfaceTreeNode[]; // このshell.jsが解釈しているShellのリソースツリー
+  private surfacesTxt: SurfacesTxt; // SurfacesTxt2Yamlの内容
+  private surfaceTree: SurfaceTreeNode[]; // このshell.jsが解釈しているShellのリソースツリー
   private cacheCanvas: { [key: string]: SurfaceCanvas; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
-  public bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
+  private bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
   public enableRegion: boolean;
 
   constructor(directory: { [filepath: string]: ArrayBuffer; }) {

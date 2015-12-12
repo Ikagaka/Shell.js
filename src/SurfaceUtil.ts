@@ -4,7 +4,7 @@ import {SurfaceTreeNode, SurfaceCanvas} from "./Interfaces";
 import Encoding = require("encoding-japanese");
 
 export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
-  var {cnv, png, pna} = srfCnv;
+  let {cnv, png, pna} = srfCnv;
   if (cnv != null) {
     // 色抜き済みだった
     return srfCnv;
@@ -12,8 +12,8 @@ export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
   if (cnv == null && png != null && pna == null){
     // 背景色抜き
     cnv = copy(png);
-    var ctx = cnv.getContext("2d");
-    var imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+    let ctx = cnv.getContext("2d");
+    let imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
     chromakey_snipet(<Uint8ClampedArray><any>imgdata.data);
     ctx.putImageData(imgdata, 0, 0);
     srfCnv.cnv = cnv; // キャッシュに反映
@@ -21,18 +21,18 @@ export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
   }
   if (cnv == null && png != null && pna != null) {
     // pna
-    var cnvA = copy(png);
-    var ctxA = cnvA.getContext("2d");
-    var imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
-    var dataA = imgdataA.data;
-    var cnvB = copy(pna);
-    var ctxB = cnvB.getContext("2d")
-    var imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
-    var dataB = imgdataB.data;
-    for(var y=0; y<cnvB.height; y++){
-      for(var x=0; x<cnvB.width; x++){
-        var iA = x*4 + y*cnvA.width*4; // baseのxy座標とインデックス
-        var iB = x*4 + y*cnvB.width*4; // pnaのxy座標とインデックス
+    let cnvA = copy(png);
+    let ctxA = cnvA.getContext("2d");
+    let imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
+    let dataA = imgdataA.data;
+    let cnvB = copy(pna);
+    let ctxB = cnvB.getContext("2d")
+    let imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
+    let dataB = imgdataB.data;
+    for(let y=0; y<cnvB.height; y++){
+      for(let x=0; x<cnvB.width; x++){
+        let iA = x*4 + y*cnvA.width*4; // baseのxy座標とインデックス
+        let iB = x*4 + y*cnvB.width*4; // pnaのxy座標とインデックス
         dataA[iA+3] = dataB[iB]; // pnaのRの値をpngのalphaチャネルへ代入
       }
     }
@@ -60,9 +60,9 @@ export function createSurfaceCanvasFromArrayBuffer(buffer: ArrayBuffer): Promise
   console.warn("SurfaceUtil.createSurfaceCanvasFromArrayBuffer is deprecated");
   return fetchImageFromArrayBuffer(buffer)
   .then((img)=>{
-    var cnv = copy(img);
-    var ctx = cnv.getContext("2d");
-    var imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+    let cnv = copy(img);
+    let ctx = cnv.getContext("2d");
+    let imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
     chromakey_snipet(<Uint8ClampedArray><any>imgdata.data);
     ctx.putImageData(imgdata, 0, 0);
     return {cnv, img}
@@ -77,8 +77,8 @@ export function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src:
 }
 
 export function chromakey_snipet(data: Uint8ClampedArray): void { // side effect
-  var r = data[0], g = data[1], b = data[2], a = data[3];
-  var i = 0;
+  let r = data[0], g = data[1], b = data[2], a = data[3];
+  let i = 0;
   if (a !== 0) {
     while (i < data.length) {
       if (r === data[i] && g === data[i + 1] && b === data[i + 2]) {
@@ -93,8 +93,8 @@ export function log(element: Element, description=""){
   if(element instanceof HTMLCanvasElement || element instanceof HTMLImageElement){
     description += "("+element.width+"x"+element.height+")";
   }
-  var fieldset = document.createElement('fieldset');
-  var legend = document.createElement('legend');
+  let fieldset = document.createElement('fieldset');
+  let legend = document.createElement('legend');
   legend.appendChild(document.createTextNode(description));
   fieldset.appendChild(legend);
   fieldset.appendChild(element);
@@ -105,7 +105,7 @@ export function log(element: Element, description=""){
 // extend deep like jQuery $.extend(true, target, source)
 export function extend(target: any, source: any): void {
   //console.warn("SurfaceUtil.extend is deprecated", "please use $.extend(true, a, b)");
-  for(var key in source){
+  for(let key in source){
     if (typeof source[key] === "object" && Object.getPrototypeOf(source[key]) === Object.prototype) {
       target[key] = target[key] || {};
       extend(target[key], source[key]);
@@ -122,18 +122,18 @@ export function extend(target: any, source: any): void {
 export function parseDescript(text: string): {[key:string]:string}{
   text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
   while(true){// remove commentout
-    var match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["",""])[0];
+    let match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["",""])[0];
     if(match.length === 0) break;
     text = text.replace(match, "");
   }
-  var lines = text.split("\n");
+  let lines = text.split("\n");
   lines = lines.filter(function(line){ return line.length !== 0; }); // remove no content line
-  var dic = lines.reduce<{[key:string]:string}>(function(dic, line){
-    var tmp = line.split(",");
-    var key = tmp[0];
-    var vals = tmp.slice(1);
+  let dic = lines.reduce<{[key:string]:string}>(function(dic, line){
+    let tmp = line.split(",");
+    let key = tmp[0];
+    let vals = tmp.slice(1);
     key = key.trim();
-    var val = vals.join(",").trim();
+    let val = vals.join(",").trim();
     dic[key] = val;
     return dic;
   }, {});
@@ -144,7 +144,7 @@ export function parseDescript(text: string): {[key:string]:string}{
 export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
   console.warn("SurfaceUtil.fetchArrayBuffer is deprecated");
   return new Promise<ArrayBuffer>(function(resolve, reject) {
-    var xhr = new XMLHttpRequest();
+    let xhr = new XMLHttpRequest();
     xhr.addEventListener("load", function() {
       if (200 <= xhr.status && xhr.status < 300) {
         if (xhr.response.error == null) {
@@ -164,8 +164,8 @@ export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
 
 // XMLHttpRequest, xhr.responseType = "arraybuffer"
 export function getArrayBuffer(url: string, cb: (err: any, buffer: ArrayBuffer)=> any): void {
-  var xhr = new XMLHttpRequest();
-  var _cb = (a: any, b: ArrayBuffer)=>{
+  let xhr = new XMLHttpRequest();
+  let _cb = (a: any, b: ArrayBuffer)=>{
     cb(a, b);
     cb = (a, b)=>{ console.warn("SurfaceUtil.getArrayBuffer", url, a, b); };
   };
@@ -202,8 +202,8 @@ export function convert(buffer: ArrayBuffer):string{
 export function find(paths: string[], filename: string): string[] {
   filename = filename.split("\\").join("/");
   if(filename.slice(0,2) === "./") filename = filename.slice(2);
-  var reg =new RegExp("^"+filename.replace(".", "\.")+"$", "i");
-  var hits = paths.filter((key)=> reg.test(key));
+  let reg =new RegExp("^"+filename.replace(".", "\.")+"$", "i");
+  let hits = paths.filter((key)=> reg.test(key));
   return hits;
 }
 
@@ -211,7 +211,7 @@ export function find(paths: string[], filename: string): string[] {
 export function fastfind(paths: string[], filename: string): string {
   filename = filename.split("\\").join("/");
   if(filename.slice(0,2) === "./") filename = filename.slice(2);
-  var reg = new RegExp("^"+filename.replace(".", "\.")+"$", "i");
+  let reg = new RegExp("^"+filename.replace(".", "\.")+"$", "i");
   for(let i=0; i < paths.length; i++){
     if (reg.test(paths[i])){
       return paths[i];
@@ -230,8 +230,8 @@ export function choice<T>(arr: T[]): T {
 // this copy technic is faster than getImageData full copy, but some pixels are bad copy.
 // see also: http://stackoverflow.com/questions/4405336/how-to-copy-contents-of-one-canvas-to-another-canvas-locally
 export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement {
-  var _copy = document.createElement("canvas");
-  var ctx = <CanvasRenderingContext2D>_copy.getContext("2d");
+  let _copy = document.createElement("canvas");
+  let ctx = <CanvasRenderingContext2D>_copy.getContext("2d");
   _copy.width = cnv.width;
   _copy.height = cnv.height;
   ctx.drawImage(<HTMLCanvasElement>cnv, 0, 0); // type hack
@@ -250,7 +250,7 @@ export function fastcopy(cnv: HTMLCanvasElement|HTMLImageElement, tmpcnv:HTMLCan
 // ArrayBuffer -> HTMLImageElement
 export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string): Promise<HTMLImageElement> {
   console.warn("SurfaceUtil.fetchImageFromArrayBuffer is deprecated");
-  var url = URL.createObjectURL(new Blob([buffer], {type: mimetype || "image/png"}));
+  let url = URL.createObjectURL(new Blob([buffer], {type: mimetype || "image/png"}));
   return fetchImageFromURL(url).then((img)=>{
     URL.revokeObjectURL(url);
     return Promise.resolve(img);
@@ -261,7 +261,7 @@ export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string)
 
 // ArrayBuffer -> HTMLImageElement
 export function getImageFromArrayBuffer(buffer: ArrayBuffer, cb: (err: any, img: HTMLImageElement)=> any): void {
-  var url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
+  let url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
   getImageFromURL(url, (err, img)=>{
     URL.revokeObjectURL(url);
     if (err == null) cb(null, img);
@@ -272,7 +272,7 @@ export function getImageFromArrayBuffer(buffer: ArrayBuffer, cb: (err: any, img:
 // URL -> HTMLImageElement
 export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
   console.warn("SurfaceUtil.fetchImageFromURL is deprecated");
-  var img = new Image();
+  let img = new Image();
   img.src = url;
   return new Promise<HTMLImageElement>((resolve, reject)=>{
     img.addEventListener("load", function() {
@@ -287,7 +287,7 @@ export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
 
 // URL -> HTMLImageElement
 export function getImageFromURL(url: string, cb: (err: any, img: HTMLImageElement)=> any): void {
-  var img = new Image();
+  let img = new Image();
   img.src = url;
   img.addEventListener("load", function() {
     cb(null, img);
@@ -325,16 +325,16 @@ export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
   if(!(x > 0 && y > 0)) return false;
   // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
   if(!(cnv.width > 0 || cnv.height > 0)) return false;
-  var ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
-  var imgdata = ctx.getImageData(0, 0, x, y);
-  var data = imgdata.data;
+  let ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
+  let imgdata = ctx.getImageData(0, 0, x, y);
+  let data = imgdata.data;
   return data[data.length - 1] !== 0;
 }
 
 // $().offset() の移植
 export function offset(element: Element): {left: number, top: number, width: number, height: number} {
   console.warn("SurfaceUtil.offset is deprecated, please use jQuery#offset()");
-  var obj = element.getBoundingClientRect();
+  let obj = element.getBoundingClientRect();
   return {
     left: obj.left + window.pageXOffset,
     top: obj.top + window.pageYOffset,
@@ -345,7 +345,7 @@ export function offset(element: Element): {left: number, top: number, width: num
 
 // 1x1の canvas を作るだけ
 export function createCanvas(): HTMLCanvasElement {
-  var cnv = document.createElement("canvas");
+  let cnv = document.createElement("canvas");
   cnv.width = 1;
   cnv.height = 1;
   return cnv;
@@ -368,20 +368,20 @@ export function unscope(charId: string): number {
 // JQueryEventObject からタッチ・マウスを正規化して座標値を抜き出す便利関数
 export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY: number, clientX: number, clientY: number, screenX: number, screenY: number} {
   if (/^touch/.test(ev.type) && (<TouchEvent>ev.originalEvent).touches.length > 0){
-    var pageX = (<TouchEvent>ev.originalEvent).touches[0].pageX;
-    var pageY = (<TouchEvent>ev.originalEvent).touches[0].pageY;
-    var clientX = (<TouchEvent>ev.originalEvent).touches[0].clientX;
-    var clientY = (<TouchEvent>ev.originalEvent).touches[0].clientY;
-    var screenX = (<TouchEvent>ev.originalEvent).touches[0].screenX;
-    var screenY = (<TouchEvent>ev.originalEvent).touches[0].screenY;
+    let pageX = (<TouchEvent>ev.originalEvent).touches[0].pageX;
+    let pageY = (<TouchEvent>ev.originalEvent).touches[0].pageY;
+    let clientX = (<TouchEvent>ev.originalEvent).touches[0].clientX;
+    let clientY = (<TouchEvent>ev.originalEvent).touches[0].clientY;
+    let screenX = (<TouchEvent>ev.originalEvent).touches[0].screenX;
+    let screenY = (<TouchEvent>ev.originalEvent).touches[0].screenY;
     return {pageX, pageY, clientX, clientY, screenX, screenY};
   }
-  var pageX = ev.pageX;
-  var pageY = ev.pageY;
-  var clientX = ev.clientX;
-  var clientY = ev.clientY;
-  var screenX = ev.screenX;
-  var screenY = ev.screenY;
+  let pageX = ev.pageX;
+  let pageY = ev.pageY;
+  let clientX = ev.clientX;
+  let clientY = ev.clientY;
+  let screenX = ev.screenX;
+  let screenY = ev.screenY;
   return {pageX, pageY, clientX, clientY, screenX, screenY};
 }
 
@@ -395,35 +395,39 @@ export function randomRange(min: number, max: number): number {
 export function getRegion(element: HTMLCanvasElement, surfaceNode: SurfaceTreeNode, offsetX: number, offsetY: number): {isHit:boolean, name:string} {
   // canvas左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べるメソッド
   if(isHit(element, offsetX, offsetY)){
-    var hitCols = surfaceNode.collisions.filter((collision, colId)=>{
-      var {type, name, left, top, right, bottom, coordinates, radius, center_x, center_y} = collision;
-      switch(type){
+    let hitCols = surfaceNode.collisions.filter((collision, colId)=>{
+      let {type, name} = collision;
+      switch(collision.type){
         case "rect":
+          var {left, top, right, bottom} = <SurfaceRegionRect>collision;
           return (left < offsetX && offsetX < right && top < offsetY && offsetY < bottom) ||
                  (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
         case "ellipse":
-          var width = Math.abs(right - left);
-          var height = Math.abs(bottom - top);
+          var {left, top, right, bottom} = <SurfaceRegionEllipse>collision;
+          let width = Math.abs(right - left);
+          let height = Math.abs(bottom - top);
           return Math.pow((offsetX-(left+width/2))/(width/2), 2) +
                  Math.pow((offsetY-(top+height/2))/(height/2), 2) < 1;
         case "circle":
+          let {radius, center_x, center_y} = <SurfaceRegionCircle>collision;
           return Math.pow((offsetX-center_x)/radius, 2)+Math.pow((offsetY-center_y)/radius, 2) < 1;
         case "polygon":
-          var ptC = {x:offsetX, y:offsetY};
-          var tuples = coordinates.reduce(((arr, {x, y}, i)=>{
+          let {coordinates} = <SurfaceRegionPolygon>collision;
+          let ptC = {x:offsetX, y:offsetY};
+          let tuples = coordinates.reduce(((arr, {x, y}, i)=>{
             arr.push([
               coordinates[i],
               (!!coordinates[i+1] ? coordinates[i+1] : coordinates[0])
             ]);
             return arr;
           }), []);
-          var deg = tuples.reduce(((sum, [ptA, ptB])=>{
-            var vctA = [ptA.x-ptC.x, ptA.y-ptC.y];
-            var vctB = [ptB.x-ptC.x, ptB.y-ptC.y];
-            var dotP = vctA[0]*vctB[0] + vctA[1]*vctB[1];
-            var absA = Math.sqrt(vctA.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
-            var absB = Math.sqrt(vctB.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
-            var rad = Math.acos(dotP/(absA*absB))
+          let deg = tuples.reduce(((sum, [ptA, ptB])=>{
+            let vctA = [ptA.x-ptC.x, ptA.y-ptC.y];
+            let vctB = [ptB.x-ptC.x, ptB.y-ptC.y];
+            let dotP = vctA[0]*vctB[0] + vctA[1]*vctB[1];
+            let absA = Math.sqrt(vctA.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
+            let absB = Math.sqrt(vctB.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
+            let rad = Math.acos(dotP/(absA*absB))
             return sum + rad;
           }), 0)
           return deg/(2*Math.PI) >= 1;

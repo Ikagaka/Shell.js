@@ -12,7 +12,7 @@ setPictureFrame = (element, description) ->
 
 QUnit.module 'SurfaceUtil'
 console.info "Worker:", Worker
-if Worker?
+###
   QUnit.test 'chromakey_snipet speed test', (assert) ->
     done = assert.async()
     Promise.all([
@@ -78,6 +78,7 @@ if Worker?
       assert.ok TotalChromakeyTime
       done()
     .catch (err)-> console.info(err, err.stack); done()
+###
 
 QUnit.test 'SurfaceUtil.extend', (assert) ->
   original = {a: 0, b: {c: 0, d: 0}}

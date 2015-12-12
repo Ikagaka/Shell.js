@@ -1306,19 +1306,56 @@ var SurfaceRender = (function () {
         this.ctx.strokeStyle = "#00FF00";
         switch (type) {
             case "rect":
+                this.ctx.beginPath();
                 this.ctx.rect(left, top, right - left, bottom - top);
+                this.ctx.stroke();
                 break;
+            case "ellipse":
+                // 実はctx.ellipseはfirefox対応してない
+                this.drawEllipseWithBezier(left, top, right - left, bottom - top);
+                break;
+            case "circle":
+                this.ctx.beginPath();
+                this.ctx.arc(center_x, center_y, radius, 0, 2 * Math.PI, true);
+                this.ctx.stroke();
+                break;
+            case "polygon":
+                if (coordinates.length <= 0)
+                    break;
+                this.ctx.beginPath();
+                var _l = coordinates[0], startX = _l.x, startY = _l.y;
+                this.ctx.moveTo(startX, startY);
+                for (var i = 1; i < coordinates.length; i++) {
+                    var _m = coordinates[i], x = _m.x, y = _m.y;
+                    this.ctx.lineTo(x, y);
+                }
+                this.ctx.lineTo(startX, startY);
+                this.ctx.stroke();
             default:
                 console.warn("collision shape:", type, "is not draw it region yet");
                 break;
         }
-        this.ctx.stroke();
         this.ctx.font = "35px";
         this.ctx.lineWidth = 4;
         this.ctx.strokeStyle = "white";
         this.ctx.strokeText(type + ":" + name, left + 5, top + 10);
         this.ctx.fillStyle = "black";
         this.ctx.fillText(type + ":" + name, left + 5, top + 10);
+    };
+    SurfaceRender.prototype.drawEllipseWithBezier = function (x, y, w, h) {
+        var kappa = .5522848, ox = (w / 2) * kappa, // control point offset horizontal
+        oy = (h / 2) * kappa, // control point offset vertical
+        xe = x + w, // x-end
+        ye = y + h, // y-end
+        xm = x + w / 2, // x-middle
+        ym = y + h / 2; // y-middle
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, ym);
+        this.ctx.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
+        this.ctx.bezierCurveTo(xm + ox, y, xe, ym - oy, xe, ym);
+        this.ctx.bezierCurveTo(xe, ym + oy, xm + ox, ye, xm, ye);
+        this.ctx.bezierCurveTo(xm - ox, ye, x, ym + oy, x, ym);
+        this.ctx.stroke();
     };
     return SurfaceRender;
 })();
@@ -1707,13 +1744,13 @@ exports.unscope = unscope;
 // JQueryEventObject からタッチ・マウスを正規化して座標値を抜き出す便利関数
 function getEventPosition(ev) {
     if (/^touch/.test(ev.type) && ev.originalEvent.touches.length > 0) {
-        var pageX = ev.originalEvent.touches[0].pageX;
-        var pageY = ev.originalEvent.touches[0].pageY;
-        var clientX = ev.originalEvent.touches[0].clientX;
-        var clientY = ev.originalEvent.touches[0].clientY;
-        var screenX = ev.originalEvent.touches[0].screenX;
-        var screenY = ev.originalEvent.touches[0].screenY;
-        return { pageX: pageX, pageY: pageY, clientX: clientX, clientY: clientY, screenX: screenX, screenY: screenY };
+        var pageX_1 = ev.originalEvent.touches[0].pageX;
+        var pageY_1 = ev.originalEvent.touches[0].pageY;
+        var clientX_1 = ev.originalEvent.touches[0].clientX;
+        var clientY_1 = ev.originalEvent.touches[0].clientY;
+        var screenX_1 = ev.originalEvent.touches[0].screenX;
+        var screenY_1 = ev.originalEvent.touches[0].screenY;
+        return { pageX: pageX_1, pageY: pageY_1, clientX: clientX_1, clientY: clientY_1, screenX: screenX_1, screenY: screenY_1 };
     }
     var pageX = ev.pageX;
     var pageY = ev.pageY;
@@ -1736,19 +1773,23 @@ function getRegion(element, surfaceNode, offsetX, offsetY) {
     // canvas左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べるメソッド
     if (isHit(element, offsetX, offsetY)) {
         var hitCols = surfaceNode.collisions.filter(function (collision, colId) {
-            var type = collision.type, name = collision.name, left = collision.left, top = collision.top, right = collision.right, bottom = collision.bottom, coordinates = collision.coordinates, radius = collision.radius, center_x = collision.center_x, center_y = collision.center_y;
-            switch (type) {
+            var type = collision.type, name = collision.name;
+            switch (collision.type) {
                 case "rect":
+                    var _a = collision, left = _a.left, top = _a.top, right = _a.right, bottom = _a.bottom;
                     return (left < offsetX && offsetX < right && top < offsetY && offsetY < bottom) ||
                         (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
                 case "ellipse":
+                    var _b = collision, left = _b.left, top = _b.top, right = _b.right, bottom = _b.bottom;
                     var width = Math.abs(right - left);
                     var height = Math.abs(bottom - top);
                     return Math.pow((offsetX - (left + width / 2)) / (width / 2), 2) +
                         Math.pow((offsetY - (top + height / 2)) / (height / 2), 2) < 1;
                 case "circle":
+                    var _c = collision, radius = _c.radius, center_x = _c.center_x, center_y = _c.center_y;
                     return Math.pow((offsetX - center_x) / radius, 2) + Math.pow((offsetY - center_y) / radius, 2) < 1;
                 case "polygon":
+                    var coordinates = collision.coordinates;
                     var ptC = { x: offsetX, y: offsetY };
                     var tuples = coordinates.reduce((function (arr, _a, i) {
                         var x = _a.x, y = _a.y;
@@ -1785,6 +1826,7 @@ function getRegion(element, surfaceNode, offsetX, offsetY) {
 exports.getRegion = getRegion;
 
 },{"encoding-japanese":7}],6:[function(require,module,exports){
+/// <reference path="../typings/tsd.d.ts"/>
 var SurfaceRender_1 = require("./SurfaceRender");
 var _SurfaceUtil = require("./SurfaceUtil");
 var Surface_1 = require('./Surface');

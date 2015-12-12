@@ -17,9 +17,6 @@
     }
   },
   "dependencies": {
-    "text-encoding/text-encoding.d.ts": {
-      "ref": "5c3e47967affa3c4128a3875d1664ba206ae1b0f"
-    },
     "encoding-japanese/encoding.d.ts": {
       "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
       "ref": "c0b1301f2011b7a47ef0940dd97b9e9efe89f2e5",
@@ -33,11 +30,11 @@
     "jquery/jquery.d.ts": {
       "ref": "5c3e47967affa3c4128a3875d1664ba206ae1b0f"
     },
-    "touch-events/touch-events.d.ts": {
-      "ref": "5c3e47967affa3c4128a3875d1664ba206ae1b0f"
-    },
     "bluebird/bluebird.d.ts": {
       "ref": "5c3e47967affa3c4128a3875d1664ba206ae1b0f"
+    },
+    "node/node.d.ts": {
+      "ref": "5a8fc5ee71701431e4fdbb80c506e3c13f85a9ff"
     }
   }
 }

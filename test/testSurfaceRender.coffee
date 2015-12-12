@@ -244,9 +244,9 @@ QUnit.test 'SurfaceRender#drawRegions', (assert) ->
       {is: 8, type: "rect", name: "Foot", left: 46, top: 386, right: 87, bottom: 441}
       {is: 9, type: "rect", name: "Foot", left: 116, top: 382, right: 155, bottom: 442}
       {is: 10, type: "rect", name: "Ponytail", left: 129, top: 52, right: 151, bottom: 179}
+      {is: 11, type: "circ", name: "neji", left: 129, top: 52, right: 151, bottom: 179}
     ])
     assert.ok true
-    #assert.ok false, "不定形当たり判定の描画がまだです"
     frame = craetePictureFrame("SurfaceRender#drawRegions")
     frame.add render.cnv, "result"
     frame.add $("<img src='src/drawRegions.png' />")[0], "expected"

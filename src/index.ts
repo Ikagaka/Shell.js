@@ -1,4 +1,4 @@
-
+/// <reference path="../typings/tsd.d.ts"/>
 
 import _SurfaceRender from "./SurfaceRender";
 import * as _SurfaceUtil from "./SurfaceUtil";

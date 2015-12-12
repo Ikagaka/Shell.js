@@ -1,4 +1,4 @@
-
+/// <reference path="../typings/tsd.d.ts"/>
 
 export interface SurfaceCanvas {
   cnv: HTMLCanvasElement; // 色抜き後のサーフェス。初期状態ではnull。使われるごとにキャッシュされる
@@ -19,42 +19,9 @@ export interface SurfaceMouseEvent {
   event: JQueryEventObject;
 }
 
-export interface SurfaceRegion {
-  is: number;
-  name: string;
-  type: string;
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-  radius: number;
-  center_x: number;
-  center_y: number;
-  coordinates: { x: number; y: number; }[];
-}
-
-export interface SurfaceAnimation {
-  is: number;
-  interval: string;
-  option: string;
-  patterns: SurfaceAnimationPattern[];
-}
-
-export interface SurfaceAnimationPattern {
-  animation_ids: number[]; //alternativestart, alternativestop
-  animation_id: string; // insert', 'start', 'stop'
-  type: string;
-  surface: number;
-  wait: string;
-  x: number;
-  y: number;
-}
-
 export interface SurfaceLayer extends SurfaceAnimationPattern {
   mayura: SurfaceAnimationPattern[];
 }
-
-
 
 export interface SurfaceTreeNode {
   base:  SurfaceCanvas,
