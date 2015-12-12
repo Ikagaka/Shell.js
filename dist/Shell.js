@@ -96,12 +96,10 @@ var Shell = (function (_super) {
             this.surfacesTxt = { surfaces: {}, descript: {}, aliases: {}, regions: {} };
         }
         else {
-            surfaces_text_names.forEach(function (filename) {
-                var text = SurfaceUtil.convert(_this.directory[filename]);
-                var srfs = SurfacesTxt2Yaml.txt_to_data(text, { compatible: 'ssp-lazy' });
-                SurfaceUtil.extend(_this.surfacesTxt, srfs);
-            });
-            //{ expand inherit and remove
+            // cat surfaces*.txt
+            var text = surfaces_text_names.reduce(function (text, filename) { return text + SurfaceUtil.convert(_this.directory[filename]); }, "");
+            this.surfacesTxt = SurfacesTxt2Yaml.txt_to_data(text, { compatible: 'ssp-lazy' });
+            // SurfacesTxt2Yamlの継承の expand と remove
             Object.keys(this.surfacesTxt.surfaces).forEach(function (name) {
                 if (typeof _this.surfacesTxt.surfaces[name].is === "number"
                     && Array.isArray(_this.surfacesTxt.surfaces[name].base)) {

@@ -100,12 +100,10 @@ export default class Shell extends EventEmitter {
       console.info("surfaces.txt is not found");
       this.surfacesTxt = <SurfacesTxt>{surfaces:{}, descript: {}, aliases: {}, regions: {}};
     } else {
-      surfaces_text_names.forEach((filename)=> {
-        var text = SurfaceUtil.convert(this.directory[filename]);
-        var srfs = SurfacesTxt2Yaml.txt_to_data(text, {compatible: 'ssp-lazy'});
-        SurfaceUtil.extend(this.surfacesTxt, srfs);
-      });
-      //{ expand inherit and remove
+      // cat surfaces*.txt
+      var text = surfaces_text_names.reduce((text, filename)=> text+SurfaceUtil.convert(this.directory[filename]), "");
+      this.surfacesTxt = SurfacesTxt2Yaml.txt_to_data(text, {compatible: 'ssp-lazy'});
+      // SurfacesTxt2Yamlの継承の expand と remove
       Object.keys(this.surfacesTxt.surfaces).forEach((name)=>{
         if(typeof this.surfacesTxt.surfaces[name].is === "number"
            && Array.isArray(this.surfacesTxt.surfaces[name].base)){
@@ -120,7 +118,7 @@ export default class Shell extends EventEmitter {
           delete this.surfacesTxt.surfaces[name]
         }
       });
-      //}
+      // expand ここまで
     }
     return Promise.resolve(this);
   }
