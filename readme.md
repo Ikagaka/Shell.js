@@ -174,3 +174,6 @@ interface SurfaceMouseEvent {
 
 #### getSurfaceSize(): {width: number, height: number}
 * 現在のベースサーフェスの大きさを返します
+
+#### getBindGroups(): getBindGroups(): {category: string, parts: string, thumbnail: string}[][]
+* bindgroups[charId][bindgroupId] === {category: string, parts: string, thumbnail: string};

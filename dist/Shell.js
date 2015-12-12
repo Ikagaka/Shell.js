@@ -439,6 +439,21 @@ var Shell = (function (_super) {
         });
         this.render();
     };
+    Shell.prototype.getBindGroups = function () {
+        var descript = this.descript;
+        var grep = function (dic, reg) {
+            return Object.keys(dic).filter(function (key) { return reg.test(key); });
+        };
+        var reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)\.name/;
+        var scopes = [];
+        grep(descript, reg).forEach(function (key) {
+            var _a = reg.exec(key), _ = _a[0], charId = _a[1], bindgroupId = _a[2], dflt = _a[3];
+            var _charId = SurfaceUtil.unscope(charId);
+            var _b = descript[key].split(","), category = _b[0], parts = _b[1], thumbnail = _b[2];
+            scopes[_charId][Number(bindgroupId)] = { category: category, parts: parts, thumbnail: thumbnail };
+        });
+        return scopes;
+    };
     return Shell;
 })(EventEmitter);
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -28635,7 +28650,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":12}],45:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.shell.js",
-  "version": "4.2.16",
+  "version": "4.3.0",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "url": "https://github.com/ikagaka/Shell.js",

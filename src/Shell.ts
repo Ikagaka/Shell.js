@@ -432,4 +432,19 @@ export default class Shell extends EventEmitter {
     });
     this.render();
   }
+
+  public getBindGroups(): {category: string, parts: string, thumbnail: string}[][]{
+    let descript = this.descript;
+    let grep = (dic:{[key:string]:any}, reg: RegExp)=>
+      Object.keys(dic).filter((key)=> reg.test(key))
+    let reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)\.name/;
+    let scopes: {category: string, parts: string, thumbnail: string}[][] = [];
+    grep(descript, reg).forEach((key)=>{
+      let [_, charId, bindgroupId, dflt] = reg.exec(key);
+      let _charId = SurfaceUtil.unscope(charId);
+      let [category, parts, thumbnail] = descript[key].split(",");
+      scopes[_charId][Number(bindgroupId)] = {category, parts, thumbnail};
+    });
+    return scopes;
+  }
 }
