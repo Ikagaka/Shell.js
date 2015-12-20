@@ -28705,11 +28705,7 @@ module.exports={
     "coffee-script": "^1.10.0",
     "gulp": "^3.9.0",
     "gulp-coffee": "^2.3.1",
-    "gulp-babel": "^5.2.1",
     "gulp-espower": "^1.0.1",
-    "gulp-rename": "^1.2.2",
-    "gulp-tslint": "^3.3.0",
-    "gulp-typescript": "^2.9.2",
     "typescript": "^1.6.2"
   },
   "bugs": {
