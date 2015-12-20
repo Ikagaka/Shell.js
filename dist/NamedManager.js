@@ -11,8 +11,8 @@
     var clientX, clientY, left, offsetX, offsetY, pageX, pageY, ref, ref1, result, tmp, top, under;
     ref = SurfaceUtil.getEventPosition(ev), clientX = ref.clientX, clientY = ref.clientY, pageX = ref.pageX, pageY = ref.pageY;
     ref1 = $(target).offset(), left = ref1.left, top = ref1.top;
-    offsetX = clientX - (left - window.scrollX);
-    offsetY = clientY - (top - window.scrollY);
+    offsetX = clientX - (left - (window.scrollX || window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft));
+    offsetY = clientY - (top - (window.scrollY || window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop));
     if ($(parent).find(target).length > 0 && target instanceof HTMLCanvasElement && SurfaceUtil.isHit(target, offsetX, offsetY)) {
       eventPropagationSim(target, ev);
       return target;
@@ -32441,7 +32441,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":20}],52:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.namedmanager.js",
-  "version": "4.1.20",
+  "version": "4.1.21",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [
