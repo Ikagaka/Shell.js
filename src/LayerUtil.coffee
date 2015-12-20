@@ -5,9 +5,10 @@ recursiveElementFromPoint = (ev, parent, target)->
   #debug# console.group(ev.type)
   # parentはdelegateする先祖要素
   {clientX, clientY, pageX, pageY} = SurfaceUtil.getEventPosition(ev)
+  {scrollX, scrollY} = SurfaceUtil.getScrollXY()
   {left, top} = $(target).offset()
-  offsetX = clientX - (left - (window.scrollX || window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft)) # window.scrollX は position: fixed; でのclientWidthをとるため
-  offsetY = clientY - (top  - (window.scrollY || window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop))
+  offsetX = clientX - (left - scrollX) # window.scrollX は position: fixed; でのclientWidthをとるため
+  offsetY = clientY - (top  - scrollY)
 
   # targetは先祖要素の子孫かつcanvasかつ不透明
   if ($(parent).find(target).length > 0 && # targetは先祖要素の子孫
@@ -63,7 +64,7 @@ eventPropagationSim = (target, ev)->
         ev.originalEvent["detail"], # detailArg
         ev.screenX, # screenXArg
         ev.screenY, # screenYArg
-        ev.clientX, # clientXArg 
+        ev.clientX, # clientXArg
         ev.clientY, # clientYArg
         ev.ctrlKey, # ctrlKeyArg
         ev.altKey, # altKeyArg

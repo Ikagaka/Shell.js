@@ -81,9 +81,10 @@ class Scope
         "left": ""
         "top": ""
     {top, left}= @$scope.offset()
+    {scrollX, scrollY} = SurfaceUtil.getScrollXY()
     return {
       # なんだよこの座標計算
-      right:  window.innerWidth  - window.scrollX - left - @$surface.width()
-      bottom: window.innerHeight - window.scrollY - top  - @$surface.height()
+      right:  window.innerWidth  - scrollX - left - @$surface.width()
+      bottom: window.innerHeight - scrollY - top  - @$surface.height()
     }
 module.exports = Scope

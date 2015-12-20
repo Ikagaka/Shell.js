@@ -87,8 +87,9 @@ class Named extends EventEmitter
                 {top, left} = $target.offset()
                 {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev.event)
                 # この座標はbody要素直下のfixed座標用
-                relLeft = clientX - (left - window.scrollX) # サーフェス左上を起点としたマウスの相対座標
-                relTop  = clientY - (top  - window.scrollY)
+                {scrollX, scrollY} = SurfaceUtil.getScrollXY()
+                relLeft = clientX - (left - scrollX) # サーフェス左上を起点としたマウスの相対座標
+                relTop  = clientY - (top  - scrollY)
                 if $(@element).children().last()[0] isnt $scope[0]
                   @$named.append($scope) # このnamedの中のscopeの中で最前面に
                 if $(@nmdmgr.element).children().last()[0] isnt @element
