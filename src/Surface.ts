@@ -104,11 +104,11 @@ export default class Surface extends EventEmitter {
   }
 
   private initMouseEvent(): void {
-    let $elm = $(this.element);
+    const $elm = $(this.element);
     let tid:any = null;
     let touchCount = 0;
     let touchStartTime = 0;
-    let tuples: [string, (ev: JQueryEventObject)=> void][] = [];
+    const tuples: [string, (ev: JQueryEventObject)=> void][] = [];
     tuples.push(["contextmenu",(ev)=> this.processMouseEvent(ev, "mouseclick")   ]);
     tuples.push(["click",      (ev)=> this.processMouseEvent(ev, "mouseclick")   ]);
     tuples.push(["dblclick",   (ev)=> this.processMouseEvent(ev, "mousedblclick")]);
@@ -137,25 +137,26 @@ export default class Surface extends EventEmitter {
 
   private processMouseEvent(ev: JQueryEventObject, type:string ): void {// マウスイベントの共通処理
     $(ev.target).css({"cursor": "default"});//これDOMアクセスして重いのでは←mousemoveタイミングで他のライブラリでもっとDOMアクセスしてるし気になるなら計測しろ
-    let {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev);
-    let {left, top} = $(ev.target).offset();
+    const {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev);
+    const {left, top} = $(ev.target).offset();
     // body直下 fixed だけにすべきかうーむ
-    let [baseX, baseY] = this.position !== "fixed" ? [pageX, pageY]: [clientX, clientY];
-    let [_left, _top]  = this.position !== "fixed" ? [left,  top]  : [left - window.scrollX, top - window.scrollY];
-    let basePosY = parseInt($(this.cnv).css("top"), 10);  // overlayでのずれた分を
-    let basePosX = parseInt($(this.cnv).css("left"), 10); // とってくる
-    let offsetX = baseX - _left - basePosX;//canvas左上からのx座標
-    let offsetY = baseY - _top  - basePosY;//canvas左上からのy座標
-    let hit1 = SurfaceUtil.getRegion(this.cnv, this.surfaceNode.collisions, offsetX, offsetY);//透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
-    let hits0 = this.backgrounds.map((_, animId)=>{
+    const {scrollX, scrollY} = SurfaceUtil.getScrollXY();
+    const [baseX, baseY] = this.position !== "fixed" ? [pageX, pageY]: [clientX, clientY];
+    const [_left, _top]  = this.position !== "fixed" ? [left,  top]  : [left - scrollX, top - scrollY];
+    const basePosY = parseInt($(this.cnv).css("top"), 10);  // overlayでのずれた分を
+    const basePosX = parseInt($(this.cnv).css("left"), 10); // とってくる
+    const offsetX = baseX - _left - basePosX;//canvas左上からのx座標
+    const offsetY = baseY - _top  - basePosY;//canvas左上からのy座標
+    const hit1 = SurfaceUtil.getRegion(this.cnv, this.surfaceNode.collisions, offsetX, offsetY);//透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
+    const hits0 = this.backgrounds.map((_, animId)=>{
       return SurfaceUtil.getRegion(this.cnv, this.surfaceNode.animations[animId].regions, offsetX, offsetY);
     });
-    let hits2 = this.layers.map((_, animId)=>{
+    const hits2 = this.layers.map((_, animId)=>{
       return SurfaceUtil.getRegion(this.cnv, this.surfaceNode.animations[animId].regions, offsetX, offsetY);
     });
-    let hits = hits0.concat([hit1], hits2).filter((hit)=> hit !== "");
-    let hit = hits[hits.length-1] || hit1;
-    let custom: SurfaceMouseEvent = {
+    const hits = hits0.concat([hit1], hits2).filter((hit)=> hit !== "");
+    const hit = hits[hits.length-1] || hit1;
+    const custom: SurfaceMouseEvent = {
       "type": type,
       "offsetX": offsetX|0,//float->int
       "offsetY": offsetY|0,//float->int
@@ -177,7 +178,7 @@ export default class Surface extends EventEmitter {
   }
 
   private initAnimation(anim: SurfaceAnimationEx): void {
-    let {is:animId, interval, intervals, patterns, options, regions} = anim;//isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
+    const {is:animId, interval, intervals, patterns, options, regions} = anim;//isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
     if(intervals.some(([interval, args])=> "bind" === interval)){
       // bind+の場合は initBind にまるなげ
       this.initBind(anim);
@@ -190,7 +191,7 @@ export default class Surface extends EventEmitter {
       });
       return;
     }
-    let [_interval, args] = intervals[0];
+    const [_interval, args] = intervals[0];
     if(args.length > 0){
       var n = Number(args[0]);
       if(!isFinite(n)){
@@ -200,7 +201,7 @@ export default class Surface extends EventEmitter {
       }
     }
     // アニメーション描画タイミングの登録
-    let fn = (nextTick: Function) => {
+    const fn = (nextTick: Function) => {
       if (this.destructed) return;
       if (this.stopFlags[animId]) return;
       this.play(animId, nextTick);
@@ -223,7 +224,7 @@ export default class Surface extends EventEmitter {
   }
 
   private initBind(anim: SurfaceAnimationEx): void {
-    let {is:animId, interval, intervals, patterns, options, regions} = anim;
+    const {is:animId, interval, intervals, patterns, options, regions} = anim;
     if (this.isBind(animId)) {
       // 現在有効な bind
       if(intervals.length > 0){
@@ -268,7 +269,7 @@ export default class Surface extends EventEmitter {
   // アニメーションタイミングループの開始要請
   public begin(animationId: number): void {
     this.stopFlags[animationId] = false;
-    let anim = this.surfaceNode.animations[animationId];
+    const anim = this.surfaceNode.animations[animationId];
     this.initAnimation(anim);
     this.render();
   }
@@ -288,28 +289,28 @@ export default class Surface extends EventEmitter {
   // アニメーション再生
   public play(animationId: number, callback?: Function): void {
     if(this.destructed) return;
-    let anims = this.surfaceNode.animations;
-    let anim = this.surfaceNode.animations[animationId];
+    const anims = this.surfaceNode.animations;
+    const anim = this.surfaceNode.animations[animationId];
     if(anim == null){
       console.warn("Surface#play", "animation", animationId, "is not defined");
       return void setTimeout(callback); // そんなアニメーションはない
     }
-    let {is:animId, patterns, options} = anim;
+    const {is:animId, patterns, options} = anim;
     this.animationsQueue[animationId] = patterns.map((pattern, i)=> ()=>{
-      let {surface, wait, type, x, y} = pattern;
+      const {surface, wait, type, x, y} = pattern;
 
       switch(type){
         case "start":
-        case "stop":             let {animation_id} = <SurfaceAnimationPatternInsert>pattern;
+        case "stop":             const {animation_id} = <SurfaceAnimationPatternInsert>pattern;
         case "start":            this.play(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]), nextTick); return;
         case "stop":             this.stop(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1])); setTimeout(nextTick); return;
         case "alternativestart":
-        case "alternativestop":  let {animation_ids} = <SurfaceAnimationPatternAlternative>pattern;
+        case "alternativestop":  const {animation_ids} = <SurfaceAnimationPatternAlternative>pattern;
         case "alternativestart": this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
         case "alternativestop":  this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
       }
-      let [__, a, b] = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]);
-      let _wait = isFinite(Number(b))
+      const [__, a, b] = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]);
+      const _wait = isFinite(Number(b))
                 ? SurfaceUtil.randomRange(Number(a), Number(b))
                 : Number(a);
       setTimeout(()=>{
@@ -321,7 +322,7 @@ export default class Surface extends EventEmitter {
             this.layers[animationId] = [pattern];
           }
         });
-        let canIPlay = this.exclusives.every((exclusive)=> exclusive !== animationId);//自分のanimationIdはexclusivesリストに含まれていない
+        const canIPlay = this.exclusives.every((exclusive)=> exclusive !== animationId);//自分のanimationIdはexclusivesリストに含まれていない
         if(canIPlay){
           this.render();
         }
@@ -344,9 +345,9 @@ export default class Surface extends EventEmitter {
         });
       }
     });
-    let nextTick = ()=>{
+    const nextTick = ()=>{
       if(this.destructed) return;
-      let next = this.animationsQueue[animationId].shift();
+      const next = this.animationsQueue[animationId].shift();
       if(!(next instanceof Function) ){  // アニメーションキューを破棄されてるor これで終わり
         // stop pattern animation.
         this.animationsQueue[animationId] = [];
@@ -366,9 +367,9 @@ export default class Surface extends EventEmitter {
   }
 
   public talk(): void {
-    let animations = this.surfaceNode.animations;
+    const animations = this.surfaceNode.animations;
     this.talkCount++;
-    let hits = animations.filter((anim)=>
+    const hits = animations.filter((anim)=>
         anim.intervals.some(([interval, args])=> "talk" === interval) && this.talkCount % this.talkCounts[anim.is] === 0);
     hits.forEach((anim)=>{
       // そのアニメーションは再生が終了しているか？
@@ -379,7 +380,7 @@ export default class Surface extends EventEmitter {
   }
 
   public yenE(): void {
-    let anims = this.surfaceNode.animations;
+    const anims = this.surfaceNode.animations;
     anims.forEach((anim)=>{
       if (anim.intervals.some(([interval, args])=> interval === "yen-e") ) {
         this.play(anim.is);
@@ -397,15 +398,15 @@ export default class Surface extends EventEmitter {
     let renderLayers: SurfaceElement[] = [];
     layers.forEach((patterns)=>{
       patterns.forEach((pattern)=>{
-        let {surface, type, x, y, wait} = pattern;
+        const {surface, type, x, y, wait} = pattern;
         if(type === "insert"){
           // insertの場合は対象のIDをとってくる
           // animation_id = animationN,x,y
-          let {animation_id} = <SurfaceAnimationPatternInsert>pattern;
-          let animId = Number((/\d+$/.exec(animation_id) || ["", "-1"]));
+          const {animation_id} = <SurfaceAnimationPatternInsert>pattern;
+          const animId = Number((/\d+$/.exec(animation_id) || ["", "-1"]));
           // 対象の着せ替えが有効かどうか判定
           if (!this.isBind(animId)) return;
-          let anim = this.surfaceNode.animations[animId];
+          const anim = this.surfaceNode.animations[animId];
           if(anim == null){
             console.warn("Surface#composeAnimationPatterns",  "insert id", animation_id, "is wrong target.", this.surfaceNode);
             return;
@@ -421,15 +422,15 @@ export default class Surface extends EventEmitter {
           }
           return;
         }
-        let srf = this.surfaceTree[surface]; // 該当のサーフェス
+        const srf = this.surfaceTree[surface]; // 該当のサーフェス
         if(srf == null){
           console.warn("Surface#composeAnimationPatterns", "surface id "+surface + " is not defined.", pattern);
           return; // 対象サーフェスがないのでスキップ
         }
         // 対象サーフェスを構築描画する
-        let {base, elements, collisions, animations} = srf;
-        let bind_backgrounds: SurfaceAnimationPattern[][] = [];
-        let bind_fronts: SurfaceAnimationPattern[][] = [];
+        const {base, elements, collisions, animations} = srf;
+        const bind_backgrounds: SurfaceAnimationPattern[][] = [];
+        const bind_fronts: SurfaceAnimationPattern[][] = [];
         this.bufferRender.reset();
         if(interval === "bind"){
           console.info("Surface#composeAnimationPatterns", "multiple binds detected");
@@ -442,7 +443,7 @@ export default class Surface extends EventEmitter {
           // intervalがbindのときのみ対象サーフェスの着せ替えも有効にする
           // https://github.com/Ikagaka/cuttlebone/issues/23
           animations.forEach((anim)=>{
-            let {is, options, patterns} = anim;
+            const {is, options, patterns} = anim;
             if(this.isBind(is)){
               options.forEach(([option, args])=>{
                 if ("background" === option){
@@ -455,8 +456,8 @@ export default class Surface extends EventEmitter {
           });
         }
         // 循環無視されずスタックオーバーフローします
-        let _bind_backgrounds = this.composeAnimationPatterns(bind_backgrounds, interval);
-        let _bind_fronts = this.composeAnimationPatterns(bind_fronts, interval);
+        const _bind_backgrounds = this.composeAnimationPatterns(bind_backgrounds, interval);
+        const _bind_fronts = this.composeAnimationPatterns(bind_fronts, interval);
         // 対象サーフェスのbaseサーフェス(surface*.png)の上にelementを合成する
         this.bufferRender.composeElements(
           [].concat(
@@ -485,10 +486,10 @@ export default class Surface extends EventEmitter {
 
   public render(): void {
     if(this.destructed) return;
-    let backgrounds = this.composeAnimationPatterns(this.backgrounds);//再生途中のアニメーション含むレイヤ
-    let elements = this.surfaceNode.elements;
-    let base = this.surfaceNode.base;
-    let fronts = this.composeAnimationPatterns(this.layers);//再生途中のアニメーション含むレイヤ
+    const backgrounds = this.composeAnimationPatterns(this.backgrounds);//再生途中のアニメーション含むレイヤ
+    const elements = this.surfaceNode.elements;
+    const base = this.surfaceNode.base;
+    const fronts = this.composeAnimationPatterns(this.layers);//再生途中のアニメーション含むレイヤ
     let baseWidth = 0;
     let baseHeight = 0;
     this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
@@ -510,7 +511,7 @@ export default class Surface extends EventEmitter {
       baseWidth = this.bufferRender.cnv.width;
       baseHeight = this.bufferRender.cnv.height;
     }
-    let composedBase = this.bufferRender.getSurfaceCanvas();
+    const composedBase = this.bufferRender.getSurfaceCanvas();
     // アニメーションレイヤー
     this.bufferRender.composeElements(backgrounds);
     this.bufferRender.composeElements([{type: "overlay", canvas: composedBase, x: 0, y: 0}]); // 現在有効な ベースサーフェスのレイヤを合成

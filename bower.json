@@ -1,10 +1,9 @@
 {
   "name": "ikagaka.shell.js",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "PNG.ts": "legokichi/PNG.ts",
     "duxca.serverworker.js": "legokichi/ServerWorker",

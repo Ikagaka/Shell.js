@@ -13,10 +13,9 @@
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true,
         "outDir": "../lib",
-        "rootDir": "../",
+        "rootDir": "./",
         "listFiles": true,
-        "experimentalDecorators": true,
-        "experimentalAsyncFunctions": true
+        "experimentalDecorators": true
     },
     "compileOnSave": true,
     "formatCodeOptions": {

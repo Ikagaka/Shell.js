@@ -58,6 +58,38 @@ var Shell = (function (_super) {
         }
         return Promise.resolve(this);
     };
+    /*
+    private loadConfig(): Promise<Shell> {
+      // configへ流し込む
+      const descript = this.descript;
+      const grep = (dic:{[key:string]:any}, reg: RegExp)=> Object.keys(dic).filter((key)=> reg.test(key));
+      const regs = [
+        { reg: /^(sakura|kero|char\d+)\.bindgroup(\d+)\.default\,(.+)/,
+          match: (results: string[])=>{
+            const [_, charId, bindgroupId, value] = results;
+            const _charId = SurfaceUtil.unscope(charId);
+            const _bindgroupId = Number(bindgroupId);
+            const _value = !!Number(value);
+            this.config.char[_charId] = this.config.char[_charId] || SurfaceUtil.initConfigCharN();
+            this.config.char[_charId][_bindgroupId] = _value;
+        }},
+        { reg: /^(sakura|kero|char\d+)\.bindgroup(\d+)\.name\,([^,]+)\,([^,]+)\,([^,]+)/,
+          match: (results: string[])=>{
+            const [_, charId, bindgroupId, category, parts, thumbnail] = results;
+            const _charId = SurfaceUtil.unscope(charId);
+            const _bindgroupId = Number(bindgroupId);
+            const _category = category.trim();
+            const _parts = parts.trim();
+            const _thumbnail = thumbnail.trim();
+        }}
+      ]
+      regs.forEach(({reg, match})=>{
+        grep(this.descript, reg).forEach((key)=>{
+          match(reg.exec(key));
+        });
+      });
+      return Promise.resolve(this);
+    }*/
     // descript.txtからbindgroup探してデフォルト値を反映
     Shell.prototype.loadBindGroup = function () {
         var _this = this;
@@ -120,7 +152,7 @@ var Shell = (function (_super) {
             if (typeof this.surfacesTxt.descript["collision-sort"] === "string") {
                 console.warn("Shell#loadSurfacesTxt", "collision-sort is not supported yet.");
             }
-            if (typeof this.surfacesTxt.descript["collision-sort"] === "string") {
+            if (typeof this.surfacesTxt.descript["animation-sort"] === "string") {
                 console.warn("Shell#loadSurfacesTxt", "animation-sort is not supported yet.");
             }
         }
@@ -576,8 +608,9 @@ var Surface = (function (_super) {
         var _a = SurfaceUtil.getEventPosition(ev), pageX = _a.pageX, pageY = _a.pageY, clientX = _a.clientX, clientY = _a.clientY;
         var _b = $(ev.target).offset(), left = _b.left, top = _b.top;
         // body直下 fixed だけにすべきかうーむ
-        var _c = this.position !== "fixed" ? [pageX, pageY] : [clientX, clientY], baseX = _c[0], baseY = _c[1];
-        var _d = this.position !== "fixed" ? [left, top] : [left - window.scrollX, top - window.scrollY], _left = _d[0], _top = _d[1];
+        var _c = SurfaceUtil.getScrollXY(), scrollX = _c.scrollX, scrollY = _c.scrollY;
+        var _d = this.position !== "fixed" ? [pageX, pageY] : [clientX, clientY], baseX = _d[0], baseY = _d[1];
+        var _e = this.position !== "fixed" ? [left, top] : [left - scrollX, top - scrollY], _left = _e[0], _top = _e[1];
         var basePosY = parseInt($(this.cnv).css("top"), 10); // overlayでのずれた分を
         var basePosX = parseInt($(this.cnv).css("left"), 10); // とってくる
         var offsetX = baseX - _left - basePosX; //canvas左上からのx座標
@@ -1377,12 +1410,12 @@ function pna(srfCnv) {
     }
     if (cnv == null && png != null && pna == null) {
         // 背景色抜き
-        cnv = copy(png);
-        var ctx = cnv.getContext("2d");
-        var imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+        var cnvA = copy(png);
+        var ctxA = cnvA.getContext("2d");
+        var imgdata = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
         chromakey_snipet(imgdata.data);
-        ctx.putImageData(imgdata, 0, 0);
-        srfCnv.cnv = cnv; // キャッシュに反映
+        ctxA.putImageData(imgdata, 0, 0);
+        srfCnv.cnv = cnvA; // キャッシュに反映
         return srfCnv;
     }
     if (cnv == null && png != null && pna != null) {
@@ -1403,33 +1436,13 @@ function pna(srfCnv) {
             }
         }
         ctxA.putImageData(imgdataA, 0, 0);
-        cnv = cnvA;
-        srfCnv.cnv = cnv; // キャッシュに反映
+        srfCnv.cnv = cnvA; // キャッシュに反映
         return srfCnv;
     }
     // png, cnv が null なのは element だけで構成されたサーフェスの dummy base
     return srfCnv;
 }
 exports.pna = pna;
-function createSurfaceCanvasFromURL(url) {
-    console.warn("SurfaceUtil.createSurfaceCanvasFromURL is deprecated");
-    return fetchArrayBuffer(url)
-        .then(createSurfaceCanvasFromArrayBuffer);
-}
-exports.createSurfaceCanvasFromURL = createSurfaceCanvasFromURL;
-function createSurfaceCanvasFromArrayBuffer(buffer) {
-    console.warn("SurfaceUtil.createSurfaceCanvasFromArrayBuffer is deprecated");
-    return fetchImageFromArrayBuffer(buffer)
-        .then(function (img) {
-        var cnv = copy(img);
-        var ctx = cnv.getContext("2d");
-        var imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
-        chromakey_snipet(imgdata.data);
-        ctx.putImageData(imgdata, 0, 0);
-        return { cnv: cnv, img: img };
-    });
-}
-exports.createSurfaceCanvasFromArrayBuffer = createSurfaceCanvasFromArrayBuffer;
 function init(cnv, ctx, src) {
     cnv.width = src.width;
     cnv.height = src.height;
@@ -1474,14 +1487,12 @@ function parseDescript(text) {
         text = text.replace(match, "");
     }
     var lines = text.split("\n");
-    lines = lines.filter(function (line) { return line.length !== 0; }); // remove no content line
-    var dic = lines.reduce(function (dic, line) {
-        var tmp = line.split(",");
-        var key = tmp[0];
-        var vals = tmp.slice(1);
-        key = key.trim();
+    var _lines = lines.filter(function (line) { return line.length !== 0; }); // remove no content line
+    var dic = _lines.reduce(function (dic, line) {
+        var _a = line.split(","), key = _a[0], vals = _a.slice(1);
+        var _key = key.trim();
         var val = vals.join(",").trim();
-        dic[key] = val;
+        dic[_key] = val;
         return dic;
     }, {});
     return dic;
@@ -1772,6 +1783,13 @@ function getRegion(element, collisions, offsetX, offsetY) {
     return "";
 }
 exports.getRegion = getRegion;
+function getScrollXY() {
+    return {
+        scrollX: window.scrollX || window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft,
+        scrollY: window.scrollY || window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop
+    };
+}
+exports.getScrollXY = getScrollXY;
 
 },{"encoding-japanese":7}],6:[function(require,module,exports){
 /// <reference path="../typings/tsd.d.ts"/>
@@ -28650,7 +28668,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":12}],45:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.shell.js",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "url": "https://github.com/ikagaka/Shell.js",
@@ -28664,9 +28682,9 @@ module.exports={
     "init": "npm run update; npm run build",
     "update": "rm -rf bower_components typeings; npm update; bower update; dtsm fetch; dtsm update --save",
     "clean": "rm lib/*.js dist/*.js demo/test/*.js",
-    "start": "http-server --silent -p 8000 & gulp watch & watchify lib/index.js --standalone Shell -o dist/Shell.js -v",
+    "start": "http-server --silent -p 8000 & tsc -w -p src & gulp watch & watchify lib/index.js --standalone Shell -o dist/Shell.js -v",
     "stop": "killall -- node */http-server -p 8000",
-    "build": "npm run clean; gulp build; browserify lib/index.js --outfile dist/Shell.js --standalone Shell",
+    "build": "npm run clean; tsc -p ./src; gulp; browserify lib/index.js --outfile dist/Shell.js --standalone Shell",
     "dtsm-fetch": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git fetch",
     "dtsm-search": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline search",
     "dtsm-update": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline update",
@@ -28697,7 +28715,7 @@ module.exports={
   "bugs": {
     "url": "https://github.com/Ikagaka/Shell.js/issues"
   },
-  "typings": "./lib/src/index.d.ts",
+  "typings": "./lib/index.d.ts",
   "main": "./lib/index.js",
   "author": "Ikagaka",
   "contributors": [

@@ -283,3 +283,8 @@ QUnit.test "SurfaceUtil.pna", (assert)->
     assert.ok srfCnv.cnv.height is 90
     setPictureFrame(srfCnv.cnv, "pna")
     done()
+
+QUnit.test "SurfaceUtil.getScrollXY", (assert)->
+  {scrollX, scrollY} = SurfaceUtil.getScrollXY()
+  assert.ok scrollX is 0
+  assert.ok scrollY is 0

@@ -1,6 +1,6 @@
 {
   "name": "ikagaka.shell.js",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "url": "https://github.com/ikagaka/Shell.js",
@@ -14,9 +14,9 @@
     "init": "npm run update; npm run build",
     "update": "rm -rf bower_components typeings; npm update; bower update; dtsm fetch; dtsm update --save",
     "clean": "rm lib/*.js dist/*.js demo/test/*.js",
-    "start": "http-server --silent -p 8000 & gulp watch & watchify lib/index.js --standalone Shell -o dist/Shell.js -v",
+    "start": "http-server --silent -p 8000 & tsc -w -p src & gulp watch & watchify lib/index.js --standalone Shell -o dist/Shell.js -v",
     "stop": "killall -- node */http-server -p 8000",
-    "build": "npm run clean; gulp build; browserify lib/index.js --outfile dist/Shell.js --standalone Shell",
+    "build": "npm run clean; tsc -p ./src; gulp; browserify lib/index.js --outfile dist/Shell.js --standalone Shell",
     "dtsm-fetch": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git fetch",
     "dtsm-search": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline search",
     "dtsm-update": "dtsm --ref master --remote https://gist.github.com/c3d5420057bcb554dc11.git --offline update",
@@ -47,7 +47,7 @@
   "bugs": {
     "url": "https://github.com/Ikagaka/Shell.js/issues"
   },
-  "typings": "./lib/src/index.d.ts",
+  "typings": "./lib/index.d.ts",
   "main": "./lib/index.js",
   "author": "Ikagaka",
   "contributors": [

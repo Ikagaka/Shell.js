@@ -61,9 +61,9 @@ export default class SurfaceRender {
   // ]
   public composeElements(elements: SurfaceElement[]): void {
     // V8による最適化のためfor文に
-    let keys = Object.keys(elements);
+    const keys = Object.keys(elements);
     for(let i=0; i<keys.length; i++){
-      let {canvas, type, x, y} = elements[keys[i]];
+      const {canvas, type, x, y} = elements[keys[i]];
       this.composeElement(canvas, type, x, y);
     }
   }
@@ -115,7 +115,7 @@ export default class SurfaceRender {
 
   private prepareOverlay(part: SurfaceCanvas, x: number, y: number): void {
     // baseのcanvasを拡大するためのキャッシュ
-    let tmp = SurfaceUtil.fastcopy(this.cnv, this.tmpcnv, this.tmpctx);
+    const tmp = SurfaceUtil.fastcopy(this.cnv, this.tmpcnv, this.tmpctx);
     let offsetX = 0;
     let offsetY = 0;
     // もしパーツが右下へはみだす
@@ -222,7 +222,7 @@ export default class SurfaceRender {
   //着せ替え・elementでは使用不可。
   private move(x: number, y: number): void{
     // overlayするためだけのものなのでpngやpnaがnullでもまあ問題ない
-    let srfCnv:SurfaceCanvas = {cnv: SurfaceUtil.copy(this.cnv), png: null, pna: null};
+    const srfCnv:SurfaceCanvas = {cnv: SurfaceUtil.copy(this.cnv), png: null, pna: null};
     this.clear(); // 大きさだけ残して一旦消す
     this.overlay(srfCnv, x, y); //ずらした位置に再描画
   }
@@ -240,17 +240,17 @@ export default class SurfaceRender {
     if(!this.use_self_alpha) part = SurfaceUtil.pna(part);
     // はみ出しちぇっく
     // prepareOverlay はしない
-    let width  = x + part.cnv.width  < this.cnv.width  ? part.cnv.width  : this.cnv.width  - x;
-    let height = y + part.cnv.height < this.cnv.height ? part.cnv.height : this.cnv.height - y;
-    let imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
-    let dataA = imgdataA.data;
-    let ctxB = part.cnv.getContext("2d");
-    let imgdataB = ctxB.getImageData(0, 0, part.cnv.width, part.cnv.height)
-    let dataB = imgdataB.data;
+    const width  = x + part.cnv.width  < this.cnv.width  ? part.cnv.width  : this.cnv.width  - x;
+    const height = y + part.cnv.height < this.cnv.height ? part.cnv.height : this.cnv.height - y;
+    const imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
+    const dataA = imgdataA.data;
+    const ctxB = part.cnv.getContext("2d");
+    const imgdataB = ctxB.getImageData(0, 0, part.cnv.width, part.cnv.height)
+    const dataB = imgdataB.data;
     for(let _y=0; _y<height; _y++){
       for(let _x=0; _x<width; _x++){
-        let iA = (x+_x)*4 + (y+_y)*this.cnv.width*4; // baseのxy座標とインデックス
-        let iB = (_x)*4 + (_y)*part.cnv.width*4;     // partのxy座標とインデックス
+        const iA = (x+_x)*4 + (y+_y)*this.cnv.width*4; // baseのxy座標とインデックス
+        const iB = (_x)*4 + (_y)*part.cnv.width*4;     // partのxy座標とインデックス
         // もしコマが透過ならpartのalphaチャネルでbaseのを上書き
         if(dataB[iB + 3] === 0) dataA[iA + 3] = dataB[iB + 3];
       }
@@ -271,7 +271,7 @@ export default class SurfaceRender {
   }
 
   private drawRegion(region: SurfaceRegion): void {
-    let {type="", name=""} = region;
+    const {type="", name=""} = region;
     this.ctx.lineWidth = 1;
     this.ctx.strokeStyle = "#00FF00";
     switch (type) {
@@ -305,15 +305,15 @@ export default class SurfaceRender {
         this.ctx.stroke();
         break;
       case "polygon":
-        let {coordinates=[]} = <SurfaceRegionPolygon>region;
+        const {coordinates=[]} = <SurfaceRegionPolygon>region;
         if(coordinates.length <= 0) break;
         this.ctx.beginPath();
-        let {x:startX, y:startY} = coordinates[0];
+        const {x:startX, y:startY} = coordinates[0];
         left = startX;
         top = startY;
         this.ctx.moveTo(startX, startY);
         for (let i=1; i<coordinates.length; i++){
-          let {x, y} = coordinates[i];
+          const {x, y} = coordinates[i];
           this.ctx.lineTo(x, y);
         }
         this.ctx.lineTo(startX, startY);
@@ -333,7 +333,7 @@ export default class SurfaceRender {
 
   // ctx.ellipseは非標準
   private drawEllipseWithBezier(x: number, y: number, w: number, h: number): void {
-    let kappa = .5522848,
+    const kappa = .5522848,
         ox = (w / 2) * kappa, // control point offset horizontal
         oy = (h / 2) * kappa, // control point offset vertical
         xe = x + w,           // x-end

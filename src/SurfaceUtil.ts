@@ -4,65 +4,46 @@ import {SurfaceTreeNode, SurfaceCanvas} from "./Interfaces";
 import Encoding = require("encoding-japanese");
 
 export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
-  let {cnv, png, pna} = srfCnv;
+  const {cnv, png, pna} = srfCnv;
   if (cnv != null) {
     // 色抜き済みだった
     return srfCnv;
   }
   if (cnv == null && png != null && pna == null){
     // 背景色抜き
-    cnv = copy(png);
-    let ctx = cnv.getContext("2d");
-    let imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
+    const cnvA = copy(png);
+    const ctxA = cnvA.getContext("2d");
+    const imgdata = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
     chromakey_snipet(<Uint8ClampedArray><any>imgdata.data);
-    ctx.putImageData(imgdata, 0, 0);
-    srfCnv.cnv = cnv; // キャッシュに反映
+    ctxA.putImageData(imgdata, 0, 0);
+    srfCnv.cnv = cnvA; // キャッシュに反映
     return srfCnv;
   }
   if (cnv == null && png != null && pna != null) {
     // pna
-    let cnvA = copy(png);
-    let ctxA = cnvA.getContext("2d");
-    let imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
-    let dataA = imgdataA.data;
-    let cnvB = copy(pna);
-    let ctxB = cnvB.getContext("2d")
-    let imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
-    let dataB = imgdataB.data;
+    const cnvA = copy(png);
+    const ctxA = cnvA.getContext("2d");
+    const imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
+    const dataA = imgdataA.data;
+    const cnvB = copy(pna);
+    const ctxB = cnvB.getContext("2d")
+    const imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
+    const dataB = imgdataB.data;
     for(let y=0; y<cnvB.height; y++){
       for(let x=0; x<cnvB.width; x++){
-        let iA = x*4 + y*cnvA.width*4; // baseのxy座標とインデックス
-        let iB = x*4 + y*cnvB.width*4; // pnaのxy座標とインデックス
+        const iA = x*4 + y*cnvA.width*4; // baseのxy座標とインデックス
+        const iB = x*4 + y*cnvB.width*4; // pnaのxy座標とインデックス
         dataA[iA+3] = dataB[iB]; // pnaのRの値をpngのalphaチャネルへ代入
       }
     }
     ctxA.putImageData(imgdataA, 0, 0);
-    cnv = cnvA;
-    srfCnv.cnv = cnv; // キャッシュに反映
+    srfCnv.cnv = cnvA; // キャッシュに反映
     return srfCnv;
   }
   // png, cnv が null なのは element だけで構成されたサーフェスの dummy base
   return srfCnv;
 }
 
-export function createSurfaceCanvasFromURL(url: string): Promise<{img:HTMLImageElement, cnv:HTMLCanvasElement}> {
-  console.warn("SurfaceUtil.createSurfaceCanvasFromURL is deprecated");
-  return fetchArrayBuffer(url)
-  .then(createSurfaceCanvasFromArrayBuffer);
-}
-
-export function createSurfaceCanvasFromArrayBuffer(buffer: ArrayBuffer): Promise<{img:HTMLImageElement, cnv:HTMLCanvasElement}> {
-  console.warn("SurfaceUtil.createSurfaceCanvasFromArrayBuffer is deprecated");
-  return fetchImageFromArrayBuffer(buffer)
-  .then((img)=>{
-    let cnv = copy(img);
-    let ctx = cnv.getContext("2d");
-    let imgdata = ctx.getImageData(0, 0, cnv.width, cnv.height);
-    chromakey_snipet(<Uint8ClampedArray><any>imgdata.data);
-    ctx.putImageData(imgdata, 0, 0);
-    return {cnv, img}
-  });
-}
 
 export function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src: HTMLCanvasElement): void {
   cnv.width = src.width;
@@ -72,7 +53,7 @@ export function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src:
 }
 
 export function chromakey_snipet(data: Uint8ClampedArray): void { // side effect
-  let r = data[0], g = data[1], b = data[2], a = data[3];
+  const r = data[0], g = data[1], b = data[2], a = data[3];
   let i = 0;
   if (a !== 0) {
     while (i < data.length) {
@@ -88,8 +69,8 @@ export function log(element: Element, description=""){
   if(element instanceof HTMLCanvasElement || element instanceof HTMLImageElement){
     description += "("+element.width+"x"+element.height+")";
   }
-  let fieldset = document.createElement('fieldset');
-  let legend = document.createElement('legend');
+  const fieldset = document.createElement('fieldset');
+  const legend = document.createElement('legend');
   legend.appendChild(document.createTextNode(description));
   fieldset.appendChild(legend);
   fieldset.appendChild(element);
@@ -101,19 +82,17 @@ export function log(element: Element, description=""){
 export function parseDescript(text: string): {[key:string]:string}{
   text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
   while(true){// remove commentout
-    let match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["",""])[0];
+    const match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["",""])[0];
     if(match.length === 0) break;
     text = text.replace(match, "");
   }
-  let lines = text.split("\n");
-  lines = lines.filter(function(line){ return line.length !== 0; }); // remove no content line
-  let dic = lines.reduce<{[key:string]:string}>(function(dic, line){
-    let tmp = line.split(",");
-    let key = tmp[0];
-    let vals = tmp.slice(1);
-    key = key.trim();
-    let val = vals.join(",").trim();
-    dic[key] = val;
+  const lines = text.split("\n");
+  const _lines = lines.filter(function(line){ return line.length !== 0; }); // remove no content line
+  const dic = _lines.reduce<{[key:string]:string}>(function(dic, line){
+    const [key, ...vals] = line.split(",");
+    const _key = key.trim();
+    const val = vals.join(",").trim();
+    dic[_key] = val;
     return dic;
   }, {});
   return dic;
@@ -131,8 +110,8 @@ export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
 
 // XMLHttpRequest, xhr.responseType = "arraybuffer"
 export function getArrayBuffer(url: string, cb: (err: any, buffer: ArrayBuffer)=> any): void {
-  let xhr = new XMLHttpRequest();
-  let _cb = (a: any, b: ArrayBuffer)=>{
+  const xhr = new XMLHttpRequest();
+  const _cb = (a: any, b: ArrayBuffer)=>{
     cb(a, b);
     cb = (a, b)=>{ console.warn("SurfaceUtil.getArrayBuffer", url, a, b); };
   };
@@ -167,8 +146,8 @@ export function convert(buffer: ArrayBuffer):string{
 export function find(paths: string[], filename: string): string[] {
   filename = filename.split("\\").join("/");
   if(filename.slice(0,2) === "./") filename = filename.slice(2);
-  let reg =new RegExp("^"+filename.replace(".", "\.")+"$", "i");
-  let hits = paths.filter((key)=> reg.test(key));
+  const reg =new RegExp("^"+filename.replace(".", "\.")+"$", "i");
+  const hits = paths.filter((key)=> reg.test(key));
   return hits;
 }
 
@@ -176,7 +155,7 @@ export function find(paths: string[], filename: string): string[] {
 export function fastfind(paths: string[], filename: string): string {
   filename = filename.split("\\").join("/");
   if(filename.slice(0,2) === "./") filename = filename.slice(2);
-  let reg = new RegExp("^"+filename.replace(".", "\.")+"$", "i");
+  const reg = new RegExp("^"+filename.replace(".", "\.")+"$", "i");
   for(let i=0; i < paths.length; i++){
     if (reg.test(paths[i])){
       return paths[i];
@@ -194,8 +173,8 @@ export function choice<T>(arr: T[]): T {
 // this copy technic is faster than getImageData full copy, but some pixels are bad copy.
 // see also: http://stackoverflow.com/questions/4405336/how-to-copy-contents-of-one-canvas-to-another-canvas-locally
 export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement {
-  let _copy = document.createElement("canvas");
-  let ctx = <CanvasRenderingContext2D>_copy.getContext("2d");
+  const _copy = document.createElement("canvas");
+  const ctx = <CanvasRenderingContext2D>_copy.getContext("2d");
   _copy.width = cnv.width;
   _copy.height = cnv.height;
   ctx.drawImage(<HTMLCanvasElement>cnv, 0, 0); // type hack
@@ -222,7 +201,7 @@ export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string)
 
 // ArrayBuffer -> HTMLImageElement
 export function getImageFromArrayBuffer(buffer: ArrayBuffer, cb: (err: any, img: HTMLImageElement)=> any): void {
-  let url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
+  const url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
   getImageFromURL(url, (err, img)=>{
     URL.revokeObjectURL(url);
     if (err == null) cb(null, img);
@@ -242,7 +221,7 @@ export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
 
 // URL -> HTMLImageElement
 export function getImageFromURL(url: string, cb: (err: any, img: HTMLImageElement)=> any): void {
-  let img = new Image();
+  const img = new Image();
   img.src = url;
   img.addEventListener("load", function() {
     cb(null, img);
@@ -280,15 +259,15 @@ export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
   if(!(x > 0 && y > 0)) return false;
   // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
   if(!(cnv.width > 0 || cnv.height > 0)) return false;
-  let ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
-  let imgdata = ctx.getImageData(0, 0, x, y);
-  let data = imgdata.data;
+  const ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
+  const imgdata = ctx.getImageData(0, 0, x, y);
+  const data = imgdata.data;
   return data[data.length - 1] !== 0;
 }
 
 // 1x1の canvas を作るだけ
 export function createCanvas(): HTMLCanvasElement {
-  let cnv = document.createElement("canvas");
+  const cnv = document.createElement("canvas");
   cnv.width = 1;
   cnv.height = 1;
   return cnv;
@@ -311,20 +290,20 @@ export function unscope(charId: string): number {
 // JQueryEventObject からタッチ・マウスを正規化して座標値を抜き出す便利関数
 export function getEventPosition (ev: JQueryEventObject): { pageX: number, pageY: number, clientX: number, clientY: number, screenX: number, screenY: number} {
   if (/^touch/.test(ev.type) && (<TouchEvent>ev.originalEvent).touches.length > 0){
-    let pageX = (<TouchEvent>ev.originalEvent).touches[0].pageX;
-    let pageY = (<TouchEvent>ev.originalEvent).touches[0].pageY;
-    let clientX = (<TouchEvent>ev.originalEvent).touches[0].clientX;
-    let clientY = (<TouchEvent>ev.originalEvent).touches[0].clientY;
-    let screenX = (<TouchEvent>ev.originalEvent).touches[0].screenX;
-    let screenY = (<TouchEvent>ev.originalEvent).touches[0].screenY;
+    const pageX = (<TouchEvent>ev.originalEvent).touches[0].pageX;
+    const pageY = (<TouchEvent>ev.originalEvent).touches[0].pageY;
+    const clientX = (<TouchEvent>ev.originalEvent).touches[0].clientX;
+    const clientY = (<TouchEvent>ev.originalEvent).touches[0].clientY;
+    const screenX = (<TouchEvent>ev.originalEvent).touches[0].screenX;
+    const screenY = (<TouchEvent>ev.originalEvent).touches[0].screenY;
     return {pageX, pageY, clientX, clientY, screenX, screenY};
   }
-  let pageX = ev.pageX;
-  let pageY = ev.pageY;
-  let clientX = ev.clientX;
-  let clientY = ev.clientY;
-  let screenX = ev.screenX;
-  let screenY = ev.screenY;
+  const pageX = ev.pageX;
+  const pageY = ev.pageY;
+  const clientX = ev.clientX;
+  const clientY = ev.clientY;
+  const screenX = ev.screenX;
+  const screenY = ev.screenY;
   return {pageX, pageY, clientX, clientY, screenX, screenY};
 }
 
@@ -338,8 +317,8 @@ export function randomRange(min: number, max: number): number {
 export function getRegion(element: HTMLCanvasElement, collisions: SurfaceRegion[], offsetX: number, offsetY: number): string {
   // canvas左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べるメソッド
 
-  let hitCols = collisions.filter((collision, colId)=>{
-    let {type, name} = collision;
+  const hitCols = collisions.filter((collision, colId)=>{
+    const {type, name} = collision;
     switch(collision.type){
       case "rect":
         var {left, top, right, bottom} = <SurfaceRegionRect>collision;
@@ -347,30 +326,30 @@ export function getRegion(element: HTMLCanvasElement, collisions: SurfaceRegion[
                (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
       case "ellipse":
         var {left, top, right, bottom} = <SurfaceRegionEllipse>collision;
-        let width = Math.abs(right - left);
-        let height = Math.abs(bottom - top);
+        const width = Math.abs(right - left);
+        const height = Math.abs(bottom - top);
         return Math.pow((offsetX-(left+width/2))/(width/2), 2) +
                Math.pow((offsetY-(top+height/2))/(height/2), 2) < 1;
       case "circle":
-        let {radius, center_x, center_y} = <SurfaceRegionCircle>collision;
+        const {radius, center_x, center_y} = <SurfaceRegionCircle>collision;
         return Math.pow((offsetX-center_x)/radius, 2)+Math.pow((offsetY-center_y)/radius, 2) < 1;
       case "polygon":
-        let {coordinates} = <SurfaceRegionPolygon>collision;
-        let ptC = {x:offsetX, y:offsetY};
-        let tuples = coordinates.reduce(((arr, {x, y}, i)=>{
+        const {coordinates} = <SurfaceRegionPolygon>collision;
+        const ptC = {x:offsetX, y:offsetY};
+        const tuples = coordinates.reduce(((arr, {x, y}, i)=>{
           arr.push([
             coordinates[i],
             (!!coordinates[i+1] ? coordinates[i+1] : coordinates[0])
           ]);
           return arr;
         }), []);
-        let deg = tuples.reduce(((sum, [ptA, ptB])=>{
-          let vctA = [ptA.x-ptC.x, ptA.y-ptC.y];
-          let vctB = [ptB.x-ptC.x, ptB.y-ptC.y];
-          let dotP = vctA[0]*vctB[0] + vctA[1]*vctB[1];
-          let absA = Math.sqrt(vctA.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
-          let absB = Math.sqrt(vctB.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
-          let rad = Math.acos(dotP/(absA*absB))
+        const deg = tuples.reduce(((sum, [ptA, ptB])=>{
+          const vctA = [ptA.x-ptC.x, ptA.y-ptC.y];
+          const vctB = [ptB.x-ptC.x, ptB.y-ptC.y];
+          const dotP = vctA[0]*vctB[0] + vctA[1]*vctB[1];
+          const absA = Math.sqrt(vctA.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
+          const absB = Math.sqrt(vctB.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
+          const rad = Math.acos(dotP/(absA*absB))
           return sum + rad;
         }), 0)
         return deg/(2*Math.PI) >= 1;
@@ -383,4 +362,11 @@ export function getRegion(element: HTMLCanvasElement, collisions: SurfaceRegion[
     return hitCols[hitCols.length-1].name;
   }
   return "";
+}
+
+export function getScrollXY(): {scrollX: number, scrollY: number} {
+  return {
+    scrollX: window.scrollX || window.pageXOffset || (<HTMLBodyElement>(document.documentElement || document.body.parentNode || document.body)).scrollLeft,
+    scrollY: window.scrollY || window.pageYOffset || (<HTMLBodyElement>(document.documentElement || document.body.parentNode || document.body)).scrollTop
+  };
 }

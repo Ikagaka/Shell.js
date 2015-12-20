@@ -442,3 +442,17 @@ QUnit.test('SurfaceUtil.pna', function (assert) {
         return done();
     });
 });
+QUnit.test('SurfaceUtil.getScrollXY', function (assert) {
+    var ref, scrollX, scrollY;
+    ref = SurfaceUtil.getScrollXY(), scrollX = ref.scrollX, scrollY = ref.scrollY;
+    assert.ok(assert._expr(assert._capt(assert._capt(scrollX, 'arguments/0/left') === 0, 'arguments/0'), {
+        content: 'assert.ok(scrollX === 0)',
+        filepath: 'test/testSurfaceUtil.js',
+        line: 364
+    }));
+    return assert.ok(assert._expr(assert._capt(assert._capt(scrollY, 'arguments/0/left') === 0, 'arguments/0'), {
+        content: 'assert.ok(scrollY === 0)',
+        filepath: 'test/testSurfaceUtil.js',
+        line: 365
+    }));
+});
