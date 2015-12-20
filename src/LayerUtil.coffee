@@ -52,23 +52,45 @@ eventPropagationSim = (target, ev)->
   ev.preventDefault()
   ev.stopPropagation()
   if /^mouse|contextmenu|click$/.test(ev.type) # マウスイベントをシミュレーション
-    mev = new MouseEvent(ev.type, {
-      screenX: ev.screenX,
-      screenY: ev.screenY,
-      clientX: ev.clientX,
-      clientY: ev.clientY,
-      ctrlKey: ev.ctrlKey,
-      altKey:  ev.altKey,
-      shiftKey:ev.shiftKey,
-      metaKey: ev.metaKey,
-      button:  ev.button,
-      buttons: ev.originalEvent["buttons"],
-      relatedTarget: ev.relatedTarget,
-      view:    ev.originalEvent["view"],
-      detail:  ev.originalEvent["detail"],
-      bubbles: true
-    })
-    target.dispatchEvent(mev)
+    ua = window.navigator.userAgent.toLowerCase()
+    if ua.indexOf("msie") isnt -1 # もしIE
+      mev = document.createEvent("MouseEvent")
+      # https://msdn.microsoft.com/ja-jp/library/ff975292(v=vs.85).aspx
+      mev.initMouseEvent(ev.type,
+        true, # canBubble
+        true, # cancelable
+        ev.originalEvent["view"], # viewArg
+        ev.originalEvent["detail"], # detailArg
+        ev.screenX, # screenXArg
+        ev.screenY, # screenYArg
+        ev.clientX, # clientXArg 
+        ev.clientY, # clientYArg
+        ev.ctrlKey, # ctrlKeyArg
+        ev.altKey, # altKeyArg
+        ev.shiftKey, # shiftKeyArg
+        ev.metaKey, # metaKeyArg
+        ev.button, # buttonArg
+        ev.relatedTarget # relatedTargetArg
+      )
+      target.dispatchEvent(mev)
+    else
+      mev = new MouseEvent(ev.type, {
+        screenX: ev.screenX,
+        screenY: ev.screenY,
+        clientX: ev.clientX,
+        clientY: ev.clientY,
+        ctrlKey: ev.ctrlKey,
+        altKey:  ev.altKey,
+        shiftKey:ev.shiftKey,
+        metaKey: ev.metaKey,
+        button:  ev.button,
+        buttons: ev.originalEvent["buttons"],
+        relatedTarget: ev.relatedTarget,
+        view:    ev.originalEvent["view"],
+        detail:  ev.originalEvent["detail"],
+        bubbles: true
+      })
+      target.dispatchEvent(mev)
   else if /^touch/.test(ev.type) # 地獄のタッチイベントシミュレーション
     ua = window.navigator.userAgent.toLowerCase()
     if !(document.createTouch instanceof Function)
