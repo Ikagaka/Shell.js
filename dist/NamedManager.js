@@ -40,7 +40,7 @@
     ev.stopPropagation();
     if (/^mouse|contextmenu|click$/.test(ev.type)) {
       ua = window.navigator.userAgent.toLowerCase();
-      if (ua.indexOf("msie") !== -1) {
+      if (ua.indexOf("msie") !== -1 || ua.indexOf("trident") !== -1) {
         mev = document.createEvent("MouseEvent");
         mev.initMouseEvent(ev.type, true, true, ev.originalEvent["view"], ev.originalEvent["detail"], ev.screenX, ev.screenY, ev.clientX, ev.clientY, ev.ctrlKey, ev.altKey, ev.shiftKey, ev.metaKey, ev.button, ev.relatedTarget);
         return target.dispatchEvent(mev);
@@ -16637,7 +16637,7 @@ module.exports={
   "_args": [
     [
       "github:ikagaka/Shell.js#master",
-      "/Users/yohsukeino/GitHub/Ikagaka/NamedManager.js"
+      "/home/legokichi/GitHub/NamedManager.js"
     ]
   ],
   "_from": "ikagaka/Shell.js#master",
@@ -16667,10 +16667,10 @@ module.exports={
     "/"
   ],
   "_resolved": "git://github.com/ikagaka/Shell.js.git#7160321a7e3cc4ec64e06d0c21cf3c875f954a6f",
-  "_shasum": "44cb437bfae33c0021dfc7edf58e2bea4166be34",
+  "_shasum": "5dd619f477263d25024867cfb1bc6d366ab95b15",
   "_shrinkwrap": null,
   "_spec": "github:ikagaka/Shell.js#master",
-  "_where": "/Users/yohsukeino/GitHub/Ikagaka/NamedManager.js",
+  "_where": "/home/legokichi/GitHub/NamedManager.js",
   "author": {
     "name": "Ikagaka"
   },
@@ -31387,7 +31387,7 @@ SurfacesTxt2Yaml.Parser = (function() {
       if (!in_scope) {
         if (this.options.charset && (result = line.match(/^\s*charset\s*,\s*(.+)$/))) {
           if (parsed_data.charset != null) {
-            this["throw"]('charset duplication found');
+            this.warnthrow('charset duplication found');
           }
           parsed_data.charset = result[1];
         } else if ((this.options.surface_definition === 'materia' && (result = line.match(/^(?:(descript)|(surface)(\d+(?:,\s*surface\d+)*)|(sakura|kero\d+)\.(surface\.alias))\s*({)?\s*$/))) || (this.options.surface_definition === 'ssp' && (result = line.match(/^\s*(?:(descript)|(surface(?:\.append)?)(!?(?:\d+-)?\d+(?:\s*,\s*(?:surface|!)?(?:\d+-)?\d+)*)|(sakura|kero|char\d+)\.(surface\.alias|cursor|tooltips))\s*({)?\s*$/))) || (this.options.surface_definition === 'ssp-lazy' && (result = line.match(/^\s*(?:(descript)|(surface(?:\.append)?)(.+)|(sakura|kero|char\d+)\.(surface\.alias|cursor|tooltips))\s*({)?\s*$/)))) {
@@ -32441,7 +32441,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":20}],52:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.namedmanager.js",
-  "version": "4.1.19",
+  "version": "4.1.20",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [

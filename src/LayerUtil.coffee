@@ -53,7 +53,7 @@ eventPropagationSim = (target, ev)->
   ev.stopPropagation()
   if /^mouse|contextmenu|click$/.test(ev.type) # マウスイベントをシミュレーション
     ua = window.navigator.userAgent.toLowerCase()
-    if ua.indexOf("msie") isnt -1 # もしIE
+    if ua.indexOf("msie") isnt -1 or ua.indexOf("trident") isnt -1 # もしIE
       mev = document.createEvent("MouseEvent")
       # https://msdn.microsoft.com/ja-jp/library/ff975292(v=vs.85).aspx
       mev.initMouseEvent(ev.type,
