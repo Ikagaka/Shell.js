@@ -110,10 +110,14 @@ document.body.appendChild(cnv2)
 * attachSurfaceしたdivを描画対象から外します。
 * ___サーフェスを変更する前に必ず呼び出してください___
 
+#### bind(category: string, parts: string): void
+* `\![bind,カテゴリ名,パーツ名,1]` 相当
 
 #### bind(scopeId: number, bindgroupId: number): void
 * `scopeId` 番目のキャラクターの`bindgroupId`の着せ替えを着せます。
 
+#### unbind(category: string, parts: string): void
+* `\![bind,カテゴリ名,パーツ名,0]` 相当
 
 #### unbind(scopeId: number, bindgroupId: number): void
 * `scopeId` 番目のキャラクターの`bindgroupId`の着せ替えを脱がせます。
@@ -175,5 +179,5 @@ interface SurfaceMouseEvent {
 #### getSurfaceSize(): {width: number, height: number}
 * 現在のベースサーフェスの大きさを返します
 
-#### getBindGroups(): getBindGroups(): {category: string, parts: string, thumbnail: string}[][]
-* bindgroups[charId][bindgroupId] === {category: string, parts: string, thumbnail: string};
+#### getBindGroups(scopeId: number): {category: string, parts: string, thumbnail: string}[]
+* bindgroup[scopeId]: {category: string, parts: string, thumbnail: string};

@@ -25,6 +25,7 @@ export default class Shell extends EventEmitter {
     super();
 
     this.descript = {};
+    this.config = <ShellConifg>{};
     this.directory = directory;
     this.attachedSurface = [];
     this.surfacesTxt = <SurfacesTxt>{};
@@ -37,6 +38,7 @@ export default class Shell extends EventEmitter {
   public load(): Promise<Shell> {
     return Promise.resolve(this)
     .then(()=> this.loadDescript()) // 1st // ←なにこれ（自問自
+    .then(()=> this.loadConfig())
     .then(()=> this.loadBindGroup()) // 2nd // 依存関係的なやつだと思われ
     .then(()=> this.loadSurfacesTxt()) // 1st
     .then(()=> this.loadSurfaceTable()) // 1st
@@ -66,38 +68,86 @@ export default class Shell extends EventEmitter {
     }
     return Promise.resolve(this);
   }
-  /*
+
   private loadConfig(): Promise<Shell> {
     // configへ流し込む
     const descript = this.descript;
-    const grep = (dic:{[key:string]:any}, reg: RegExp)=> Object.keys(dic).filter((key)=> reg.test(key));
-    const regs = [
-      { reg: /^(sakura|kero|char\d+)\.bindgroup(\d+)\.default\,(.+)/,
-        match: (results: string[])=>{
-          const [_, charId, bindgroupId, value] = results;
-          const _charId = SurfaceUtil.unscope(charId);
-          const _bindgroupId = Number(bindgroupId);
-          const _value = !!Number(value);
-          this.config.char[_charId] = this.config.char[_charId] || SurfaceUtil.initConfigCharN();
-          this.config.char[_charId][_bindgroupId] = _value;
-      }},
-      { reg: /^(sakura|kero|char\d+)\.bindgroup(\d+)\.name\,([^,]+)\,([^,]+)\,([^,]+)/,
-        match: (results: string[])=>{
-          const [_, charId, bindgroupId, category, parts, thumbnail] = results;
-          const _charId = SurfaceUtil.unscope(charId);
-          const _bindgroupId = Number(bindgroupId);
-          const _category = category.trim();
-          const _parts = parts.trim();
-          const _thumbnail = thumbnail.trim();
-      }}
-    ]
-    regs.forEach(({reg, match})=>{
-      grep(this.descript, reg).forEach((key)=>{
-        match(reg.exec(key));
-      });
+    // オートマージ
+    Object.keys(descript).forEach((key)=>{
+      let ptr: any = this.config;
+      const props = key.split(".");
+      for(let i=0; i<props.length; i++){
+        const prop = props[i];
+        const [_prop, num] = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop)||["", "", ""], 1);
+        const _num = Number(num);
+        if(isFinite(_num)){
+          if(!Array.isArray(ptr[_prop])){
+            ptr[_prop] = [];
+          }
+          ptr[_prop][_num] = ptr[_prop][_num] || {};
+          if(i !== props.length-1){
+            ptr = ptr[_prop][_num];
+          }else{
+            if(ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0){
+              // menu, 0 -> menu.value
+              // menu.font...
+              ptr[_prop][_num].value = Number(descript[key]) || descript[key];
+            }else{
+              ptr[_prop][_num] = Number(descript[key]) || descript[key];
+            }
+          }
+        }else{
+          ptr[_prop] = ptr[_prop] || {};
+          if(i !== props.length-1){
+            ptr = ptr[_prop];
+          }else{
+            if(ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0){
+              ptr[_prop].value = Number(descript[key]) || descript[key];
+            }else{
+              ptr[_prop] = Number(descript[key]) || descript[key];
+            }
+          }
+        }
+      }
+    });
+    if(typeof this.config.menu.value === "number"){
+      this.config.menu.value = (+this.config.menu.value) > 0; // number -> boolean
+    }else{
+      this.config.menu.value = true; // default value
+    }
+    this.config.char = this.config.char|| [];
+    // sakura -> char0
+    this.config.char[0] = this.config.char[0] || <any>{};
+    $.extend(true, this.config["char"][0], this.config["sakura"]);
+    delete this.config["sakura"];
+    // kero -> char1
+    this.config.char = this.config.char|| [];
+    this.config.char[1] = this.config.char[1] || <any>{};
+    $.extend(true, this.config.char[1], this.config["kero"]);
+    delete this.config["kero"];
+    // char*
+    this.config.char.forEach((char)=>{
+      // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
+      if(Array.isArray(char.bindgroup)){
+        char.bindgroup.forEach((bindgroup)=>{
+          if(typeof bindgroup.name === "string"){
+            const [category, parts, thumbnail] = (""+bindgroup.name).split(",").map((a)=>a.trim())
+            bindgroup.name = {category, parts, thumbnail};
+          }
+        });
+      }
+      // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
+      if(Array.isArray(char.bindoption)){
+        char.bindoption.forEach((bindoption)=>{
+          if(typeof bindoption.group === "string"){
+            const [category, ...options] = (""+bindoption.group).split(",").map((a)=>a.trim())
+            bindoption.group = {category, options};
+          }
+        });
+      }
     });
     return Promise.resolve(this);
-  }*/
+  }
 
   // descript.txtからbindgroup探してデフォルト値を反映
   private loadBindGroup(): Promise<Shell> {
@@ -418,27 +468,65 @@ export default class Shell extends EventEmitter {
   }
 
   // 着せ替えオン
-  public bind(scopeId: number, bindgroupId: number): void {
-    if(this.bindgroup[scopeId] == null){
-      console.warn("Shell#bind > bindgroup", "scopeId:",scopeId, "bindgroupId:",bindgroupId, "is not defined")
-      return;
+  public bind(category: string, parts: string): void
+  public bind(scopeId: number, bindgroupId: number): void
+  public bind(a: number|string, b: number|string): void {
+    if(typeof a === "number" && typeof b === "number"){
+      const scopeId = a;
+      const bindgroupId = b;
+      if(this.bindgroup[scopeId] == null){
+        console.warn("Shell#bind > bindgroup", "scopeId:",scopeId, "bindgroupId:",bindgroupId, "is not defined")
+        return;
+      }
+      this.bindgroup[scopeId][bindgroupId] = true;
+      this.attachedSurface.forEach(({surface:srf, div})=>{
+        srf.updateBind();
+      });
+    }else if(typeof a === "string" && typeof b === "string"){
+      const _category = a;
+      const _parts = b;
+      this.config.char.forEach((char, scopeId)=>{
+        char.bindgroup.forEach((bindgroup, bindgroupId)=>{
+          const {category, parts} = bindgroup.name;
+          if(_category === category && _parts === parts){
+            this.bind(scopeId, bindgroupId);
+          }
+        });
+      });
+    }else{
+      console.error("Shell#bind", "TypeError:", a, b);
     }
-    this.bindgroup[scopeId][bindgroupId] = true;
-    this.attachedSurface.forEach(({surface:srf, div})=>{
-      srf.updateBind();
-    });
   }
 
   // 着せ替えオフ
-  public unbind(scopeId: number, bindgroupId: number): void {
-    if(this.bindgroup[scopeId] == null){
-      console.warn("Shell#unbind > bindgroup", "scopeId:",scopeId, "bindgroupId:",bindgroupId, "is not defined")
-      return;
+  public unbind(category: string, parts: string): void
+  public unbind(scopeId: number, bindgroupId: number): void
+  public unbind(a: number|string, b: number|string): void {
+    if(typeof a === "number" && typeof b === "number"){
+      const scopeId = a;
+      const bindgroupId = b;
+      if(this.bindgroup[scopeId] == null){
+        console.warn("Shell#unbind > bindgroup", "scopeId:",scopeId, "bindgroupId:",bindgroupId, "is not defined")
+        return;
+      }
+      this.bindgroup[scopeId][bindgroupId] = false;
+      this.attachedSurface.forEach(({surface:srf, div})=>{
+        srf.updateBind();
+      });
+    }else if(typeof a === "string" && typeof b === "string"){
+      const _category = a;
+      const _parts = b;
+      this.config.char.forEach((char, scopeId)=>{
+        char.bindgroup.forEach((bindgroup, bindgroupId)=>{
+          const {category, parts} = bindgroup.name;
+          if(_category === category && _parts === parts){
+            this.unbind(scopeId, bindgroupId);
+          }
+        });
+      });
+    }else{
+      console.error("Shell#unbind", "TypeError:", a, b);
     }
-    this.bindgroup[scopeId][bindgroupId] = false;
-    this.attachedSurface.forEach(({surface:srf, div})=>{
-      srf.updateBind();
-    });
   }
 
   // 全サーフェス強制再描画
@@ -465,19 +553,11 @@ export default class Shell extends EventEmitter {
     });
     this.render();
   }
-
-  public getBindGroups(): {category: string, parts: string, thumbnail: string}[][]{
-    const descript = this.descript;
-    const grep = (dic:{[key:string]:any}, reg: RegExp)=>
-      Object.keys(dic).filter((key)=> reg.test(key))
-    const reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)\.name/;
-    const scopes: {category: string, parts: string, thumbnail: string}[][] = [];
-    grep(descript, reg).forEach((key)=>{
-      const [_, charId, bindgroupId, dflt] = reg.exec(key);
-      const _charId = SurfaceUtil.unscope(charId);
-      const [category, parts, thumbnail] = descript[key].split(",");
-      scopes[_charId][Number(bindgroupId)] = {category, parts, thumbnail};
+  
+  // 着せ替えメニュー用情報ていきょう
+  public getBindGroups(scopeId: number): {category: string, parts: string, thumbnail: string}[] {
+    return this.config.char[scopeId].bindgroup.map((bindgroup, bindgroupId)=>{
+      return bindgroup.name;
     });
-    return scopes;
   }
 }

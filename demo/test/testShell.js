@@ -29,7 +29,7 @@ prmNar.then(function (nanikaDir) {
             top = tmp.top;
             offsetX = pageX - left;
             offsetY = pageY - top;
-            hit = SurfaceUtil.getRegion(srf.element, srf.surfaceNode, offsetX, offsetY);
+            hit = SurfaceUtil.getRegion(srf.element, srf.surfaceNode.collisions, offsetX, offsetY);
             console.log(hit);
             if (hit.isHit) {
                 $(ev.target).css({ 'cursor': 'pointer' });
@@ -313,5 +313,45 @@ prmNar.then(function (nanikaDir) {
             line: 183
         }));
         setPictureFrame(srf, '\u203B透明です\u3002ファイル名エラー補正のテスト\u3002');
+    });
+    QUnit.test('shell#getBindGroups', function (assert) {
+        var arr, expected;
+        arr = shell.getBindGroups(0);
+        expected = {
+            20: {
+                category: '装備',
+                parts: '飛行装備'
+            },
+            30: {
+                category: 'みみ',
+                parts: 'MiSP-[sDA]アンテナ'
+            },
+            31: {
+                category: 'みみ',
+                parts: 'めか'
+            },
+            32: {
+                category: 'みみ',
+                parts: 'ねこ'
+            },
+            50: {
+                category: 'アクセサリ',
+                parts: 'MiSP-[sDA]眼鏡'
+            }
+        };
+        return arr.forEach(function (arg, bindId) {
+            var category, parts;
+            category = arg.category, parts = arg.parts;
+            assert.ok(assert._expr(assert._capt(category = assert._capt(assert._capt(assert._capt(expected, 'arguments/0/right/object/object')[assert._capt(bindId, 'arguments/0/right/object/property')], 'arguments/0/right/object').category, 'arguments/0/right'), 'arguments/0'), {
+                content: 'assert.ok(category = expected[bindId].category)',
+                filepath: 'test/testShell.js',
+                line: 214
+            }));
+            return assert.ok(assert._expr(assert._capt(parts = assert._capt(assert._capt(assert._capt(expected, 'arguments/0/right/object/object')[assert._capt(bindId, 'arguments/0/right/object/property')], 'arguments/0/right/object').parts, 'arguments/0/right'), 'arguments/0'), {
+                content: 'assert.ok(parts = expected[bindId].parts)',
+                filepath: 'test/testShell.js',
+                line: 215
+            }));
+        });
     });
 });

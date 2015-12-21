@@ -6,7 +6,7 @@ export interface ShellConifg {
         alignmenttodesktop: string;
     };
     menu: {
-        hidden: boolean;
+        value: boolean;
         font: {
             name: string;
             height: number;

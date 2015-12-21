@@ -7,7 +7,7 @@ export interface ShellConifg {
     alignmenttodesktop: string; // top|bottom|free, 全体のサーフェスのデフォルト※表示位置情報。 上部に貼り付き | 下部に貼り付き | 自由移動 bottom
   };
   menu: {
-    hidden: boolean; // シェルをゴーストのシェル切り替えメニューに表示しなくなる。false
+    value: boolean; // シェルをゴーストのシェル切り替えメニューに表示しなくなる。false
     font: {
       name: string; // オーナードローメニューに使用するフォント
       height: number; // オーナードローメニューに使用する文字の大きさ。
@@ -84,7 +84,7 @@ export interface ShellConifg {
       name: {
         category: string;
         parts: string;
-        thumbnail: string;
+        thumbnail: string;// HTMLImageElemetにするかも -> やるならgetBindGroupsで
       };
       default: number;
       addid: number; // アニメーションID

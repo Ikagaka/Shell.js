@@ -17,6 +17,7 @@ var Shell = (function (_super) {
     function Shell(directory) {
         _super.call(this);
         this.descript = {};
+        this.config = {};
         this.directory = directory;
         this.attachedSurface = [];
         this.surfacesTxt = {};
@@ -29,6 +30,7 @@ var Shell = (function (_super) {
         var _this = this;
         return Promise.resolve(this)
             .then(function () { return _this.loadDescript(); }) // 1st // ←なにこれ（自問自
+            .then(function () { return _this.loadConfig(); })
             .then(function () { return _this.loadBindGroup(); }) // 2nd // 依存関係的なやつだと思われ
             .then(function () { return _this.loadSurfacesTxt(); }) // 1st
             .then(function () { return _this.loadSurfaceTable(); }) // 1st
@@ -58,38 +60,92 @@ var Shell = (function (_super) {
         }
         return Promise.resolve(this);
     };
-    /*
-    private loadConfig(): Promise<Shell> {
-      // configへ流し込む
-      const descript = this.descript;
-      const grep = (dic:{[key:string]:any}, reg: RegExp)=> Object.keys(dic).filter((key)=> reg.test(key));
-      const regs = [
-        { reg: /^(sakura|kero|char\d+)\.bindgroup(\d+)\.default\,(.+)/,
-          match: (results: string[])=>{
-            const [_, charId, bindgroupId, value] = results;
-            const _charId = SurfaceUtil.unscope(charId);
-            const _bindgroupId = Number(bindgroupId);
-            const _value = !!Number(value);
-            this.config.char[_charId] = this.config.char[_charId] || SurfaceUtil.initConfigCharN();
-            this.config.char[_charId][_bindgroupId] = _value;
-        }},
-        { reg: /^(sakura|kero|char\d+)\.bindgroup(\d+)\.name\,([^,]+)\,([^,]+)\,([^,]+)/,
-          match: (results: string[])=>{
-            const [_, charId, bindgroupId, category, parts, thumbnail] = results;
-            const _charId = SurfaceUtil.unscope(charId);
-            const _bindgroupId = Number(bindgroupId);
-            const _category = category.trim();
-            const _parts = parts.trim();
-            const _thumbnail = thumbnail.trim();
-        }}
-      ]
-      regs.forEach(({reg, match})=>{
-        grep(this.descript, reg).forEach((key)=>{
-          match(reg.exec(key));
+    Shell.prototype.loadConfig = function () {
+        var _this = this;
+        // configへ流し込む
+        var descript = this.descript;
+        // オートマージ
+        Object.keys(descript).forEach(function (key) {
+            var ptr = _this.config;
+            var props = key.split(".");
+            for (var i = 0; i < props.length; i++) {
+                var prop = props[i];
+                var _a = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1), _prop = _a[0], num = _a[1];
+                var _num = Number(num);
+                if (isFinite(_num)) {
+                    if (!Array.isArray(ptr[_prop])) {
+                        ptr[_prop] = [];
+                    }
+                    ptr[_prop][_num] = ptr[_prop][_num] || {};
+                    if (i !== props.length - 1) {
+                        ptr = ptr[_prop][_num];
+                    }
+                    else {
+                        if (ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0) {
+                            // menu, 0 -> menu.value
+                            // menu.font...
+                            ptr[_prop][_num].value = Number(descript[key]) || descript[key];
+                        }
+                        else {
+                            ptr[_prop][_num] = Number(descript[key]) || descript[key];
+                        }
+                    }
+                }
+                else {
+                    ptr[_prop] = ptr[_prop] || {};
+                    if (i !== props.length - 1) {
+                        ptr = ptr[_prop];
+                    }
+                    else {
+                        if (ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0) {
+                            ptr[_prop].value = Number(descript[key]) || descript[key];
+                        }
+                        else {
+                            ptr[_prop] = Number(descript[key]) || descript[key];
+                        }
+                    }
+                }
+            }
         });
-      });
-      return Promise.resolve(this);
-    }*/
+        if (typeof this.config.menu.value === "number") {
+            this.config.menu.value = (+this.config.menu.value) > 0; // number -> boolean
+        }
+        else {
+            this.config.menu.value = true; // default value
+        }
+        this.config.char = this.config.char || [];
+        // sakura -> char0
+        this.config.char[0] = this.config.char[0] || {};
+        $.extend(true, this.config["char"][0], this.config["sakura"]);
+        delete this.config["sakura"];
+        // kero -> char1
+        this.config.char = this.config.char || [];
+        this.config.char[1] = this.config.char[1] || {};
+        $.extend(true, this.config.char[1], this.config["kero"]);
+        delete this.config["kero"];
+        // char*
+        this.config.char.forEach(function (char) {
+            // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
+            if (Array.isArray(char.bindgroup)) {
+                char.bindgroup.forEach(function (bindgroup) {
+                    if (typeof bindgroup.name === "string") {
+                        var _a = ("" + bindgroup.name).split(",").map(function (a) { return a.trim(); }), category = _a[0], parts = _a[1], thumbnail = _a[2];
+                        bindgroup.name = { category: category, parts: parts, thumbnail: thumbnail };
+                    }
+                });
+            }
+            // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
+            if (Array.isArray(char.bindoption)) {
+                char.bindoption.forEach(function (bindoption) {
+                    if (typeof bindoption.group === "string") {
+                        var _a = ("" + bindoption.group).split(",").map(function (a) { return a.trim(); }), category = _a[0], options = _a.slice(1);
+                        bindoption.group = { category: category, options: options };
+                    }
+                });
+            }
+        });
+        return Promise.resolve(this);
+    };
     // descript.txtからbindgroup探してデフォルト値を反映
     Shell.prototype.loadBindGroup = function () {
         var _this = this;
@@ -422,29 +478,67 @@ var Shell = (function (_super) {
     Shell.prototype.hasSurface = function (scopeId, surfaceId) {
         return this.getSurfaceAlias(scopeId, surfaceId) >= 0;
     };
-    // 着せ替えオン
-    Shell.prototype.bind = function (scopeId, bindgroupId) {
-        if (this.bindgroup[scopeId] == null) {
-            console.warn("Shell#bind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
-            return;
+    Shell.prototype.bind = function (a, b) {
+        var _this = this;
+        if (typeof a === "number" && typeof b === "number") {
+            var scopeId = a;
+            var bindgroupId = b;
+            if (this.bindgroup[scopeId] == null) {
+                console.warn("Shell#bind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
+                return;
+            }
+            this.bindgroup[scopeId][bindgroupId] = true;
+            this.attachedSurface.forEach(function (_a) {
+                var srf = _a.surface, div = _a.div;
+                srf.updateBind();
+            });
         }
-        this.bindgroup[scopeId][bindgroupId] = true;
-        this.attachedSurface.forEach(function (_a) {
-            var srf = _a.surface, div = _a.div;
-            srf.updateBind();
-        });
+        else if (typeof a === "string" && typeof b === "string") {
+            var _category = a;
+            var _parts = b;
+            this.config.char.forEach(function (char, scopeId) {
+                char.bindgroup.forEach(function (bindgroup, bindgroupId) {
+                    var _a = bindgroup.name, category = _a.category, parts = _a.parts;
+                    if (_category === category && _parts === parts) {
+                        _this.bind(scopeId, bindgroupId);
+                    }
+                });
+            });
+        }
+        else {
+            console.error("Shell#bind", "TypeError:", a, b);
+        }
     };
-    // 着せ替えオフ
-    Shell.prototype.unbind = function (scopeId, bindgroupId) {
-        if (this.bindgroup[scopeId] == null) {
-            console.warn("Shell#unbind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
-            return;
+    Shell.prototype.unbind = function (a, b) {
+        var _this = this;
+        if (typeof a === "number" && typeof b === "number") {
+            var scopeId = a;
+            var bindgroupId = b;
+            if (this.bindgroup[scopeId] == null) {
+                console.warn("Shell#unbind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
+                return;
+            }
+            this.bindgroup[scopeId][bindgroupId] = false;
+            this.attachedSurface.forEach(function (_a) {
+                var srf = _a.surface, div = _a.div;
+                srf.updateBind();
+            });
         }
-        this.bindgroup[scopeId][bindgroupId] = false;
-        this.attachedSurface.forEach(function (_a) {
-            var srf = _a.surface, div = _a.div;
-            srf.updateBind();
-        });
+        else if (typeof a === "string" && typeof b === "string") {
+            var _category = a;
+            var _parts = b;
+            this.config.char.forEach(function (char, scopeId) {
+                char.bindgroup.forEach(function (bindgroup, bindgroupId) {
+                    var _a = bindgroup.name, category = _a.category, parts = _a.parts;
+                    if (_category === category && _parts === parts) {
+                        _this.unbind(scopeId, bindgroupId);
+                    }
+                });
+            });
+        }
+        else {
+            console.error("Shell#unbind", "TypeError:", a, b);
+        }
     };
     // 全サーフェス強制再描画
     Shell.prototype.render = function () {
@@ -471,20 +565,11 @@ var Shell = (function (_super) {
         });
         this.render();
     };
-    Shell.prototype.getBindGroups = function () {
-        var descript = this.descript;
-        var grep = function (dic, reg) {
-            return Object.keys(dic).filter(function (key) { return reg.test(key); });
-        };
-        var reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)\.name/;
-        var scopes = [];
-        grep(descript, reg).forEach(function (key) {
-            var _a = reg.exec(key), _ = _a[0], charId = _a[1], bindgroupId = _a[2], dflt = _a[3];
-            var _charId = SurfaceUtil.unscope(charId);
-            var _b = descript[key].split(","), category = _b[0], parts = _b[1], thumbnail = _b[2];
-            scopes[_charId][Number(bindgroupId)] = { category: category, parts: parts, thumbnail: thumbnail };
+    // 着せ替えメニュー用情報ていきょう
+    Shell.prototype.getBindGroups = function (scopeId) {
+        return this.config.char[scopeId].bindgroup.map(function (bindgroup, bindgroupId) {
+            return bindgroup.name;
         });
-        return scopes;
     };
     return Shell;
 })(EventEmitter);
@@ -28668,7 +28753,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":12}],45:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.shell.js",
-  "version": "4.3.1",
+  "version": "4.3.2",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "url": "https://github.com/ikagaka/Shell.js",

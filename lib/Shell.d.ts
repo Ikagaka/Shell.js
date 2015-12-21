@@ -24,6 +24,7 @@ export default class Shell extends EventEmitter {
     });
     load(): Promise<Shell>;
     private loadDescript();
+    private loadConfig();
     private loadBindGroup();
     private loadSurfacesTxt();
     private loadSurfaceTable();
@@ -38,14 +39,16 @@ export default class Shell extends EventEmitter {
     unload(): void;
     private getSurfaceAlias(scopeId, surfaceId);
     private hasSurface(scopeId, surfaceId);
+    bind(category: string, parts: string): void;
     bind(scopeId: number, bindgroupId: number): void;
+    unbind(category: string, parts: string): void;
     unbind(scopeId: number, bindgroupId: number): void;
     private render();
     showRegion(): void;
     hideRegion(): void;
-    getBindGroups(): {
+    getBindGroups(scopeId: number): {
         category: string;
         parts: string;
         thumbnail: string;
-    }[][];
+    }[];
 }

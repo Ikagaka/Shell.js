@@ -25,7 +25,7 @@ prmNar.then (nanikaDir) ->
       top = tmp.top
       offsetX = pageX - left
       offsetY = pageY - top
-      hit = SurfaceUtil.getRegion(srf.element, srf.surfaceNode , offsetX, offsetY)
+      hit = SurfaceUtil.getRegion(srf.element, srf.surfaceNode.collisions , offsetX, offsetY)
       console.log(hit)
       if hit.isHit
         $(ev.target).css 'cursor': 'pointer'
@@ -168,6 +168,17 @@ prmNar.then (nanikaDir) ->
     assert.ok $(srf.element).width() == 300
     setPictureFrame srf, '※透明です。ファイル名エラー補正のテスト。'
     return
+  QUnit.test 'shell#getBindGroups', (assert) ->
+    arr = shell.getBindGroups(0);
+    expected =
+      20: {category: "装備", parts: "飛行装備"}
+      30: {category: "みみ", parts: "MiSP-[sDA]アンテナ"}
+      31: {category: "みみ", parts: "めか"}
+      32: {category: "みみ", parts: "ねこ"}
+      50: {category: "アクセサリ", parts: "MiSP-[sDA]眼鏡"}
+    arr.forEach ({category, parts}, bindId)->
+      assert.ok category = expected[bindId].category
+      assert.ok parts = expected[bindId].parts
   return
 
 # ---
