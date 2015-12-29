@@ -1983,9 +1983,7 @@ module.exports = function ($) {
       this.contextmenuHandler = null;
       this.initDOMStructure();
       this.initEventListener();
-      this.scope(0).surface(0);
-      this.scope(1).surface(10);
-      Promise.resolve(this);
+      this.initDefaultSurface();
     }
 
     Named.prototype.initDOMStructure = function() {
@@ -1993,263 +1991,295 @@ module.exports = function ($) {
     };
 
     Named.prototype.initEventListener = function() {
-      (function(_this) {
-        return (function() {
-          $.contextMenu({
-            selector: ".namedMgr .named[namedId=" + _this.namedId + "] .context-menu",
-            build: function($trigger, ev) {
-              var scopeId;
-              ev.preventDefault();
-              scopeId = $trigger.attr("scopeId");
-              if (_this.contextmenuHandler != null) {
-                return _this.contextmenuHandler({
-                  type: "contextmenu",
-                  scopeId: scopeId,
-                  scope: scopeId,
-                  event: ev
-                });
-              } else {
-                return {
-                  items: {
-                    sep1: "---"
-                  }
-                };
-              }
-            }
-          });
-          _this.destructors.push(function() {
-            return _this.$named.find(".context-menu").contextMenu("destroy");
-          });
-        });
-      })(this)();
-      (function(_this) {
-        return (function() {
-          var $target, onmousemove, onmouseup, relLeft, relTop, scopeId;
-          relLeft = relTop = 0;
-          $target = null;
-          scopeId = -1;
-          onmouseup = function() {
-            $target = null;
-            return scopeId = -1;
-          };
-          onmousemove = function(ev) {
-            var $element, alignment, bottom, clientX, clientY, pageX, pageY, ref, right;
-            if ($target == null) {
-              return;
-            }
-            $element = $(_this.scopes[scopeId].element);
-            ref = SurfaceUtil.getEventPosition(ev), pageX = ref.pageX, pageY = ref.pageY, clientX = ref.clientX, clientY = ref.clientY;
-            right = window.innerWidth - clientX - ($element.width() - relLeft);
-            bottom = window.innerHeight - clientY - ($element.height() - relTop);
-            alignment = _this.shell.descript["seriko.alignmenttodesktop"] || _this.shell.descript[(SurfaceUtil.scope(scopeId)) + ".alignmenttodesktop"] || "bottom";
-            switch (alignment) {
-              case "free":
-                break;
-              case "top":
-                console.warn("seriko.alignmenttodesktop, free", "have not been supported yet");
-                break;
-              case "bottom":
-                bottom = 0;
-                break;
-            }
-            return $target.css({
-              right: right,
-              bottom: bottom,
-              top: "",
-              left: ""
-            });
-          };
-          $(document.body).on("mouseup", onmouseup);
-          $(document.body).on("mousemove", onmousemove);
-          $(document.body).on("touchmove", onmousemove);
-          $(document.body).on("touchend", onmouseup);
-          _this.destructors.push(function() {
-            $(document.body).off("mouseup", onmouseup);
-            $(document.body).off("mousemove", onmousemove);
-            $(document.body).off("touchmove", onmousemove);
-            $(document.body).off("touchend", onmouseup);
-            return _this.shell.off("mouse");
-          });
-          _this.shell.on("mouse", function(ev) {
-            var $scope, clientX, clientY, left, pageX, pageY, ref, ref1, ref2, scrollX, scrollY, top;
-            if (ev.transparency === true && ev.type !== "mousemove") {
-              ev.event.preventDefault();
-              recursiveElementFromPoint(ev.event, _this.nmdmgr.element, ev.event.target);
-              return;
-            }
-            switch (ev.button) {
-              case 0:
-                switch (ev.type) {
-                  case "mousedown":
-                    scopeId = ev.scopeId;
-                    $target = $scope = $(_this.scopes[ev.scopeId].element);
-                    ref = $target.offset(), top = ref.top, left = ref.left;
-                    ref1 = SurfaceUtil.getEventPosition(ev.event), pageX = ref1.pageX, pageY = ref1.pageY, clientX = ref1.clientX, clientY = ref1.clientY;
-                    ref2 = SurfaceUtil.getScrollXY(), scrollX = ref2.scrollX, scrollY = ref2.scrollY;
-                    relLeft = clientX - (left - scrollX);
-                    relTop = clientY - (top - scrollY);
-                    if ($(_this.element).children().last()[0] !== $scope[0]) {
-                      _this.$named.append($scope);
-                    }
-                    if ($(_this.nmdmgr.element).children().last()[0] !== _this.element) {
-                      _this.$named.appendTo(_this.nmdmgr.element);
-                    }
-                }
-            }
-            ev.scope = ev.scopeId;
-            _this.emit(ev.type, ev);
-          });
-        });
-      })(this)();
-      (function(_this) {
-        return (function() {
-          var $target, onmousemove, onmouseup, relLeft, relTop, scopeId;
-          relLeft = relTop = 0;
-          $target = null;
-          scopeId = -1;
-          onmouseup = function() {
-            $target = null;
-            return scopeId = -1;
-          };
-          onmousemove = function(ev) {
-            var $scope, clientX, clientY, pageX, pageY, ref, screenX, screenY;
-            if ($target == null) {
-              return;
-            }
-            ref = SurfaceUtil.getEventPosition(ev), pageX = ref.pageX, pageY = ref.pageY, clientX = ref.clientX, clientY = ref.clientY, screenX = ref.screenX, screenY = ref.screenY;
-            $scope = $(_this.scopes[scopeId].element);
-            if (pageX - relLeft + $scope.width() / 2 > 0) {
-              _this.scope(scopeId).blimp().right();
+      this.initContextMenuEvent();
+      this.initShellMouseEvent();
+      this.initBalloonMouseEvent();
+      this.initBalloonSelectEvent();
+      return this.initFileDropEvent();
+    };
+
+    Named.prototype.initDefaultSurface = function() {
+      this.scope(0).surface(0);
+      return this.scope(1).surface(10);
+    };
+
+    Named.prototype.initContextMenuEvent = function() {
+      $.contextMenu({
+        selector: ".namedMgr .named[namedId=" + this.namedId + "] .context-menu",
+        build: (function(_this) {
+          return function($trigger, ev) {
+            var scopeId;
+            ev.preventDefault();
+            scopeId = $trigger.attr("scopeId");
+            if (_this.contextmenuHandler != null) {
+              return _this.contextmenuHandler({
+                type: "contextmenu",
+                scopeId: scopeId,
+                scope: scopeId,
+                event: ev
+              });
             } else {
-              _this.scope(scopeId).blimp().left();
-            }
-            return $target.css({
-              left: pageX - relLeft,
-              top: pageY - relTop,
-              right: "",
-              bottom: ""
-            });
-          };
-          $(document.body).on("mouseup", onmouseup);
-          $(document.body).on("mousemove", onmousemove);
-          $(document.body).on("touchmove", onmousemove);
-          $(document.body).on("touchend", onmouseup);
-          _this.destructors.push(function() {
-            $(document.body).off("mouseup", onmouseup);
-            $(document.body).off("mousemove", onmousemove);
-            $(document.body).off("touchmove", onmousemove);
-            $(document.body).off("touchend", onmouseup);
-            return _this.balloon.off("mouse");
-          });
-          _this.balloon.on("mouse", function(ev) {
-            var $scope, clientX, clientY, left, offsetX, offsetY, pageX, pageY, ref, ref1, screenX, screenY, top;
-            switch (ev.event.button) {
-              case 0:
-                $scope = $(_this.scopes[ev.scopeId].element);
-                switch (ev.type) {
-                  case "mousedown":
-                    scopeId = ev.scopeId;
-                    $scope = $(_this.scopes[ev.scopeId].element);
-                    $target = $scope.find(".blimp");
-                    ref = $target.offset(), top = ref.top, left = ref.left;
-                    offsetY = parseInt($target.css("left"), 10);
-                    offsetX = parseInt($target.css("top"), 10);
-                    ref1 = SurfaceUtil.getEventPosition(ev.event), pageX = ref1.pageX, pageY = ref1.pageY, clientX = ref1.clientX, clientY = ref1.clientY, screenX = ref1.screenX, screenY = ref1.screenY;
-                    relLeft = pageX - offsetY;
-                    relTop = pageY - offsetX;
-                    if ($(_this.element).children().last()[0] !== $scope[0]) {
-                      _this.$named.append($scope);
-                    }
-                    if ($(_this.nmdmgr.element).children().last()[0] !== _this.element) {
-                      _this.$named.appendTo(_this.nmdmgr.element);
-                    }
+              return {
+                items: {
+                  sep1: "---"
                 }
+              };
             }
-            ev.scope = ev.scopeId;
-            switch (ev.type) {
-              case "click":
-                ev.type = "balloonclick";
-                _this.emit("balloonclick", ev);
-                break;
-              case "dblclick":
-                ev.type = "balloondblclick";
-                _this.emit("balloondblclick", ev);
-            }
+          };
+        })(this)
+      });
+      this.destructors.push((function(_this) {
+        return function() {
+          return _this.$named.find(".context-menu").contextMenu("destroy");
+        };
+      })(this));
+    };
+
+    Named.prototype.initShellMouseEvent = function() {
+      var $target, onmousemove, onmouseup, relLeft, relTop, scopeId;
+      relLeft = relTop = 0;
+      $target = null;
+      scopeId = -1;
+      onmouseup = (function(_this) {
+        return function() {
+          $target = null;
+          return scopeId = -1;
+        };
+      })(this);
+      onmousemove = (function(_this) {
+        return function(ev) {
+          var $element, alignment, bottom, clientX, clientY, pageX, pageY, ref, right;
+          if ($target == null) {
+            return;
+          }
+          $element = $(_this.scopes[scopeId].element);
+          ref = SurfaceUtil.getEventPosition(ev), pageX = ref.pageX, pageY = ref.pageY, clientX = ref.clientX, clientY = ref.clientY;
+          right = window.innerWidth - clientX - ($element.width() - relLeft);
+          bottom = window.innerHeight - clientY - ($element.height() - relTop);
+          alignment = _this.shell.descript["seriko.alignmenttodesktop"] || _this.shell.descript[(SurfaceUtil.scope(scopeId)) + ".alignmenttodesktop"] || "bottom";
+          switch (alignment) {
+            case "free":
+              break;
+            case "top":
+              console.warn("seriko.alignmenttodesktop, free", "have not been supported yet");
+              break;
+            case "bottom":
+              bottom = 0;
+              break;
+          }
+          return $target.css({
+            right: right,
+            bottom: bottom,
+            top: "",
+            left: ""
           });
+        };
+      })(this);
+      $(document.body).on("mouseup", onmouseup);
+      $(document.body).on("mousemove", onmousemove);
+      $(document.body).on("touchmove", onmousemove);
+      $(document.body).on("touchend", onmouseup);
+      this.destructors.push((function(_this) {
+        return function() {
+          $(document.body).off("mouseup", onmouseup);
+          $(document.body).off("mousemove", onmousemove);
+          $(document.body).off("touchmove", onmousemove);
+          $(document.body).off("touchend", onmouseup);
+          return _this.shell.off("mouse");
+        };
+      })(this));
+      this.shell.on("mouse", (function(_this) {
+        return function(ev) {
+          var $scope, clientX, clientY, left, pageX, pageY, ref, ref1, ref2, scrollX, scrollY, top;
+          if (ev.transparency === true && ev.type !== "mousemove") {
+            ev.event.preventDefault();
+            recursiveElementFromPoint(ev.event, _this.nmdmgr.element, ev.event.target);
+            return;
+          }
+          switch (ev.button) {
+            case 0:
+              switch (ev.type) {
+                case "mousedown":
+                  scopeId = ev.scopeId;
+                  $target = $scope = $(_this.scopes[ev.scopeId].element);
+                  ref = $target.offset(), top = ref.top, left = ref.left;
+                  ref1 = SurfaceUtil.getEventPosition(ev.event), pageX = ref1.pageX, pageY = ref1.pageY, clientX = ref1.clientX, clientY = ref1.clientY;
+                  ref2 = SurfaceUtil.getScrollXY(), scrollX = ref2.scrollX, scrollY = ref2.scrollY;
+                  relLeft = clientX - (left - scrollX);
+                  relTop = clientY - (top - scrollY);
+                  if ($(_this.element).children().last()[0] !== $scope[0]) {
+                    _this.$named.append($scope);
+                  }
+                  if ($(_this.nmdmgr.element).children().last()[0] !== _this.element) {
+                    _this.$named.appendTo(_this.nmdmgr.element);
+                  }
+              }
+          }
+          ev.scope = ev.scopeId;
+          _this.emit(ev.type, ev);
+        };
+      })(this));
+    };
+
+    Named.prototype.initBalloonMouseEvent = function() {
+      var $target, onmousemove, onmouseup, relLeft, relTop, scopeId;
+      relLeft = relTop = 0;
+      $target = null;
+      scopeId = -1;
+      onmouseup = (function(_this) {
+        return function() {
+          $target = null;
+          return scopeId = -1;
+        };
+      })(this);
+      onmousemove = (function(_this) {
+        return function(ev) {
+          var $scope, clientX, clientY, pageX, pageY, ref, screenX, screenY;
+          if ($target == null) {
+            return;
+          }
+          ref = SurfaceUtil.getEventPosition(ev), pageX = ref.pageX, pageY = ref.pageY, clientX = ref.clientX, clientY = ref.clientY, screenX = ref.screenX, screenY = ref.screenY;
+          $scope = $(_this.scopes[scopeId].element);
+          if (pageX - relLeft + $scope.width() / 2 > 0) {
+            _this.scope(scopeId).blimp().right();
+          } else {
+            _this.scope(scopeId).blimp().left();
+          }
+          return $target.css({
+            left: pageX - relLeft,
+            top: pageY - relTop,
+            right: "",
+            bottom: ""
+          });
+        };
+      })(this);
+      $(document.body).on("mouseup", onmouseup);
+      $(document.body).on("mousemove", onmousemove);
+      $(document.body).on("touchmove", onmousemove);
+      $(document.body).on("touchend", onmouseup);
+      this.destructors.push((function(_this) {
+        return function() {
+          $(document.body).off("mouseup", onmouseup);
+          $(document.body).off("mousemove", onmousemove);
+          $(document.body).off("touchmove", onmousemove);
+          $(document.body).off("touchend", onmouseup);
+          console.log(_this);
+          return _this.balloon.off("mouse");
+        };
+      })(this));
+      this.balloon.on("mouse", (function(_this) {
+        return function(ev) {
+          var $scope, clientX, clientY, left, offsetX, offsetY, pageX, pageY, ref, ref1, screenX, screenY, top;
+          switch (ev.event.button) {
+            case 0:
+              $scope = $(_this.scopes[ev.scopeId].element);
+              switch (ev.type) {
+                case "mousedown":
+                  scopeId = ev.scopeId;
+                  $scope = $(_this.scopes[ev.scopeId].element);
+                  $target = $scope.find(".blimp");
+                  ref = $target.offset(), top = ref.top, left = ref.left;
+                  offsetY = parseInt($target.css("left"), 10);
+                  offsetX = parseInt($target.css("top"), 10);
+                  ref1 = SurfaceUtil.getEventPosition(ev.event), pageX = ref1.pageX, pageY = ref1.pageY, clientX = ref1.clientX, clientY = ref1.clientY, screenX = ref1.screenX, screenY = ref1.screenY;
+                  relLeft = pageX - offsetY;
+                  relTop = pageY - offsetX;
+                  if ($(_this.element).children().last()[0] !== $scope[0]) {
+                    _this.$named.append($scope);
+                  }
+                  if ($(_this.nmdmgr.element).children().last()[0] !== _this.element) {
+                    _this.$named.appendTo(_this.nmdmgr.element);
+                  }
+              }
+          }
+          ev.scope = ev.scopeId;
+          switch (ev.type) {
+            case "click":
+              ev.type = "balloonclick";
+              _this.emit("balloonclick", ev);
+              break;
+            case "dblclick":
+              ev.type = "balloondblclick";
+              _this.emit("balloondblclick", ev);
+          }
+        };
+      })(this));
+    };
+
+    Named.prototype.initBalloonSelectEvent = function() {
+      this.balloon.on("select", (function(_this) {
+        return function(ev) {
+          ev.scope = ev.scopeId;
+          switch (ev.type) {
+            case "choiceselect":
+              _this.emit("choiceselect", ev);
+              break;
+            case "anchorselect":
+              _this.emit("anchorselect", ev);
+          }
+        };
+      })(this));
+      this.destructors.push((function(_this) {
+        return function() {
+          return _this.balloon.off("select");
+        };
+      })(this));
+    };
+
+    Named.prototype.initFileDropEvent = function() {
+      var that;
+      that = this;
+      this.$named.on("dragenter", function(ev) {
+        ev.preventDefault();
+        return ev.stopPropagation();
+      });
+      this.$named.on("dragleave", function(ev) {
+        ev.preventDefault();
+        return ev.stopPropagation();
+      });
+      this.$named.on("dragover", function(ev) {
+        var scopeId;
+        ev.preventDefault();
+        ev.stopPropagation();
+        scopeId = Number($(this).attr("scopeId"));
+        return that.emit("filedropping", {
+          type: "filedropping",
+          scopeId: scopeId,
+          scope: scopeId,
+          event: ev
         });
-      })(this)();
-      (function(_this) {
-        return (function() {
-          _this.balloon.on("select", function(ev) {
-            ev.scope = ev.scopeId;
-            switch (ev.type) {
-              case "choiceselect":
-                _this.emit("choiceselect", ev);
-                break;
-              case "anchorselect":
-                _this.emit("anchorselect", ev);
-            }
-          });
-          _this.destructors.push(function() {
-            return _this.balloon.off("select");
-          });
+      });
+      this.$named.on("drop", ".scope", function(ev) {
+        var scopeId;
+        ev.preventDefault();
+        ev.stopPropagation();
+        scopeId = Number($(this).attr("scopeId"));
+        return that.emit("filedrop", {
+          type: "filedrop",
+          scopeId: scopeId,
+          scope: scopeId,
+          event: ev
         });
-      })(this)();
-      (function(_this) {
-        return (function() {
-          var that;
-          that = _this;
-          _this.$named.on("dragenter", function(ev) {
-            ev.preventDefault();
-            return ev.stopPropagation();
-          });
-          _this.$named.on("dragleave", function(ev) {
-            ev.preventDefault();
-            return ev.stopPropagation();
-          });
-          _this.$named.on("dragover", function(ev) {
-            var scopeId;
-            ev.preventDefault();
-            ev.stopPropagation();
-            scopeId = Number($(this).attr("scopeId"));
-            return that.emit("filedropping", {
-              type: "filedropping",
-              scopeId: scopeId,
-              scope: scopeId,
-              event: ev
-            });
-          });
-          _this.$named.on("drop", ".scope", function(ev) {
-            var scopeId;
-            ev.preventDefault();
-            ev.stopPropagation();
-            scopeId = Number($(this).attr("scopeId"));
-            return that.emit("filedrop", {
-              type: "filedrop",
-              scopeId: scopeId,
-              scope: scopeId,
-              event: ev
-            });
-          });
-          _this.destructors.push(function() {
-            _this.$named.off("dragenter");
-            _this.$named.off("dragleave");
-            _this.$named.off("dragover");
-            return _this.$named.off("drop");
-          });
-        });
-      })(this)();
+      });
+      this.destructors.push((function(_this) {
+        return function() {
+          _this.$named.off("dragenter");
+          _this.$named.off("dragleave");
+          _this.$named.off("dragover");
+          return _this.$named.off("drop");
+        };
+      })(this));
     };
 
     Named.prototype.destructor = function() {
+      this.destructors.forEach(function(fn) {
+        return fn();
+      });
       this.scopes.forEach(function(scope) {
         return scope.destructor();
       });
       this.scopes = [];
       this.contextmenuHandler = null;
-      this.destructors.forEach(function(fn) {
-        return fn();
-      });
       this.$named.children().remove();
       this.$named.remove();
     };
@@ -2277,6 +2307,36 @@ module.exports = function ($) {
       this.currentScope = this.scopes[scopeId];
       this.$named.append(this.scopes[scopeId].element);
       return this.currentScope;
+    };
+
+    Named.prototype.changeShell = function(shell) {
+      this.shell = shell;
+      return this.reload();
+    };
+
+    Named.prototype.changeBalloon = function(balloon) {
+      this.balloon = balloon;
+      return this.reload();
+    };
+
+    Named.prototype.reload = function() {
+      var _contextmenuHandler, args, positions;
+      args = [this.namedId, this.shell, this.balloon, this.nmdmgr];
+      positions = this.scopes.map(function(scope) {
+        return scope.position();
+      });
+      _contextmenuHandler = this.contextmenuHandler;
+      this.destructor();
+      this.constructor.apply(this, args);
+      positions.forEach((function(_this) {
+        return function(pos, i) {
+          _this.scope(i).surface(i === 0 ? 0 : 10);
+          console.log(pos, i);
+          return _this.scope(i).position(pos);
+        };
+      })(this));
+      this.contextmenuHandler = _contextmenuHandler;
+      return this.nmdmgr.$namedMgr.append(this.element);
     };
 
     Named.prototype.openInputBox = function(id, text) {
@@ -2457,7 +2517,11 @@ module.exports = function ($) {
       this.blimp(-1);
     };
 
-    Scope.prototype.destructor = function() {};
+    Scope.prototype.destructor = function() {
+      this.shell.detachSurface(this.$surface[0]);
+      this.$surface.children().remove();
+      this.$surface.remove();
+    };
 
     Scope.prototype.surface = function(surfaceId) {
       var tmp;
@@ -2506,16 +2570,6 @@ module.exports = function ($) {
           });
         }
       }
-    };
-
-    Scope.prototype.changeShell = function(shell) {
-      this.shell = shell;
-      return this.initSurface();
-    };
-
-    Scope.prototype.changeBalloon = function(balloon) {
-      this.balloon = balloon;
-      return this.initSurface();
     };
 
     Scope.prototype.position = function(obj) {
@@ -16794,7 +16848,7 @@ module.exports={
     "/"
   ],
   "_resolved": "git://github.com/ikagaka/Shell.js.git#60559b4e0fe52b50f836e75d0508d9da4eb4db51",
-  "_shasum": "7bc5c0a3ac4f12d8204512d271b400d067b0776f",
+  "_shasum": "f293c7adb1621d185986a6a57017ef5d32e984a2",
   "_shrinkwrap": null,
   "_spec": "github:ikagaka/Shell.js#master",
   "_where": "/Users/yohsukeino/GitHub/Ikagaka/NamedManager.js",
@@ -32564,7 +32618,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":20}],52:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.namedmanager.js",
-  "version": "4.1.23",
+  "version": "4.1.24",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [

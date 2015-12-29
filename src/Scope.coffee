@@ -36,6 +36,10 @@ class Scope
     return
 
   destructor: ()->
+    @shell.detachSurface(@$surface[0])
+    @$surface.children().remove()
+    @$surface.remove()
+    return
 
   surface: (surfaceId)->
     unless surfaceId? then return @currentSurface
@@ -73,12 +77,6 @@ class Scope
         @$blimp.css
           left: Number(@shell.descript["#{@type}.balloon.offsetx"] || 0) + @$surface.width()
       return
-
-  changeShell: (@shell)->
-    @initSurface()
-
-  changeBalloon: (@balloon)->
-    @initSurface()
 
   position: (obj)->
     if obj?

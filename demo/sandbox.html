@@ -35,26 +35,26 @@ Promise.all([
     balloon2.load(),
     shell3.load(),
     balloon3.load()
-  ]);
-}).then(function(tmp){
-  var shell = tmp[0];
-  var balloon = tmp[1];
-  var shell2 = tmp[2];
-  var balloon2 = tmp[3];
-  var shell3 = tmp[4];
-  var balloon3 = tmp[5];
-  var nmdmgr = new NamedManager();
-  document.body.appendChild(nmdmgr.element);
+  ]).then(function(tmp){
+    var shell = tmp[0];
+    var balloon = tmp[1];
+    var shell2 = tmp[2];
+    var balloon2 = tmp[3];
+    var shell3 = tmp[4];
+    var balloon3 = tmp[5];
+    var nmdmgr = new NamedManager();
+    document.body.appendChild(nmdmgr.element);
 
-  shell2.bindgroup.forEach(function (arr, i){
-    arr.forEach(function(_, j){
-      shell2.bindgroup[i][j] = false});});
-  shell3.bindgroup[0][30] = false
-  shell3.bindgroup[0][31] = false
+    shell2.bindgroup.forEach(function (arr, i){
+      arr.forEach(function(_, j){
+        shell2.bindgroup[i][j] = false});});
+    shell3.bindgroup[0][30] = false
+    shell3.bindgroup[0][31] = false
 
-  init(nmdmgr, shell, balloon, 1);
-  init(nmdmgr, shell2, balloon2, 2);
-  init(nmdmgr, shell3, balloon3, 3);
+    init(nmdmgr, shell, balloon, 1, shellNDir);
+    init(nmdmgr, shell2, balloon2, 2, shellNDir);
+    init(nmdmgr, shell3, balloon3, 3, shellNDir);
+  });
 });
 
 
@@ -70,7 +70,7 @@ function wait(ms, callback) {
   };
 }
 
-function init(nmdmgr, shell, balloon, id){
+function init(nmdmgr, shell, balloon, id, shellNDir){
   var hwnd = nmdmgr.materialize(shell, balloon);
   var named = nmdmgr.named(hwnd);
   console.log(nmdmgr, hwnd, named, shell, balloon);
@@ -79,15 +79,78 @@ function init(nmdmgr, shell, balloon, id){
     var scopeId = ev.scopeId;
     return {
       items: {
+        testTalk: {
+          name: 'テストトーク',
+          callback: function(){
+            talk(named, id);
+          }
+        }
         showRegion: { name: '当たり判定表示', callback: function(){ named.shell.showRegion(); } },
         hideRegion: { name: '当たり判定非表示', callback: function(){ named.shell.hideRegion(); } },
         sep1: "---------",
-        changeShell: { name: 'シェル変更', callback: function(){ named.changeShell(); } },
-        changeBalloon: { name: 'バルーン変更', callback: function(){ named.changeBalloon(); } },
+        installNar: {
+          name: "narをインストール",
+          callback: function(){
+            $('#install_field').remove();
+            var $install_field = $('<input type="file" />').attr('id', 'install_field').css("display", 'none');
+            $install_field.change(function(ev){
+              $install_field.remove();
+              Array.prototype.slice.call(ev.target.files).forEach(function(file){
+                NarLoader.loadFromBlob(file).then(function(shellNDir){
+                  var shellDir = shellNDir.getDirectory("shell/master").asArrayBuffer();
+                  var shell = new Shell(shellDir);
+                  console.log(shell, shellDir, shellNDir);
+                  shell.load().then(function(){
+                    named.changeShell(shell);
+                  });
+                });
+              });
+            }).appendTo("body").click();
+          }
+        },
+        changeShell: {
+          name: 'シェル変更',
+          items: (function(){
+            var shelllist = shellNDir.getDirectory("shell").listChildren();
+            return shelllist.reduce(function(a, b, i){
+              a["changeShell"+i] = {
+                name: b,
+                callback: function(){
+                  var shellDir = shellNDir.getDirectory("shell/"+shelllist[i]).asArrayBuffer();
+                  var shell = new Shell(shellDir);
+                  console.log(shell, shellDir, shellNDir);
+                  shell.load().then(function(){
+                    named.changeShell(shell);
+                  });
+                }
+              };
+              return a;
+            }, {});
+          }())
+        },
+        changeBalloon: {
+          name: 'バルーン変更',
+          callback: function(){
+            $('#install_field').remove();
+            var $install_field = $('<input type="file" />').attr('id', 'install_field').css("display", 'none');
+            $install_field.change(function(ev){
+              $install_field.remove();
+              Array.prototype.slice.call(ev.target.files).forEach(function(file){
+                NarLoader.loadFromBlob(file).then(function(balloonNDir){
+                  var balloonDir = balloonNDir.asArrayBuffer();
+                  var balloon = new Balloon(balloonDir);
+                  balloon.load().then(function(){
+                    named.changeBalloon(balloon);
+                  });
+                });
+              });
+            }).appendTo("body").click();
+          }
+        },
         sep2: "---------",
         bindGroups: {
-          "name": "着せ替えオン",
-          "items": (function(){
+          name: "着せ替えオン",
+          items: (function(){
             var bindgroups = named.shell.getBindGroups(scopeId);
             return bindgroups.reduce((function(a, b, i){
               a["bindGroups"+i] = {
@@ -101,8 +164,8 @@ function init(nmdmgr, shell, balloon, id){
           }())
         },
         unbindGroups: {
-          "name": "着せ替えオフ",
-          "items": (function(){
+          name: "着せ替えオフ",
+          items: (function(){
             var bindgroups = named.shell.getBindGroups(scopeId);
             return bindgroups.reduce((function(a, b, i){
               a["unbindGroups"+i] = {
@@ -131,6 +194,9 @@ function init(nmdmgr, shell, balloon, id){
   named.on("communicateinput", function(ev){ console.log(ev.type, ev); });
   named.on("filedrop", function(ev){ console.log(ev.type, ev); });
   console.log(named.scope(1).position(), id);
+  talk(named, id);
+}
+function talk(named, id){
   Promise.resolve(named)
   .then(wait(0, function(named) { named.scope(0); }))
   .then(wait(0, function(named) { named.scope().surface(0); }))
