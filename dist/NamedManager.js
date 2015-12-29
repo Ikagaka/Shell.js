@@ -2102,7 +2102,7 @@ module.exports = function ($) {
               switch (ev.type) {
                 case "mousedown":
                   _this.$named.find(".context-menu").contextMenu(true);
-                  $(".namedMgr .named[namedId=" + _this.namedId + "] .context-menu").trigger($.Event('contextmenu', {
+                  $(".namedMgr .named[namedId=" + _this.namedId + "] .scope[scopeId=" + ev.scopeId + "] .context-menu").trigger($.Event('contextmenu', {
                     data: ev.event.data,
                     pageX: ev.event.pageX,
                     pageY: ev.event.pageY
@@ -16870,7 +16870,7 @@ module.exports={
     "/"
   ],
   "_resolved": "git://github.com/ikagaka/Shell.js.git#574af8943a3775fe527e1a11c0c3b8be2ecb5f98",
-  "_shasum": "2cb3c941b566e9b50cf1894794fbab878213b16a",
+  "_shasum": "1cb8718feb6910e1f7c4099fddbd03c9c745a58c",
   "_shrinkwrap": null,
   "_spec": "github:ikagaka/Shell.js#master",
   "_where": "/Users/yohsukeino/GitHub/Ikagaka/NamedManager.js",
@@ -32640,7 +32640,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":20}],52:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.namedmanager.js",
-  "version": "4.1.24",
+  "version": "4.1.26",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [

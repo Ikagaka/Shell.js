@@ -94,7 +94,7 @@ class Named extends EventEmitter
             when "mousedown"
               # コンテキストメニュー表示
               @$named.find(".context-menu").contextMenu(true)
-              $(".namedMgr .named[namedId=#{@namedId}] .context-menu")
+              $(".namedMgr .named[namedId=#{@namedId}] .scope[scopeId=#{ev.scopeId}] .context-menu")
               .trigger($.Event('contextmenu', {data: ev.event.data, pageX: ev.event.pageX, pageY: ev.event.pageY}))
               @$named.find(".context-menu").contextMenu(false)
         when 0
