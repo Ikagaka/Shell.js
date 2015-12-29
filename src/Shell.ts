@@ -128,23 +128,25 @@ export default class Shell extends EventEmitter {
     // char*
     this.config.char.forEach((char)=>{
       // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
-      if(Array.isArray(char.bindgroup)){
-        char.bindgroup.forEach((bindgroup)=>{
-          if(typeof bindgroup.name === "string"){
-            const [category, parts, thumbnail] = (""+bindgroup.name).split(",").map((a)=>a.trim())
-            bindgroup.name = {category, parts, thumbnail};
-          }
-        });
+      if(!Array.isArray(char.bindgroup)){
+        char.bindgroup = [];
       }
+      char.bindgroup.forEach((bindgroup)=>{
+        if(typeof bindgroup.name === "string"){
+          const [category, parts, thumbnail] = (""+bindgroup.name).split(",").map((a)=>a.trim())
+          bindgroup.name = {category, parts, thumbnail};
+        }
+      });
       // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
-      if(Array.isArray(char.bindoption)){
-        char.bindoption.forEach((bindoption)=>{
-          if(typeof bindoption.group === "string"){
-            const [category, ...options] = (""+bindoption.group).split(",").map((a)=>a.trim())
-            bindoption.group = {category, options};
-          }
-        });
+      if(!Array.isArray(char.bindoption)){
+        char.bindoption = [];
       }
+      char.bindoption.forEach((bindoption)=>{
+        if(typeof bindoption.group === "string"){
+          const [category, ...options] = (""+bindoption.group).split(",").map((a)=>a.trim())
+          bindoption.group = {category, options};
+        }
+      });
     });
     return Promise.resolve(this);
   }
@@ -553,7 +555,7 @@ export default class Shell extends EventEmitter {
     });
     this.render();
   }
-  
+
   // 着せ替えメニュー用情報ていきょう
   public getBindGroups(scopeId: number): {category: string, parts: string, thumbnail: string}[] {
     return this.config.char[scopeId].bindgroup.map((bindgroup, bindgroupId)=>{

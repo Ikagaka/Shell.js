@@ -126,23 +126,25 @@ var Shell = (function (_super) {
         // char*
         this.config.char.forEach(function (char) {
             // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
-            if (Array.isArray(char.bindgroup)) {
-                char.bindgroup.forEach(function (bindgroup) {
-                    if (typeof bindgroup.name === "string") {
-                        var _a = ("" + bindgroup.name).split(",").map(function (a) { return a.trim(); }), category = _a[0], parts = _a[1], thumbnail = _a[2];
-                        bindgroup.name = { category: category, parts: parts, thumbnail: thumbnail };
-                    }
-                });
+            if (!Array.isArray(char.bindgroup)) {
+                char.bindgroup = [];
             }
+            char.bindgroup.forEach(function (bindgroup) {
+                if (typeof bindgroup.name === "string") {
+                    var _a = ("" + bindgroup.name).split(",").map(function (a) { return a.trim(); }), category = _a[0], parts = _a[1], thumbnail = _a[2];
+                    bindgroup.name = { category: category, parts: parts, thumbnail: thumbnail };
+                }
+            });
             // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
-            if (Array.isArray(char.bindoption)) {
-                char.bindoption.forEach(function (bindoption) {
-                    if (typeof bindoption.group === "string") {
-                        var _a = ("" + bindoption.group).split(",").map(function (a) { return a.trim(); }), category = _a[0], options = _a.slice(1);
-                        bindoption.group = { category: category, options: options };
-                    }
-                });
+            if (!Array.isArray(char.bindoption)) {
+                char.bindoption = [];
             }
+            char.bindoption.forEach(function (bindoption) {
+                if (typeof bindoption.group === "string") {
+                    var _a = ("" + bindoption.group).split(",").map(function (a) { return a.trim(); }), category = _a[0], options = _a.slice(1);
+                    bindoption.group = { category: category, options: options };
+                }
+            });
         });
         return Promise.resolve(this);
     };
@@ -829,7 +831,14 @@ var Surface = (function (_super) {
         var _this = this;
         // Shell.tsから呼ばれるためpublic
         // Shell#bind,Shell#unbindで発動
-        this.surfaceNode.animations.forEach(function (anim) { _this.initBind(anim); });
+        this.surfaceNode.animations.forEach(function (anim) {
+            if (anim.intervals.some(function (_a) {
+                var interval = _a[0], args = _a[1];
+                return "bind" === interval;
+            })) {
+                _this.initBind(anim);
+            }
+        });
         // 即時に反映
         this.render();
     };
@@ -28753,7 +28762,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":12}],45:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.shell.js",
-  "version": "4.3.2",
+  "version": "4.3.3",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "url": "https://github.com/ikagaka/Shell.js",

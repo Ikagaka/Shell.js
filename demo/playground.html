@@ -115,8 +115,8 @@ function changeShell(nanikaDir){
       var bindgroupIds = {};
       $(this).each(function(){
         var bindgroupId = $(this).val();
-        if($(this).prop("checked")) shell.bind(scopeId, bindgroupId);
-        else                        shell.unbind(scopeId, bindgroupId);
+        if($(this).prop("checked")) shell.bind(Number(scopeId), Number(bindgroupId));
+        else                        shell.unbind(Number(scopeId), Number(bindgroupId));
       });
       shell.render();
     });

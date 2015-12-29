@@ -56,7 +56,10 @@ npm run build
 * surfaces.txtなどをパースして情報をまとめて保持します。
 * canvas要素にSurfaceクラスを割り当てるためのクラスです。
 
-#### load(directory: { [path: string]: ArrayBuffer; }): Promise<Shell>
+#### constructor(directory: { [path: string]: ArrayBuffer; }): Shell
+* コンストラクタです
+
+#### load(): Promise<Shell>
 * `Shell/master/` 以下のファイル一覧とそのArrayBufferを持つObjectを渡してください。
 * ArrayBufferはnarファイルをzip解凍や、
   ネットワーク更新用の`updates2.dau`をXHRして入手してください。
@@ -78,7 +81,7 @@ shell = new Shell(shellDir)
 
 #### unload(): void
 * Shellクラスが管理しているすべてのリソースを開放します。
-* すべてのサーフェスがdettatchSurfaceされます。
+* すべてのサーフェスがdetachSurfaceされます。
 * すべてのイベントハンドラも解除されます。
 * すべてのプロパティにnullが代入され、GCを促します
 
@@ -106,7 +109,7 @@ cnv2 = document.createElement("canvas")
 srf2 = shell.attachSurface(cnv, 0, "びっくり") # \0\s[びっくり]
 document.body.appendChild(cnv2)
 ```
-#### dettatchSurface(div: HTMLDivElement): void
+#### detachSurface(div: HTMLDivElement): void
 * attachSurfaceしたdivを描画対象から外します。
 * ___サーフェスを変更する前に必ず呼び出してください___
 
@@ -153,6 +156,9 @@ interface SurfaceMouseEvent {
 }
 ```
 
+#### getBindGroups(scopeId: number): {category: string, parts: string, thumbnail: string}[]
+* bindgroup[scopeId]: {category: string, parts: string, thumbnail: string};
+
 
 ### Surface Class
 * canvas要素にサーフェスを描画します。
@@ -178,6 +184,3 @@ interface SurfaceMouseEvent {
 
 #### getSurfaceSize(): {width: number, height: number}
 * 現在のベースサーフェスの大きさを返します
-
-#### getBindGroups(scopeId: number): {category: string, parts: string, thumbnail: string}[]
-* bindgroup[scopeId]: {category: string, parts: string, thumbnail: string};

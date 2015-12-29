@@ -261,7 +261,11 @@ export default class Surface extends EventEmitter {
   public updateBind(): void {
     // Shell.tsから呼ばれるためpublic
     // Shell#bind,Shell#unbindで発動
-    this.surfaceNode.animations.forEach((anim)=>{ this.initBind(anim); });
+    this.surfaceNode.animations.forEach((anim)=>{
+      if(anim.intervals.some(([interval, args])=> "bind" === interval)){
+        this.initBind(anim);
+      }
+    });
     // 即時に反映
     this.render();
   }
