@@ -80,6 +80,7 @@ class Named extends EventEmitter
       $(document.body).off("touchend", onmouseup)
       @shell.off("mouse")
     @shell.on "mouse", (ev)=>
+      @$named.find(".context-menu").contextMenu(false)
       if ev.transparency is true and
          ev.type isnt "mousemove" # mousemoveおよびmouseenterはループするので
         ev.event.preventDefault()
@@ -88,6 +89,14 @@ class Named extends EventEmitter
         # それが拾われるのを待つ
         return
       switch ev.button
+        when 1
+          switch ev.type
+            when "mousedown"
+              # コンテキストメニュー表示
+              @$named.find(".context-menu").contextMenu(true)
+              $(".namedMgr .named[namedId=#{@namedId}] .context-menu")
+              .trigger($.Event('contextmenu', {data: ev.event.data, pageX: ev.event.pageX, pageY: ev.event.pageY}))
+              @$named.find(".context-menu").contextMenu(false)
         when 0
           switch ev.type
             when "mousedown"

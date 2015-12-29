@@ -2091,12 +2091,25 @@ module.exports = function ($) {
       this.shell.on("mouse", (function(_this) {
         return function(ev) {
           var $scope, clientX, clientY, left, pageX, pageY, ref, ref1, ref2, scrollX, scrollY, top;
+          _this.$named.find(".context-menu").contextMenu(false);
           if (ev.transparency === true && ev.type !== "mousemove") {
             ev.event.preventDefault();
             recursiveElementFromPoint(ev.event, _this.nmdmgr.element, ev.event.target);
             return;
           }
           switch (ev.button) {
+            case 1:
+              switch (ev.type) {
+                case "mousedown":
+                  _this.$named.find(".context-menu").contextMenu(true);
+                  $(".namedMgr .named[namedId=" + _this.namedId + "] .context-menu").trigger($.Event('contextmenu', {
+                    data: ev.event.data,
+                    pageX: ev.event.pageX,
+                    pageY: ev.event.pageY
+                  }));
+                  _this.$named.find(".context-menu").contextMenu(false);
+              }
+              break;
             case 0:
               switch (ev.type) {
                 case "mousedown":
@@ -16857,7 +16870,7 @@ module.exports={
     "/"
   ],
   "_resolved": "git://github.com/ikagaka/Shell.js.git#574af8943a3775fe527e1a11c0c3b8be2ecb5f98",
-  "_shasum": "ec08ff265cc4d5547f5bd7316e248061c12176f8",
+  "_shasum": "2cb3c941b566e9b50cf1894794fbab878213b16a",
   "_shrinkwrap": null,
   "_spec": "github:ikagaka/Shell.js#master",
   "_where": "/Users/yohsukeino/GitHub/Ikagaka/NamedManager.js",
