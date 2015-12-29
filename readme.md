@@ -123,25 +123,29 @@ npm run build
     div.named
     ...
   ```
-* `document.body.appned`してRealDOMTreeに入れてください。
+* `document.body.appned`してDOM Treeに入れてください。
 
 #### destructor(): void
 * すべてのリソースを開放します
 
-#### materialize(shell: Shell, balloon: Balloon): number
-* ゴーストのレンダリングを開始します
-* 返り値`number`は`namedId`です。いわゆるウインドウハンドラです。
+#### materialize(shell: Shell, balloon: Balloon): namedId
+#### materialize2(shell: Shell, balloon: Balloon): Named
+* ゴーストのDOMを構築しシェルのレンダリングを開始します
 
 #### vanish(namedId: number): void
-* `namedId`のゴーストのレンダリングを終了します。
+* `namedId`のゴーストのDOM構造を消しシェルのレンダリングを終了します。
 
 #### named(namedId: number): Named;
 * `namedId`のNamedクラスのインスタンスを返します
 
 ### Named Class
 
+#### namedId: number
+* このNamedのIDです
+
 #### scope(scopeId?: number): Scope
 * `scopeId`のScopeクラスのインスタンスを返します。
+* まだ存在しないスコープの場合、新しいスコープを追加します。
 * 引数を省略した場合、現在のスコープを返します。
 
 #### openInputBox(id: string, placeHolder?: string): void
@@ -226,6 +230,11 @@ interface FileDropEvent {
 ##### on(event: "communicateinput", callback: (ev: BalloonInputEvent)=> void): void
 ##### on(event: "filedrop", callback: (ev: FileDropEvent)=> void): void
 
+#### changeShell(shell: Shell): void
+* 現在のシェルを動的に変更します。
+
+#### changeBalloon(balloon: Balloon): void
+* 現在のバルーンシェルを動的に変更します。
 
 ### Scope Class
 

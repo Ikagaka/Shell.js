@@ -76,31 +76,44 @@ function init(nmdmgr, shell, balloon, id){
   console.log(nmdmgr, hwnd, named, shell, balloon);
   named.contextmenu(function(ev){
     // ここで動的に生成
+    var scopeId = ev.scopeId;
     return {
-      callback: function(key){
-        console.log(key);
-      },
       items: {
-        "edit": {name: "Edit"},
-        "cut": {name: "Cut"},
-        "copy": {name: "Copy"},
-        "paste": {name: "Paste"},
-        "delete": {name: "Delete"},
-        "sep1": "---------",
-        "fold1": {
-          "name": "Sub group",
-          "items": {
-            "fold1-key1": {"name": "Foo bar"},
-            "fold2": {
-              "name": "Sub group 2",
-              "items": {
-                "fold2-key1": {"name": "alpha"},
-                "fold2-key2": {"name": "bravo"},
-                "fold2-key3": {"name": "charlie"}
-              }
-            },
-            "fold1-key3": {"name": "delta"}
-          }
+        showRegion: { name: '当たり判定表示', callback: function(){ named.shell.showRegion(); } },
+        hideRegion: { name: '当たり判定非表示', callback: function(){ named.shell.hideRegion(); } },
+        sep1: "---------",
+        changeShell: { name: 'シェル変更', callback: function(){ named.changeShell(); } },
+        changeBalloon: { name: 'バルーン変更', callback: function(){ named.changeBalloon(); } },
+        sep2: "---------",
+        bindGroups: {
+          "name": "着せ替えオン",
+          "items": (function(){
+            var bindgroups = named.shell.getBindGroups(scopeId);
+            return bindgroups.reduce((function(a, b, i){
+              a["bindGroups"+i] = {
+                name: i + ":" + b.category+ " " + b.parts,
+                callback: function(){
+                  named.shell.bind(b.category, b.parts);
+                }
+              };
+              return a;
+            }), {});
+          }())
+        },
+        unbindGroups: {
+          "name": "着せ替えオフ",
+          "items": (function(){
+            var bindgroups = named.shell.getBindGroups(scopeId);
+            return bindgroups.reduce((function(a, b, i){
+              a["unbindGroups"+i] = {
+                name: i + ":" + b.category+ " " + b.parts,
+                callback: function(){
+                  named.shell.unbind(b.category, b.parts);
+                }
+              };
+              return a;
+            }), {});
+          }())
         }
       }
     };

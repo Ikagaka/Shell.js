@@ -81,6 +81,13 @@ class NamedManager extends EventEmitter
     @$namedMgr.remove()
     return
 
+  materialize2: (shell, balloon)->
+    namedId = @namedies.length
+    named = new Named(namedId, shell, balloon, this)
+    @namedies.push(named)
+    @$namedMgr.append(named.element)
+    return named
+
   materialize: (shell, balloon)->
     namedId = @namedies.length
     named = new Named(namedId, shell, balloon, this)

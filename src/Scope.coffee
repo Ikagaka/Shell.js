@@ -1,3 +1,4 @@
+{SurfaceUtil} = require("ikagaka.shell.js")
 $ = require("jquery")
 
 class Scope
@@ -72,6 +73,12 @@ class Scope
         @$blimp.css
           left: Number(@shell.descript["#{@type}.balloon.offsetx"] || 0) + @$surface.width()
       return
+
+  changeShell: (@shell)->
+    @initSurface()
+
+  changeBalloon: (@balloon)->
+    @initSurface()
 
   position: (obj)->
     if obj?
