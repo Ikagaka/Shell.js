@@ -16794,7 +16794,7 @@ module.exports={
     "/"
   ],
   "_resolved": "git://github.com/ikagaka/Shell.js.git#60559b4e0fe52b50f836e75d0508d9da4eb4db51",
-  "_shasum": "7afc1ca4111d270b79c8bb6761bdab9bdaf662b1",
+  "_shasum": "7bc5c0a3ac4f12d8204512d271b400d067b0776f",
   "_shrinkwrap": null,
   "_spec": "github:ikagaka/Shell.js#master",
   "_where": "/Users/yohsukeino/GitHub/Ikagaka/NamedManager.js",
@@ -32564,7 +32564,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":20}],52:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.namedmanager.js",
-  "version": "4.1.22",
+  "version": "4.1.23",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [
