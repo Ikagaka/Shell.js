@@ -164,16 +164,34 @@ interface ContextMenuEvent {
   event: UIEvent;
 }
 interface ContextMenuObject {
-  callback: (key: string)=> void;
-  items: {[key: string]: Item|SubGroup}
+  callback?: (itemId: string)=> void;
+  items: {[itemId: string]: Item|SubGroup}
 }
 interface Item {
   name: string;
+  callback?: (itemId: string)=> void;
 }
 interface SubGroup {
   name: string;
   items: {[key: string]: Item|SubGroup};
 }
+```
+
+```typescript
+named.contextmenu((ev)=>{
+  return {
+    items: {
+      install: { name: "インストールする？"}
+    },
+    callback: (id)=>{
+      switch(id){
+        case "install":
+          something();
+          break;
+      }
+    }
+  };
+});
 ```
 
 #### on(event: string, callback: (ev: {type: string})=> void): void
