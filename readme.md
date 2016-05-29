@@ -103,8 +103,10 @@ npm run build
 * 型はTypeScriptで、HTMLはJadeで、サンプルコードはCoffeeScriptで書かれています。
 
 ### NamedManager Class
+
 #### constructor(): NamedManager
 * コンストラクタです。
+
 #### element: HTMLDivElement
 * `div.namedMgr` が入っています。構造は以下のとおりです。
   ```jade
@@ -176,7 +178,7 @@ interface SubGroup {
   items: {[key: string]: Item|SubGroup};
 }
 ```
-
+sample code
 ```typescript
 named.contextmenu((ev)=>{
   return {
