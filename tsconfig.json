@@ -1,0 +1,32 @@
+﻿{
+  "compilerOptions": {
+    "declaration": false,
+    "diagnostics": false,
+    "listFiles": false,
+    "pretty": true,
+    "removeComments": false,
+    "target": "es2015",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "rootDir": "src",
+    "outDir": "es5"
+  },
+  "filesGlob": [
+    "./**/*.ts",
+    "./**/*.tsx",
+    "!./**/*.d.ts",
+    "!./gulpfile.ts",
+    "./typings/**/*.d.ts",
+    "!./node_modules/**/*.ts",
+    "./node_modules/typescript/lib/lib.es2017.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "bower_components",
+    "typings/browser.d.ts",
+    "typings/browser"
+  ]
+}
