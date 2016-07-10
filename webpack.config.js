@@ -30,7 +30,6 @@ module.exports = {
   resolve: {
     extensions: ["", ".ts", ".tsx", ".js"],
     alias: {
-      'eventEmitter/EventEmitter': 'wolfy87-eventemitter/EventEmitter',
     },
   },
 };
