@@ -21,8 +21,7 @@ export class NamedManager implements Attachable {
         element.classList.add("NamedManager");
         for (const id of Object.keys(this._nameds)) {
             const named = this._nameds[<number><any>id]; // TODO
-            const childElement = document.createElement("div");
-            element.appendChild(childElement);
+            const childElement = this._createChildElement();
             named.attachTo(childElement);
         }
     }
@@ -37,13 +36,20 @@ export class NamedManager implements Attachable {
         delete this.element;
     }
 
+    private _createChildElement() {
+        return this.element ? <Element>this.element.appendChild(document.createElement("div")) : null;
+    }
+
     materialize(shellData: ShellData, balloonData: BalloonData, shellProfile?: ShellProfile, balloonProfile?: BalloonProfile) {
         const id = this._new_named_id();
-        const childElement = document.createElement("div");
-        this.element.appendChild(childElement);
+        const childElement = this._createChildElement();
         const named = new Named(id, shellData, balloonData, shellProfile, balloonProfile, this, childElement);
         this._nameds[id] = named;
         return named;
+    }
+
+    private _childElement() {
+        return 
     }
 
     vanish(id: number) {

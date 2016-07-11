@@ -19,7 +19,7 @@ export class ScopeShell implements Attachable {
         this.data = data;
         this.profile = profile;
         this.parent = parent;
-        this.element = element;
+        if (element) this.attachTo(element);
     }
 
     attachTo(element: Element) {

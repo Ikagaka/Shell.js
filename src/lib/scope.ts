@@ -37,11 +37,10 @@ export class Scope implements Attachable {
         this.element = element;
         this.element.classList.add("Scope");
         this.element.classList.add(`Scope-${this.id}`);
-        const shellElement = document.createElement("div");
-        this.element.appendChild(shellElement);
+        const shellElement = this._createChildElement();
         this.shell.attachTo(shellElement);
         // balloonのほうが上側
-        const balloonElement = document.createElement("div");
+        const balloonElement = this._createChildElement();
         this.element.appendChild(balloonElement);
         this.balloon.attachTo(balloonElement);
     }
@@ -54,5 +53,9 @@ export class Scope implements Attachable {
         this.element.classList.remove("Scope");
         this.element.classList.remove(`Scope-${this.id}`);
         delete this.element;
+    }
+
+    private _createChildElement() {
+        return this.element ? <Element>this.element.appendChild(document.createElement("div")) : null;
     }
 }

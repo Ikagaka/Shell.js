@@ -18,7 +18,7 @@ export class ScopeBalloon implements Attachable {
         this.profile = profile;
         this.position = this.profile.position;
         this.parent = parent;
-        this.element = element;
+        if (element) this.attachTo(element);
     }
 
     attachTo(element: Element) {

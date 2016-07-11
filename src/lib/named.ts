@@ -33,8 +33,7 @@ export class Named implements Attachable {
         this.element.classList.add("Named");
         this.element.classList.add(`Named-${this.id}`);
         for (const scope of this._scopes) {
-            const childElement = document.createElement("div");
-            this.element.appendChild(childElement);
+            const childElement = this._createChildElement();
             scope.attachTo(childElement);
         }
     }
@@ -47,6 +46,10 @@ export class Named implements Attachable {
         this.element.classList.remove("Named");
         this.element.classList.remove(`Named-${this.id}`);
         delete this.element;
+    }
+
+    private _createChildElement() {
+        return this.element ? <Element>this.element.appendChild(document.createElement("div")) : null;
     }
 
     vanish() {
@@ -65,8 +68,7 @@ export class Named implements Attachable {
         if (id != null) {
             if (!this._scopes[id]) {
                 // TODO position
-                const childElement = document.createElement("div");
-                this.element.appendChild(childElement);
+                const childElement = this._createChildElement();
                 const scope = new Scope(id, this.shellData, this.balloonData, this.shellProfile, this.balloonProfile, this, childElement);
                 this._scopes[id] = scope;
             }
