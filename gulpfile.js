@@ -1,4 +1,4 @@
-﻿var path = require('path');
+var path = require('path');
 var gulp = require('gulp');
 var loadPlugins = require('gulp-load-plugins');
 var $ = loadPlugins();
