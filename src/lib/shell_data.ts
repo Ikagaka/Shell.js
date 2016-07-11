@@ -10,7 +10,7 @@ export class ShellData {
   constructor(surfaceResources: any, surfaceDefinitions: any) {
 
   }
-  
+
   unload() {
 
   }

@@ -1,6 +1,8 @@
 import {Attachable} from './attachable';
 import {ShellData} from './shell_data';
 import {BalloonData} from './balloon_data';
+import {ShellProfile} from './shell_profile';
+import {BalloonProfile} from './balloon_profile';
 import {NamedManager} from './named_manager';
 import {Scope} from './scope';
 
@@ -8,26 +10,43 @@ export class Named implements Attachable {
     id: number;
     shellData: ShellData;
     balloonData: BalloonData;
+    shellProfile: ShellProfile;
+    balloonProfile: BalloonProfile;
     parent: NamedManager;
     element: Element;
     currentScopeId: number;
 
     private _scopes: Scope[] = [];
 
-    constructor(id: number, shellData: ShellData, balloonData: BalloonData, parent?: NamedManager, element?: Element) {
+    constructor(id: number, shellData: ShellData, balloonData: BalloonData, shellProfile?: ShellProfile, balloonProfile?: BalloonProfile, parent?: NamedManager, element?: Element) {
         this.id = id;
         this.shellData = shellData;
         this.balloonData = balloonData;
+        this.shellProfile = shellProfile;
+        this.balloonProfile = balloonProfile;
         this.parent = parent;
-        this.element = element;
+        if (element) this.attachTo(element);
     }
 
     attachTo(element: Element) {
-        
+        this.element = element;
+        this.element.classList.add("Named");
+        this.element.classList.add(`Named-${this.id}`);
+        for (const scope of this._scopes) {
+            const childElement = document.createElement("div");
+            this.element.appendChild(childElement);
+            scope.attachTo(childElement);
+        }
     }
 
-    detachFrom(element: Element) {
-        
+    detach() {
+        for (const scope of this._scopes) {
+            this.element.removeChild(scope.element);
+            scope.detach();
+        }
+        this.element.classList.remove("Named");
+        this.element.classList.remove(`Named-${this.id}`);
+        delete this.element;
     }
 
     vanish() {
@@ -46,7 +65,9 @@ export class Named implements Attachable {
         if (id != null) {
             if (!this._scopes[id]) {
                 // TODO position
-                const scope = new Scope(id, this.shellData, this.balloonData, null, this, this.element);
+                const childElement = document.createElement("div");
+                this.element.appendChild(childElement);
+                const scope = new Scope(id, this.shellData, this.balloonData, this.shellProfile, this.balloonProfile, this, childElement);
                 this._scopes[id] = scope;
             }
             this.currentScopeId = id;
