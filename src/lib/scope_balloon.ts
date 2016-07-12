@@ -1,8 +1,8 @@
-import {Attachable} from './attachable';
-import {Position} from './position';
-import {BalloonData} from './balloon_data';
-import {BalloonProfile} from './balloon_profile';
-import {Scope} from './scope';
+import {Attachable} from "./attachable";
+import {Position} from "./position";
+import {BalloonData} from "./balloon_data";
+import {BalloonProfile} from "./balloon_profile";
+import {Scope} from "./scope";
 
 export class ScopeBalloon implements Attachable {
     id: number;

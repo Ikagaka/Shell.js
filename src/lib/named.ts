@@ -1,10 +1,10 @@
-import {Attachable} from './attachable';
-import {ShellData} from './shell_data';
-import {BalloonData} from './balloon_data';
-import {ShellProfile} from './shell_profile';
-import {BalloonProfile} from './balloon_profile';
-import {NamedManager} from './named_manager';
-import {Scope} from './scope';
+import {Attachable} from "./attachable";
+import {ShellData} from "./shell_data";
+import {BalloonData} from "./balloon_data";
+import {ShellProfile} from "./shell_profile";
+import {BalloonProfile} from "./balloon_profile";
+import {NamedManager} from "./named_manager";
+import {Scope} from "./scope";
 
 export class Named implements Attachable {
     id: number;
@@ -48,10 +48,6 @@ export class Named implements Attachable {
         delete this.element;
     }
 
-    private _createChildElement() {
-        return this.element ? <Element>this.element.appendChild(document.createElement("div")) : null;
-    }
-
     vanish() {
 
     }
@@ -75,5 +71,9 @@ export class Named implements Attachable {
             this.currentScopeId = id;
         }
         return this._scopes[this.currentScopeId];
+    }
+
+    private _createChildElement() {
+        return this.element ? <Element>this.element.appendChild(document.createElement("div")) : null;
     }
 }

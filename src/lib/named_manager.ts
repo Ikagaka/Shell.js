@@ -1,16 +1,16 @@
-import {Attachable} from './attachable';
-import {ShellData} from './shell_data';
-import {BalloonData} from './balloon_data';
-import {ShellProfile} from './shell_profile';
-import {BalloonProfile} from './balloon_profile';
-import {Named} from './named';
+import {Attachable} from "./attachable";
+import {ShellData} from "./shell_data";
+import {BalloonData} from "./balloon_data";
+import {ShellProfile} from "./shell_profile";
+import {BalloonProfile} from "./balloon_profile";
+import {Named} from "./named";
 
 export class NamedManager implements Attachable {
     element: Element;
 
     private _nameds: {[id: number]: Named} = {};
 
-    private _named_id: number = 0;
+    private _namedID: number = 0;
 
     constructor(element?: Element) {
         if (element) this.attachTo(element);
@@ -36,20 +36,12 @@ export class NamedManager implements Attachable {
         delete this.element;
     }
 
-    private _createChildElement() {
-        return this.element ? <Element>this.element.appendChild(document.createElement("div")) : null;
-    }
-
     materialize(shellData: ShellData, balloonData: BalloonData, shellProfile?: ShellProfile, balloonProfile?: BalloonProfile) {
-        const id = this._new_named_id();
+        const id = this._new_namedID();
         const childElement = this._createChildElement();
         const named = new Named(id, shellData, balloonData, shellProfile, balloonProfile, this, childElement);
         this._nameds[id] = named;
         return named;
-    }
-
-    private _childElement() {
-        return 
     }
 
     vanish(id: number) {
@@ -62,7 +54,11 @@ export class NamedManager implements Attachable {
         return this._nameds[id];
     }
 
-    private _new_named_id() {
-        return ++this._named_id;
+    private _createChildElement() {
+        return this.element ? <Element>this.element.appendChild(document.createElement("div")) : null;
+    }
+
+    private _new_namedID() {
+        return ++this._namedID;
     }
 }

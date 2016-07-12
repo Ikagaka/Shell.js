@@ -1,12 +1,12 @@
-import {Attachable} from './attachable';
-import {Position} from './position';
-import {ShellData} from './shell_data';
-import {BalloonData} from './balloon_data';
-import {ShellProfile} from './shell_profile';
-import {BalloonProfile} from './balloon_profile';
-import {Named} from './named';
-import {ScopeShell} from './scope_shell';
-import {ScopeBalloon} from './scope_balloon';
+import {Attachable} from "./attachable";
+import {Position} from "./position";
+import {ShellData} from "./shell_data";
+import {BalloonData} from "./balloon_data";
+import {ShellProfile} from "./shell_profile";
+import {BalloonProfile} from "./balloon_profile";
+import {Named} from "./named";
+import {ScopeShell} from "./scope_shell";
+import {ScopeBalloon} from "./scope_balloon";
 
 export class Scope implements Attachable {
     id: number;

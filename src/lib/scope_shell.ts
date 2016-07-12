@@ -1,10 +1,9 @@
 /// <reference path="../../node_modules/phaser/typescript/phaser.d.ts" />
-import * as Phaser from 'phaser';
-import {Attachable} from './attachable';
-import {Position} from './position';
-import {ShellData} from './shell_data';
-import {ShellProfile} from './shell_profile';
-import {Scope} from './scope';
+import * as Phaser from "phaser";
+import {Attachable} from "./attachable";
+import {ShellData} from "./shell_data";
+import {ShellProfile} from "./shell_profile";
+import {Scope} from "./scope";
 
 export class ScopeShell implements Attachable {
     id: number;

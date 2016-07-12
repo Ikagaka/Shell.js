@@ -1,0 +1,10 @@
+{
+    "extends": "tslint:latest",
+    "rules": {
+        "ordered-imports": false,
+        "member-access": false,
+        "curly": false,
+        "variable-name": [true, "check-format", "allow-leading-underscore"],
+        "interface-name": [true, "never-prefix"]
+    }
+}
