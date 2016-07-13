@@ -8,9 +8,9 @@ import {Named} from "./named";
 export class NamedManager implements Attachable {
     element: Element;
 
-    private _nameds: {[id: number]: Named} = {};
+    protected _nameds: {[id: number]: Named} = {};
 
-    private _namedID: number = 0;
+    protected _namedID: number = 0;
 
     constructor(element?: Element) {
         if (element) this.attachTo(element);

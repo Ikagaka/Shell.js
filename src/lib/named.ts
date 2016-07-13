@@ -16,7 +16,7 @@ export class Named implements Attachable {
     element: Element;
     currentScopeId: number;
 
-    private _scopes: Scope[] = [];
+    protected _scopes: Scope[] = [];
 
     constructor(id: number, shellData: ShellData, balloonData: BalloonData, shellProfile?: ShellProfile, balloonProfile?: BalloonProfile, parent?: NamedManager, element?: Element) {
         this.id = id;
