@@ -1,4 +1,5 @@
 import {Attachable} from "./attachable";
+import {ScopeBalloonRenderer} from "./renderer/scope_balloon_renderer";
 import {Position} from "./position";
 import {BalloonData} from "./balloon_data";
 import {BalloonProfile} from "./balloon_profile";
@@ -10,26 +11,24 @@ export class ScopeBalloon implements Attachable {
     profile: BalloonProfile;
     position: Position;
     parent: Scope;
-    element: Element;
+    renderer: ScopeBalloonRenderer;
 
-    constructor(id: number, data: BalloonData, profile?: BalloonProfile, parent?: Scope, element?: Element) {
+    constructor(id: number, data: BalloonData, profile?: BalloonProfile, parent?: Scope, renderer?: ScopeBalloonRenderer) {
         this.id = id;
         this.data = data;
         this.profile = profile;
         this.position = this.profile.position;
         this.parent = parent;
-        if (element) this.attachTo(element);
+        if (renderer) this.attachTo(renderer);
     }
 
-    attachTo(element: Element) {
-        this.element = element;
-        this.element.classList.add("ScopeBalloon");
-        this.element.classList.add(`ScopeBalloon-${this.id}`);
+    attachTo(renderer: ScopeBalloonRenderer) {
+        this.renderer = renderer;
+        this.renderer.attachModel(this);
     }
 
     detach() {
-        this.element.classList.remove("ScopeBalloon");
-        this.element.classList.remove(`ScopeBalloon-${this.id}`);
-        delete this.element;
+        this.renderer.detachModel();
+        delete this.renderer;
     }
 }

@@ -1,5 +1,7 @@
+import {Renderer} from "./renderer";
+
 export interface Attachable {
-    element: Element;
-    attachTo(element: Element): void;
+    renderer: Renderer;
+    attachTo(renderer: Renderer): void;
     detach(): void;
 }

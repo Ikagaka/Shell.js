@@ -1,4 +1,5 @@
 import {Attachable} from "./attachable";
+import {ScopeRenderer} from "./renderer/scope_renderer";
 import {Position} from "./position";
 import {ShellData} from "./shell_data";
 import {BalloonData} from "./balloon_data";
@@ -18,9 +19,9 @@ export class Scope implements Attachable {
     balloonProfile: BalloonProfile;
     position: Position;
     parent: Named;
-    element: Element;
+    renderer: ScopeRenderer;
 
-    constructor(id: number, shellData: ShellData, balloonData: BalloonData, shellProfile?: ShellProfile, balloonProfile?: BalloonProfile, parent?: Named, element?: Element) {
+    constructor(id: number, shellData: ShellData, balloonData: BalloonData, shellProfile?: ShellProfile, balloonProfile?: BalloonProfile, parent?: Named, renderer?: ScopeRenderer) {
         this.id = id;
         this.shellData = shellData;
         this.balloonData = balloonData;
@@ -28,34 +29,29 @@ export class Scope implements Attachable {
         this.balloonProfile = balloonProfile;
         this.position = this.shellProfile.position;
         this.parent = parent;
-        this.shell = new ScopeShell(this.id, this.shellData, this.shellProfile, this, this.element);
-        this.balloon = new ScopeBalloon(this.id, this.balloonData, this.balloonProfile, this, this.element);
-        if (element) this.attachTo(element);
+        this.shell = new ScopeShell(this.id, this.shellData, this.shellProfile, this);
+        this.balloon = new ScopeBalloon(this.id, this.balloonData, this.balloonProfile, this);
+        if (renderer) this.attachTo(renderer);
     }
 
-    attachTo(element: Element) {
-        this.element = element;
-        this.element.classList.add("Scope");
-        this.element.classList.add(`Scope-${this.id}`);
-        const shellElement = this._createChildElement();
-        this.shell.attachTo(shellElement);
+    attachTo(renderer: ScopeRenderer) {
+        this.renderer = renderer;
+        this.renderer.attachModel(this);
+        const shellRenderer = this.renderer.createChildShellRenderer();
+        this.shell.attachTo(shellRenderer);
         // balloonのほうが上側
-        const balloonElement = this._createChildElement();
-        this.element.appendChild(balloonElement);
-        this.balloon.attachTo(balloonElement);
+        const balloonRenderer = this.renderer.createChildBalloonRenderer();
+        this.balloon.attachTo(balloonRenderer);
     }
 
     detach() {
-        this.element.removeChild(this.shell.element);
+        const shellRenderer = this.shell.renderer;
         this.shell.detach();
-        this.element.removeChild(this.balloon.element);
+        this.renderer.removeChildShellRenderer(shellRenderer);
+        const balloonRenderer = this.balloon.renderer;
         this.balloon.detach();
-        this.element.classList.remove("Scope");
-        this.element.classList.remove(`Scope-${this.id}`);
-        delete this.element;
-    }
-
-    private _createChildElement() {
-        return this.element ? <Element>this.element.appendChild(document.createElement("div")) : null;
+        this.renderer.removeChildBalloonRenderer(balloonRenderer);
+        this.renderer.detachModel();
+        delete this.renderer;
     }
 }

@@ -9,6 +9,7 @@ import {Named} from "./named";
 import {Scope} from "./scope";
 import {ScopeShell} from "./scope_shell";
 import {ScopeBalloon} from "./scope_balloon";
+import {Renderer} from "./renderer";
 
 export {
     Position,
@@ -22,4 +23,5 @@ export {
     Scope,
     ScopeShell,
     ScopeBalloon,
+    Renderer,
 };

@@ -1,4 +1,5 @@
 import {Attachable} from "./attachable";
+import {NamedRenderer} from './renderer/named_renderer';
 import {ShellData} from "./shell_data";
 import {BalloonData} from "./balloon_data";
 import {ShellProfile} from "./shell_profile";
@@ -13,39 +14,38 @@ export class Named implements Attachable {
     shellProfile: ShellProfile;
     balloonProfile: BalloonProfile;
     parent: NamedManager;
-    element: Element;
+    renderer: NamedRenderer;
     currentScopeId: number;
 
     protected _scopes: Scope[] = [];
 
-    constructor(id: number, shellData: ShellData, balloonData: BalloonData, shellProfile?: ShellProfile, balloonProfile?: BalloonProfile, parent?: NamedManager, element?: Element) {
+    constructor(id: number, shellData: ShellData, balloonData: BalloonData, shellProfile?: ShellProfile, balloonProfile?: BalloonProfile, parent?: NamedManager, renderer?: NamedRenderer) {
         this.id = id;
         this.shellData = shellData;
         this.balloonData = balloonData;
         this.shellProfile = shellProfile;
         this.balloonProfile = balloonProfile;
         this.parent = parent;
-        if (element) this.attachTo(element);
+        if (renderer) this.attachTo(renderer);
     }
 
-    attachTo(element: Element) {
-        this.element = element;
-        this.element.classList.add("Named");
-        this.element.classList.add(`Named-${this.id}`);
+    attachTo(renderer: NamedRenderer) {
+        this.renderer = renderer;
+        this.renderer.attachModel(this);
         for (const scope of this._scopes) {
-            const childElement = this._createChildElement();
-            scope.attachTo(childElement);
+            const childRenderer = this.renderer.createChildRenderer();
+            scope.attachTo(childRenderer);
         }
     }
 
     detach() {
         for (const scope of this._scopes) {
-            this.element.removeChild(scope.element);
+            const childRenderer = scope.renderer;
             scope.detach();
+            this.renderer.removeChildRenderer(childRenderer);
         }
-        this.element.classList.remove("Named");
-        this.element.classList.remove(`Named-${this.id}`);
-        delete this.element;
+        this.renderer.detachModel();
+        delete this.renderer;
     }
 
     vanish() {
@@ -63,17 +63,12 @@ export class Named implements Attachable {
     scope(id?: number) {
         if (id != null) {
             if (!this._scopes[id]) {
-                // TODO position
-                const childElement = this._createChildElement();
-                const scope = new Scope(id, this.shellData, this.balloonData, this.shellProfile, this.balloonProfile, this, childElement);
+                const childRenderer = this.renderer.createChildRenderer();
+                const scope = new Scope(id, this.shellData, this.balloonData, this.shellProfile, this.balloonProfile, this, childRenderer);
                 this._scopes[id] = scope;
             }
             this.currentScopeId = id;
         }
         return this._scopes[this.currentScopeId];
-    }
-
-    private _createChildElement() {
-        return this.element ? <Element>this.element.appendChild(document.createElement("div")) : null;
     }
 }
