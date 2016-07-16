@@ -30,4 +30,7 @@ export class NamedManagerPhaserRenderer extends PhaserRendererBase implements Na
         }
         super.detachModel();
     }
+
+    setPriority(priority: number[]) {
+    }
 }

@@ -26,4 +26,7 @@ export class NamedDOMRenderer extends DOMRendererBase implements NamedRenderer {
         this.element.classList.remove(`Named-${this.model.id}`);
         super.detachModel();
     }
+
+    setPriority(priority: number[]) {
+    }
 }

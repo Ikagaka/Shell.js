@@ -24,4 +24,7 @@ export class NamedManagerDOMRenderer extends DOMRendererBase implements NamedMan
         this.element.classList.remove("NamedManager");
         super.detachModel();
     }
+
+    setPriority(priority: number[]) {
+    }
 }

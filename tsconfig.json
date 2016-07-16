@@ -10,6 +10,7 @@
     "moduleResolution": "node",
     "noImplicitAny": true,
     "sourceMap": true,
+    "strictNullChecks": false,
     "forceConsistentCasingInFileNames": true,
     "rootDir": "src",
     "outDir": "es5"

@@ -32,4 +32,7 @@ export class NamedPhaserRenderer extends PhaserRendererBase implements NamedRend
         }
         super.detachModel();
     }
+
+    setPriority(priority: number[]) {
+    }
 }

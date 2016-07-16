@@ -18,10 +18,18 @@ export class Scope implements Attachable {
     shellProfile: ShellProfile;
     balloonProfile: BalloonProfile;
     position: Position;
-    parent: Named;
+    parent: Named | undefined;
     renderer: ScopeRenderer;
 
-    constructor(id: number, shellData: ShellData, balloonData: BalloonData, shellProfile?: ShellProfile, balloonProfile?: BalloonProfile, parent?: Named, renderer?: ScopeRenderer) {
+    constructor(
+        id: number,
+        shellData: ShellData,
+        balloonData: BalloonData,
+        shellProfile: ShellProfile = new ShellProfile(),
+        balloonProfile: BalloonProfile = new BalloonProfile(),
+        parent?: Named,
+        renderer?: ScopeRenderer
+    ) {
         this.id = id;
         this.shellData = shellData;
         this.balloonData = balloonData;

@@ -8,4 +8,5 @@ export interface NamedManagerRenderer extends Renderer {
     createChildRenderer(): NamedRenderer;
     removeChildRenderer(renderer: NamedRenderer): void;
     detachModel(): void;
+    setPriority(priority: number[]): void;
 }

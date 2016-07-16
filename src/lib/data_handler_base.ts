@@ -11,7 +11,7 @@ export class DataHandlerBase {
   }
 
   static findDescript(directory: {[path: string]: Uint8Array}) {
-    return DataHandlerBase.bufferToString(directory[DataHandlerBase.findDescriptPath(directory)]);
+    return DataHandlerBase.bufferToString(directory[<string>DataHandlerBase.findDescriptPath(directory)]);
   }
 
   static parseDescript(str: string) {
