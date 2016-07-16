@@ -7,11 +7,11 @@ import {Scope} from "./scope";
 import {BalloonSurface} from "./balloon_surface";
 
 export class ScopeBalloon implements Attachable {
-    id: number;
-    data: BalloonData;
-    profile: BalloonProfile;
-    position: Position;
-    parent: Scope | undefined;
+    readonly id: number;
+    readonly data: BalloonData;
+    readonly profile: BalloonProfile;
+    readonly position: Position;
+    readonly parent: Scope | undefined;
     renderer: ScopeBalloonRenderer;
     private _surface: BalloonSurface;
 

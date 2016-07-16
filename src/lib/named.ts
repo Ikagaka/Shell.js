@@ -8,12 +8,12 @@ import {NamedManager} from "./named_manager";
 import {Scope} from "./scope";
 
 export class Named implements Attachable {
-    id: number;
-    shellData: ShellData;
-    balloonData: BalloonData;
-    shellProfile: ShellProfile;
-    balloonProfile: BalloonProfile;
-    parent: NamedManager | undefined;
+    readonly id: number;
+    readonly shellData: ShellData;
+    readonly balloonData: BalloonData;
+    readonly shellProfile: ShellProfile;
+    readonly balloonProfile: BalloonProfile;
+    readonly parent: NamedManager | undefined;
     renderer: NamedRenderer;
 
     protected _scopes: Scope[] = [];

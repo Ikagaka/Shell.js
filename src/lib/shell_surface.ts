@@ -5,10 +5,10 @@ import {ShellProfile} from "./shell_profile";
 import {ScopeShell} from "./scope_shell";
 
 export class ShellSurface implements Attachable {
-    id: number;
-    data: ShellData;
-    profile: ShellProfile;
-    parent: ScopeShell | undefined;
+    readonly id: number;
+    readonly data: ShellData;
+    readonly profile: ShellProfile;
+    readonly parent: ScopeShell | undefined;
     renderer: ShellSurfaceRenderer;
 
     constructor(

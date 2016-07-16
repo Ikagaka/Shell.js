@@ -6,10 +6,10 @@ import {Scope} from "./scope";
 import {ShellSurface} from "./shell_surface";
 
 export class ScopeShell implements Attachable {
-    id: number;
-    data: ShellData;
-    profile: ShellProfile;
-    parent: Scope | undefined;
+    readonly id: number;
+    readonly data: ShellData;
+    readonly profile: ShellProfile;
+    readonly parent: Scope | undefined;
     renderer: ScopeShellRenderer;
     private _surface: ShellSurface;
 

@@ -1,9 +1,9 @@
 export class Descript {
 
-    charset: string;
-    name: string;
-    homeurl: string;
-    readme: string;
+    readonly charset: string;
+    readonly name: string;
+    readonly homeurl: string;
+    readonly readme: string;
 
     static parse(str: string) {
         return new Descript({});

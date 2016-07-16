@@ -5,10 +5,10 @@ import {BalloonProfile} from "./balloon_profile";
 import {ScopeBalloon} from "./scope_balloon";
 
 export class BalloonSurface implements Attachable {
-    id: number;
-    data: BalloonData;
-    profile: BalloonProfile;
-    parent: ScopeBalloon | undefined;
+    readonly id: number;
+    readonly data: BalloonData;
+    readonly profile: BalloonProfile;
+    readonly parent: ScopeBalloon | undefined;
     renderer: BalloonSurfaceRenderer;
 
     constructor(

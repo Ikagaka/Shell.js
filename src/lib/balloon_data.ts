@@ -8,7 +8,7 @@ export class BalloonData extends DataHandlerBase {
         return new Promise<BalloonData>((resolve) => resolve(balloonData));
     }
 
-    descript: Descript;
+    readonly descript: Descript;
 
     alias: { [name: string]: number };
     

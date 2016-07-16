@@ -45,7 +45,7 @@ export class ShellData extends DataHandlerBase {
         return ShellData.parseSurfaceTable(ShellData.selectSurfaceTables(directory));
     }
 
-    descript: Descript;
+    readonly descript: Descript;
 
     alias: { [name: string]: number };
 

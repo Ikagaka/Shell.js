@@ -10,15 +10,15 @@ import {ScopeShell} from "./scope_shell";
 import {ScopeBalloon} from "./scope_balloon";
 
 export class Scope implements Attachable {
-    id: number;
+    readonly id: number;
     shell: ScopeShell;
     balloon: ScopeBalloon;
-    shellData: ShellData;
-    balloonData: BalloonData;
-    shellProfile: ShellProfile;
-    balloonProfile: BalloonProfile;
-    position: Position;
-    parent: Named | undefined;
+    readonly shellData: ShellData;
+    readonly balloonData: BalloonData;
+    readonly shellProfile: ShellProfile;
+    readonly balloonProfile: BalloonProfile;
+    readonly position: Position;
+    readonly parent: Named | undefined;
     renderer: ScopeRenderer;
 
     constructor(
