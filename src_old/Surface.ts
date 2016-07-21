@@ -1,9 +1,9 @@
-/// <reference path="../typings/tsd.d.ts"/>
+/// <reference path="../typings/index.d.ts"/>
 
 import SurfaceRender from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
 import {SurfaceElement, SurfaceTreeNode, SurfaceMouseEvent, SurfaceAnimationEx} from "./Interfaces";
-import EventEmitter = require("eventemitter3");
+import * as EventEmitter from "events";
 import $ = require("jquery");
 
 

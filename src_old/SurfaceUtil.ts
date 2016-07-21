@@ -1,4 +1,4 @@
-/// <reference path="../typings/tsd.d.ts"/>
+/// <reference path="../typings/index.d.ts"/>
 
 import {SurfaceTreeNode, SurfaceCanvas} from "./Interfaces";
 import Encoding = require("encoding-japanese");

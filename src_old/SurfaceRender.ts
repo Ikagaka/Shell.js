@@ -1,4 +1,4 @@
-/// <reference path="../typings/tsd.d.ts"/>
+/// <reference path="../typings/index.d.ts"/>
 
 import {SurfaceCanvas, SurfaceElement} from "./Interfaces";
 import * as SurfaceUtil from "./SurfaceUtil";
@@ -96,7 +96,8 @@ export default class SurfaceRender {
   }
 
   public clear(): void {
-    this.cnv.width = this.cnv.width;
+    // this.cnv.width = this.cnv.width; // これDOM GC発生するので
+    this.ctx.clearRect(0, 0, this.cnv.width, this.cnv.height);
   }
 
   //下位レイヤをコマで完全に置き換える。collisionもコマのサーフェスに定義されたものに更新される。
@@ -125,7 +126,7 @@ export default class SurfaceRender {
         this.cnv.width = this.basePosX + x + part.cnv.width;
         //offsetX = this.basePosX;
       }else{
-        this.cnv.width = this.cnv.width;
+        this.clear();
       }
     }
     if(y >= 0){

@@ -1,11 +1,11 @@
-/// <reference path="../typings/tsd.d.ts"/>
+/// <reference path="../typings/index.d.ts"/>
 
 import Surface from './Surface';
 import SurfaceRender from "./SurfaceRender";
 import * as SurfaceUtil from "./SurfaceUtil";
 import {SurfaceTreeNode, SurfaceCanvas, SurfaceMouseEvent, ShellConifg} from "./Interfaces";
 import SurfacesTxt2Yaml = require("surfaces_txt2yaml");
-import EventEmitter = require("eventemitter3");
+import * as EventEmitter from "events";
 import $ = require("jquery");
 
 export default class Shell extends EventEmitter {
