@@ -6,34 +6,50 @@ CacheCanvas型はサーフェスのロード状況を管理します。
 
 */
 
+export class Done {a: "a"}
+export class Yet {b:"b"}
 
-export interface PNGLoaded {
+export class Cache<T extends Done | Yet >{
+  _: T; // [phantom type](http://qiita.com/falsandtru/items/353a303cc88401db44dd#generic%E5%9E%8B)
+  cnv: HTMLCanvasElement; // クロマキーあるいはpnaによる色抜き後のサーフェス.
+  ctx: CanvasRenderingContext2D;
   png: HTMLImageElement; // surface*.png
+  constructor() {
+    this.cnv = document.createElement("canvas");
+  }
 }
 
-export interface PNGWithPNALoaded extends PNGLoaded {
-  pna: HTMLImageElement; // surface*.pna
+export class PNGWithoutPNA<T extends Done | Yet > extends Cache<T>{
+  constructor(png: HTMLImageElement) {
+    super();
+    this.png = png;
+  }
 }
 
-export interface CanvasLoaded extends PNGLoaded {
-  cnv: HTMLCanvasElement; // クロマキーあるいはpnaによる色抜き後のサーフェス
+export class PNGWithPNA<T extends Done | Yet > extends PNGWithoutPNA<T>{
+  pna: HTMLImageElement
+  constructor(png: HTMLImageElement, pna: HTMLImageElement) {
+    super(png);
+    this.pna = pna;
+  }
 }
 
-export type CacheCanvas = PNGLoaded|PNGWithPNALoaded|CanvasLoaded;
-
-export function applyChromakey(): Promise<CanvasLoaded> {
-  return new Promise<CanvasLoaded>((resolve, reject)=>{});
+export function applyChromakey(cc: Cache<Done | Yet>): Promise<Cache<Done>> {
+  return new Promise<Cache<Done>>((resolve, reject)=>{
+    resolve(<Cache<Done>>cc);
+    //reject("not impl yet");
+  });
 } 
 
-export function getPNGImage(pngBuffer: ArrayBuffer): Promise<PNGLoaded> {
-  return getImageFromArrayBuffer(pngBuffer).then((png)=> ({png: png}));
+export function getPNGImage(pngBuffer: ArrayBuffer): Promise<PNGWithoutPNA<Yet>> {
+  return getImageFromArrayBuffer(pngBuffer).then((png)=> new PNGWithoutPNA<Yet>(png) );
 }
 
-export function getPNGAndPNAImage(pngBuffer: ArrayBuffer, pnaBuffer: ArrayBuffer): Promise<PNGWithPNALoaded> {
+export function getPNGAndPNAImage(pngBuffer: ArrayBuffer, pnaBuffer: ArrayBuffer): Promise<PNGWithPNA<Yet>> {
   return Promise.all([
     getImageFromArrayBuffer(pngBuffer),
     getImageFromArrayBuffer(pnaBuffer)
-  ]).then(([png, pna])=> ({png: png, pna: pna}));
+  ]).then(([png, pna])=> new PNGWithPNA<Yet>(png, pna) );
 }
 
 export function getImageFromArrayBuffer(buffer: ArrayBuffer): Promise<HTMLImageElement> {
@@ -45,18 +61,18 @@ export function getImageFromArrayBuffer(buffer: ArrayBuffer): Promise<HTMLImageE
 }
 
 export function getImageFromURL(url: string): Promise<HTMLImageElement> {
-  const img = new Image();
-  img.src = url;
   return new Promise<HTMLImageElement>((resolve, reject)=>{
+    const img = new Image();
+    img.src = url;
     img.addEventListener("load", ()=> resolve(img));
     img.addEventListener("error", reject);
   });
 }
 
-export function getArrayBuffer(url: string): Promise<ArrayBuffer> {
+export function getArrayBufferFromURL(url: string): Promise<ArrayBuffer> {
   console.warn("getArrayBuffer for debbug");
-  const xhr = new XMLHttpRequest();
   return new Promise<ArrayBuffer>((resolve, reject)=> {
+    const xhr = new XMLHttpRequest();
     xhr.addEventListener("load", ()=>{
       if (200 <= xhr.status && xhr.status < 300) {
         if (xhr.response.error == null) {

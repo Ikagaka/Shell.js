@@ -26,6 +26,7 @@
     "encoding-japanese": "*",
     "events": "^1.1.0",
     "jquery": "^2.2.4",
+    "jszip": "^3.0.0",
     "surfaces_txt2yaml": "legokichi/surfaces_txt2yaml#master",
     "text-encoding": "*"
   },

@@ -6,6 +6,7 @@
     "empower": "registry:dt/empower#0.0.0+20160317120654",
     "encoding-japanese/encoding.d.ts": "https://gist.githubusercontent.com/legokichi/c3d5420057bcb554dc11/raw/8267e95a31b0bcee392a100f29b34f1480aeda9e/encoding.d.ts",
     "jquery": "registry:dt/jquery#1.10.0+20160417213236",
+    "jszip": "registry:dt/jszip#0.0.0+20160709055933",
     "node": "registry:dt/node#6.0.0+20160720070758",
     "power-assert": "registry:dt/power-assert#0.0.0+20160316155526",
     "power-assert-formatter": "registry:dt/power-assert-formatter#0.0.0+20160317120654",
