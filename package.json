@@ -31,7 +31,8 @@
     "eventemitter3": "*",
     "jquery": "*",
     "surfaces_txt2yaml": "legokichi/surfaces_txt2yaml#master",
-    "text-encoding": "*"
+    "text-encoding": "*",
+    "typescript": "^1.6.2"
   },
   "devDependencies": {
     "coffee-script": "^1.10.0",

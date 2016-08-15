@@ -28,13 +28,13 @@
       "path": "surfaces_txt2yaml.d.ts"
     },
     "jquery/jquery.d.ts": {
-      "ref": "a323a1f2d09c4c5af8b18908091bed7a502e3996"
+      "ref": "67557f18a898462614ed14063a54ca33a1cfab12"
     },
     "bluebird/bluebird.d.ts": {
-      "ref": "a323a1f2d09c4c5af8b18908091bed7a502e3996"
+      "ref": "67557f18a898462614ed14063a54ca33a1cfab12"
     },
     "node/node.d.ts": {
-      "ref": "a323a1f2d09c4c5af8b18908091bed7a502e3996"
+      "ref": "67557f18a898462614ed14063a54ca33a1cfab12"
     }
   }
 }

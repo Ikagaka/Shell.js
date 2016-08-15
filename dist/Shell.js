@@ -200,6 +200,11 @@ var Shell = (function (_super) {
             // cat surfaces*.txt
             var text = surfaces_text_names.reduce(function (text, filename) { return text + SurfaceUtil.convert(_this.directory[filename]); }, "");
             this.surfacesTxt = SurfacesTxt2Yaml.txt_to_data(text, { compatible: 'ssp-lazy' });
+            console.log(this.surfaceTxt);
+            // https://github.com/Ikagaka/Shell.js/issues/55
+            if (this.surfacesTxt.surfaces == null) {
+                this.surfacesTxt.surfaces = {};
+            }
             // SurfacesTxt2Yamlの継承の expand と remove
             Object.keys(this.surfacesTxt.surfaces).forEach(function (name) {
                 if (typeof _this.surfacesTxt.surfaces[name].is === "number"
@@ -23592,7 +23597,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":9}],41:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.shell.js",
-  "version": "4.3.3",
+  "version": "4.3.4",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "url": "https://github.com/ikagaka/Shell.js",
@@ -23623,7 +23628,8 @@ module.exports={
     "eventemitter3": "*",
     "jquery": "*",
     "surfaces_txt2yaml": "legokichi/surfaces_txt2yaml#master",
-    "text-encoding": "*"
+    "text-encoding": "*",
+    "typescript": "^1.6.2"
   },
   "devDependencies": {
     "coffee-script": "^1.10.0",

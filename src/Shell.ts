@@ -205,6 +205,11 @@ export default class Shell extends EventEmitter {
       // cat surfaces*.txt
       const text = surfaces_text_names.reduce((text, filename)=> text + SurfaceUtil.convert(this.directory[filename]), "");
       this.surfacesTxt = SurfacesTxt2Yaml.txt_to_data(text, {compatible: 'ssp-lazy'});
+      console.log(this.surfaceTxt);
+      // https://github.com/Ikagaka/Shell.js/issues/55
+      if ( this.surfacesTxt.surfaces == null ) {
+        this.surfacesTxt.surfaces = {};
+      }
       // SurfacesTxt2Yamlの継承の expand と remove
       Object.keys(this.surfacesTxt.surfaces).forEach((name)=>{
         if(typeof this.surfacesTxt.surfaces[name].is === "number"
