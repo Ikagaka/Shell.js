@@ -1,0 +1,40 @@
+{
+  "repos": [
+    {
+      "url": "https://github.com/borisyankov/DefinitelyTyped.git",
+      "ref": "master"
+    },
+    {
+      "url": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "master"
+    }
+  ],
+  "path": "typings",
+  "bundle": "typings/tsd.d.ts",
+  "link": {
+    "npm": {
+      "include": true
+    }
+  },
+  "dependencies": {
+    "encoding-japanese/encoding.d.ts": {
+      "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "8267e95a31b0bcee392a100f29b34f1480aeda9e",
+      "path": "encoding.d.ts"
+    },
+    "surfaces_yaml/surfaces_txt2yaml.d.ts": {
+      "repo": "https://gist.github.com/c3d5420057bcb554dc11.git",
+      "ref": "8267e95a31b0bcee392a100f29b34f1480aeda9e",
+      "path": "surfaces_txt2yaml.d.ts"
+    },
+    "jquery/jquery.d.ts": {
+      "ref": "67557f18a898462614ed14063a54ca33a1cfab12"
+    },
+    "bluebird/bluebird.d.ts": {
+      "ref": "67557f18a898462614ed14063a54ca33a1cfab12"
+    },
+    "node/node.d.ts": {
+      "ref": "67557f18a898462614ed14063a54ca33a1cfab12"
+    }
+  }
+}

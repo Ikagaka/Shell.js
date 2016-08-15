@@ -8,11 +8,11 @@ export interface ShellConifg {
   };
   menu: {
     value: boolean; // シェルをゴーストのシェル切り替えメニューに表示しなくなる。false
-    font: {
+    font?: {
       name: string; // オーナードローメニューに使用するフォント
       height: number; // オーナードローメニューに使用する文字の大きさ。
     };
-    background: {
+    background?: {
       bitmap: {
         filename: string; // バックグラウンド表示画像ファイル名。
       };
@@ -25,7 +25,7 @@ export interface ShellConifg {
       };
       alignment: string; // バックグラウンド画像をrighttopで右寄せ、lefttopで左寄せ、centertopで中央寄せ。SSPのみrightbottom、leftbottom、centerbottomのような下方向固定も可。lefttop
     };
-    foreground: {
+    foreground?: {
       bitmap: {
         filename: string; // フォアグラウンド表示画像ファイル名。
       };
@@ -38,20 +38,20 @@ export interface ShellConifg {
       };
       alignment: string; // フォアグラウンド画像をrighttopで右寄せ、lefttopで左寄せ、centertopで中央寄せ。SSPのみrightbottom、leftbottom、centerbottomのような下方向固定も可。lefttop
     };
-    sidebar: {
+    sidebar?: {
       bitmap: {
         filename: string; // サイドバー表示画像ファイル名。
       };
       alignment: string; // サイドバー画像をtopで上寄せ、bottomで下寄せ。bottom
     };
-    separator: {
+    separator?: {
       color: {
         r: number; // セパレータ色赤(0～255)
         b: number; // セパレータ色緑(0～255)
         g: number; // セパレータ色青(0～255)
       };
     };
-    disable: {
+    disable?: {
       font: {
         color: {
           r: number; // フォアグラウンド文字色赤(0～255)

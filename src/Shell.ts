@@ -70,9 +70,10 @@ export default class Shell extends EventEmitter.EventEmitter {
   }
 
   private loadConfig(): Promise<Shell> {
-    // configへ流し込む
+    // key-valueなdescriptをconfigへ変換
     const descript = this.descript;
     // オートマージ
+    // dic["a.b.c"]="d"なテキストをJSON形式に変換している気がする
     Object.keys(descript).forEach((key)=>{
       let ptr: any = this.config;
       const props = key.split(".");
@@ -89,8 +90,11 @@ export default class Shell extends EventEmitter.EventEmitter {
             ptr = ptr[_prop][_num];
           }else{
             if(ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0){
+              // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
               // menu, 0 -> menu.value
               // menu.font...
+              // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
+              // このifはその例外への対処である
               ptr[_prop][_num].value = Number(descript[key]) || descript[key];
             }else{
               ptr[_prop][_num] = Number(descript[key]) || descript[key];
@@ -110,6 +114,19 @@ export default class Shell extends EventEmitter.EventEmitter {
         }
       }
     });
+    if(typeof this.config.menu !== "undefiend"){
+      // config型のデフォルト値を作り出すコンストラクタが存在しない（ゴミかよ）なので
+      // いちいちプロパティの存在チェックをしないといけないゴミさ加減
+      // このコード書いたやつ三週間便所掃除させたい
+      this.config.menu = {
+        value: false
+        // font: {...}
+        // background: {...}
+        // foreground: {...}
+        // ...
+        // いいから型コンストラクタ定義してくれ頼む
+      };
+    }
     if(typeof this.config.menu.value === "number"){
       this.config.menu.value = (+this.config.menu.value) > 0; // number -> boolean
     }else{
@@ -188,6 +205,10 @@ export default class Shell extends EventEmitter.EventEmitter {
       // cat surfaces*.txt
       const text = surfaces_text_names.reduce((text, filename)=> text + SurfaceUtil.convert(this.directory[filename]), "");
       this.surfacesTxt = SurfacesTxt2Yaml.txt_to_data(text, {compatible: 'ssp-lazy'});
+      // https://github.com/Ikagaka/Shell.js/issues/55
+      if ( this.surfacesTxt.surfaces == null ) {
+        this.surfacesTxt.surfaces = {};
+      }
       // SurfacesTxt2Yamlの継承の expand と remove
       Object.keys(this.surfacesTxt.surfaces).forEach((name)=>{
         if(typeof this.surfacesTxt.surfaces[name].is === "number"

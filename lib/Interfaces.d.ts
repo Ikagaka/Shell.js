@@ -7,11 +7,11 @@ export interface ShellConifg {
     };
     menu: {
         value: boolean;
-        font: {
+        font?: {
             name: string;
             height: number;
         };
-        background: {
+        background?: {
             bitmap: {
                 filename: string;
             };
@@ -24,7 +24,7 @@ export interface ShellConifg {
             };
             alignment: string;
         };
-        foreground: {
+        foreground?: {
             bitmap: {
                 filename: string;
             };
@@ -37,20 +37,20 @@ export interface ShellConifg {
             };
             alignment: string;
         };
-        sidebar: {
+        sidebar?: {
             bitmap: {
                 filename: string;
             };
             alignment: string;
         };
-        separator: {
+        separator?: {
             color: {
                 r: number;
                 b: number;
                 g: number;
             };
         };
-        disable: {
+        disable?: {
             font: {
                 color: {
                     r: number;
