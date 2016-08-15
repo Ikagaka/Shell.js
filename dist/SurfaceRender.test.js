@@ -900,7 +900,8 @@ function getScrollXY() {
 }
 exports.getScrollXY = getScrollXY;
 },{"encoding-japanese":4}],3:[function(require,module,exports){
-var craetePictureFrame;
+'use strict';
+var _craetePictureFrame;
 window.$ = require('jquery');
 window.SurfaceRender = require('./SurfaceRender')['default'];
 window.SurfaceUtil = require('./SurfaceUtil');
@@ -908,7 +909,7 @@ SurfaceRender.prototype.debug = true;
 $(function () {
     return $('<style />').html('canvas,img{border:1px solid black;}').appendTo($('body'));
 });
-craetePictureFrame = function (description, target) {
+_craetePictureFrame = function craetePictureFrame(description, target) {
     var fieldset, legend;
     if (target == null) {
         target = document.body;
@@ -921,10 +922,10 @@ craetePictureFrame = function (description, target) {
     target.appendChild(fieldset);
     fieldset.style.backgroundColor = '#D2E0E6';
     return {
-        add: function (element, txt) {
+        add: function add(element, txt) {
             var frame, p, txtNode;
             if (txt != null) {
-                frame = craetePictureFrame(txt, fieldset);
+                frame = _craetePictureFrame(txt, fieldset);
                 return frame.add(element);
             } else if (typeof element === 'string') {
                 txtNode = document.createTextNode(element);
@@ -960,7 +961,7 @@ QUnit.test('SurfaceRender#clear', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(alpha, 'arguments/0/left') === 0, 'arguments/0'), {
             content: 'assert.ok(alpha === 0)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 67
+            line: 69
         }));
         return done();
     });
@@ -981,12 +982,12 @@ QUnit.test('SurfaceRender#base', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
             content: 'assert.ok(cnv.width === 182)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 85
+            line: 87
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
             content: 'assert.ok(cnv.height === 445)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 86
+            line: 88
         }));
         return done();
     });
@@ -1026,44 +1027,44 @@ QUnit.test('SurfaceRender#overlay', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(megane_on_base_render, 'arguments/0/left/object/object').cnv, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
             content: 'assert.ok(megane_on_base_render.cnv.width === 182)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 119
+            line: 121
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(megane_on_base_render, 'arguments/0/left/object/object').cnv, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
             content: 'assert.ok(megane_on_base_render.cnv.height === 445)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 120
+            line: 122
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(base_on_megane_render, 'arguments/0/left/object/object').cnv, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
             content: 'assert.ok(base_on_megane_render.cnv.width === 182)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 121
+            line: 123
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(base_on_megane_render, 'arguments/0/left/object/object').cnv, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
             content: 'assert.ok(base_on_megane_render.cnv.height === 445)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 122
+            line: 124
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(megane_on_base_negative_render, 'arguments/0/left/object/object').cnv, 'arguments/0/left/object').width, 'arguments/0/left') === 282, 'arguments/0'), {
             content: 'assert.ok(megane_on_base_negative_render.cnv.width === 282)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 123
+            line: 125
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(megane_on_base_negative_render, 'arguments/0/left/object/object').cnv, 'arguments/0/left/object').height, 'arguments/0/left') === 545, 'arguments/0'), {
             content: 'assert.ok(megane_on_base_negative_render.cnv.height === 545)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 124
+            line: 126
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(base_on_megane_negative_render, 'arguments/0/left/object/object').cnv, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
             content: 'assert.ok(base_on_megane_negative_render.cnv.width === 182)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 125
+            line: 127
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(base_on_megane_negative_render, 'arguments/0/left/object/object').cnv, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
             content: 'assert.ok(base_on_megane_negative_render.cnv.height === 445)',
             filepath: 'es5/SurfaceRender.test.js',
-            line: 126
+            line: 128
         }));
-        frame = craetePictureFrame('SurfaceRender#overlay');
+        frame = _craetePictureFrame('SurfaceRender#overlay');
         frame.add('下位レイヤにコマを重ねる');
         frame.add(megane_on_base_render.cnv, 'megane on base');
         frame.add(base_on_megane_render.cnv, 'base on megane');
@@ -1088,7 +1089,7 @@ QUnit.test('SurfaceRender#overlayfast', function (assert) {
         transparent = render.getSurfaceCanvas();
         render.overlayfast(transparent, 50, 50);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#overlayfast');
+        frame = _craetePictureFrame('SurfaceRender#overlayfast');
         frame.add('下位レイヤの非透過部分\uFF08半透明含む\uFF09にのみコマを重ねる');
         frame.add(render.cnv, 'result');
         frame.add($('<img src=\'src/overlayfast.png\' />')[0], 'expected');
@@ -1111,7 +1112,7 @@ QUnit.test('SurfaceRender#interpolate', function (assert) {
         transparent = render.getSurfaceCanvas();
         render.interpolate(transparent, 50, 50);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#interpolate');
+        frame = _craetePictureFrame('SurfaceRender#interpolate');
         frame.add('下位レイヤの透明なところにのみコマを重ねる');
         frame.add(render.cnv, 'result');
         frame.add($('<img src=\'src/interpolate.png\' />')[0], 'expected');
@@ -1134,7 +1135,7 @@ QUnit.test('SurfaceRender#replace', function (assert) {
         transparent = render.getSurfaceCanvas();
         render.replace(transparent, 50, 50);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#replace');
+        frame = _craetePictureFrame('SurfaceRender#replace');
         frame.add('下位レイヤにコマを重ねるが\u3001コマの透過部分について下位レイヤにも反映する');
         frame.add(render.cnv, 'result');
         frame.add($('<img src=\'src/replace.png\' />')[0], 'expected');
@@ -1156,7 +1157,7 @@ QUnit.test('SurfaceRender#move', function (assert) {
         render.base(base);
         render.move(50, 50);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#move(50, 50)');
+        frame = _craetePictureFrame('SurfaceRender#move(50, 50)');
         frame.add('下位レイヤをXY座標指定分ずらす');
         frame.add(render.cnv, 'result');
         frame.add($('<img src=\'src/move.png\' />')[0], 'expected');
@@ -1189,7 +1190,7 @@ QUnit.test('SurfaceRender#reduce', function (assert) {
         render.reduce(filter, 50, 50);
         render.reduce(filter, 120, 120);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#reduce');
+        frame = _craetePictureFrame('SurfaceRender#reduce');
         frame.add('マリちゃんの顔のまわりと右下に透明枠ができる');
         frame.add(render.cnv, 'result');
         frame.add($('<img src=\'src/reduce.png\' />')[0], 'expected');
@@ -1211,7 +1212,7 @@ QUnit.test('SurfaceRender#asis', function (assert) {
         render.base(base);
         render.asis(base, 50, 50);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#asis(50, 50)');
+        frame = _craetePictureFrame('SurfaceRender#asis(50, 50)');
         frame.add('下位レイヤに\u3001抜き色やアルファチャンネルを適応しないままそのコマを重ねる');
         frame.add(render.cnv, 'result');
         frame.add($('<img src=\'src/asis.png\' />')[0], 'expected');
@@ -1254,7 +1255,7 @@ QUnit.test('SurfaceRender#composeElements', function (assert) {
             }
         ]);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#composeElements');
+        frame = _craetePictureFrame('SurfaceRender#composeElements');
         frame.add(render.cnv, 'result');
         frame.add($('<img src=\'src/composeElements.png\' />')[0], 'expected');
         return done();
@@ -1436,7 +1437,7 @@ QUnit.test('SurfaceRender#drawRegions', function (assert) {
             }
         ]);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#drawRegions');
+        frame = _craetePictureFrame('SurfaceRender#drawRegions');
         frame.add(render.cnv, 'result');
         frame.add($('<img src=\'src/drawRegions.png\' />')[0], 'expected');
         return done();
@@ -1491,7 +1492,7 @@ QUnit.test('SurfaceRender#overlay negative', function (assert) {
             }
         ]);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#overlay negative');
+        frame = _craetePictureFrame('SurfaceRender#overlay negative');
         frame.add(render.cnv, 'result');
         return done();
     });
@@ -1533,7 +1534,7 @@ QUnit.test('SurfaceRender#overlay base on megane', function (assert) {
             }
         ]);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#overlay negative');
+        frame = _craetePictureFrame('SurfaceRender#overlay negative');
         frame.add(render.cnv, 'result');
         return done();
     });
@@ -1593,7 +1594,7 @@ QUnit.test('SurfaceRender#overlay base on megane super', function (assert) {
             }
         ]);
         assert.ok(true);
-        frame = craetePictureFrame('SurfaceRender#overlay negative');
+        frame = _craetePictureFrame('SurfaceRender#overlay negative');
         frame.add(render.cnv, 'result');
         return done();
     });

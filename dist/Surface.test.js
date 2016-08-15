@@ -1683,14 +1683,15 @@ function getScrollXY() {
 }
 exports.getScrollXY = getScrollXY;
 },{"encoding-japanese":5}],4:[function(require,module,exports){
-var craetePictureFrame;
+'use strict';
+var _craetePictureFrame;
 window.$ = require('jquery');
 window.SurfaceUtil = require('./SurfaceUtil');
 window.Surface = require('./Surface')['default'];
 $(function () {
     return $('<style />').html('canvas{border:1px solid black;}').appendTo($('body'));
 });
-craetePictureFrame = function (description, target) {
+_craetePictureFrame = function craetePictureFrame(description, target) {
     var fieldset, legend;
     if (target == null) {
         target = document.body;
@@ -1703,10 +1704,10 @@ craetePictureFrame = function (description, target) {
     target.appendChild(fieldset);
     fieldset.style.backgroundColor = '#D2E0E6';
     return {
-        add: function (element, txt) {
+        add: function add(element, txt) {
             var frame, p, txtNode;
             if (txt != null) {
-                frame = craetePictureFrame(txt, fieldset);
+                frame = _craetePictureFrame(txt, fieldset);
                 return frame.add(element);
             } else if (typeof element === 'string') {
                 txtNode = document.createTextNode(element);
@@ -1808,14 +1809,14 @@ QUnit.test('surface0', function (assert) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok($(srf.element).width() === base.cnv.width)',
                 filepath: 'es5/Surface.test.js',
-                line: 123
+                line: 121
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok($(srf.element).height() === base.cnv.height)',
                 filepath: 'es5/Surface.test.js',
-                line: 124
+                line: 122
             }));
-            frame = craetePictureFrame('surface0');
+            frame = _craetePictureFrame('surface0');
             frame.add(srf.element, 'マリちゃんの\\0\\s[0]のまばたき');
             return done();
         });
@@ -1906,14 +1907,14 @@ QUnit.test('surface overlay', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).width() === base.cnv.width)',
             filepath: 'es5/Surface.test.js',
-            line: 209
+            line: 203
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).height() === base.cnv.height)',
             filepath: 'es5/Surface.test.js',
-            line: 210
+            line: 204
         }));
-        frame = craetePictureFrame('overlay テスト');
+        frame = _craetePictureFrame('overlay テスト');
         frame.add(srf.element, 'マリちゃんのセルフエグザイル');
         return done();
     });
@@ -1982,14 +1983,14 @@ QUnit.test('surface overlay negative', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).width() === base.cnv.width)',
             filepath: 'es5/Surface.test.js',
-            line: 276
+            line: 266
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).height() === base.cnv.height)',
             filepath: 'es5/Surface.test.js',
-            line: 277
+            line: 267
         }));
-        frame = craetePictureFrame('overlay テスト');
+        frame = _craetePictureFrame('overlay テスト');
         frame.add(srf.element, 'マリちゃんが左上へ向かう');
         return done();
     });
