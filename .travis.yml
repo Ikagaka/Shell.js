@@ -9,17 +9,16 @@ script:
   - echo "nothing"
 after_script:
   - git stash
-  - npm install -g bower 
-  - git fetch origin gh-pages
-  - git checkout gh-pages
+  - git checkout --orphan travis_tmp
   - git checkout 5.x dist demo nar bower.json
+  - npm install -g bower
   - bower install
   - git status
   - git add dist demo nar bower_components
   - git commit -am "travis-auto-update"
   - git status
   - git ls-files
-  - '[ "$TRAVIS_BRANCH" == "5.x" ] && [ $GH_TOKEN ] && git push --force --quiet "https://${GH_TOKEN}@github.com/Ikagaka/Shell.git" gh-pages:gh-pages > /dev/null 2>&1'
+  - '[ "$TRAVIS_BRANCH" == "5.x" ] && [ $GH_TOKEN ] && git push --force --quiet "https://${GH_TOKEN}@github.com/Ikagaka/Shell.git" travis_tmp:gh-pages > /dev/null 2>&1'
 env:
   global:
     - GIT_COMMITTER_NAME=legokichi
