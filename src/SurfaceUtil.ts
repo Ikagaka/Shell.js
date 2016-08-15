@@ -13,6 +13,7 @@ export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
     // 背景色抜き
     const cnvA = copy(png);
     const ctxA = cnvA.getContext("2d");
+    if(!ctxA) throw new Error("getContext failed");
     const imgdata = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
     chromakey_snipet(<Uint8ClampedArray><any>imgdata.data);
     ctxA.putImageData(imgdata, 0, 0);
@@ -23,10 +24,12 @@ export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
     // pna
     const cnvA = copy(png);
     const ctxA = cnvA.getContext("2d");
+    if(!ctxA) throw new Error("getContext failed");
     const imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
     const dataA = imgdataA.data;
     const cnvB = copy(pna);
     const ctxB = cnvB.getContext("2d")
+    if(!ctxB) throw new Error("getContext failed");
     const imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
     const dataB = imgdataB.data;
     for(let y=0; y<cnvB.height; y++){
@@ -103,22 +106,22 @@ export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
   return new Promise<ArrayBuffer>((resolve, reject)=>{
     getArrayBuffer(url, (err, buffer)=>{
       if(!!err) reject(err);
-      else      resolve(buffer);
+      else      resolve(buffer!);
     });
   });
 }
 
 // XMLHttpRequest, xhr.responseType = "arraybuffer"
-export function getArrayBuffer(url: string, cb: (err: any, buffer: ArrayBuffer)=> any): void {
+export function getArrayBuffer(url: string, cb: (err: any, buffer: ArrayBuffer|null)=> any): void {
   const xhr = new XMLHttpRequest();
-  const _cb = (a: any, b: ArrayBuffer)=>{
+  const _cb = (a: any, b: ArrayBuffer|null)=>{
     cb(a, b);
     cb = (a, b)=>{ console.warn("SurfaceUtil.getArrayBuffer", url, a, b); };
   };
   xhr.addEventListener("load", function() {
     if (200 <= xhr.status && xhr.status < 300) {
       if (xhr.response.error == null) {
-        _cb(null, xhr.response);
+        _cb(null, <ArrayBuffer>xhr.response);
       } else {
         _cb(new Error("message: "+ xhr.response.error.message), null);
       }
@@ -174,7 +177,8 @@ export function choice<T>(arr: T[]): T {
 // see also: http://stackoverflow.com/questions/4405336/how-to-copy-contents-of-one-canvas-to-another-canvas-locally
 export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement {
   const _copy = document.createElement("canvas");
-  const ctx = <CanvasRenderingContext2D>_copy.getContext("2d");
+  const ctx = _copy.getContext("2d");
+  if(!ctx) throw new Error("getContext failed");
   _copy.width = cnv.width;
   _copy.height = cnv.height;
   ctx.drawImage(<HTMLCanvasElement>cnv, 0, 0); // type hack
@@ -194,13 +198,13 @@ export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string)
   return new Promise<HTMLImageElement>((resolve, reject)=>{
     getImageFromArrayBuffer(buffer, (err, img)=>{
       if(!!err) reject(err);
-      else      resolve(img);
+      else      resolve(img!);
     })
   });
 }
 
 // ArrayBuffer -> HTMLImageElement
-export function getImageFromArrayBuffer(buffer: ArrayBuffer, cb: (err: any, img: HTMLImageElement)=> any): void {
+export function getImageFromArrayBuffer(buffer: ArrayBuffer, cb: (err: any, img: HTMLImageElement|null)=> any): void {
   const url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
   getImageFromURL(url, (err, img)=>{
     URL.revokeObjectURL(url);
@@ -214,13 +218,13 @@ export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
   return new Promise<HTMLImageElement>((resolve, reject)=>{
     getImageFromURL(url, (err, img)=>{
       if(!!err) reject(err);
-      else      resolve(img);
+      else      resolve(img!);
     });
   });
 }
 
 // URL -> HTMLImageElement
-export function getImageFromURL(url: string, cb: (err: any, img: HTMLImageElement)=> any): void {
+export function getImageFromURL(url: string, cb: (err: any, img: HTMLImageElement | null)=> any): void {
   const img = new Image();
   img.src = url;
   img.addEventListener("load", function() {
@@ -259,7 +263,8 @@ export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
   if(!(x > 0 && y > 0)) return false;
   // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
   if(!(cnv.width > 0 || cnv.height > 0)) return false;
-  const ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
+  const ctx = cnv.getContext("2d");
+  if(!ctx) throw new Error("getContext failed");
   const imgdata = ctx.getImageData(0, 0, x, y);
   const data = imgdata.data;
   return data[data.length - 1] !== 0;
@@ -280,11 +285,12 @@ export function scope(scopeId: number): string {
        : "char"+scopeId;
 }
 
-// sakuta -> 0
+// sakura -> 0
+// parse error -> -1
 export function unscope(charId: string): number {
   return charId === "sakura" ? 0
        : charId === "kero"   ? 1
-       : Number(/^char(\d+)/.exec(charId)[1]);
+       : Number((/^char(\d+)/.exec(charId)||["","-1"])[1]);
 }
 
 // JQueryEventObject からタッチ・マウスを正規化して座標値を抜き出す便利関数
@@ -336,7 +342,7 @@ export function getRegion(element: HTMLCanvasElement, collisions: SurfaceRegion[
       case "polygon":
         const {coordinates} = <SurfaceRegionPolygon>collision;
         const ptC = {x:offsetX, y:offsetY};
-        const tuples = coordinates.reduce(((arr, {x, y}, i)=>{
+        const tuples = coordinates.reduce<[{x:number,y:number},{x:number,y:number}][]>(((arr, {x, y}, i)=>{
           arr.push([
             coordinates[i],
             (!!coordinates[i+1] ? coordinates[i+1] : coordinates[0])

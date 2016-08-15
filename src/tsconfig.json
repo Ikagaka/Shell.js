@@ -30,13 +30,13 @@
         //"noImplicitUseStrict": false,
         "noLib": false,
         "noResolve": false,
-        "outDir": "./lib",
+        "outDir": "../lib",
         //"outFile": null,
         "preserveConstEnums": true,
         "pretty": true,
         //"reactNamespace": "React",
         "removeComments": false,
-        "rootDir": "./src",
+        "rootDir": "./",
         "skipDefaultLibCheck": false,
         "sourceMap": false,
         //"sourceRoot": "./src",
@@ -44,7 +44,7 @@
         "stripInternal": false,
         "suppressExcessPropertyErrors": true,
         "suppressImplicitAnyIndexErrors": true,
-        "target": "es2015"//,
+        "target": "es2015"
         //"traceResolution": false
     },
     "formatCodeOptions": {
@@ -62,14 +62,15 @@
         "placeOpenBraceOnNewLineForControlBlocks": true
     },
     "files": [
-        //"./src/Shell.ts",
-        //"./src/index.ts",
-        //"./src/Interfaces.ts",
-        //"./src/Shell.ts",
-        //"./src/ShellSurface.ts"
-        //"./src/SurfaceRender.ts"
-        "./src/CacheCanvas.ts",
-        "./src/testCacheCanvas.ts"
+        "index.ts",
+        "Interfaces.ts",
+        "Shell.ts",
+        "Surface.ts",
+        "SurfaceUtil.ts",
+        "SurfaceRender.ts",
+        "CacheCanvas.ts",
+        "testCacheCanvas.ts",
+        "surfaces_txt2yaml.d.ts"
     ],
     "exclude": [
         "node_modules"

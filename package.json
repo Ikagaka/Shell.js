@@ -10,35 +10,48 @@
     "ukagaka"
   ],
   "scripts": {
-    "setup": "npm install -g gulp-cli typings http-server",
+    "setup": "npm install -g gulp-cli typings http-server mversion",
     "init": "npm run update; npm run build",
     "update": "npm update; bower update; typings install",
-    "tree": "tree -C -L 2 -I node_modules",
-    "build": "gulp",
-    "start": "http-server -s & gulp watch",
+    "build": "npm run clean&&  tsc    -p src&& babel lib    -d es5&& gulp build&& browserify es5/index.js --standalone Shell -o dist/Shell.js",
+    "start": "http-server -s & tsc -w -p src & babel lib -w -d es5 & gulp watch &   watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
     "stop": "killall -- node */http-server -s",
-    "clean": "rm -rf lib/* dist/* demo/test/*"
+    "tsc": "tsc -p src",
+    "babel": "babel lib -d es5",
+    "espower": "gulp build",
+    "browserify": "browserify es5/index.js --standalone Shell -o dist/Shell.js",
+    "check": "reset; tsc -p src --noEmit",
+    "tree": "tree -C -L 2 -I node_modules",
+    "clean": "rm -rf lib/* es5/* dist/*",
+    "reset": "rm -rf bower_components node_modules typings",
+    "patch": "mversion patch"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/ikagaka/ikagaka/Shell.js.git"
   },
   "dependencies": {
+    "encoding-japanese": "^1.0.24",
     "events": "^1.1.0",
     "jquery": "3.*",
     "surfaces_txt2yaml": "legokichi/surfaces_txt2yaml#master"
   },
   "devDependencies": {
-    "babel-core": "^6.11.4",
-    "babel-preset-es2015": "^6.9.0",
+    "babel-cli": "^6.11.4",
+    "babel-polyfill": "^6.13.0",
+    "babel-preset-es2015": "^6.13.2",
+    "browserify": "^13.1.0",
     "empower": "^1.2.1",
     "gulp": "^3.9.1",
-    "gulp-babel": "^6.1.2",
-    "gulp-browserify": "^0.5.1",
+    "gulp-coffee": "^2.3.2",
     "gulp-espower": "^1.0.2",
-    "gulp-typescript": "^2.13.6",
-    "run-sequence": "^1.2.2",
-    "typescript": "2.0.*"
+    "typescript": "^2.0.0",
+    "watchify": "^3.7.0"
+  },
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
   },
   "bugs": {
     "url": "https://github.com/Ikagaka/Shell.js/issues"

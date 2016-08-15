@@ -1,32 +1,22 @@
 const gulp = require('gulp');
-const typescript = require('typescript');
-const ts = require('gulp-typescript');
-const babel = require('gulp-babel');
+const coffee = require('gulp-coffee');
 const espower = require('gulp-espower');
-const browserify = require('gulp-browserify');
-const runseq = require('run-sequence');
 
-const tsProject = ts.createProject('tsconfig.json', {typescript});
 
-gulp.task('build:lib', ()=>{
-    return tsProject.src()
-        .pipe(ts(tsProject))
-        .pipe(babel({presets: ['es2015']}))
-        .pipe(gulp.dest('lib'));
-});
-
-gulp.task('build:dist', ()=>{
-    return gulp.src("lib/*.js")
+gulp.task('build:test', ()=>{
+    //return gulp.src("es5/test_*.js")
+    return gulp.src("test/**/*.coffee")
+        .pipe(coffee({bare: true}).on("error", console.error.bind(console)))    
         .pipe(espower())
-        .pipe(browserify())
-        .pipe(gulp.dest('dist'));
+        //.pipe(gulp.dest('dist'));
+        .pipe(gulp.dest('demo/test'));
 });
 
-gulp.task('watch:src', ()=>{
-    return gulp.watch('src/*.ts', ['build']);
+gulp.task('watch:test', ()=>{
+    return gulp.watch('es5/test_*.js', ['build:test']);
 });
 
 gulp.task('default', ['build']);
-gulp.task('build', (cb)=> runseq("build:lib", ["build:dist"], cb));
-gulp.task('watch', ['build', "watch:src"]);
+gulp.task('build', ["build:test"]);
+gulp.task('watch', ['build', "watch:test"]);
 

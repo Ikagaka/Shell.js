@@ -1,4 +1,5 @@
 /// <reference path="../typings/index.d.ts"/>
+/// <reference path="surfaces_txt2yaml.d.ts" />
 
 import Surface from './Surface';
 import SurfaceRender from "./SurfaceRender";
@@ -8,7 +9,7 @@ import SurfacesTxt2Yaml = require("surfaces_txt2yaml");
 import * as EventEmitter from "events";
 import $ = require("jquery");
 
-export default class Shell extends EventEmitter {
+export default class Shell extends EventEmitter.EventEmitter {
   //public
 
   public directory: { [filepath: string]: ArrayBuffer; } // filepathに対応するファイルのArrayBuffer
@@ -158,7 +159,7 @@ export default class Shell extends EventEmitter {
       Object.keys(dic).filter((key)=> reg.test(key))
     const reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)(?:\.(default))?/;
     grep(descript, reg).forEach((key)=>{
-      const [_, charId, bindgroupId, dflt] = reg.exec(key);
+      const [_, charId, bindgroupId, dflt] = <string[]>reg.exec(key);
       const _charId = charId === "sakura" ? "0" :
                                "kero"   ? "1" :
                                (/char(\d+)/.exec(charId)||["", Number.NaN])[1];
@@ -234,7 +235,8 @@ export default class Shell extends EventEmitter {
     return new Promise<Shell>((resolve, reject)=>{
       let i = 0;
       surface_names.forEach((filename)=>{
-        const n = Number(/^surface(\d+)\.png$/i.exec(filename)[1]);
+        const n = Number((/^surface(\d+)\.png$/i.exec(filename)||["","NaN"])[1]);
+        if(!isFinite(n)) return;
         i++;
         this.getPNGFromDirectory(filename, (err, cnv)=>{
           if(err != null){
@@ -275,7 +277,7 @@ export default class Shell extends EventEmitter {
           const {is, type, file, x, y} = elms[elmname];
           i++;
           this.getPNGFromDirectory(file, (err, canvas)=>{
-            if( err != null){
+            if( err != null || canvas == null){
               console.warn("Shell#loadElements > " + err);
             }else{
               if(!this.surfaceTree[n]){
@@ -367,7 +369,7 @@ export default class Shell extends EventEmitter {
   // this.cacheCanvas から filename な SurfaceCanvas を探す。
   // なければ this.directory から探し this.cacheCanvas にキャッシュする
   // 非同期の理由：img.onload = blob url
-  private getPNGFromDirectory(filename: string, cb: (err: any, srfCnv: SurfaceCanvas)=> any): void {
+  private getPNGFromDirectory(filename: string, cb: (err: any, srfCnv: SurfaceCanvas|null)=> any): void {
     const cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
     if(cached_filename !== ""){
       cb(null, this.cacheCanvas[cached_filename]);
@@ -404,7 +406,7 @@ export default class Shell extends EventEmitter {
     });
   }
 
-  public attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number|string): Surface {
+  public attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number|string): Surface|null {
     const type = SurfaceUtil.scope(scopeId);
     const hits = this.attachedSurface.filter(({div: _div})=> _div === div);
     if(hits.length !== 0) throw new Error("Shell#attachSurface > ReferenceError: this HTMLDivElement is already attached");
@@ -442,24 +444,25 @@ export default class Shell extends EventEmitter {
     this.attachedSurface.forEach(function({div, surface}){
       surface.destructor();
     });
-    this.removeAllListeners(null);
+    this.removeAllListeners();
     Shell.call(this, {}); // 初期化
   }
 
   private getSurfaceAlias(scopeId: number, surfaceId: number|string): number {
     const type = SurfaceUtil.scope(scopeId);
+    var _surfaceId = -1;
     if(typeof surfaceId === "string" || typeof surfaceId === "number"){
       if(!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]){
         // まずエイリアスを探す
-        var _surfaceId = SurfaceUtil.choice<number>(this.surfacesTxt.aliases[type][surfaceId]);
+        _surfaceId = SurfaceUtil.choice<number>(this.surfacesTxt.aliases[type][surfaceId]);
       }else if(typeof surfaceId === "number"){
         // 通常の処理
-        var _surfaceId = surfaceId;
+        _surfaceId = surfaceId;
       }
     }else{
       // そんなサーフェスはない
       console.warn("Shell#hasSurface > surface alias scope:", scopeId + "as" + type+ ", id:" + surfaceId + " is not defined.");
-      var _surfaceId = -1;
+      _surfaceId = -1;
     }
     return _surfaceId;
   }

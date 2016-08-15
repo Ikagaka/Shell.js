@@ -28,9 +28,13 @@ export default class SurfaceRender {
   constructor(opt?:{use_self_alpha: boolean;}) {
     this.use_self_alpha = false;
     this.cnv = SurfaceUtil.createCanvas();
-    this.ctx = this.cnv.getContext("2d");
+    const ctx = this.cnv.getContext("2d");
+    if(!ctx) throw new Error("SurfaceRender#Constructor:getContext failed");
+    this.ctx = ctx;
     this.tmpcnv = SurfaceUtil.createCanvas();
-    this.tmpctx = this.tmpcnv.getContext("2d");
+    const tmpctx = this.tmpcnv.getContext("2d");
+    if(!tmpctx) throw new Error("SurfaceRender#Constructor:getContext failed");
+    this.tmpctx = tmpctx;
     this.basePosX = 0;
     this.basePosY = 0;
     this.baseWidth = 0;
@@ -105,6 +109,7 @@ export default class SurfaceRender {
   //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
   //着せ替え・elementでも使用できる。
   public base(part: SurfaceCanvas): void {
+    
     if (! (part.cnv instanceof HTMLCanvasElement)){
       console.error("SurfaceRender#base", "base surface is not defined", part);
       return;
@@ -115,6 +120,7 @@ export default class SurfaceRender {
   }
 
   private prepareOverlay(part: SurfaceCanvas, x: number, y: number): void {
+    if(!part.cnv) throw new Error("SurfaceRender#prepareOverlay:cnv is null"); 
     // baseのcanvasを拡大するためのキャッシュ
     const tmp = SurfaceUtil.fastcopy(this.cnv, this.tmpcnv, this.tmpctx);
     let offsetX = 0;
@@ -177,7 +183,7 @@ export default class SurfaceRender {
   private overlay(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "source-over";
-    this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);//コマ追加
+    this.ctx.drawImage(part.cnv!, this.basePosX + x, this.basePosY + y);//コマ追加
   }
 
   //下位レイヤの非透過部分（半透明含む）にのみコマを重ねる。
@@ -185,7 +191,7 @@ export default class SurfaceRender {
   private overlayfast(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "source-atop";
-    this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
+    this.ctx.drawImage(part.cnv!, this.basePosX + x, this.basePosY + y);
   }
 
   //下位レイヤの透明なところにのみコマを重ねる。
@@ -196,14 +202,14 @@ export default class SurfaceRender {
   private interpolate(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "destination-over";
-    this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
+    this.ctx.drawImage(part.cnv!, this.basePosX + x, this.basePosY + y);
   }
 
   //下位レイヤにコマを重ねるが、コマの透過部分について下位レイヤにも反映する（reduce + overlayに近い）。
   //着せ替え・elementでも使用できる。
   private replace(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
-    this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv.width, part.cnv.height);
+    this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv!.width, part.cnv!.height);
     this.overlay(part, x, y);
   }
 
@@ -215,7 +221,7 @@ export default class SurfaceRender {
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "source-over";
     // part.png で png画像をそのまま利用
-    this.ctx.drawImage(part.png, this.basePosX + x, this.basePosY + y);
+    this.ctx.drawImage(part.png!, this.basePosX + x, this.basePosY + y);
   }
 
   //下位レイヤをXY座標指定分ずらす。
@@ -239,6 +245,7 @@ export default class SurfaceRender {
   //http://usada.sakura.vg/contents/seriko.html
   private reduce(part: SurfaceCanvas, x: number, y: number): void {
     if(!this.use_self_alpha) part = SurfaceUtil.pna(part);
+    if(!(part.cnv instanceof HTMLCanvasElement)) throw new Error("SurfaceRender#reduce: null")
     // はみ出しちぇっく
     // prepareOverlay はしない
     const width  = x + part.cnv.width  < this.cnv.width  ? part.cnv.width  : this.cnv.width  - x;
@@ -246,6 +253,7 @@ export default class SurfaceRender {
     const imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
     const dataA = imgdataA.data;
     const ctxB = part.cnv.getContext("2d");
+    if(!ctxB) throw new Error("SurfaceRender#reduce: getContext failed");
     const imgdataB = ctxB.getImageData(0, 0, part.cnv.width, part.cnv.height)
     const dataB = imgdataB.data;
     for(let _y=0; _y<height; _y++){
@@ -275,6 +283,7 @@ export default class SurfaceRender {
     const {type="", name=""} = region;
     this.ctx.lineWidth = 1;
     this.ctx.strokeStyle = "#00FF00";
+    var left=0, top=0, right=0, bottom=0;
     switch (type) {
       case "rect":
         var {left=0, top=0, right=0, bottom=0} = <SurfaceRegionRect>region;

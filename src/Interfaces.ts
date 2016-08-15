@@ -1,4 +1,5 @@
 /// <reference path="../typings/index.d.ts"/>
+/// <reference path="surfaces_txt2yaml.d.ts" />
 
 export interface ShellConifg {
   seriko: {
@@ -99,9 +100,9 @@ export interface ShellConifg {
 }
 
 export interface SurfaceCanvas {
-  cnv: HTMLCanvasElement; // 色抜き後のサーフェス。初期状態ではnull。使われるごとにキャッシュされる
-  png: HTMLImageElement; // 色抜き前の素材。cnvがあればnullable
-  pna: HTMLImageElement; // 色抜き前の素材。SurfaceUtil.pna しないかぎり nullable
+  cnv: HTMLCanvasElement|null; // 色抜き後のサーフェス。初期状態ではnull。使われるごとにキャッシュされる
+  png: HTMLImageElement|null; // 色抜き前の素材。cnvがあればnullable
+  pna: HTMLImageElement|null; // 色抜き前の素材。SurfaceUtil.pna しないかぎり nullable
 }
 
 export interface SurfaceMouseEvent {
@@ -117,7 +118,7 @@ export interface SurfaceMouseEvent {
 }
 
 export interface SurfaceTreeNode {
-  base:  SurfaceCanvas,
+  base:  SurfaceCanvas|null,
   elements: SurfaceElement[],
   collisions: SurfaceRegion[],
   animations: SurfaceAnimationEx[]

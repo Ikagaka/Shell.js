@@ -7,7 +7,7 @@ import * as EventEmitter from "events";
 import $ = require("jquery");
 
 
-export default class Surface extends EventEmitter {
+export default class Surface extends EventEmitter.EventEmitter {
 
   public element: HTMLDivElement;
   public scopeId: number;
@@ -29,7 +29,7 @@ export default class Surface extends EventEmitter {
   private stopFlags:       { [animationId: number]: boolean };//keyがfalseのアニメーションの"自発的"再生を停止する、sometimesみたいのを止める。bindには関係ない
   private surfaceTree:     { [animationId: number]: SurfaceTreeNode };
   private bindgroup:       { [charId: number]: { [bindgroupId: number]: boolean } }
-  private dynamicBase:     {type: string, x: number, y: number, canvas: {cnv: HTMLCanvasElement, png: HTMLImageElement, pna: HTMLImageElement}}; // アニメーションパーツででbase指定されたもの
+  private dynamicBase:     {type: string, x: number, y: number, canvas: {cnv: HTMLCanvasElement|null, png: HTMLImageElement|null, pna: HTMLImageElement|null}}|null; // アニメーションパーツででbase指定されたもの
 
   private destructed: boolean;
   private destructors: Function[]; // destructor実行時に実行される関数のリスト
@@ -43,8 +43,8 @@ export default class Surface extends EventEmitter {
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
     this.cnv = SurfaceUtil.createCanvas();
-    this.ctx = this.cnv.getContext("2d");
-
+    const ctx = this.cnv.getContext("2d");
+    if(ctx == null) throw new Error("Surface#constructor: ctx is null");
     this.bindgroup = bindgroup;
     this.position = "fixed";
     this.surfaceTree = surfaceTree;
@@ -79,7 +79,7 @@ export default class Surface extends EventEmitter {
   public destructor(): void {
     $(this.element).children().remove();
     this.destructors.forEach((fn)=> fn());
-    this.element = null;
+    this.element = document.createElement("div");
     this.surfaceNode = {
       base:  {cnv: null, png: null, pna: null},
       elements: [],
@@ -92,7 +92,7 @@ export default class Surface extends EventEmitter {
     this.animationsQueue = {};
     this.talkCounts = {};
     this.destructors = [];
-    this.removeAllListeners(null);
+    this.removeAllListeners();
     this.destructed = true;
   }
 
@@ -141,8 +141,17 @@ export default class Surface extends EventEmitter {
     const {left, top} = $(ev.target).offset();
     // body直下 fixed だけにすべきかうーむ
     const {scrollX, scrollY} = SurfaceUtil.getScrollXY();
-    const [baseX, baseY] = this.position !== "fixed" ? [pageX, pageY]: [clientX, clientY];
-    const [_left, _top]  = this.position !== "fixed" ? [left,  top]  : [left - scrollX, top - scrollY];
+    if(this.position !== "fixed"){
+      var baseX = pageX;
+      var baseY = pageY;
+      var _left = left;
+      var _top = top;
+    }else{
+      var baseX = clientX;
+      var baseY = clientY;
+      var _left = left - scrollX;
+      var _top = top - scrollY;
+    }
     const basePosY = parseInt($(this.cnv).css("top"), 10);  // overlayでのずれた分を
     const basePosX = parseInt($(this.cnv).css("left"), 10); // とってくる
     const offsetX = baseX - _left - basePosX;//canvas左上からのx座標
@@ -192,8 +201,9 @@ export default class Surface extends EventEmitter {
       return;
     }
     const [_interval, args] = intervals[0];
+    var n = 0; // tsc黙らせるため
     if(args.length > 0){
-      var n = Number(args[0]);
+      n = Number(args[0]);
       if(!isFinite(n)){
         console.warn("initAnimation > TypeError: surface", this.surfaceId, "animation", anim.is, "interval", _interval, " argument is not finite number");
         // rarelyにfaileback
@@ -304,16 +314,12 @@ export default class Surface extends EventEmitter {
       const {surface, wait, type, x, y} = pattern;
 
       switch(type){
-        case "start":
-        case "stop":             const {animation_id} = <SurfaceAnimationPatternInsert>pattern;
-        case "start":            this.play(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]), nextTick); return;
-        case "stop":             this.stop(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1])); setTimeout(nextTick); return;
-        case "alternativestart":
-        case "alternativestop":  const {animation_ids} = <SurfaceAnimationPatternAlternative>pattern;
-        case "alternativestart": this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
-        case "alternativestop":  this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
+        case "start":            var {animation_id} = <SurfaceAnimationPatternInsert>pattern; this.play(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]), nextTick); return;
+        case "stop":             var {animation_id} = <SurfaceAnimationPatternInsert>pattern; this.stop(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1])); setTimeout(nextTick); return;
+        case "alternativestart": var {animation_ids} = <SurfaceAnimationPatternAlternative>pattern; this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
+        case "alternativestop":  var {animation_ids} = <SurfaceAnimationPatternAlternative>pattern; this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
       }
-      const [__, a, b] = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]);
+      const [a, b] = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]).slice(1);
       const _wait = isFinite(Number(b))
                 ? SurfaceUtil.randomRange(Number(a), Number(b))
                 : Number(a);
@@ -349,7 +355,7 @@ export default class Surface extends EventEmitter {
         });
       }
     });
-    const nextTick = ()=>{
+    var nextTick = ()=>{
       if(this.destructed) return;
       const next = this.animationsQueue[animationId].shift();
       if(!(next instanceof Function) ){  // アニメーションキューを破棄されてるor これで終わり
@@ -462,17 +468,21 @@ export default class Surface extends EventEmitter {
         // 循環無視されずスタックオーバーフローします
         const _bind_backgrounds = this.composeAnimationPatterns(bind_backgrounds, interval);
         const _bind_fronts = this.composeAnimationPatterns(bind_fronts, interval);
+        var _base_:SurfaceElement[] = [];
+        if(elements[0] != null){
+          // element0, element1...
+          _base_ = elements;
+        }else if(base != null){
+          // base, element1, element2...
+          _base_ = [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements);
+        }else{
+          console.error("Surface#composeAnimationPatterns: cannot decide base");
+          return;
+        }
         // 対象サーフェスのbaseサーフェス(surface*.png)の上にelementを合成する
+
         this.bufferRender.composeElements(
-          [].concat(
-            _bind_backgrounds,
-            elements[0] != null ?
-              // element0, element1...
-              elements :
-              // base, element1, element2...
-              [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements),
-            _bind_fronts
-          )
+          _bind_backgrounds.concat(_base_, _bind_fronts)
         );
         if(type === "base"){
           // 構築したこのレイヤーのサーフェスはベースサーフェス指定
@@ -509,8 +519,10 @@ export default class Surface extends EventEmitter {
         elements[0] != null ?
           // element0, element1...
           elements :
-          // base, element1, element2...
-          [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements));
+            base !=null ?
+              // base, element1, element2...
+              [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements)
+              : []);
       // elementまでがベースサーフェス扱い
       baseWidth = this.bufferRender.cnv.width;
       baseHeight = this.bufferRender.cnv.height;
