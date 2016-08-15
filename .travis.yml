@@ -14,7 +14,8 @@ after_script:
   - npm install -g bower
   - bower install
   - git status
-  - git add dist demo nar bower_components
+  - rm .gitignore
+  - git add -f dist demo nar bower_components
   - git commit -am "travis-auto-update"
   - git status
   - git ls-files
