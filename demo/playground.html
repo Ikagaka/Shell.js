@@ -19,6 +19,7 @@
 <p>collision: <input type="checkbox" id="collisionDraw" /></p>
 </fieldset>
 <script>
+var NarLoader = NarLoader.NarLoader;
 $("#version").append("(Shell@"+Shell.version+")");
 Shell.SurfaceRender.prototype.debug = false;//実際メモリの危機,GC多発
 
