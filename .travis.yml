@@ -10,6 +10,7 @@ script:
 after_script:
   - git stash
   - git checkout --orphan travis_tmp
+  - git checkout travis_tmp
   - git checkout 5.x dist demo nar bower.json
   - npm install -g bower
   - bower install
