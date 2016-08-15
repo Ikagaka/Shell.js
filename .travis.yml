@@ -8,9 +8,9 @@ before_script:
 script:
   - echo "nothing"
 after_script:
-  - git stash 
+  - git stash
+  - npm install -g bower 
   - git fetch origin gh-pages
-  - npm install -g bower
   - git checkout gh-pages
   - git checkout 5.x dist demo nar bower.json
   - bower install
