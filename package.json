@@ -15,6 +15,7 @@
     "update": "npm update; bower update; typings install",
     "build": "npm run clean&& tsc    -p src&& coffee -c -b -o lib src/*.coffee&& babel lib    -d es5&& gulp build&& browserify es5/index.js --standalone Shell -o dist/Shell.js",
     "start": "http-server -s& tsc -w -p src & coffee -w -b -o lib src/*.coffee & babel lib -w -d es5 & gulp watch &   watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
+    "stop": "killall -- node",
     "tsc": "tsc -p src",
     "coffee": "coffee -c -b -o lib src/*.coffee",
     "babel": "babel lib -d es5",
