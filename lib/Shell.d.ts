@@ -1,5 +1,4 @@
 /// <reference path="../typings/index.d.ts" />
-/// <reference path="../src/surfaces_txt2yaml.d.ts" />
 import Surface from './Surface';
 import { ShellConifg } from "./Interfaces";
 import * as EventEmitter from "events";

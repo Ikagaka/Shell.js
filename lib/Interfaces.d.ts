@@ -1,5 +1,4 @@
 /// <reference path="../typings/index.d.ts" />
-/// <reference path="../src/surfaces_txt2yaml.d.ts" />
 export interface ShellConifg {
     seriko: {
         use_self_alpha: number;
