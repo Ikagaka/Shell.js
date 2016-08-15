@@ -1,6 +1,8 @@
-window.SurfaceRender = Shell.SurfaceRender
+window.$ = require("jquery")
+window.SurfaceRender = require("./SurfaceRender").default
+window.SurfaceUtil = require("./SurfaceUtil")
+
 SurfaceRender.prototype.debug = true;
-window.SurfaceUtil = Shell.SurfaceUtil
 
 $ -> $("<style />").html("canvas,img{border:1px solid black;}").appendTo($("body"))
 craetePictureFrame = (description, target=document.body) ->

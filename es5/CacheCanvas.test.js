@@ -1,7 +1,8 @@
-"use strict";
 /// <reference path="../typings/index.d.ts"/>
+"use strict";
 
 var CCC = require("./CacheCanvas");
+var JSZip = require("jszip");
 QUnit.module('CCC');
 QUnit.test('CCC.getArrayBufferFromURL', function (assert) {
     var done = assert.async();

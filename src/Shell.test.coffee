@@ -1,7 +1,11 @@
+window.$ = require("jquery")
+window.NarLoader = require("narloader")
+window.SurfaceUtil = require("./SurfaceUtil")
+window.Shell = require("./Shell").default
+
+
 prmNar = NarLoader.loadFromURL('../nar/mobilemaster.nar')
 $ -> $("<style />").html("body{background-color:#D2E0E6;}canvas,img{border:1px solid black;}").appendTo($("body"))
-window.SurfaceUtil = Shell.SurfaceUtil
-window.Shell = Shell.Shell
 
 prmNar.then (nanikaDir) ->
 

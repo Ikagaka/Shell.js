@@ -42,9 +42,9 @@ NarLoader
 
 ## Development
 ```sh
-npm install -g bower dtsm gulp browserify watchify http-server
+npm run setup
 npm run init
-npm run build
+npm run start
 ```
 
 

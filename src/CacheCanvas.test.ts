@@ -1,5 +1,7 @@
 /// <reference path="../typings/index.d.ts"/>
+
 import * as CCC from "./CacheCanvas";
+import * as JSZip from "jszip";
 
 QUnit.module('CCC');
 

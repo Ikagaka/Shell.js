@@ -1,4 +1,6 @@
-window.SurfaceUtil = Shell.SurfaceUtil
+window.$ = require("jquery")
+window.SurfaceUtil = require("./SurfaceUtil")
+
 setPictureFrame = (element, description) ->
   fieldset = document.createElement('fieldset')
   legend = document.createElement('legend')

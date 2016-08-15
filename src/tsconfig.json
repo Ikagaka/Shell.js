@@ -69,7 +69,7 @@
         "SurfaceUtil.ts",
         "SurfaceRender.ts",
         "CacheCanvas.ts",
-        "testCacheCanvas.ts"
+        "CacheCanvas.test.ts"
     ],
     "exclude": [
         "node_modules"
