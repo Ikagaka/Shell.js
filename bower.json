@@ -1,6 +1,6 @@
 {
   "name": "ikagaka.shell.js",
-  "version": "5.0",
+  "version": "5.0.0",
   "description": "Ukagaka Shell Renderer for Web Browser",
   "license": "MIT",
   "dependencies": {},
@@ -8,7 +8,8 @@
     "qunit": "*",
     "qunit-tap": "*",
     "empower": "*",
-    "power-assert-formatter": "*"
+    "power-assert-formatter": "*",
+    "narloader": "Ikagaka/NarLoader#master"
   },
   "main": "./dist/Shell.js",
   "ignore": [
