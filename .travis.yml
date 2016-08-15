@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - 6.0.0
+  - 6.3.1
 branches:
   only: '5.x'
 before_install:
@@ -13,6 +13,7 @@ after_script:
   - mv dist demo nar bower.json ./gh-pages
   - cd gh-pages
   - git init
+  - git checkout -b gh-pages
   - npm install -g bower
   - bower install
   - git status
