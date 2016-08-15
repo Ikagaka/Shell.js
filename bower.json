@@ -5,11 +5,9 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "PNG.ts": "legokichi/PNG.ts",
-    "duxca.serverworker.js": "legokichi/ServerWorker",
     "bluebird": "*",
     "qunit": "*",
-    "narloader": "legokichi/NarLoader#issue12",
+    "narloader": "Ikagaka/NarLoader#master",
     "qunit-tap": "*",
     "empower": "*",
     "power-assert-formatter": "*"

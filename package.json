@@ -5,14 +5,15 @@
   "license": "MIT",
   "url": "https://github.com/ikagaka/Shell.js",
   "keywords": [
-    "ikagaka",
     "nar",
     "ikagaka",
     "ukagaka"
   ],
   "scripts": {
-    "update": "npm update",
-    "tree": "tree -I 'node_modules'",
+    "setup": "npm install -g gulp-cli typings http-server",
+    "init": "npm run update; npm run build",
+    "update": "npm update; bower update; typings install",
+    "tree": "tree -C -L 2 -I node_modules",
     "build": "gulp",
     "start": "http-server -s & gulp watch",
     "stop": "killall -- node */http-server -s",
@@ -23,12 +24,9 @@
     "url": "https://github.com/ikagaka/ikagaka/Shell.js.git"
   },
   "dependencies": {
-    "encoding-japanese": "*",
     "events": "^1.1.0",
-    "jquery": "^2.2.4",
-    "jszip": "^3.0.0",
-    "surfaces_txt2yaml": "legokichi/surfaces_txt2yaml#master",
-    "text-encoding": "*"
+    "jquery": "3.*",
+    "surfaces_txt2yaml": "legokichi/surfaces_txt2yaml#master"
   },
   "devDependencies": {
     "babel-core": "^6.11.4",
@@ -38,14 +36,9 @@
     "gulp-babel": "^6.1.2",
     "gulp-browserify": "^0.5.1",
     "gulp-espower": "^1.0.2",
-    "gulp-tsfmt": "^1.0.2",
-    "gulp-tslint": "^6.0.1",
     "gulp-typescript": "^2.13.6",
-    "power-assert-formatter": "^1.4.0",
-    "qunitjs": "^2.0.0-rc1",
     "run-sequence": "^1.2.2",
-    "tslint": "^3.13.0",
-    "typescript": "^2.0.0"
+    "typescript": "2.0.*"
   },
   "bugs": {
     "url": "https://github.com/Ikagaka/Shell.js/issues"
