@@ -30,6 +30,7 @@ var Surface = function (_EventEmitter$EventEm) {
         _this.cnv = SurfaceUtil.createCanvas();
         var ctx = _this.cnv.getContext("2d");
         if (ctx == null) throw new Error("Surface#constructor: ctx is null");
+        _this.ctx = ctx;
         _this.bindgroup = bindgroup;
         _this.position = "fixed";
         _this.surfaceTree = surfaceTree;
@@ -233,7 +234,6 @@ var Surface = function (_EventEmitter$EventEm) {
             var _this4 = this;
 
             var animId = anim.is;
-            var interval = anim.interval;
             var intervals = anim.intervals;
             var patterns = anim.patterns;
             var options = anim.options;
@@ -258,7 +258,7 @@ var Surface = function (_EventEmitter$EventEm) {
                     var _interval = _ref8[0];
                     var args = _ref8[1];
 
-                    _this4.initAnimation({ interval: interval, intervals: [[_interval, args]], is: animId, patterns: patterns, options: options, regions: regions });
+                    _this4.initAnimation({ intervals: [[_interval, args]], is: animId, patterns: patterns, options: options, regions: regions });
                 });
                 return;
             }
@@ -315,7 +315,6 @@ var Surface = function (_EventEmitter$EventEm) {
             var _this5 = this;
 
             var animId = anim.is;
-            var interval = anim.interval;
             var intervals = anim.intervals;
             var patterns = anim.patterns;
             var options = anim.options;
@@ -333,7 +332,7 @@ var Surface = function (_EventEmitter$EventEm) {
                         var args = _ref10[1];
 
                         if (interval !== "bind") {
-                            _this5.initAnimation({ interval: interval, intervals: [[interval, args]], is: animId, patterns: patterns, options: options, regions: regions });
+                            _this5.initAnimation({ intervals: [[interval, args]], is: animId, patterns: patterns, options: options, regions: regions });
                         }
                     });
                 }

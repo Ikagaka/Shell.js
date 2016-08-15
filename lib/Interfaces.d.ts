@@ -119,7 +119,6 @@ export interface SurfaceTreeNode {
     animations: SurfaceAnimationEx[];
 }
 export interface SurfaceAnimationEx {
-    interval: string;
     intervals: [string, string[]][];
     options: [string, string[]][];
     is: number;

@@ -15,7 +15,6 @@
     "update": "npm update; bower update; typings install",
     "build": "npm run clean&&  tsc    -p src&& babel lib    -d es5&& gulp build&& browserify es5/index.js --standalone Shell -o dist/Shell.js",
     "start": "http-server -s & tsc -w -p src & babel lib -w -d es5 & gulp watch &   watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
-    "stop": "killall -- node */http-server -s",
     "tsc": "tsc -p src",
     "babel": "babel lib -d es5",
     "espower": "gulp build",

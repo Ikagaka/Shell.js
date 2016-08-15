@@ -13,7 +13,8 @@ gulp.task('build:test', ()=>{
 });
 
 gulp.task('watch:test', ()=>{
-    return gulp.watch('es5/test_*.js', ['build:test']);
+    //return gulp.watch('es5/test_*.js', ['build:test']);
+    return gulp.watch('test/**/*.coffee', ['build:test']);
 });
 
 gulp.task('default', ['build']);

@@ -46,7 +46,8 @@ QUnit.test 'surface0', (assert) ->
         animations: [
           {
             is: 0
-            interval: "periodic,5"
+            intervals: [["periodic", 5]]
+            options: []
             patterns: [
               {
                 type: "overlay"
@@ -112,7 +113,8 @@ QUnit.test 'surface overlay', (assert) ->
         animations: [
           {
             is: 0
-            interval: "always"
+            intervals: ["always"]
+            options: []
             patterns: [
               {
                 type: "overlay"
@@ -194,7 +196,8 @@ QUnit.test 'surface overlay negative', (assert) ->
         animations: [
           {
             is: 0
-            interval: "always"
+            intervals: ["always"]
+            options: []
             patterns: [
               {
                 type: "overlay"

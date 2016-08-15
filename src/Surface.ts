@@ -45,6 +45,7 @@ export default class Surface extends EventEmitter.EventEmitter {
     this.cnv = SurfaceUtil.createCanvas();
     const ctx = this.cnv.getContext("2d");
     if(ctx == null) throw new Error("Surface#constructor: ctx is null");
+    this.ctx = ctx;
     this.bindgroup = bindgroup;
     this.position = "fixed";
     this.surfaceTree = surfaceTree;
@@ -187,7 +188,7 @@ export default class Surface extends EventEmitter.EventEmitter {
   }
 
   private initAnimation(anim: SurfaceAnimationEx): void {
-    const {is:animId, interval, intervals, patterns, options, regions} = anim;//isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
+    const {is:animId, intervals, patterns, options, regions} = anim;//isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
     if(intervals.some(([interval, args])=> "bind" === interval)){
       // bind+の場合は initBind にまるなげ
       this.initBind(anim);
@@ -196,7 +197,7 @@ export default class Surface extends EventEmitter.EventEmitter {
     if (intervals.length > 1){
       // bind+でなければ分解して再実行
       intervals.forEach(([_interval, args])=>{
-        this.initAnimation({interval, intervals:[[_interval, args]], is: animId, patterns, options, regions});
+        this.initAnimation({intervals:[[_interval, args]], is: animId, patterns, options, regions});
       });
       return;
     }
@@ -234,7 +235,7 @@ export default class Surface extends EventEmitter.EventEmitter {
   }
 
   private initBind(anim: SurfaceAnimationEx): void {
-    const {is:animId, interval, intervals, patterns, options, regions} = anim;
+    const {is:animId, intervals, patterns, options, regions} = anim;
     if (this.isBind(animId)) {
       // 現在有効な bind
       if(intervals.length > 0){
@@ -242,7 +243,7 @@ export default class Surface extends EventEmitter.EventEmitter {
         // bind+sometimesを分解して実行
         intervals.forEach(([interval, args])=>{
           if(interval !== "bind"){
-            this.initAnimation({interval, intervals:[[interval, args]], is: animId, patterns, options, regions});
+            this.initAnimation({intervals:[[interval, args]], is: animId, patterns, options, regions});
           }
         });
       }

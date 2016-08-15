@@ -66,7 +66,11 @@ QUnit.test('surface0', function (assert) {
                 collisions: [],
                 animations: [{
                         is: 0,
-                        interval: 'periodic,5',
+                        intervals: [[
+                                'periodic',
+                                5
+                            ]],
+                        options: [],
                         patterns: [
                             {
                                 type: 'overlay',
@@ -118,12 +122,12 @@ QUnit.test('surface0', function (assert) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok($(srf.element).width() === base.cnv.width)',
                 filepath: 'test/testSurface.js',
-                line: 119
+                line: 120
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok($(srf.element).height() === base.cnv.height)',
                 filepath: 'test/testSurface.js',
-                line: 120
+                line: 121
             }));
             frame = craetePictureFrame('surface0');
             frame.add(srf.element, 'マリちゃんの\\0\\s[0]のまばたき');
@@ -149,7 +153,8 @@ QUnit.test('surface overlay', function (assert) {
                 collisions: [],
                 animations: [{
                         is: 0,
-                        interval: 'always',
+                        intervals: ['always'],
+                        options: [],
                         patterns: [
                             {
                                 type: 'overlay',
@@ -215,12 +220,12 @@ QUnit.test('surface overlay', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).width() === base.cnv.width)',
             filepath: 'test/testSurface.js',
-            line: 204
+            line: 206
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).height() === base.cnv.height)',
             filepath: 'test/testSurface.js',
-            line: 205
+            line: 207
         }));
         frame = craetePictureFrame('overlay テスト');
         frame.add(srf.element, 'マリちゃんのセルフエグザイル');
@@ -245,7 +250,8 @@ QUnit.test('surface overlay negative', function (assert) {
                 collisions: [],
                 animations: [{
                         is: 0,
-                        interval: 'always',
+                        intervals: ['always'],
+                        options: [],
                         patterns: [
                             {
                                 type: 'overlay',
@@ -290,12 +296,12 @@ QUnit.test('surface overlay negative', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).width() === base.cnv.width)',
             filepath: 'test/testSurface.js',
-            line: 270
+            line: 273
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === assert._capt(assert._capt(assert._capt(base, 'arguments/0/right/object/object').cnv, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).height() === base.cnv.height)',
             filepath: 'test/testSurface.js',
-            line: 271
+            line: 274
         }));
         frame = craetePictureFrame('overlay テスト');
         frame.add(srf.element, 'マリちゃんが左上へ向かう');

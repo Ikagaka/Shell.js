@@ -124,7 +124,7 @@ export interface SurfaceTreeNode {
 }
 
 export interface SurfaceAnimationEx {
-  interval: string;
+//  interval: string;
   intervals: [string, string[]][]; // [command, args]
   options: [string, string[]][]; // [command, args]
   is: number;
