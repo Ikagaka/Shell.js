@@ -19,8 +19,8 @@ export default class Surface extends EventEmitter.EventEmitter {
   private ctx: CanvasRenderingContext2D;
   private surfaceNode: SurfaceTreeNode
 
-  private backgrounds:     SurfaceAnimationPattern[][];//背景レイヤ
-  private layers:          SurfaceAnimationPattern[][];//アニメーションIDの現在のレイヤ。アニメで言う動画セル。
+  private backgrounds:     SurfacesTxt2Yaml.SurfaceAnimationPattern[][];//背景レイヤ
+  private layers:          SurfacesTxt2Yaml.SurfaceAnimationPattern[][];//アニメーションIDの現在のレイヤ。アニメで言う動画セル。
 
   private exclusives: number[]; // 現在排他されているアニメションID
   private talkCount: number;
@@ -315,10 +315,10 @@ export default class Surface extends EventEmitter.EventEmitter {
       const {surface, wait, type, x, y} = pattern;
 
       switch(type){
-        case "start":            var {animation_id} = <SurfaceAnimationPatternInsert>pattern; this.play(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]), nextTick); return;
-        case "stop":             var {animation_id} = <SurfaceAnimationPatternInsert>pattern; this.stop(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1])); setTimeout(nextTick); return;
-        case "alternativestart": var {animation_ids} = <SurfaceAnimationPatternAlternative>pattern; this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
-        case "alternativestop":  var {animation_ids} = <SurfaceAnimationPatternAlternative>pattern; this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
+        case "start":            var {animation_id} = <SurfacesTxt2Yaml.SurfaceAnimationPatternInsert>pattern; this.play(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]), nextTick); return;
+        case "stop":             var {animation_id} = <SurfacesTxt2Yaml.SurfaceAnimationPatternInsert>pattern; this.stop(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1])); setTimeout(nextTick); return;
+        case "alternativestart": var {animation_ids} = <SurfacesTxt2Yaml.SurfaceAnimationPatternAlternative>pattern; this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
+        case "alternativestop":  var {animation_ids} = <SurfacesTxt2Yaml.SurfaceAnimationPatternAlternative>pattern; this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
       }
       const [a, b] = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]).slice(1);
       const _wait = isFinite(Number(b))
@@ -405,7 +405,7 @@ export default class Surface extends EventEmitter.EventEmitter {
     return true;
   }
 
-  private composeAnimationPatterns(layers: SurfaceAnimationPattern[][], interval?: string): SurfaceElement[] {
+  private composeAnimationPatterns(layers: SurfacesTxt2Yaml.SurfaceAnimationPattern[][], interval?: string): SurfaceElement[] {
     let renderLayers: SurfaceElement[] = [];
     layers.forEach((patterns)=>{
       patterns.forEach((pattern)=>{
@@ -413,7 +413,7 @@ export default class Surface extends EventEmitter.EventEmitter {
         if(type === "insert"){
           // insertの場合は対象のIDをとってくる
           // animation_id = animationN,x,y
-          const {animation_id} = <SurfaceAnimationPatternInsert>pattern;
+          const {animation_id} = <SurfacesTxt2Yaml.SurfaceAnimationPatternInsert>pattern;
           const animId = Number((/\d+$/.exec(animation_id) || ["", "-1"]));
           // 対象の着せ替えが有効かどうか判定
           if (!this.isBind(animId)) return;
@@ -440,8 +440,8 @@ export default class Surface extends EventEmitter.EventEmitter {
         }
         // 対象サーフェスを構築描画する
         const {base, elements, collisions, animations} = srf;
-        const bind_backgrounds: SurfaceAnimationPattern[][] = [];
-        const bind_fronts: SurfaceAnimationPattern[][] = [];
+        const bind_backgrounds: SurfacesTxt2Yaml.SurfaceAnimationPattern[][] = [];
+        const bind_fronts: SurfacesTxt2Yaml.SurfaceAnimationPattern[][] = [];
         this.bufferRender.reset();
         if(interval === "bind"){
           console.info("Surface#composeAnimationPatterns", "multiple binds detected");

@@ -16097,6 +16097,7 @@ function hasOwnProperty(obj, prop) {
 /// <reference path="globals/encoding-japanese/index.d.ts" />
 /// <reference path="globals/jquery/index.d.ts" />
 /// <reference path="globals/jszip/index.d.ts" />
+/// <reference path="globals/narloader/index.d.ts" />
 /// <reference path="globals/node/index.d.ts" />
 /// <reference path="globals/power-assert-formatter/index.d.ts" />
 /// <reference path="globals/power-assert/index.d.ts" />

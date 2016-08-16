@@ -268,10 +268,7 @@ var Shell = function (_EventEmitter$EventEm) {
         value: function loadSurfacesTxt() {
             var _this5 = this;
 
-            var surfaces_text_names = Object.keys(this.directory).filter(function (name) {
-                return (/^surfaces.*\.txt$|^alias\.txt$/i.test(name)
-                );
-            });
+            var surfaces_text_names = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
             if (surfaces_text_names.length === 0) {
                 console.info("surfaces.txt is not found");
                 this.surfacesTxt = { surfaces: {}, descript: {}, aliases: {}, regions: {} };
@@ -2474,6 +2471,13 @@ function getScrollXY() {
     };
 }
 exports.getScrollXY = getScrollXY;
+function findSurfacesTxt(filepaths) {
+    return filepaths.filter(function (name) {
+        return (/^surfaces.*\.txt$|^alias\.txt$/i.test(name)
+        );
+    });
+}
+exports.findSurfacesTxt = findSurfacesTxt;
 },{"encoding-japanese":6}],5:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";

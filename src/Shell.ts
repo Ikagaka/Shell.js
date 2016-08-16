@@ -15,7 +15,7 @@ export default class Shell extends EventEmitter.EventEmitter {
   public descript: { [key: string]: string; }; // descript.txtをcsvと解釈した時の値
   public config: ShellConifg; // 実際に有効なdescript
   public attachedSurface: { div: HTMLDivElement, surface: Surface }[]; // 現在このシェルが実DOM上にレンダリングしているcanvasとそのsurface一覧
-  private surfacesTxt: SurfacesTxt; // SurfacesTxt2Yamlの内容
+  private surfacesTxt: SurfacesTxt2Yaml.SurfacesTxt; // SurfacesTxt2Yamlの内容
   private surfaceTree: SurfaceTreeNode[]; // このshell.jsが解釈しているShellのリソースツリー
   private cacheCanvas: { [key: string]: SurfaceCanvas; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
   private bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
@@ -28,7 +28,7 @@ export default class Shell extends EventEmitter.EventEmitter {
     this.config = <ShellConifg>{};
     this.directory = directory;
     this.attachedSurface = [];
-    this.surfacesTxt = <SurfacesTxt>{};
+    this.surfacesTxt = <SurfacesTxt2Yaml.SurfacesTxt>{};
     this.surfaceTree = [];
     this.cacheCanvas = {};
     this.bindgroup = [];
@@ -197,10 +197,10 @@ export default class Shell extends EventEmitter.EventEmitter {
 
   // surfaces.txtを読んでthis.surfacesTxtに反映
   private loadSurfacesTxt(): Promise<Shell> {
-    const surfaces_text_names = Object.keys(this.directory).filter((name)=> /^surfaces.*\.txt$|^alias\.txt$/i.test(name));
+    const surfaces_text_names = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
     if(surfaces_text_names.length === 0) {
       console.info("surfaces.txt is not found");
-      this.surfacesTxt = <SurfacesTxt>{surfaces:{}, descript: {}, aliases: {}, regions: {}};
+      this.surfacesTxt = <SurfacesTxt2Yaml.SurfacesTxt>{surfaces:{}, descript: {}, aliases: {}, regions: {}};
     } else {
       // cat surfaces*.txt
       const text = surfaces_text_names.reduce((text, filename)=> text + SurfaceUtil.convert(this.directory[filename]), "");
@@ -225,7 +225,7 @@ export default class Shell extends EventEmitter.EventEmitter {
         }
       });
       // expand ここまで
-      this.surfacesTxt.descript = this.surfacesTxt.descript || <SurfaceDescript>{};
+      this.surfacesTxt.descript = this.surfacesTxt.descript || <SurfacesTxt2Yaml.SurfaceDescript>{};
       if(typeof this.surfacesTxt.descript["collision-sort"] === "string"){
         console.warn("Shell#loadSurfacesTxt", "collision-sort is not supported yet.");
       }
@@ -356,7 +356,7 @@ export default class Shell extends EventEmitter.EventEmitter {
             animations: []
           };
         }
-        const {is, interval="never", option="", patterns=[], regions=<{ [key: string]: SurfaceRegion; }>{}} = animations[animId];
+        const {is, interval="never", option="", patterns=[], regions=<{ [key: string]: SurfacesTxt2Yaml.SurfaceRegion; }>{}} = animations[animId];
         // animation*.option,* の展開
         // animation*.option,exclusive+background,(1,3,5)
         const [_option, ...opt_args] = option.split(",");
@@ -367,7 +367,7 @@ export default class Shell extends EventEmitter.EventEmitter {
         const _int_args = int_args.map((str)=> str.trim());
         const intervals = _interval.split("+"); // sometimes+talk
         const _intervals = intervals.map<[string, string[]]>((interval)=> [interval.trim(), _int_args]);
-        const _regions: SurfaceRegion[] = [];
+        const _regions: SurfacesTxt2Yaml.SurfaceRegion[] = [];
         Object.keys(regions).forEach((key)=>{
           _regions[regions[key].is] = regions[key];
         });

@@ -119,7 +119,7 @@ export interface SurfaceMouseEvent {
 export interface SurfaceTreeNode {
   base:  SurfaceCanvas|null,
   elements: SurfaceElement[],
-  collisions: SurfaceRegion[],
+  collisions: SurfacesTxt2Yaml.SurfaceRegion[],
   animations: SurfaceAnimationEx[]
 }
 
@@ -128,8 +128,8 @@ export interface SurfaceAnimationEx {
   intervals: [string, string[]][]; // [command, args]
   options: [string, string[]][]; // [command, args]
   is: number;
-  patterns: SurfaceAnimationPattern[];
-  regions: SurfaceRegion[];
+  patterns: SurfacesTxt2Yaml.SurfaceAnimationPattern[];
+  regions: SurfacesTxt2Yaml.SurfaceRegion[];
 }
 
 export interface SurfaceElement {

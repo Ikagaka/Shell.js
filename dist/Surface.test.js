@@ -1682,6 +1682,13 @@ function getScrollXY() {
     };
 }
 exports.getScrollXY = getScrollXY;
+function findSurfacesTxt(filepaths) {
+    return filepaths.filter(function (name) {
+        return (/^surfaces.*\.txt$|^alias\.txt$/i.test(name)
+        );
+    });
+}
+exports.findSurfacesTxt = findSurfacesTxt;
 },{"encoding-japanese":5}],4:[function(require,module,exports){
 'use strict';
 var _craetePictureFrame;

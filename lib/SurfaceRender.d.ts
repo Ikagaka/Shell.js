@@ -29,7 +29,7 @@ export default class SurfaceRender {
     private move(x, y);
     private add(part, x, y);
     private reduce(part, x, y);
-    drawRegions(regions: SurfaceRegion[], description?: string): void;
+    drawRegions(regions: SurfacesTxt2Yaml.SurfaceRegion[], description?: string): void;
     private drawRegion(region);
     private drawEllipseWithBezier(x, y, w, h);
 }

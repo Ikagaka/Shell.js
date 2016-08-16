@@ -267,7 +267,7 @@ export default class SurfaceRender {
     this.ctx.putImageData(imgdataA, 0, 0);
   }
 
-  public drawRegions(regions: SurfaceRegion[], description="notitle"): void {
+  public drawRegions(regions: SurfacesTxt2Yaml.SurfaceRegion[], description="notitle"): void {
     this.ctx.font = "35px";
     this.ctx.lineWidth = 4;
     this.ctx.strokeStyle = "white";
@@ -279,14 +279,14 @@ export default class SurfaceRender {
     });
   }
 
-  private drawRegion(region: SurfaceRegion): void {
+  private drawRegion(region: SurfacesTxt2Yaml.SurfaceRegion): void {
     const {type="", name=""} = region;
     this.ctx.lineWidth = 1;
     this.ctx.strokeStyle = "#00FF00";
     var left=0, top=0, right=0, bottom=0;
     switch (type) {
       case "rect":
-        var {left=0, top=0, right=0, bottom=0} = <SurfaceRegionRect>region;
+        var {left=0, top=0, right=0, bottom=0} = <SurfacesTxt2Yaml.SurfaceRegionRect>region;
         left += this.basePosX;
         top += this.basePosY;
         right += this.basePosX;
@@ -296,7 +296,7 @@ export default class SurfaceRender {
         this.ctx.stroke();
         break;
       case "ellipse":
-        var {left=0, top=0, right=0, bottom=0} = <SurfaceRegionEllipse>region;
+        var {left=0, top=0, right=0, bottom=0} = <SurfacesTxt2Yaml.SurfaceRegionEllipse>region;
         left += this.basePosX;
         top += this.basePosY;
         right += this.basePosX;
@@ -305,7 +305,7 @@ export default class SurfaceRender {
         this.drawEllipseWithBezier(left, top, right - left, bottom - top);
         break;
       case "circle":
-        let {radius=0, center_x=0, center_y=0} = <SurfaceRegionCircle>region;
+        let {radius=0, center_x=0, center_y=0} = <SurfacesTxt2Yaml.SurfaceRegionCircle>region;
         center_x += this.basePosX;
         center_y += this.basePosY;
         left = center_x;
@@ -315,7 +315,7 @@ export default class SurfaceRender {
         this.ctx.stroke();
         break;
       case "polygon":
-        const {coordinates=[]} = <SurfaceRegionPolygon>region;
+        const {coordinates=[]} = <SurfacesTxt2Yaml.SurfaceRegionPolygon>region;
         if(coordinates.length <= 0) break;
         this.ctx.beginPath();
         const {x:startX, y:startY} = coordinates[0];

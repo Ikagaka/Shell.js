@@ -267,10 +267,7 @@ var Shell = function (_EventEmitter$EventEm) {
         value: function loadSurfacesTxt() {
             var _this5 = this;
 
-            var surfaces_text_names = Object.keys(this.directory).filter(function (name) {
-                return (/^surfaces.*\.txt$|^alias\.txt$/i.test(name)
-                );
-            });
+            var surfaces_text_names = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
             if (surfaces_text_names.length === 0) {
                 console.info("surfaces.txt is not found");
                 this.surfacesTxt = { surfaces: {}, descript: {}, aliases: {}, regions: {} };

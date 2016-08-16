@@ -1,148 +1,111 @@
-export interface SurfaceCanvas {
-    cnv: HTMLCanvasElement | null;
-    png: HTMLImageElement | null;
-    pna: HTMLImageElement | null;
-}
-export interface SurfaceTreeNode {
-    elements: SurfaceElement[];
-    collisions: SurfaceRegion[];
-    animations: SurfaceAnimationEx[];
-}
-export interface SurfaceAnimationEx {
-    intervals: [string, string[]][];
-    options: [string, string[]][];
-    is: number;
-    patterns: SurfaceAnimationPattern[];
-    regions: SurfaceRegion[];
-}
-export interface SurfaceElement {
-    canvas: SurfaceCanvas;
-    type: string;
-    x: number;
-    y: number;
-}
-export interface SurfacesTxt {
-    charset: string;
+/// <reference path="../typings/index.d.ts" />
+export declare class SurfaceDefinitionTree {
     descript: SurfaceDescript;
     surfaces: {
-        [key: string]: SurfaceDefinition;
+        [surfaceID: number]: SurfaceDefinition;
     };
     aliases: {
-        [scope: string]: {
+        [scopeID: number]: {
             [aliasname: string]: number[];
         };
     };
-    regions: {
-        [scope: string]: {
-            [regionName: string]: ToolTipElement;
-        };
-    };
+    constructor();
+    loadFromsurfacesTxt2Yaml(srfsTxt: SurfacesTxt2Yaml.SurfacesTxt): Promise<this>;
 }
-export interface ToolTipElement {
-    tooltip: string;
-    cursor: {
-        mouseup: string;
-        mousedown: string;
-    };
+export declare class SurfaceDescript {
+    collisionSort: string;
+    animationSort: string;
+    constructor();
+    loadFromsurfacesTxt2Yaml(descript: SurfacesTxt2Yaml.SurfaceDescript): Promise<this>;
 }
-export interface SurfaceDescript {
-    version: number;
-    maxwidth: number;
-    "collision-sort": string;
-    "animation-sort": string;
-}
-export interface SurfaceDefinition {
-    is: number;
-    characters: {
-        sakura: string;
-    };
+export declare class SurfaceDefinition {
     points: {
-        centerx: number;
-        centery: number;
-        kinoko: {
-            centerx: number;
-            centery: number;
-        };
         basepos: {
             x: number;
             y: number;
         };
     };
     balloons: {
-        sakura: {
-            offsetx: number;
-            offsety: number;
+        char: {
+            [scopeID: number]: {
+                offsetX: number;
+                offsetY: number;
+            };
         };
-        offsetx: number;
-        offsety: number;
+        offsetX: number;
+        offsetY: number;
     };
-    regions: {
-        [key: string]: SurfaceRegion;
+    collisions: {
+        [id: number]: SurfaceCollision;
     };
     animations: {
-        [key: string]: SurfaceAnimation;
+        [id: number]: SurfaceAnimation;
     };
     elements: {
-        [key: string]: ElementPattern;
+        [id: number]: SurfaceElement;
     };
-    base: string[];
+    constructor();
+    loadFromsurfacesTxt2Yaml(srf: SurfacesTxt2Yaml.SurfaceDefinition): Promise<this>;
 }
-export interface ElementPattern {
-    is: number;
+export declare class SurfaceElement {
     type: string;
     file: string;
     x: number;
     y: number;
+    constructor();
+    loadFromsurfacesTxt2Yaml(elm: SurfacesTxt2Yaml.ElementPattern): Promise<this>;
 }
-export interface SurfaceAnimation {
-    is: number;
-    interval: string;
-    option: string;
-    patterns: SurfaceAnimationPattern[];
-    regions: {
-        [key: string]: SurfaceRegion;
-    };
-}
-export interface SurfaceAnimationPatternBase {
-    type: string;
-    surface: number;
-    wait: string;
-    x: number;
-    y: number;
-}
-export interface SurfaceAnimationPatternAlternative extends SurfaceAnimationPatternBase {
-    animation_ids: number[];
-}
-export interface SurfaceAnimationPatternInsert extends SurfaceAnimationPatternBase {
-    animation_id: string;
-}
-export declare type SurfaceAnimationPattern = SurfaceAnimationPatternBase | SurfaceAnimationPatternAlternative | SurfaceAnimationPatternInsert;
-export interface SurfaceRegionBase {
-    is: number;
+export declare class SurfaceCollision {
     name: string;
     type: string;
+    constructor();
+    loadFromsurfacesTxt2Yaml(collision: SurfacesTxt2Yaml.SurfaceRegion): Promise<SurfaceCollision>;
 }
-export interface SurfaceRegionRect extends SurfaceRegionBase {
+export declare class SurfaceCollisionRect extends SurfaceCollision {
     left: number;
     top: number;
     right: number;
     bottom: number;
+    constructor();
+    loadFromsurfacesTxt2Yaml(collision: SurfacesTxt2Yaml.SurfaceRegionRect): Promise<this>;
 }
-export interface SurfaceRegionCircle extends SurfaceRegionBase {
-    center_x: number;
-    center_y: number;
+export declare class SurfaceCollisionCircle extends SurfaceCollision {
+    centerX: number;
+    centerY: number;
     radius: number;
+    constructor();
+    loadFromsurfacesTxt2Yaml(collision: SurfacesTxt2Yaml.SurfaceRegionCircle): Promise<this>;
 }
-export interface SurfaceRegionEllipse extends SurfaceRegionBase {
-    left: number;
-    top: number;
-    right: number;
-    bottom: number;
+export declare class SurfaceCollisionEllipse extends SurfaceCollisionRect {
+    constructor();
 }
-export interface SurfaceRegionPolygon extends SurfaceRegionBase {
+export declare class SurfaceCollisionPolygon extends SurfaceCollision {
     coordinates: {
         x: number;
         y: number;
     }[];
+    constructor();
+    loadFromsurfacesTxt2Yaml(col: SurfacesTxt2Yaml.SurfaceRegionPolygon): Promise<this>;
 }
-export declare type SurfaceRegion = SurfaceRegionRect | SurfaceRegionCircle | SurfaceRegionEllipse | SurfaceRegionPolygon;
+export declare class SurfaceAnimation {
+    intervals: [string, string[]][];
+    options: [string, string[]][];
+    collisions: {
+        [id: number]: SurfaceCollision;
+    };
+    patterns: {
+        [id: number]: SurfaceAnimationPattern;
+    };
+    constructor();
+    loadFromsurfacesTxt2Yaml(animation: SurfacesTxt2Yaml.SurfaceAnimation): Promise<this>;
+}
+export declare class SurfaceAnimationPattern {
+    type: string;
+    surface: number;
+    wait: [number, number];
+    x: number;
+    y: number;
+    animation_ids: number[];
+    constructor();
+    loadFromsurfacesTxt2Yaml(pat: SurfacesTxt2Yaml.SurfaceAnimationPattern): Promise<this>;
+}

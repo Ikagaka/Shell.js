@@ -1,5 +1,5 @@
 window.$ = require("jquery")
-window.NarLoader = require("narloader")
+window.NarLoader = require("narloader").NarLoader
 window.SurfaceUtil = require("./SurfaceUtil")
 window.Shell = require("./Shell").default
 

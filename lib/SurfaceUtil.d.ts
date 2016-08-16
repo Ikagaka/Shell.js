@@ -35,8 +35,9 @@ export declare function getEventPosition(ev: JQueryEventObject): {
     screenY: number;
 };
 export declare function randomRange(min: number, max: number): number;
-export declare function getRegion(element: HTMLCanvasElement, collisions: SurfaceRegion[], offsetX: number, offsetY: number): string;
+export declare function getRegion(element: HTMLCanvasElement, collisions: SurfacesTxt2Yaml.SurfaceRegion[], offsetX: number, offsetY: number): string;
 export declare function getScrollXY(): {
     scrollX: number;
     scrollY: number;
 };
+export declare function findSurfacesTxt(filepaths: string[]): string[];

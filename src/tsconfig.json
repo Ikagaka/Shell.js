@@ -63,6 +63,7 @@
     },
     "files": [
         "SurfaceTree.ts",
+        "SurfaceTree.test.ts",
         "index.ts",
         "Interfaces.ts",
         "Shell.ts",
