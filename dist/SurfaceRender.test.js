@@ -377,17 +377,17 @@ var SurfaceRender = function () {
                 case "circle":
                     var _region$radius = region.radius;
                     var radius = _region$radius === undefined ? 0 : _region$radius;
-                    var _region$center_x = region.center_x;
-                    var center_x = _region$center_x === undefined ? 0 : _region$center_x;
-                    var _region$center_y = region.center_y;
-                    var center_y = _region$center_y === undefined ? 0 : _region$center_y;
+                    var _region$centerX = region.centerX;
+                    var centerX = _region$centerX === undefined ? 0 : _region$centerX;
+                    var _region$centerY = region.centerY;
+                    var centerY = _region$centerY === undefined ? 0 : _region$centerY;
 
-                    center_x += this.basePosX;
-                    center_y += this.basePosY;
-                    left = center_x;
-                    top = center_y;
+                    centerX += this.basePosX;
+                    centerY += this.basePosY;
+                    left = centerX;
+                    top = centerY;
                     this.ctx.beginPath();
-                    this.ctx.arc(center_x, center_y, radius, 0, 2 * Math.PI, true);
+                    this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, true);
                     this.ctx.stroke();
                     break;
                 case "polygon":
@@ -834,11 +834,11 @@ function getRegion(element, collisions, offsetX, offsetY) {
                     };
                 case "circle":
                     var radius = collision.radius;
-                    var center_x = collision.center_x;
-                    var center_y = collision.center_y;
+                    var centerX = collision.centerX;
+                    var centerY = collision.centerY;
 
                     return {
-                        v: Math.pow((offsetX - center_x) / radius, 2) + Math.pow((offsetY - center_y) / radius, 2) < 1
+                        v: Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1
                     };
                 case "polygon":
                     var coordinates = collision.coordinates;

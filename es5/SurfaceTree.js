@@ -22,8 +22,8 @@ var SurfaceDefinitionTree = function () {
         _classCallCheck(this, SurfaceDefinitionTree);
 
         this.descript = new SurfaceDescript();
-        this.surfaces = {};
-        this.aliases = {};
+        this.surfaces = [];
+        this.aliases = [];
     }
 
     _createClass(SurfaceDefinitionTree, [{
@@ -100,10 +100,11 @@ var SurfaceDefinition = function () {
         _classCallCheck(this, SurfaceDefinition);
 
         this.points = { basepos: { x: 0, y: 0 } };
-        this.balloons = { char: {}, offsetX: 0, offsetY: 0 };
-        this.elements = {};
-        this.collisions = {};
-        this.animations = {};
+        this.balloons = { char: [], offsetX: 0, offsetY: 0 };
+        this.elements = [];
+        this.collisions = [];
+        this.animations = [];
+        this.base = { cnv: null, png: null, pna: null };
     }
 
     _createClass(SurfaceDefinition, [{
@@ -137,9 +138,11 @@ var SurfaceDefinition = function () {
                 }).forEach(function (charName) {
                     var charID = SU.unscope(charName);
                     if (typeof balloons[charName].offsetx === "number") {
+                        _this2.balloons.char[charID] = _this2.balloons.char[charID] != null ? _this2.balloons.char[charID] : { offsetX: 0, offsetY: 0 };
                         _this2.balloons.char[charID].offsetX = balloons[charName].offsetx;
                     }
                     if (typeof balloons[charName].offsety === "number") {
+                        _this2.balloons.char[charID] = _this2.balloons.char[charID] != null ? _this2.balloons.char[charID] : { offsetX: 0, offsetY: 0 };
                         _this2.balloons.char[charID].offsetY = balloons[charName].offsety;
                     }
                 });
@@ -182,6 +185,7 @@ var SurfaceElement = function () {
         this.file = "";
         this.x = 0;
         this.y = 0;
+        this.canvas = { cnv: null, png: null, pna: null };
     }
 
     _createClass(SurfaceElement, [{
@@ -200,7 +204,7 @@ var SurfaceElement = function () {
                 console.warn("SurfaceElement#loadFromsurfacesTxt2Yaml: faileback to", this.x);
             }
             if (typeof elm.y === "number") {
-                this.x = elm.y;
+                this.y = elm.y;
             } else {
                 console.warn("SurfaceElement#loadFromsurfacesTxt2Yaml: faileback to", this.y);
             }
@@ -361,7 +365,7 @@ var SurfaceCollisionPolygon = function (_SurfaceCollision3) {
                 return Promise.reject(col);
             }
             if (coordinates.every(function (o) {
-                return typeof o.x === "number" && typeof o.x === "number";
+                return typeof o.x !== "number" || typeof o.y !== "number";
             })) {
                 console.warn("SurfaceRegionPolygon#loadFromsurfacesTxt2Yaml: coordinates has erro value", col);
                 return Promise.reject(col);
@@ -382,8 +386,8 @@ var SurfaceAnimation = function () {
 
         this.intervals = [["never", []]];
         this.options = [];
-        this.collisions = {};
-        this.patterns = {};
+        this.collisions = [];
+        this.patterns = [];
     }
 
     _createClass(SurfaceAnimation, [{

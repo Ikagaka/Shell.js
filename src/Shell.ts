@@ -2,6 +2,7 @@
 
 import Surface from './Surface';
 import SurfaceRender from "./SurfaceRender";
+import * as ST from "./SurfaceTree";
 import * as SurfaceUtil from "./SurfaceUtil";
 import {SurfaceTreeNode, SurfaceCanvas, SurfaceMouseEvent, ShellConifg} from "./Interfaces";
 import SurfacesTxt2Yaml = require("surfaces_txt2yaml");
@@ -16,7 +17,8 @@ export default class Shell extends EventEmitter.EventEmitter {
   public config: ShellConifg; // 実際に有効なdescript
   public attachedSurface: { div: HTMLDivElement, surface: Surface }[]; // 現在このシェルが実DOM上にレンダリングしているcanvasとそのsurface一覧
   private surfacesTxt: SurfacesTxt2Yaml.SurfacesTxt; // SurfacesTxt2Yamlの内容
-  private surfaceTree: SurfaceTreeNode[]; // このshell.jsが解釈しているShellのリソースツリー
+  private surfaceTree: ST.SurfaceDefinition[]; // このshell.jsが解釈しているShellのリソースツリー
+  private surfaceDefTree: ST.SurfaceDefinitionTree; // このshell.jsが解釈しているShellのリソースツリー
   private cacheCanvas: { [key: string]: SurfaceCanvas; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
   private bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
   public enableRegion: boolean;
@@ -29,7 +31,8 @@ export default class Shell extends EventEmitter.EventEmitter {
     this.directory = directory;
     this.attachedSurface = [];
     this.surfacesTxt = <SurfacesTxt2Yaml.SurfacesTxt>{};
-    this.surfaceTree = [];
+    this.surfaceDefTree = new ST.SurfaceDefinitionTree();
+    this.surfaceTree = this.surfaceDefTree.surfaces;
     this.cacheCanvas = {};
     this.bindgroup = [];
     this.enableRegion = false;
@@ -40,12 +43,14 @@ export default class Shell extends EventEmitter.EventEmitter {
     .then(()=> this.loadDescript()) // 1st // ←なにこれ（自問自
     .then(()=> this.loadConfig())
     .then(()=> this.loadBindGroup()) // 2nd // 依存関係的なやつだと思われ
+    .then(()=> console.log("descript done"))
     .then(()=> this.loadSurfacesTxt()) // 1st
     .then(()=> this.loadSurfaceTable()) // 1st
+    .then(()=> console.log("surfaces done"))
     .then(()=> this.loadSurfacePNG())   // 2nd
-    .then(()=> this.loadCollisions()) // 3rd
-    .then(()=> this.loadAnimations()) // 3rd
+    .then(()=> console.log("base done"))
     .then(()=> this.loadElements()) // 3rd
+    .then(()=> console.log("elements done"))
     .then(()=> this) // 3rd
     .catch((err)=>{
       console.error("Shell#load > ", err);
@@ -197,43 +202,19 @@ export default class Shell extends EventEmitter.EventEmitter {
 
   // surfaces.txtを読んでthis.surfacesTxtに反映
   private loadSurfacesTxt(): Promise<Shell> {
-    const surfaces_text_names = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
-    if(surfaces_text_names.length === 0) {
+    const filenames = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
+    if(filenames.length === 0){
       console.info("surfaces.txt is not found");
-      this.surfacesTxt = <SurfacesTxt2Yaml.SurfacesTxt>{surfaces:{}, descript: {}, aliases: {}, regions: {}};
-    } else {
-      // cat surfaces*.txt
-      const text = surfaces_text_names.reduce((text, filename)=> text + SurfaceUtil.convert(this.directory[filename]), "");
-      this.surfacesTxt = SurfacesTxt2Yaml.txt_to_data(text, {compatible: 'ssp-lazy'});
-      // https://github.com/Ikagaka/Shell.js/issues/55
-      if ( this.surfacesTxt.surfaces == null ) {
-        this.surfacesTxt.surfaces = {};
-      }
-      // SurfacesTxt2Yamlの継承の expand と remove
-      Object.keys(this.surfacesTxt.surfaces).forEach((name)=>{
-        if(typeof this.surfacesTxt.surfaces[name].is === "number"
-           && Array.isArray(this.surfacesTxt.surfaces[name].base)){
-          this.surfacesTxt.surfaces[name].base.forEach((key)=>{
-            $.extend(true, this.surfacesTxt.surfaces[name], this.surfacesTxt.surfaces[key]);
-          });
-          delete this.surfacesTxt.surfaces[name].base;
-        }
-      });
-      Object.keys(this.surfacesTxt.surfaces).forEach((name)=>{
-        if(typeof this.surfacesTxt.surfaces[name].is === "undefined"){
-          delete this.surfacesTxt.surfaces[name]
-        }
-      });
-      // expand ここまで
-      this.surfacesTxt.descript = this.surfacesTxt.descript || <SurfacesTxt2Yaml.SurfaceDescript>{};
-      if(typeof this.surfacesTxt.descript["collision-sort"] === "string"){
-        console.warn("Shell#loadSurfacesTxt", "collision-sort is not supported yet.");
-      }
-      if(typeof this.surfacesTxt.descript["animation-sort"] === "string"){
-        console.warn("Shell#loadSurfacesTxt", "animation-sort is not supported yet.");
-      }
     }
-    return Promise.resolve(this);
+    const cat_text = filenames.reduce((text, filename)=> text + SurfaceUtil.convert(this.directory[filename]), "");
+    const surfacesTxt = SurfacesTxt2Yaml.txt_to_data(cat_text, {compatible: 'ssp-lazy'});
+    return new ST.SurfaceDefinitionTree().loadFromsurfacesTxt2Yaml(surfacesTxt)
+    .then((surfaceTree)=>{
+      this.surfacesTxt = surfacesTxt;
+      this.surfaceDefTree = surfaceTree;
+      this.surfaceTree = this.surfaceDefTree.surfaces;
+      return this;
+    });
   }
 
   // surfacetable.txtを読む予定
@@ -259,17 +240,13 @@ export default class Shell extends EventEmitter.EventEmitter {
         if(!isFinite(n)) return;
         i++;
         this.getPNGFromDirectory(filename, (err, cnv)=>{
-          if(err != null){
+          if(err != null || cnv == null){
             console.warn("Shell#loadSurfacePNG > " + err);
           }else{
             if(!this.surfaceTree[n]){
               // surfaces.txtで未定義なら追加
-              this.surfaceTree[n] = {
-                base: cnv,
-                elements: [],
-                collisions: [],
-                animations: []
-              };
+              this.surfaceTree[n] = new ST.SurfaceDefinition();
+              this.surfaceTree[n].base = cnv;
             }else{
               // surfaces.txtで定義済み
               this.surfaceTree[n].base = cnv;
@@ -285,30 +262,19 @@ export default class Shell extends EventEmitter.EventEmitter {
 
   // this.surfacesTxt から element を読み込んで this.surfaceTree に反映
   private loadElements(): Promise<Shell>{
-    const srfs = this.surfacesTxt.surfaces;
-    const hits = Object.keys(srfs).filter((name)=> !!srfs[name].elements);
+    const srfs = this.surfaceTree;
     return new Promise<Shell>((resolve, reject)=>{
       let i = 0;
-      if(hits.length === 0) return resolve(this);
-      hits.forEach((defname)=>{
-        const n = srfs[defname].is;
-        const elms = srfs[defname].elements;
-        const _prms = Object.keys(elms).map((elmname)=>{
-          const {is, type, file, x, y} = elms[elmname];
+      srfs.forEach((srf, n)=>{
+        const elms = srf.elements;
+        const _prms = elms.map((elm, elmId)=>{
+          const {type, file, x, y} = elm;
           i++;
           this.getPNGFromDirectory(file, (err, canvas)=>{
             if( err != null || canvas == null){
               console.warn("Shell#loadElements > " + err);
             }else{
-              if(!this.surfaceTree[n]){
-                this.surfaceTree[n] = {
-                  base: {cnv:null, png: null, pna: null},
-                  elements: [],
-                  collisions: [],
-                  animations: []
-                };
-              }
-              this.surfaceTree[n].elements[is] = {type, canvas, x, y};
+              this.surfaceTree[n].elements[elmId].canvas = canvas;
             }
             if(--i <= 0){
               resolve(this);
@@ -316,70 +282,11 @@ export default class Shell extends EventEmitter.EventEmitter {
           });
         });
       });
-    });
-  }
-
-  // this.surfacesTxt から collision を読み込んで this.surfaceTree に反映
-  private loadCollisions(): Promise<Shell>{
-    const srfs = this.surfacesTxt.surfaces;
-    Object.keys(srfs).filter((name)=> !!srfs[name].regions).forEach((defname)=>{
-      const n = srfs[defname].is;
-      const regions = srfs[defname].regions;
-      Object.keys(regions).forEach((regname)=>{
-        if(!this.surfaceTree[n]){
-          this.surfaceTree[n] = {
-            base: {cnv:null, png: null, pna: null},
-            elements: [],
-            collisions: [],
-            animations: []
-          };
-        }
-        const {is} = regions[regname];
-        this.surfaceTree[n].collisions[is] = regions[regname];
-      });
-    });
-    return Promise.resolve(this);
-  }
-
-  // this.surfacesTxt から animation を読み込んで this.surfaceTree に反映
-  private loadAnimations(): Promise<Shell>{
-    const srfs = this.surfacesTxt.surfaces;
-    Object.keys(srfs).filter((name)=> !!srfs[name].animations).forEach((defname)=>{
-      const n = srfs[defname].is;
-      const animations = srfs[defname].animations;
-      Object.keys(animations).forEach((animId)=>{
-        if(!this.surfaceTree[n]){
-          this.surfaceTree[n] = {
-            base: {cnv:null, png: null, pna: null},
-            elements: [],
-            collisions: [],
-            animations: []
-          };
-        }
-        const {is, interval="never", option="", patterns=[], regions=<{ [key: string]: SurfacesTxt2Yaml.SurfaceRegion; }>{}} = animations[animId];
-        // animation*.option,* の展開
-        // animation*.option,exclusive+background,(1,3,5)
-        const [_option, ...opt_args] = option.split(",");
-        const _opt_args = opt_args.map((str)=> str.replace("(", "").replace(")", "").trim());
-        const options = option.split("+");
-        const _options = options.map<[string, string[]]>((option)=> [option.trim(), _opt_args]);
-        const [_interval, ...int_args] = interval.split(",");
-        const _int_args = int_args.map((str)=> str.trim());
-        const intervals = _interval.split("+"); // sometimes+talk
-        const _intervals = intervals.map<[string, string[]]>((interval)=> [interval.trim(), _int_args]);
-        const _regions: SurfacesTxt2Yaml.SurfaceRegion[] = [];
-        Object.keys(regions).forEach((key)=>{
-          _regions[regions[key].is] = regions[key];
-        });
-        this.surfaceTree[n].animations[is] = {
-          options: _options,
-          intervals: _intervals,
-          regions: _regions,
-          is, patterns, interval
-        };
-      });
-    });
-    return Promise.resolve(this);
+      // elementを一切使っていなかった
+      if(i === 0){
+        resolve(this);
+      }
+    }).then(()=> this);
   }
 
   private hasFile(filename: string): boolean {
@@ -441,7 +348,7 @@ export default class Shell extends EventEmitter.EventEmitter {
       console.warn("surfaceId:", _surfaceId, "is not defined in surfaceTree", this.surfaceTree);
       return null;
     }
-    const srf = new Surface(div, scopeId, _surfaceId, this.surfaceTree, this.bindgroup);
+    const srf = new Surface(div, scopeId, _surfaceId, this.surfaceDefTree, this.bindgroup);
     srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
     if(this.enableRegion){
       srf.render();

@@ -376,11 +376,11 @@ function getRegion(element, collisions, offsetX, offsetY) {
                     };
                 case "circle":
                     var radius = collision.radius;
-                    var center_x = collision.center_x;
-                    var center_y = collision.center_y;
+                    var centerX = collision.centerX;
+                    var centerY = collision.centerY;
 
                     return {
-                        v: Math.pow((offsetX - center_x) / radius, 2) + Math.pow((offsetY - center_y) / radius, 2) < 1
+                        v: Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1
                     };
                 case "polygon":
                     var coordinates = collision.coordinates;

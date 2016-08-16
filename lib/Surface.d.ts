@@ -1,5 +1,5 @@
 /// <reference path="../typings/index.d.ts" />
-import { SurfaceTreeNode } from "./Interfaces";
+import * as ST from "./SurfaceTree";
 import * as EventEmitter from "events";
 export default class Surface extends EventEmitter.EventEmitter {
     element: HTMLDivElement;
@@ -18,24 +18,21 @@ export default class Surface extends EventEmitter.EventEmitter {
     private animationsQueue;
     private stopFlags;
     private surfaceTree;
+    private surfaceDefTree;
     private bindgroup;
     private dynamicBase;
     private destructed;
     private destructors;
     private bufferRender;
-    constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceTree: {
-        [animationId: number]: SurfaceTreeNode;
-    }, bindgroup: {
+    constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceDefTree: ST.SurfaceDefinitionTree, bindgroup: {
         [charId: number]: {
             [bindgroupId: number]: boolean;
         };
     });
     destructor(): void;
     private initDOMStructure();
-    private initMouseEvent();
-    private processMouseEvent(ev, type);
-    private initAnimation(anim);
-    private initBind(anim);
+    private initAnimation(animId, anim);
+    private initBind(animId, anim);
     updateBind(): void;
     begin(animationId: number): void;
     end(animationId: number): void;
@@ -51,4 +48,6 @@ export default class Surface extends EventEmitter.EventEmitter {
         width: number;
         height: number;
     };
+    private initMouseEvent();
+    private processMouseEvent(ev, type);
 }

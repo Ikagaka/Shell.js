@@ -1,6 +1,7 @@
 /// <reference path="../typings/index.d.ts"/>
 
 import {SurfaceCanvas, SurfaceElement} from "./Interfaces";
+import * as ST from "./SurfaceTree"
 import * as SurfaceUtil from "./SurfaceUtil";
 
 
@@ -267,7 +268,7 @@ export default class SurfaceRender {
     this.ctx.putImageData(imgdataA, 0, 0);
   }
 
-  public drawRegions(regions: SurfacesTxt2Yaml.SurfaceRegion[], description="notitle"): void {
+  public drawRegions(regions: ST.SurfaceCollision[], description="notitle"): void {
     this.ctx.font = "35px";
     this.ctx.lineWidth = 4;
     this.ctx.strokeStyle = "white";
@@ -279,14 +280,14 @@ export default class SurfaceRender {
     });
   }
 
-  private drawRegion(region: SurfacesTxt2Yaml.SurfaceRegion): void {
+  private drawRegion(region: ST.SurfaceCollision): void {
     const {type="", name=""} = region;
     this.ctx.lineWidth = 1;
     this.ctx.strokeStyle = "#00FF00";
     var left=0, top=0, right=0, bottom=0;
     switch (type) {
       case "rect":
-        var {left=0, top=0, right=0, bottom=0} = <SurfacesTxt2Yaml.SurfaceRegionRect>region;
+        var {left=0, top=0, right=0, bottom=0} = <ST.SurfaceCollisionRect>region;
         left += this.basePosX;
         top += this.basePosY;
         right += this.basePosX;
@@ -296,7 +297,7 @@ export default class SurfaceRender {
         this.ctx.stroke();
         break;
       case "ellipse":
-        var {left=0, top=0, right=0, bottom=0} = <SurfacesTxt2Yaml.SurfaceRegionEllipse>region;
+        var {left=0, top=0, right=0, bottom=0} = <ST.SurfaceCollisionEllipse>region;
         left += this.basePosX;
         top += this.basePosY;
         right += this.basePosX;
@@ -305,17 +306,17 @@ export default class SurfaceRender {
         this.drawEllipseWithBezier(left, top, right - left, bottom - top);
         break;
       case "circle":
-        let {radius=0, center_x=0, center_y=0} = <SurfacesTxt2Yaml.SurfaceRegionCircle>region;
-        center_x += this.basePosX;
-        center_y += this.basePosY;
-        left = center_x;
-        top = center_y;
+        let {radius=0, centerX=0, centerY=0} = <ST.SurfaceCollisionCircle>region;
+        centerX += this.basePosX;
+        centerY += this.basePosY;
+        left = centerX;
+        top = centerY;
         this.ctx.beginPath();
-        this.ctx.arc(center_x, center_y, radius, 0, 2*Math.PI, true);
+        this.ctx.arc(centerX, centerY, radius, 0, 2*Math.PI, true);
         this.ctx.stroke();
         break;
       case "polygon":
-        const {coordinates=[]} = <SurfacesTxt2Yaml.SurfaceRegionPolygon>region;
+        const {coordinates=[]} = <ST.SurfaceCollisionPolygon>region;
         if(coordinates.length <= 0) break;
         this.ctx.beginPath();
         const {x:startX, y:startY} = coordinates[0];

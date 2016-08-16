@@ -376,17 +376,17 @@ var SurfaceRender = function () {
                 case "circle":
                     var _region$radius = region.radius;
                     var radius = _region$radius === undefined ? 0 : _region$radius;
-                    var _region$center_x = region.center_x;
-                    var center_x = _region$center_x === undefined ? 0 : _region$center_x;
-                    var _region$center_y = region.center_y;
-                    var center_y = _region$center_y === undefined ? 0 : _region$center_y;
+                    var _region$centerX = region.centerX;
+                    var centerX = _region$centerX === undefined ? 0 : _region$centerX;
+                    var _region$centerY = region.centerY;
+                    var centerY = _region$centerY === undefined ? 0 : _region$centerY;
 
-                    center_x += this.basePosX;
-                    center_y += this.basePosY;
-                    left = center_x;
-                    top = center_y;
+                    centerX += this.basePosX;
+                    centerY += this.basePosY;
+                    left = centerX;
+                    top = centerY;
                     this.ctx.beginPath();
-                    this.ctx.arc(center_x, center_y, radius, 0, 2 * Math.PI, true);
+                    this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, true);
                     this.ctx.stroke();
                     break;
                 case "polygon":

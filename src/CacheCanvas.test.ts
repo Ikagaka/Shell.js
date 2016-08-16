@@ -2,13 +2,14 @@
 
 import * as CCC from "./CacheCanvas";
 import * as SU from "./SurfaceUtil";
-import * as JSZip from "jszip";
+import narloader = require("narloader");
+const NL = narloader.NarLoader;
 
 QUnit.module('CCC');
 
 
-unzip("/nar/mobilemaster.nar").then((dic)=>{
-
+NL.loadFromURL("/nar/mobilemaster.nar").then((dir)=>{
+  const dic = dir.asArrayBuffer();
 
   QUnit.test('CCC.getPNGAndPNAImage', (assert)=>{
     const done = assert.async();
@@ -53,23 +54,3 @@ unzip("/nar/mobilemaster.nar").then((dic)=>{
 });
 
 
-function unzip(url: string): Promise<{[key:string]: ArrayBuffer}>{
-  const jszip = new JSZip();
-  return SU.getArrayBufferFromURL(url)
-  .then((buf)=> jszip.loadAsync(buf))
-  .then((zip)=>{
-    const pairs = Object.keys(zip.files)
-      .map((filename)=> ({filename, zipped: zip.file(filename)}) );
-    const proms = pairs.map(({filename, zipped})=>
-      (<JSZipObject>zipped).async("arraybuffer")
-      .then((unzipped: ArrayBuffer)=> ({filename, unzipped}) )
-    );
-    return Promise.all(proms);
-  }).then((pairs)=>{
-    console.warn(pairs)
-    const dic = pairs.reduce<{[key:string]: ArrayBuffer}>(
-      (o, {filename, unzipped})=>{ o[filename] = unzipped; return o; }, {});
-    console.info(dic);
-    return dic;
-  });
-}

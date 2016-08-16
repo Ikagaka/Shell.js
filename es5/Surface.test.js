@@ -7,6 +7,8 @@ window.$ = require("jquery");
 
 window.SurfaceUtil = require("./SurfaceUtil");
 
+window.ST = require("./SurfaceTree");
+
 window.Surface = require("./Surface")["default"];
 
 $(function () {
@@ -67,53 +69,52 @@ QUnit.test('surface0', function (assert) {
       pna: null
     };
     surfaceTree = {
-      0: {
+      aliases: [],
+      descript: {},
+      surfaces: [{
         base: base,
         elements: [],
         collisions: [],
         animations: [{
-          is: 0,
           intervals: [["periodic", 5]],
           options: [],
           patterns: [{
             type: "overlay",
-            surface: 100,
-            wait: "50-3000",
+            surface: 1,
+            wait: [50, 3000],
             x: 65,
             y: 100
           }, {
             type: "overlay",
-            surface: 101,
-            wait: 50,
+            surface: 2,
+            wait: [50, 50],
             x: 65,
             y: 100
           }, {
             type: "overlay",
-            surface: 100,
-            wait: 50,
+            surface: 1,
+            wait: [50, 50],
             x: 65,
             y: 100
           }, {
             type: "overlay",
             surface: -1,
-            wait: 50,
+            wait: [50, 50],
             x: 0,
             y: 0
           }]
         }]
-      },
-      100: {
+      }, {
         base: srf100,
         elements: [],
         collisions: [],
         animations: []
-      },
-      101: {
+      }, {
         base: srf101,
         elements: [],
         collisions: [],
         animations: []
-      }
+      }]
     };
     srf = new Surface(document.createElement("div"), 0, 0, surfaceTree);
     return setTimeout(function () {
@@ -139,65 +140,66 @@ QUnit.test('surface overlay', function (assert) {
       pna: null
     };
     surfaceTree = {
-      0: {
+      descript: {},
+      aliases: [],
+      surfaces: [{
         base: base,
         elements: [],
         collisions: [],
         animations: [{
-          is: 0,
           intervals: ["always"],
           options: [],
           patterns: [{
             type: "overlay",
             surface: 0,
-            wait: "50",
+            wait: [50, 50],
             x: 10,
             y: 10
           }, {
             type: "overlay",
             surface: 0,
-            wait: 50,
+            wait: [50, 50],
             x: 20,
             y: 0
           }, {
             type: "overlay",
             surface: 0,
-            wait: 50,
+            wait: [50, 50],
             x: 10,
             y: -10
           }, {
             type: "overlay",
             surface: 0,
-            wait: 50,
+            wait: [50, 50],
             x: 0,
             y: -20
           }, {
             type: "overlay",
             surface: 0,
-            wait: 50,
+            wait: [50, 50],
             x: -10,
             y: -10
           }, {
             type: "overlay",
             surface: 0,
-            wait: 50,
+            wait: [50, 50],
             x: -20,
             y: 0
           }, {
             type: "overlay",
             surface: 0,
-            wait: 50,
+            wait: [50, 50],
             x: -10,
             y: 10
           }, {
             type: "overlay",
             surface: 0,
-            wait: 50,
+            wait: [50, 50],
             x: 0,
             y: 20
           }]
         }]
-      }
+      }]
     };
     srf = new Surface(document.createElement("div"), 0, 0, surfaceTree);
     assert.ok($(srf.element).width() === base.cnv.width);
@@ -220,47 +222,48 @@ QUnit.test('surface overlay negative', function (assert) {
       pna: null
     };
     surfaceTree = {
-      0: {
+      descript: {},
+      aliases: [],
+      surfaces: [{
         base: base,
         elements: [],
         collisions: [],
         animations: [{
-          is: 0,
           intervals: ["always"],
           options: [],
           patterns: [{
             type: "overlay",
             surface: 0,
-            wait: "30",
+            wait: [30, 30],
             x: -10,
             y: -10
           }, {
             type: "overlay",
             surface: 0,
-            wait: "30",
+            wait: [30, 30],
             x: -20,
             y: -20
           }, {
             type: "overlay",
             surface: 0,
-            wait: "30",
+            wait: [30, 30],
             x: -30,
             y: -30
           }, {
             type: "overlay",
             surface: 0,
-            wait: "30",
+            wait: [30, 30],
             x: -40,
             y: -40
           }, {
             type: "overlay",
             surface: 0,
-            wait: "30",
+            wait: [30, 30],
             x: -50,
             y: -50
           }]
         }]
-      }
+      }]
     };
     srf = new Surface(document.createElement("div"), 0, 0, surfaceTree);
     assert.ok($(srf.element).width() === base.cnv.width);

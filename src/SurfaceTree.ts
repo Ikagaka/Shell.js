@@ -1,17 +1,18 @@
 /// <reference path="../typings/index.d.ts"/>
 
+import {SurfaceCanvas} from "./Interfaces"
 import * as SU from "./SurfaceUtil";
 import $ = require("jquery");
 
 export class SurfaceDefinitionTree {
   descript: SurfaceDescript;
-  surfaces: { [surfaceID: number]: SurfaceDefinition; };
-  aliases:  { [scopeID: number]: { [aliasname: string]: number[]; }};
+  surfaces: SurfaceDefinition[];
+  aliases:  { [aliasname: string]: number[]; }[];
   //regions: { [scopeID: number]: {[regionName: string]: ToolTipElement}; }; // 謎
   constructor(){
     this.descript = new SurfaceDescript();
-    this.surfaces = {};
-    this.aliases  = {};
+    this.surfaces = [];
+    this.aliases  = [];
   };
   loadFromsurfacesTxt2Yaml(srfsTxt: SurfacesTxt2Yaml.SurfacesTxt): Promise<this>{
     const descript = srfsTxt.descript != null ? srfsTxt.descript : <SurfacesTxt2Yaml.SurfaceDescript>{};
@@ -82,15 +83,17 @@ export class SurfaceDefinition {
     offsetX: number;
     offsetY: number;
   };
-  collisions: { [id: number]: SurfaceCollision; };
-  animations: { [id: number]: SurfaceAnimation; };
-  elements:   { [id: number]: SurfaceElement; };
+  collisions: SurfaceCollision[];
+  animations: SurfaceAnimation[];
+  elements:   SurfaceElement[];
+  base: SurfaceCanvas;
   constructor(){
     this.points = {basepos: { x: 0, y: 0 }};
-    this.balloons = {char: {}, offsetX: 0, offsetY: 0};
-    this.elements   = {};
-    this.collisions = {};
-    this.animations = {};
+    this.balloons = {char: [], offsetX: 0, offsetY: 0};
+    this.elements   = [];
+    this.collisions = [];
+    this.animations = [];
+    this.base = {cnv:null, png: null, pna: null};
   }
   loadFromsurfacesTxt2Yaml(srf: SurfacesTxt2Yaml.SurfaceDefinition): Promise<this>{
     const points = srf.points;
@@ -116,9 +119,11 @@ export class SurfaceDefinition {
       Object.keys(balloons).filter((key)=> /sakura$|kero$|char\d+/.test(key)).forEach((charName)=>{
         const charID = SU.unscope(charName);
         if(typeof balloons[charName].offsetx === "number"){
+          this.balloons.char[charID] = this.balloons.char[charID] != null ? this.balloons.char[charID] : {offsetX: 0, offsetY: 0};
           this.balloons.char[charID].offsetX = balloons[charName].offsetx;
         }
         if(typeof balloons[charName].offsety === "number"){
+          this.balloons.char[charID] = this.balloons.char[charID] != null ? this.balloons.char[charID] : {offsetX: 0, offsetY: 0};
           this.balloons.char[charID].offsetY = balloons[charName].offsety;
         }
       });
@@ -153,11 +158,13 @@ export class SurfaceElement {
   file: string;
   x: number;
   y: number;
+  canvas: SurfaceCanvas;
   constructor(){
     this.type = "overlay";
     this.file = "";
     this.x = 0;
     this.y = 0;
+    this.canvas = {cnv: null, png: null, pna: null};
   }
   loadFromsurfacesTxt2Yaml(elm: SurfacesTxt2Yaml.ElementPattern): Promise<this>{
     if(!(typeof elm.file === "string" &&
@@ -174,7 +181,7 @@ export class SurfaceElement {
       console.warn("SurfaceElement#loadFromsurfacesTxt2Yaml: faileback to", this.x);
     }
     if(typeof elm.y === "number"){
-      this.x = elm.y;
+      this.y = elm.y;
     }else{
       console.warn("SurfaceElement#loadFromsurfacesTxt2Yaml: faileback to", this.y);
     }
@@ -283,7 +290,7 @@ export class SurfaceCollisionPolygon extends SurfaceCollision {
       console.warn("SurfaceRegionPolygon#loadFromsurfacesTxt2Yaml: coordinates need more than 3", col);
       return Promise.reject(col);
     }
-    if(coordinates.every((o)=> typeof o.x === "number" && typeof o.x === "number")){
+    if(coordinates.every((o)=> typeof o.x !== "number" || typeof o.y !== "number")){
       console.warn("SurfaceRegionPolygon#loadFromsurfacesTxt2Yaml: coordinates has erro value", col);
       return Promise.reject(col);
     }
@@ -295,13 +302,13 @@ export class SurfaceCollisionPolygon extends SurfaceCollision {
 export class SurfaceAnimation {
   intervals: [string, string[]][]; // [command, args]
   options: [string, string[]][]; // [command, args]
-  collisions: { [id: number]: SurfaceCollision; };
-  patterns:   { [id: number]: SurfaceAnimationPattern; };
+  collisions: SurfaceCollision[];
+  patterns:   SurfaceAnimationPattern[];
   constructor(){
     this.intervals = [["never", []]];
     this.options = [];
-    this.collisions = {};
-    this.patterns = {};
+    this.collisions = [];
+    this.patterns = [];
   }
   loadFromsurfacesTxt2Yaml(animation: SurfacesTxt2Yaml.SurfaceAnimation): Promise<this>{
     const interval = typeof animation.interval === "string" ? animation.interval : "";

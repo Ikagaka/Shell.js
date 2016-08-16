@@ -16,6 +16,7 @@ export default class Shell extends EventEmitter.EventEmitter {
     }[];
     private surfacesTxt;
     private surfaceTree;
+    private surfaceDefTree;
     private cacheCanvas;
     private bindgroup;
     enableRegion: boolean;
@@ -30,8 +31,6 @@ export default class Shell extends EventEmitter.EventEmitter {
     private loadSurfaceTable();
     private loadSurfacePNG();
     private loadElements();
-    private loadCollisions();
-    private loadAnimations();
     private hasFile(filename);
     private getPNGFromDirectory(filename, cb);
     attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number | string): Surface | null;

@@ -110,7 +110,7 @@ prmNar.then (nanikaDir) ->
     assert.ok $(srf.element).height() == 445
     assert.ok $(srf.element).width() == 182
     assert.ok srf.surfaceNode.collisions[0].name == 'Head'
-    assert.ok srf.surfaceNode.animations[0].interval == 'sometimes'
+    assert.ok srf.surfaceNode.animations[0].intervals[0][0] == 'sometimes'
     setInterval (->
       srf.talk()
       return

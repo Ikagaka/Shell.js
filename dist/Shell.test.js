@@ -15,6 +15,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var Surface_1 = require('./Surface');
+var ST = require("./SurfaceTree");
 var SurfaceUtil = require("./SurfaceUtil");
 var SurfacesTxt2Yaml = require("surfaces_txt2yaml");
 var EventEmitter = require("events");
@@ -33,7 +34,8 @@ var Shell = function (_EventEmitter$EventEm) {
         _this.directory = directory;
         _this.attachedSurface = [];
         _this.surfacesTxt = {};
-        _this.surfaceTree = [];
+        _this.surfaceDefTree = new ST.SurfaceDefinitionTree();
+        _this.surfaceTree = _this.surfaceDefTree.surfaces;
         _this.cacheCanvas = {};
         _this.bindgroup = [];
         _this.enableRegion = false;
@@ -54,24 +56,26 @@ var Shell = function (_EventEmitter$EventEm) {
                 return _this2.loadBindGroup();
             }) // 2nd // 依存関係的なやつだと思われ
             .then(function () {
+                return console.log("descript done");
+            }).then(function () {
                 return _this2.loadSurfacesTxt();
             }) // 1st
             .then(function () {
                 return _this2.loadSurfaceTable();
             }) // 1st
             .then(function () {
+                return console.log("surfaces done");
+            }).then(function () {
                 return _this2.loadSurfacePNG();
             }) // 2nd
             .then(function () {
-                return _this2.loadCollisions();
-            }) // 3rd
-            .then(function () {
-                return _this2.loadAnimations();
-            }) // 3rd
-            .then(function () {
+                return console.log("base done");
+            }).then(function () {
                 return _this2.loadElements();
             }) // 3rd
             .then(function () {
+                return console.log("elements done");
+            }).then(function () {
                 return _this2;
             }) // 3rd
             .catch(function (err) {
@@ -268,44 +272,20 @@ var Shell = function (_EventEmitter$EventEm) {
         value: function loadSurfacesTxt() {
             var _this5 = this;
 
-            var surfaces_text_names = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
-            if (surfaces_text_names.length === 0) {
+            var filenames = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
+            if (filenames.length === 0) {
                 console.info("surfaces.txt is not found");
-                this.surfacesTxt = { surfaces: {}, descript: {}, aliases: {}, regions: {} };
-            } else {
-                // cat surfaces*.txt
-                var text = surfaces_text_names.reduce(function (text, filename) {
-                    return text + SurfaceUtil.convert(_this5.directory[filename]);
-                }, "");
-                this.surfacesTxt = SurfacesTxt2Yaml.txt_to_data(text, { compatible: 'ssp-lazy' });
-                // https://github.com/Ikagaka/Shell.js/issues/55
-                if (this.surfacesTxt.surfaces == null) {
-                    this.surfacesTxt.surfaces = {};
-                }
-                // SurfacesTxt2Yamlの継承の expand と remove
-                Object.keys(this.surfacesTxt.surfaces).forEach(function (name) {
-                    if (typeof _this5.surfacesTxt.surfaces[name].is === "number" && Array.isArray(_this5.surfacesTxt.surfaces[name].base)) {
-                        _this5.surfacesTxt.surfaces[name].base.forEach(function (key) {
-                            $.extend(true, _this5.surfacesTxt.surfaces[name], _this5.surfacesTxt.surfaces[key]);
-                        });
-                        delete _this5.surfacesTxt.surfaces[name].base;
-                    }
-                });
-                Object.keys(this.surfacesTxt.surfaces).forEach(function (name) {
-                    if (typeof _this5.surfacesTxt.surfaces[name].is === "undefined") {
-                        delete _this5.surfacesTxt.surfaces[name];
-                    }
-                });
-                // expand ここまで
-                this.surfacesTxt.descript = this.surfacesTxt.descript || {};
-                if (typeof this.surfacesTxt.descript["collision-sort"] === "string") {
-                    console.warn("Shell#loadSurfacesTxt", "collision-sort is not supported yet.");
-                }
-                if (typeof this.surfacesTxt.descript["animation-sort"] === "string") {
-                    console.warn("Shell#loadSurfacesTxt", "animation-sort is not supported yet.");
-                }
             }
-            return Promise.resolve(this);
+            var cat_text = filenames.reduce(function (text, filename) {
+                return text + SurfaceUtil.convert(_this5.directory[filename]);
+            }, "");
+            var surfacesTxt = SurfacesTxt2Yaml.txt_to_data(cat_text, { compatible: 'ssp-lazy' });
+            return new ST.SurfaceDefinitionTree().loadFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceTree) {
+                _this5.surfacesTxt = surfacesTxt;
+                _this5.surfaceDefTree = surfaceTree;
+                _this5.surfaceTree = _this5.surfaceDefTree.surfaces;
+                return _this5;
+            });
         }
         // surfacetable.txtを読む予定
 
@@ -342,17 +322,13 @@ var Shell = function (_EventEmitter$EventEm) {
                     if (!isFinite(n)) return;
                     i++;
                     _this6.getPNGFromDirectory(filename, function (err, cnv) {
-                        if (err != null) {
+                        if (err != null || cnv == null) {
                             console.warn("Shell#loadSurfacePNG > " + err);
                         } else {
                             if (!_this6.surfaceTree[n]) {
                                 // surfaces.txtで未定義なら追加
-                                _this6.surfaceTree[n] = {
-                                    base: cnv,
-                                    elements: [],
-                                    collisions: [],
-                                    animations: []
-                                };
+                                _this6.surfaceTree[n] = new ST.SurfaceDefinition();
+                                _this6.surfaceTree[n].base = cnv;
                             } else {
                                 // surfaces.txtで定義済み
                                 _this6.surfaceTree[n].base = cnv;
@@ -372,38 +348,23 @@ var Shell = function (_EventEmitter$EventEm) {
         value: function loadElements() {
             var _this7 = this;
 
-            var srfs = this.surfacesTxt.surfaces;
-            var hits = Object.keys(srfs).filter(function (name) {
-                return !!srfs[name].elements;
-            });
+            var srfs = this.surfaceTree;
             return new Promise(function (resolve, reject) {
                 var i = 0;
-                if (hits.length === 0) return resolve(_this7);
-                hits.forEach(function (defname) {
-                    var n = srfs[defname].is;
-                    var elms = srfs[defname].elements;
-                    var _prms = Object.keys(elms).map(function (elmname) {
-                        var _elms$elmname = elms[elmname];
-                        var is = _elms$elmname.is;
-                        var type = _elms$elmname.type;
-                        var file = _elms$elmname.file;
-                        var x = _elms$elmname.x;
-                        var y = _elms$elmname.y;
+                srfs.forEach(function (srf, n) {
+                    var elms = srf.elements;
+                    var _prms = elms.map(function (elm, elmId) {
+                        var type = elm.type;
+                        var file = elm.file;
+                        var x = elm.x;
+                        var y = elm.y;
 
                         i++;
                         _this7.getPNGFromDirectory(file, function (err, canvas) {
                             if (err != null || canvas == null) {
                                 console.warn("Shell#loadElements > " + err);
                             } else {
-                                if (!_this7.surfaceTree[n]) {
-                                    _this7.surfaceTree[n] = {
-                                        base: { cnv: null, png: null, pna: null },
-                                        elements: [],
-                                        collisions: [],
-                                        animations: []
-                                    };
-                                }
-                                _this7.surfaceTree[n].elements[is] = { type: type, canvas: canvas, x: x, y: y };
+                                _this7.surfaceTree[n].elements[elmId].canvas = canvas;
                             }
                             if (--i <= 0) {
                                 resolve(_this7);
@@ -411,116 +372,13 @@ var Shell = function (_EventEmitter$EventEm) {
                         });
                     });
                 });
+                // elementを一切使っていなかった
+                if (i === 0) {
+                    resolve(_this7);
+                }
+            }).then(function () {
+                return _this7;
             });
-        }
-        // this.surfacesTxt から collision を読み込んで this.surfaceTree に反映
-
-    }, {
-        key: "loadCollisions",
-        value: function loadCollisions() {
-            var _this8 = this;
-
-            var srfs = this.surfacesTxt.surfaces;
-            Object.keys(srfs).filter(function (name) {
-                return !!srfs[name].regions;
-            }).forEach(function (defname) {
-                var n = srfs[defname].is;
-                var regions = srfs[defname].regions;
-                Object.keys(regions).forEach(function (regname) {
-                    if (!_this8.surfaceTree[n]) {
-                        _this8.surfaceTree[n] = {
-                            base: { cnv: null, png: null, pna: null },
-                            elements: [],
-                            collisions: [],
-                            animations: []
-                        };
-                    }
-                    var is = regions[regname].is;
-
-                    _this8.surfaceTree[n].collisions[is] = regions[regname];
-                });
-            });
-            return Promise.resolve(this);
-        }
-        // this.surfacesTxt から animation を読み込んで this.surfaceTree に反映
-
-    }, {
-        key: "loadAnimations",
-        value: function loadAnimations() {
-            var _this9 = this;
-
-            var srfs = this.surfacesTxt.surfaces;
-            Object.keys(srfs).filter(function (name) {
-                return !!srfs[name].animations;
-            }).forEach(function (defname) {
-                var n = srfs[defname].is;
-                var animations = srfs[defname].animations;
-                Object.keys(animations).forEach(function (animId) {
-                    if (!_this9.surfaceTree[n]) {
-                        _this9.surfaceTree[n] = {
-                            base: { cnv: null, png: null, pna: null },
-                            elements: [],
-                            collisions: [],
-                            animations: []
-                        };
-                    }
-                    var _animations$animId = animations[animId];
-                    var is = _animations$animId.is;
-                    var _animations$animId$in = _animations$animId.interval;
-                    var interval = _animations$animId$in === undefined ? "never" : _animations$animId$in;
-                    var _animations$animId$op = _animations$animId.option;
-                    var option = _animations$animId$op === undefined ? "" : _animations$animId$op;
-                    var _animations$animId$pa = _animations$animId.patterns;
-                    var patterns = _animations$animId$pa === undefined ? [] : _animations$animId$pa;
-                    var _animations$animId$re = _animations$animId.regions;
-                    var regions = _animations$animId$re === undefined ? {} : _animations$animId$re;
-                    // animation*.option,* の展開
-                    // animation*.option,exclusive+background,(1,3,5)
-
-                    var _option$split = option.split(",");
-
-                    var _option$split2 = _toArray(_option$split);
-
-                    var _option = _option$split2[0];
-
-                    var opt_args = _option$split2.slice(1);
-
-                    var _opt_args = opt_args.map(function (str) {
-                        return str.replace("(", "").replace(")", "").trim();
-                    });
-                    var options = option.split("+");
-                    var _options = options.map(function (option) {
-                        return [option.trim(), _opt_args];
-                    });
-
-                    var _interval$split = interval.split(",");
-
-                    var _interval$split2 = _toArray(_interval$split);
-
-                    var _interval = _interval$split2[0];
-
-                    var int_args = _interval$split2.slice(1);
-
-                    var _int_args = int_args.map(function (str) {
-                        return str.trim();
-                    });
-                    var intervals = _interval.split("+"); // sometimes+talk
-                    var _intervals = intervals.map(function (interval) {
-                        return [interval.trim(), _int_args];
-                    });
-                    var _regions = [];
-                    Object.keys(regions).forEach(function (key) {
-                        _regions[regions[key].is] = regions[key];
-                    });
-                    _this9.surfaceTree[n].animations[is] = {
-                        options: _options,
-                        intervals: _intervals,
-                        regions: _regions,
-                        is: is, patterns: patterns, interval: interval
-                    };
-                });
-            });
-            return Promise.resolve(this);
         }
     }, {
         key: "hasFile",
@@ -534,7 +392,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "getPNGFromDirectory",
         value: function getPNGFromDirectory(filename, cb) {
-            var _this10 = this;
+            var _this8 = this;
 
             var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
             if (cached_filename !== "") {
@@ -558,22 +416,22 @@ var Shell = function (_EventEmitter$EventEm) {
                 if (err != null) return cb(err, null);
                 // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
                 if (_pnafilename === "") {
-                    _this10.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
-                    cb(null, _this10.cacheCanvas[_filename]);
+                    _this8.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
+                    cb(null, _this8.cacheCanvas[_filename]);
                     return;
                 }
-                var pnabuf = _this10.directory[_pnafilename];
+                var pnabuf = _this8.directory[_pnafilename];
                 SurfaceUtil.getImageFromArrayBuffer(pnabuf, function (err, pna) {
                     if (err != null) return cb(err, null);
-                    _this10.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
-                    cb(null, _this10.cacheCanvas[_filename]);
+                    _this8.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
+                    cb(null, _this8.cacheCanvas[_filename]);
                 });
             });
         }
     }, {
         key: "attachSurface",
         value: function attachSurface(div, scopeId, surfaceId) {
-            var _this11 = this;
+            var _this9 = this;
 
             var type = SurfaceUtil.scope(scopeId);
             var hits = this.attachedSurface.filter(function (_ref) {
@@ -592,13 +450,13 @@ var Shell = function (_EventEmitter$EventEm) {
                 console.warn("surfaceId:", _surfaceId, "is not defined in surfaceTree", this.surfaceTree);
                 return null;
             }
-            var srf = new Surface_1.default(div, scopeId, _surfaceId, this.surfaceTree, this.bindgroup);
+            var srf = new Surface_1.default(div, scopeId, _surfaceId, this.surfaceDefTree, this.bindgroup);
             srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
             if (this.enableRegion) {
                 srf.render();
             }
             srf.on("mouse", function (ev) {
-                _this11.emit("mouse", ev); // detachSurfaceで消える
+                _this9.emit("mouse", ev); // detachSurfaceで消える
             });
             this.attachedSurface.push({ div: div, surface: srf });
             return srf;
@@ -656,7 +514,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "bind",
         value: function bind(a, b) {
-            var _this12 = this;
+            var _this10 = this;
 
             if (typeof a === "number" && typeof b === "number") {
                 var scopeId = a;
@@ -676,14 +534,14 @@ var Shell = function (_EventEmitter$EventEm) {
                 (function () {
                     var _category = a;
                     var _parts = b;
-                    _this12.config.char.forEach(function (char, scopeId) {
+                    _this10.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name = bindgroup.name;
                             var category = _bindgroup$name.category;
                             var parts = _bindgroup$name.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this12.bind(scopeId, bindgroupId);
+                                _this10.bind(scopeId, bindgroupId);
                             }
                         });
                     });
@@ -695,7 +553,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "unbind",
         value: function unbind(a, b) {
-            var _this13 = this;
+            var _this11 = this;
 
             if (typeof a === "number" && typeof b === "number") {
                 var scopeId = a;
@@ -715,14 +573,14 @@ var Shell = function (_EventEmitter$EventEm) {
                 (function () {
                     var _category = a;
                     var _parts = b;
-                    _this13.config.char.forEach(function (char, scopeId) {
+                    _this11.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name2 = bindgroup.name;
                             var category = _bindgroup$name2.category;
                             var parts = _bindgroup$name2.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this13.unbind(scopeId, bindgroupId);
+                                _this11.unbind(scopeId, bindgroupId);
                             }
                         });
                     });
@@ -787,7 +645,7 @@ var Shell = function (_EventEmitter$EventEm) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Shell;
-},{"./Surface":2,"./SurfaceUtil":4,"events":13,"jquery":19,"surfaces_txt2yaml":131}],2:[function(require,module,exports){
+},{"./Surface":2,"./SurfaceTree":4,"./SurfaceUtil":5,"events":14,"jquery":20,"surfaces_txt2yaml":132}],2:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
@@ -803,13 +661,14 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var SurfaceRender_1 = require("./SurfaceRender");
 var SurfaceUtil = require("./SurfaceUtil");
+var ST = require("./SurfaceTree");
 var EventEmitter = require("events");
 var $ = require("jquery");
 
 var Surface = function (_EventEmitter$EventEm) {
     _inherits(Surface, _EventEmitter$EventEm);
 
-    function Surface(div, scopeId, surfaceId, surfaceTree, bindgroup) {
+    function Surface(div, scopeId, surfaceId, surfaceDefTree, bindgroup) {
         _classCallCheck(this, Surface);
 
         var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Surface).call(this));
@@ -823,13 +682,9 @@ var Surface = function (_EventEmitter$EventEm) {
         _this.ctx = ctx;
         _this.bindgroup = bindgroup;
         _this.position = "fixed";
-        _this.surfaceTree = surfaceTree;
-        _this.surfaceNode = surfaceTree[surfaceId] || {
-            base: { cnv: null, png: null, pna: null },
-            elements: [],
-            collisions: [],
-            animations: []
-        };
+        _this.surfaceDefTree = surfaceDefTree;
+        _this.surfaceTree = surfaceDefTree.surfaces;
+        _this.surfaceNode = surfaceDefTree.surfaces[surfaceId];
         _this.exclusives = [];
         _this.talkCount = 0;
         _this.talkCounts = {};
@@ -844,8 +699,8 @@ var Surface = function (_EventEmitter$EventEm) {
         _this.bufferRender = new SurfaceRender_1.default();
         _this.initDOMStructure();
         _this.initMouseEvent();
-        _this.surfaceNode.animations.forEach(function (anim) {
-            _this.initAnimation(anim);
+        _this.surfaceNode.animations.forEach(function (anim, id) {
+            _this.initAnimation(id, anim);
         });
         _this.render();
         return _this;
@@ -859,12 +714,7 @@ var Surface = function (_EventEmitter$EventEm) {
                 return fn();
             });
             this.element = document.createElement("div");
-            this.surfaceNode = {
-                base: { cnv: null, png: null, pna: null },
-                elements: [],
-                collisions: [],
-                animations: []
-            };
+            this.surfaceNode = new ST.SurfaceDefinition();
             this.surfaceTree = [];
             this.bindgroup = [];
             this.layers = [];
@@ -883,9 +733,551 @@ var Surface = function (_EventEmitter$EventEm) {
             $(this.cnv).css("position", "absolute");
         }
     }, {
+        key: "initAnimation",
+        value: function initAnimation(animId, anim) {
+            var _this2 = this;
+
+            var intervals = anim.intervals;
+            var patterns = anim.patterns;
+            var options = anim.options;
+            var collisions = anim.collisions; //isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
+
+            if (intervals.some(function (_ref) {
+                var _ref2 = _slicedToArray(_ref, 2);
+
+                var interval = _ref2[0];
+                var args = _ref2[1];
+                return "bind" === interval;
+            })) {
+                // bind+の場合は initBind にまるなげ
+                this.initBind(animId, anim);
+                return;
+            }
+            if (intervals.length > 1) {
+                // bind+でなければ分解して再実行
+                intervals.forEach(function (_ref3) {
+                    var _ref4 = _slicedToArray(_ref3, 2);
+
+                    var _interval = _ref4[0];
+                    var args = _ref4[1];
+
+                    var a = new ST.SurfaceAnimation();
+                    a.intervals = [[_interval, args]];
+                    a.patterns = patterns;
+                    a.options = options;
+                    a.collisions = collisions;
+                    _this2.initAnimation(animId, a);
+                });
+                return;
+            }
+
+            var _intervals$ = _slicedToArray(intervals[0], 2);
+
+            var _interval = _intervals$[0];
+            var args = _intervals$[1];
+
+            var n = 0; // tsc黙らせるため
+            if (args.length > 0) {
+                n = Number(args[0]);
+                if (!isFinite(n)) {
+                    // rarelyにfaileback
+                    n = 4;
+                }
+            }
+            // アニメーション描画タイミングの登録
+            var fn = function fn(nextTick) {
+                if (_this2.destructed) return;
+                if (_this2.stopFlags[animId]) return;
+                _this2.play(animId, nextTick);
+            };
+            // アニメーションを止めるための準備
+            this.stopFlags[animId] = false;
+            switch (_interval) {
+                // nextTickを呼ぶともう一回random
+                case "sometimes":
+                    return SurfaceUtil.random(fn, 2);
+                case "rarely":
+                    return SurfaceUtil.random(fn, 4);
+                case "random":
+                    return SurfaceUtil.random(fn, n);
+                case "periodic":
+                    return SurfaceUtil.periodic(fn, n);
+                case "always":
+                    return SurfaceUtil.always(fn);
+                case "runonce":
+                    return this.play(animId);
+                case "never":
+                    return;
+                case "yen-e":
+                    return;
+                case "talk":
+                    this.talkCounts[animId] = n;
+                    return;
+            }
+            console.warn("Surface#initAnimation > unkown interval:", _interval, anim);
+        }
+    }, {
+        key: "initBind",
+        value: function initBind(animId, anim) {
+            var _this3 = this;
+
+            var intervals = anim.intervals;
+            var patterns = anim.patterns;
+            var options = anim.options;
+            var collisions = anim.collisions;
+
+            if (this.isBind(animId)) {
+                // 現在有効な bind
+                if (intervals.length > 0) {
+                    // bind+hogeは着せ替え付随アニメーション。
+                    // bind+sometimesを分解して実行
+                    intervals.forEach(function (_ref5) {
+                        var _ref6 = _slicedToArray(_ref5, 2);
+
+                        var interval = _ref6[0];
+                        var args = _ref6[1];
+
+                        if (interval !== "bind") {
+                            var a = new ST.SurfaceAnimation();
+                            a.intervals = [[interval, args]];
+                            a.patterns = patterns;
+                            a.options = options;
+                            a.collisions = collisions;
+                            _this3.initAnimation(animId, a);
+                        }
+                    });
+                }
+                // レイヤに着せ替えを追加
+                options.forEach(function (_ref7) {
+                    var _ref8 = _slicedToArray(_ref7, 2);
+
+                    var option = _ref8[0];
+                    var args = _ref8[1];
+
+                    if (option === "background") {
+                        _this3.backgrounds[animId] = patterns;
+                    } else {
+                        _this3.layers[animId] = patterns;
+                    }
+                });
+            } else {
+                //現在の合成レイヤから着せ替えレイヤを削除
+                options.forEach(function (_ref9) {
+                    var _ref10 = _slicedToArray(_ref9, 2);
+
+                    var option = _ref10[0];
+                    var args = _ref10[1];
+
+                    if (option === "background") {
+                        delete _this3.backgrounds[animId];
+                    } else {
+                        delete _this3.layers[animId];
+                    }
+                });
+                // bind+sometimsなどを殺す
+                this.end(animId);
+            }
+        }
+    }, {
+        key: "updateBind",
+        value: function updateBind() {
+            var _this4 = this;
+
+            // Shell.tsから呼ばれるためpublic
+            // Shell#bind,Shell#unbindで発動
+            this.surfaceNode.animations.forEach(function (anim, animId) {
+                if (anim.intervals.some(function (_ref11) {
+                    var _ref12 = _slicedToArray(_ref11, 2);
+
+                    var interval = _ref12[0];
+                    var args = _ref12[1];
+                    return "bind" === interval;
+                })) {
+                    _this4.initBind(animId, anim);
+                }
+            });
+            // 即時に反映
+            this.render();
+        }
+        // アニメーションタイミングループの開始要請
+
+    }, {
+        key: "begin",
+        value: function begin(animationId) {
+            this.stopFlags[animationId] = false;
+            var anim = this.surfaceNode.animations[animationId];
+            this.initAnimation(animationId, anim);
+            this.render();
+        }
+        // アニメーションタイミングループの開始
+
+    }, {
+        key: "end",
+        value: function end(animationId) {
+            this.stopFlags[animationId] = true;
+        }
+        // すべての自発的アニメーション再生の停止
+
+    }, {
+        key: "endAll",
+        value: function endAll() {
+            var _this5 = this;
+
+            Object.keys(this.stopFlags).forEach(function (animationId) {
+                _this5.end(Number(animationId));
+            });
+        }
+        // アニメーション再生
+
+    }, {
+        key: "play",
+        value: function play(animationId, callback) {
+            var _this6 = this;
+
+            if (this.destructed) return;
+            var anims = this.surfaceNode.animations;
+            var anim = this.surfaceNode.animations[animationId];
+            if (anim == null) {
+                console.warn("Surface#play", "animation", animationId, "is not defined");
+                return void setTimeout(callback); // そんなアニメーションはない
+            }
+            var patterns = anim.patterns;
+            var options = anim.options;
+
+            this.animationsQueue[animationId] = patterns.map(function (pattern, i) {
+                return function () {
+                    var surface = pattern.surface;
+                    var wait = pattern.wait;
+                    var type = pattern.type;
+                    var x = pattern.x;
+                    var y = pattern.y;
+
+                    switch (type) {
+                        case "start":
+                            var animation_ids = pattern.animation_ids;
+
+                            _this6.play(animation_ids[0], nextTick);
+                            return;
+                        case "stop":
+                            var animation_ids = pattern.animation_ids;
+
+                            _this6.stop(animation_ids[0]);
+                            setTimeout(nextTick);
+                            return;
+                        case "alternativestart":
+                            var animation_ids = pattern.animation_ids;
+
+                            _this6.play(SurfaceUtil.choice(animation_ids), nextTick);
+                            return;
+                        case "alternativestop":
+                            var animation_ids = pattern.animation_ids;
+
+                            _this6.stop(SurfaceUtil.choice(animation_ids));
+                            setTimeout(nextTick);
+                            return;
+                    }
+                    var _wait = SurfaceUtil.randomRange(wait[0], wait[1]);
+                    setTimeout(function () {
+                        // 現在のコマをレイヤーに追加
+                        options.forEach(function (_ref13) {
+                            var _ref14 = _slicedToArray(_ref13, 2);
+
+                            var option = _ref14[0];
+                            var args = _ref14[1];
+
+                            if (option === "background") {
+                                _this6.backgrounds[animationId] = [pattern];
+                            } else {
+                                _this6.layers[animationId] = [pattern];
+                            }
+                        });
+                        var canIPlay = _this6.exclusives.every(function (exclusive) {
+                            return exclusive !== animationId;
+                        }); //自分のanimationIdはexclusivesリストに含まれていない
+                        if (canIPlay) {
+                            _this6.render();
+                        }
+                        nextTick();
+                    }, _wait);
+                };
+            });
+            options.forEach(function (_ref15) {
+                var _ref16 = _slicedToArray(_ref15, 2);
+
+                var option = _ref16[0];
+                var args = _ref16[1];
+
+                if (option === "exclusive") {
+                    if (args.length > 0) {
+                        _this6.animationsQueue[animationId].unshift(function () {
+                            _this6.exclusives = args.map(function (arg) {
+                                return Number(arg);
+                            });
+                        });
+                    } else {
+                        _this6.animationsQueue[animationId].unshift(function () {
+                            _this6.exclusives = _this6.surfaceNode.animations.filter(function (anim, animId) {
+                                return animId !== animationId;
+                            }).map(function (anim, animId) {
+                                return animId;
+                            });
+                        });
+                    }
+                    _this6.animationsQueue[animationId].push(function () {
+                        _this6.exclusives = [];
+                    });
+                }
+            });
+            var nextTick = function nextTick() {
+                if (_this6.destructed) return;
+                var next = _this6.animationsQueue[animationId].shift();
+                if (!(next instanceof Function)) {
+                    // stop pattern animation.
+                    _this6.animationsQueue[animationId] = [];
+                    _this6.exclusives = [];
+                    setTimeout(callback);
+                } else {
+                    next();
+                }
+            };
+            if (this.animationsQueue[animationId][0] instanceof Function) {
+                nextTick();
+            }
+        }
+    }, {
+        key: "stop",
+        value: function stop(animationId) {
+            this.animationsQueue[animationId] = []; // アニメーションキューを破棄
+        }
+    }, {
+        key: "talk",
+        value: function talk() {
+            var _this7 = this;
+
+            var animations = this.surfaceNode.animations;
+            this.talkCount++;
+            var hits = animations.filter(function (anim, animId) {
+                return anim.intervals.some(function (_ref17) {
+                    var _ref18 = _slicedToArray(_ref17, 2);
+
+                    var interval = _ref18[0];
+                    var args = _ref18[1];
+                    return "talk" === interval;
+                }) && _this7.talkCount % _this7.talkCounts[animId] === 0;
+            });
+            hits.forEach(function (anim, animId) {
+                // そのアニメーションは再生が終了しているか？
+                if (_this7.animationsQueue[animId] == null || _this7.animationsQueue[animId].length === 0) {
+                    _this7.play(animId);
+                }
+            });
+        }
+    }, {
+        key: "yenE",
+        value: function yenE() {
+            var _this8 = this;
+
+            var anims = this.surfaceNode.animations;
+            anims.forEach(function (anim, animId) {
+                if (anim.intervals.some(function (_ref19) {
+                    var _ref20 = _slicedToArray(_ref19, 2);
+
+                    var interval = _ref20[0];
+                    var args = _ref20[1];
+                    return interval === "yen-e";
+                })) {
+                    _this8.play(animId);
+                }
+            });
+        }
+    }, {
+        key: "isBind",
+        value: function isBind(animId) {
+            if (this.bindgroup[this.scopeId] == null) return false;
+            if (this.bindgroup[this.scopeId][animId] === false) return false;
+            return true;
+        }
+    }, {
+        key: "composeAnimationPatterns",
+        value: function composeAnimationPatterns(layers, interval) {
+            var _this9 = this;
+
+            var renderLayers = [];
+            layers.forEach(function (patterns) {
+                patterns.forEach(function (pattern) {
+                    var surface = pattern.surface;
+                    var type = pattern.type;
+                    var x = pattern.x;
+                    var y = pattern.y;
+                    var wait = pattern.wait;
+
+                    if (type === "insert") {
+                        // insertの場合は対象のIDをとってくる
+                        // animation_id = animationN,x,y
+                        var animation_ids = pattern.animation_ids;
+
+                        var animId = animation_ids.length > 0 ? animation_ids[0] : -1;
+                        // 対象の着せ替えが有効かどうか判定
+                        if (!_this9.isBind(animId)) return;
+                        var anim = _this9.surfaceNode.animations[animId];
+                        if (anim == null) {
+                            console.warn("Surface#composeAnimationPatterns", "insert id", animation_ids, "is wrong target.", _this9.surfaceNode);
+                            return;
+                        }
+                        renderLayers = renderLayers.concat(_this9.composeAnimationPatterns([anim.patterns], interval));
+                        return;
+                    }
+                    if (surface < 0) {
+                        // idが-1つまり非表示指定
+                        if (type === "base") {
+                            // アニメーションパーツによるbaseを削除
+                            _this9.dynamicBase = null;
+                        }
+                        return;
+                    }
+                    var srf = _this9.surfaceTree[surface]; // 該当のサーフェス
+                    if (srf == null) {
+                        console.warn("Surface#composeAnimationPatterns", "surface id " + surface + " is not defined.", pattern);
+                        return; // 対象サーフェスがないのでスキップ
+                    }
+                    // 対象サーフェスを構築描画する
+                    var base = srf.base;
+                    var elements = srf.elements;
+                    var collisions = srf.collisions;
+                    var animations = srf.animations;
+
+                    var bind_backgrounds = [];
+                    var bind_fronts = [];
+                    _this9.bufferRender.reset();
+                    if (interval === "bind") {
+                        console.info("Surface#composeAnimationPatterns", "multiple binds detected");
+                        // 多重着せ替え定義（SSPのみ）
+                        // アニメーションのコマとして参照した先のsurfaceに、そのsurfaceのアニメーションが定義されていた場合、通常それらは無視される。
+                        // しかしSSPではintervalがbindのアニメーション（＝着せ替え）のみ無視されず反映されるようになっている。
+                        // これによって、着せ替えの影響を受けるような構造のアニメーションについて、アニメーションのコマ側で着せ替えに応じた定義を行う事が可能である。
+                        // なお多重着せ替えを入れ子にする事も可能であるが、循環的な参照は無視される。
+                        // http://ssp.shillest.net/ukadoc/manual/descript_shell_surfaces.html#introduction_mayuna
+                        // intervalがbindのときのみ対象サーフェスの着せ替えも有効にする
+                        // https://github.com/Ikagaka/cuttlebone/issues/23
+                        animations.forEach(function (anim, is) {
+                            var options = anim.options;
+                            var patterns = anim.patterns;
+
+                            if (_this9.isBind(is)) {
+                                options.forEach(function (_ref21) {
+                                    var _ref22 = _slicedToArray(_ref21, 2);
+
+                                    var option = _ref22[0];
+                                    var args = _ref22[1];
+
+                                    if ("background" === option) {
+                                        bind_backgrounds[is] = patterns;
+                                    } else {
+                                        bind_fronts[is] = patterns;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    // 循環無視されずスタックオーバーフローします
+                    var _bind_backgrounds = _this9.composeAnimationPatterns(bind_backgrounds, interval);
+                    var _bind_fronts = _this9.composeAnimationPatterns(bind_fronts, interval);
+                    var _base_ = [];
+                    if (elements[0] != null) {
+                        // element0, element1...
+                        _base_ = elements;
+                    } else if (base != null) {
+                        // base, element1, element2...
+                        _base_ = [{ type: "overlay", canvas: base, x: 0, y: 0 }].concat(elements);
+                    } else {
+                        console.error("Surface#composeAnimationPatterns: cannot decide base");
+                        return;
+                    }
+                    // 対象サーフェスのbaseサーフェス(surface*.png)の上にelementを合成する
+                    _this9.bufferRender.composeElements(_bind_backgrounds.concat(_base_, _bind_fronts));
+                    if (type === "base") {
+                        // 構築したこのレイヤーのサーフェスはベースサーフェス指定
+                        // 12pattern0,300,30,base,0,0 みたいなの
+                        // baseの場合はthis.dynamicBaseにまかせて何も返さない
+                        _this9.dynamicBase = { type: type, x: x, y: y, canvas: _this9.bufferRender.getSurfaceCanvas() };
+                        return;
+                    } else {
+                        renderLayers.push({ type: type, x: x, y: y, canvas: _this9.bufferRender.getSurfaceCanvas() });
+                    }
+                });
+            });
+            return renderLayers;
+        }
+    }, {
+        key: "render",
+        value: function render() {
+            var _this10 = this;
+
+            if (this.destructed) return;
+            var backgrounds = this.composeAnimationPatterns(this.backgrounds); //再生途中のアニメーション含むレイヤ
+            var elements = this.surfaceNode.elements;
+            var base = this.surfaceNode.base;
+            var fronts = this.composeAnimationPatterns(this.layers); //再生途中のアニメーション含むレイヤ
+            var baseWidth = 0;
+            var baseHeight = 0;
+            this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
+            // ベースサーフェス作る
+            if (this.dynamicBase != null) {
+                // pattern base があればそちらを使用
+                this.bufferRender.composeElements([this.dynamicBase]);
+                baseWidth = this.bufferRender.cnv.width;
+                baseHeight = this.bufferRender.cnv.height;
+            } else {
+                // base+elementでベースサーフェス作る
+                this.bufferRender.composeElements(elements[0] != null ?
+                // element0, element1...
+                elements : base != null ?
+                // base, element1, element2...
+                [{ type: "overlay", canvas: base, x: 0, y: 0 }].concat(elements) : []);
+                // elementまでがベースサーフェス扱い
+                baseWidth = this.bufferRender.cnv.width;
+                baseHeight = this.bufferRender.cnv.height;
+            }
+            var composedBase = this.bufferRender.getSurfaceCanvas();
+            // アニメーションレイヤー
+            this.bufferRender.composeElements(backgrounds);
+            this.bufferRender.composeElements([{ type: "overlay", canvas: composedBase, x: 0, y: 0 }]); // 現在有効な ベースサーフェスのレイヤを合成
+            this.bufferRender.composeElements(fronts);
+            // 当たり判定を描画
+            if (this.enableRegionDraw) {
+                this.bufferRender.drawRegions(this.surfaceNode.collisions, "" + this.surfaceId);
+                this.backgrounds.forEach(function (_, animId) {
+                    _this10.bufferRender.drawRegions(_this10.surfaceNode.animations[animId].collisions, "" + _this10.surfaceId);
+                });
+                this.layers.forEach(function (_, animId) {
+                    _this10.bufferRender.drawRegions(_this10.surfaceNode.animations[animId].collisions, "" + _this10.surfaceId);
+                });
+            }
+            // debug用
+            //console.log(this.bufferRender.log);
+            //SurfaceUtil.log(SurfaceUtil.copy(this.bufferRender.cnv));
+            //document.body.scrollTop = 99999;
+            //this.endAll();
+            // バッファから実DOMTree上のcanvasへ描画
+            SurfaceUtil.init(this.cnv, this.ctx, this.bufferRender.cnv);
+            // 位置合わせとか
+            $(this.element).width(baseWidth); //this.cnv.width - bufRender.basePosX);
+            $(this.element).height(baseHeight); //this.cnv.height - bufRender.basePosY);
+            $(this.cnv).css("top", -this.bufferRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
+            $(this.cnv).css("left", -this.bufferRender.basePosX);
+        }
+    }, {
+        key: "getSurfaceSize",
+        value: function getSurfaceSize() {
+            return {
+                width: $(this.element).width(),
+                height: $(this.element).height()
+            };
+        }
+    }, {
         key: "initMouseEvent",
         value: function initMouseEvent() {
-            var _this2 = this;
+            var _this11 = this;
 
             var $elm = $(this.element);
             var tid = null;
@@ -893,55 +1285,55 @@ var Surface = function (_EventEmitter$EventEm) {
             var touchStartTime = 0;
             var tuples = [];
             tuples.push(["contextmenu", function (ev) {
-                return _this2.processMouseEvent(ev, "mouseclick");
+                return _this11.processMouseEvent(ev, "mouseclick");
             }]);
             tuples.push(["click", function (ev) {
-                return _this2.processMouseEvent(ev, "mouseclick");
+                return _this11.processMouseEvent(ev, "mouseclick");
             }]);
             tuples.push(["dblclick", function (ev) {
-                return _this2.processMouseEvent(ev, "mousedblclick");
+                return _this11.processMouseEvent(ev, "mousedblclick");
             }]);
             tuples.push(["mousedown", function (ev) {
-                return _this2.processMouseEvent(ev, "mousedown");
+                return _this11.processMouseEvent(ev, "mousedown");
             }]);
             tuples.push(["mousemove", function (ev) {
-                return _this2.processMouseEvent(ev, "mousemove");
+                return _this11.processMouseEvent(ev, "mousemove");
             }]);
             tuples.push(["mouseup", function (ev) {
-                return _this2.processMouseEvent(ev, "mouseup");
+                return _this11.processMouseEvent(ev, "mouseup");
             }]);
             tuples.push(["touchmove", function (ev) {
-                return _this2.processMouseEvent(ev, "mousemove");
+                return _this11.processMouseEvent(ev, "mousemove");
             }]);
             tuples.push(["touchend", function (ev) {
-                _this2.processMouseEvent(ev, "mouseup");
-                _this2.processMouseEvent(ev, "mouseclick");
+                _this11.processMouseEvent(ev, "mouseup");
+                _this11.processMouseEvent(ev, "mouseclick");
                 if (Date.now() - touchStartTime < 500 && touchCount % 2 === 0) {
-                    _this2.processMouseEvent(ev, "mousedblclick");
+                    _this11.processMouseEvent(ev, "mousedblclick");
                 } // ダブルタップ->ダブルクリック変換
             }]);
             tuples.push(["touchstart", function (ev) {
                 touchCount++;
                 touchStartTime = Date.now();
-                _this2.processMouseEvent(ev, "mousedown");
+                _this11.processMouseEvent(ev, "mousedown");
                 clearTimeout(tid);
                 tid = setTimeout(function () {
                     return touchCount = 0;
                 }, 500);
             }]);
-            tuples.forEach(function (_ref) {
-                var _ref2 = _slicedToArray(_ref, 2);
+            tuples.forEach(function (_ref23) {
+                var _ref24 = _slicedToArray(_ref23, 2);
 
-                var ev = _ref2[0];
-                var handler = _ref2[1];
+                var ev = _ref24[0];
+                var handler = _ref24[1];
                 return $elm.on(ev, handler);
             }); // イベント登録
             this.destructors.push(function () {
-                tuples.forEach(function (_ref3) {
-                    var _ref4 = _slicedToArray(_ref3, 2);
+                tuples.forEach(function (_ref25) {
+                    var _ref26 = _slicedToArray(_ref25, 2);
 
-                    var ev = _ref4[0];
-                    var handler = _ref4[1];
+                    var ev = _ref26[0];
+                    var handler = _ref26[1];
                     return $elm.off(ev, handler);
                 }); // イベント解除
             });
@@ -949,7 +1341,7 @@ var Surface = function (_EventEmitter$EventEm) {
     }, {
         key: "processMouseEvent",
         value: function processMouseEvent(ev, type) {
-            var _this3 = this;
+            var _this12 = this;
 
             $(ev.target).css({ "cursor": "default" }); //これDOMアクセスして重いのでは←mousemoveタイミングで他のライブラリでもっとDOMアクセスしてるし気になるなら計測しろ
 
@@ -988,10 +1380,10 @@ var Surface = function (_EventEmitter$EventEm) {
             var offsetY = baseY - _top - basePosY; //canvas左上からのy座標
             var hit1 = SurfaceUtil.getRegion(this.cnv, this.surfaceNode.collisions, offsetX, offsetY); //透明領域ではなかったら{name:当たり判定なら名前, isHit:true}
             var hits0 = this.backgrounds.map(function (_, animId) {
-                return SurfaceUtil.getRegion(_this3.cnv, _this3.surfaceNode.animations[animId].regions, offsetX, offsetY);
+                return SurfaceUtil.getRegion(_this12.cnv, _this12.surfaceNode.animations[animId].collisions, offsetX, offsetY);
             });
             var hits2 = this.layers.map(function (_, animId) {
-                return SurfaceUtil.getRegion(_this3.cnv, _this3.surfaceNode.animations[animId].regions, offsetX, offsetY);
+                return SurfaceUtil.getRegion(_this12.cnv, _this12.surfaceNode.animations[animId].collisions, offsetX, offsetY);
             });
             var hits = hits0.concat([hit1], hits2).filter(function (hit) {
                 return hit !== "";
@@ -1018,551 +1410,6 @@ var Surface = function (_EventEmitter$EventEm) {
             }
             this.emit("mouse", custom);
         }
-    }, {
-        key: "initAnimation",
-        value: function initAnimation(anim) {
-            var _this4 = this;
-
-            var animId = anim.is;
-            var intervals = anim.intervals;
-            var patterns = anim.patterns;
-            var options = anim.options;
-            var regions = anim.regions; //isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
-
-            if (intervals.some(function (_ref5) {
-                var _ref6 = _slicedToArray(_ref5, 2);
-
-                var interval = _ref6[0];
-                var args = _ref6[1];
-                return "bind" === interval;
-            })) {
-                // bind+の場合は initBind にまるなげ
-                this.initBind(anim);
-                return;
-            }
-            if (intervals.length > 1) {
-                // bind+でなければ分解して再実行
-                intervals.forEach(function (_ref7) {
-                    var _ref8 = _slicedToArray(_ref7, 2);
-
-                    var _interval = _ref8[0];
-                    var args = _ref8[1];
-
-                    _this4.initAnimation({ intervals: [[_interval, args]], is: animId, patterns: patterns, options: options, regions: regions });
-                });
-                return;
-            }
-
-            var _intervals$ = _slicedToArray(intervals[0], 2);
-
-            var _interval = _intervals$[0];
-            var args = _intervals$[1];
-
-            var n = 0; // tsc黙らせるため
-            if (args.length > 0) {
-                n = Number(args[0]);
-                if (!isFinite(n)) {
-                    console.warn("initAnimation > TypeError: surface", this.surfaceId, "animation", anim.is, "interval", _interval, " argument is not finite number");
-                    // rarelyにfaileback
-                    n = 4;
-                }
-            }
-            // アニメーション描画タイミングの登録
-            var fn = function fn(nextTick) {
-                if (_this4.destructed) return;
-                if (_this4.stopFlags[animId]) return;
-                _this4.play(animId, nextTick);
-            };
-            // アニメーションを止めるための準備
-            this.stopFlags[animId] = false;
-            switch (_interval) {
-                // nextTickを呼ぶともう一回random
-                case "sometimes":
-                    return SurfaceUtil.random(fn, 2);
-                case "rarely":
-                    return SurfaceUtil.random(fn, 4);
-                case "random":
-                    return SurfaceUtil.random(fn, n);
-                case "periodic":
-                    return SurfaceUtil.periodic(fn, n);
-                case "always":
-                    return SurfaceUtil.always(fn);
-                case "runonce":
-                    return this.play(animId);
-                case "never":
-                    return;
-                case "yen-e":
-                    return;
-                case "talk":
-                    this.talkCounts[animId] = n;
-                    return;
-            }
-            console.warn("Surface#initAnimation > unkown interval:", _interval, anim);
-        }
-    }, {
-        key: "initBind",
-        value: function initBind(anim) {
-            var _this5 = this;
-
-            var animId = anim.is;
-            var intervals = anim.intervals;
-            var patterns = anim.patterns;
-            var options = anim.options;
-            var regions = anim.regions;
-
-            if (this.isBind(animId)) {
-                // 現在有効な bind
-                if (intervals.length > 0) {
-                    // bind+hogeは着せ替え付随アニメーション。
-                    // bind+sometimesを分解して実行
-                    intervals.forEach(function (_ref9) {
-                        var _ref10 = _slicedToArray(_ref9, 2);
-
-                        var interval = _ref10[0];
-                        var args = _ref10[1];
-
-                        if (interval !== "bind") {
-                            _this5.initAnimation({ intervals: [[interval, args]], is: animId, patterns: patterns, options: options, regions: regions });
-                        }
-                    });
-                }
-                // レイヤに着せ替えを追加
-                options.forEach(function (_ref11) {
-                    var _ref12 = _slicedToArray(_ref11, 2);
-
-                    var option = _ref12[0];
-                    var args = _ref12[1];
-
-                    if (option === "background") {
-                        _this5.backgrounds[animId] = patterns;
-                    } else {
-                        _this5.layers[animId] = patterns;
-                    }
-                });
-            } else {
-                //現在の合成レイヤから着せ替えレイヤを削除
-                options.forEach(function (_ref13) {
-                    var _ref14 = _slicedToArray(_ref13, 2);
-
-                    var option = _ref14[0];
-                    var args = _ref14[1];
-
-                    if (option === "background") {
-                        delete _this5.backgrounds[animId];
-                    } else {
-                        delete _this5.layers[animId];
-                    }
-                });
-                // bind+sometimsなどを殺す
-                this.end(animId);
-            }
-        }
-    }, {
-        key: "updateBind",
-        value: function updateBind() {
-            var _this6 = this;
-
-            // Shell.tsから呼ばれるためpublic
-            // Shell#bind,Shell#unbindで発動
-            this.surfaceNode.animations.forEach(function (anim) {
-                if (anim.intervals.some(function (_ref15) {
-                    var _ref16 = _slicedToArray(_ref15, 2);
-
-                    var interval = _ref16[0];
-                    var args = _ref16[1];
-                    return "bind" === interval;
-                })) {
-                    _this6.initBind(anim);
-                }
-            });
-            // 即時に反映
-            this.render();
-        }
-        // アニメーションタイミングループの開始要請
-
-    }, {
-        key: "begin",
-        value: function begin(animationId) {
-            this.stopFlags[animationId] = false;
-            var anim = this.surfaceNode.animations[animationId];
-            this.initAnimation(anim);
-            this.render();
-        }
-        // アニメーションタイミングループの開始
-
-    }, {
-        key: "end",
-        value: function end(animationId) {
-            this.stopFlags[animationId] = true;
-        }
-        // すべての自発的アニメーション再生の停止
-
-    }, {
-        key: "endAll",
-        value: function endAll() {
-            var _this7 = this;
-
-            Object.keys(this.stopFlags).forEach(function (animationId) {
-                _this7.end(Number(animationId));
-            });
-        }
-        // アニメーション再生
-
-    }, {
-        key: "play",
-        value: function play(animationId, callback) {
-            var _this8 = this;
-
-            if (this.destructed) return;
-            var anims = this.surfaceNode.animations;
-            var anim = this.surfaceNode.animations[animationId];
-            if (anim == null) {
-                console.warn("Surface#play", "animation", animationId, "is not defined");
-                return void setTimeout(callback); // そんなアニメーションはない
-            }
-            var animId = anim.is;
-            var patterns = anim.patterns;
-            var options = anim.options;
-
-            this.animationsQueue[animationId] = patterns.map(function (pattern, i) {
-                return function () {
-                    var surface = pattern.surface;
-                    var wait = pattern.wait;
-                    var type = pattern.type;
-                    var x = pattern.x;
-                    var y = pattern.y;
-
-                    switch (type) {
-                        case "start":
-                            var animation_id = pattern.animation_id;
-
-                            _this8.play(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]), nextTick);
-                            return;
-                        case "stop":
-                            var animation_id = pattern.animation_id;
-
-                            _this8.stop(Number((/(\d+)$/.exec(animation_id) || ["", "-1"])[1]));
-                            setTimeout(nextTick);
-                            return;
-                        case "alternativestart":
-                            var animation_ids = pattern.animation_ids;
-
-                            _this8.play(SurfaceUtil.choice(animation_ids), nextTick);
-                            return;
-                        case "alternativestop":
-                            var animation_ids = pattern.animation_ids;
-
-                            _this8.stop(SurfaceUtil.choice(animation_ids));
-                            setTimeout(nextTick);
-                            return;
-                    }
-
-                    var _slice = (/(\d+)(?:\-(\d+))?/.exec(wait) || ["", "0", ""]).slice(1);
-
-                    var _slice2 = _slicedToArray(_slice, 2);
-
-                    var a = _slice2[0];
-                    var b = _slice2[1];
-
-                    var _wait = isFinite(Number(b)) ? SurfaceUtil.randomRange(Number(a), Number(b)) : Number(a);
-                    setTimeout(function () {
-                        // 現在のコマをレイヤーに追加
-                        options.forEach(function (_ref17) {
-                            var _ref18 = _slicedToArray(_ref17, 2);
-
-                            var option = _ref18[0];
-                            var args = _ref18[1];
-
-                            if (option === "background") {
-                                _this8.backgrounds[animationId] = [pattern];
-                            } else {
-                                _this8.layers[animationId] = [pattern];
-                            }
-                        });
-                        var canIPlay = _this8.exclusives.every(function (exclusive) {
-                            return exclusive !== animationId;
-                        }); //自分のanimationIdはexclusivesリストに含まれていない
-                        if (canIPlay) {
-                            _this8.render();
-                        }
-                        nextTick();
-                    }, _wait);
-                };
-            });
-            options.forEach(function (_ref19) {
-                var _ref20 = _slicedToArray(_ref19, 2);
-
-                var option = _ref20[0];
-                var args = _ref20[1];
-
-                if (option === "exclusive") {
-                    if (args.length > 0) {
-                        _this8.animationsQueue[animationId].unshift(function () {
-                            _this8.exclusives = args.map(function (arg) {
-                                return Number(arg);
-                            });
-                        });
-                    } else {
-                        _this8.animationsQueue[animationId].unshift(function () {
-                            _this8.exclusives = _this8.surfaceNode.animations.filter(function (anim) {
-                                return anim.is !== animationId;
-                            }).map(function (anim) {
-                                return anim.is;
-                            });
-                        });
-                    }
-                    _this8.animationsQueue[animationId].push(function () {
-                        _this8.exclusives = [];
-                    });
-                }
-            });
-            var nextTick = function nextTick() {
-                if (_this8.destructed) return;
-                var next = _this8.animationsQueue[animationId].shift();
-                if (!(next instanceof Function)) {
-                    // stop pattern animation.
-                    _this8.animationsQueue[animationId] = [];
-                    _this8.exclusives = [];
-                    setTimeout(callback);
-                } else {
-                    next();
-                }
-            };
-            if (this.animationsQueue[animationId][0] instanceof Function) {
-                nextTick();
-            }
-        }
-    }, {
-        key: "stop",
-        value: function stop(animationId) {
-            this.animationsQueue[animationId] = []; // アニメーションキューを破棄
-        }
-    }, {
-        key: "talk",
-        value: function talk() {
-            var _this9 = this;
-
-            var animations = this.surfaceNode.animations;
-            this.talkCount++;
-            var hits = animations.filter(function (anim) {
-                return anim.intervals.some(function (_ref21) {
-                    var _ref22 = _slicedToArray(_ref21, 2);
-
-                    var interval = _ref22[0];
-                    var args = _ref22[1];
-                    return "talk" === interval;
-                }) && _this9.talkCount % _this9.talkCounts[anim.is] === 0;
-            });
-            hits.forEach(function (anim) {
-                // そのアニメーションは再生が終了しているか？
-                if (_this9.animationsQueue[anim.is] == null || _this9.animationsQueue[anim.is].length === 0) {
-                    _this9.play(anim.is);
-                }
-            });
-        }
-    }, {
-        key: "yenE",
-        value: function yenE() {
-            var _this10 = this;
-
-            var anims = this.surfaceNode.animations;
-            anims.forEach(function (anim) {
-                if (anim.intervals.some(function (_ref23) {
-                    var _ref24 = _slicedToArray(_ref23, 2);
-
-                    var interval = _ref24[0];
-                    var args = _ref24[1];
-                    return interval === "yen-e";
-                })) {
-                    _this10.play(anim.is);
-                }
-            });
-        }
-    }, {
-        key: "isBind",
-        value: function isBind(animId) {
-            if (this.bindgroup[this.scopeId] == null) return false;
-            if (this.bindgroup[this.scopeId][animId] === false) return false;
-            return true;
-        }
-    }, {
-        key: "composeAnimationPatterns",
-        value: function composeAnimationPatterns(layers, interval) {
-            var _this11 = this;
-
-            var renderLayers = [];
-            layers.forEach(function (patterns) {
-                patterns.forEach(function (pattern) {
-                    var surface = pattern.surface;
-                    var type = pattern.type;
-                    var x = pattern.x;
-                    var y = pattern.y;
-                    var wait = pattern.wait;
-
-                    if (type === "insert") {
-                        // insertの場合は対象のIDをとってくる
-                        // animation_id = animationN,x,y
-                        var animation_id = pattern.animation_id;
-
-                        var animId = Number(/\d+$/.exec(animation_id) || ["", "-1"]);
-                        // 対象の着せ替えが有効かどうか判定
-                        if (!_this11.isBind(animId)) return;
-                        var anim = _this11.surfaceNode.animations[animId];
-                        if (anim == null) {
-                            console.warn("Surface#composeAnimationPatterns", "insert id", animation_id, "is wrong target.", _this11.surfaceNode);
-                            return;
-                        }
-                        renderLayers = renderLayers.concat(_this11.composeAnimationPatterns([anim.patterns], interval));
-                        return;
-                    }
-                    if (surface < 0) {
-                        // idが-1つまり非表示指定
-                        if (type === "base") {
-                            // アニメーションパーツによるbaseを削除
-                            _this11.dynamicBase = null;
-                        }
-                        return;
-                    }
-                    var srf = _this11.surfaceTree[surface]; // 該当のサーフェス
-                    if (srf == null) {
-                        console.warn("Surface#composeAnimationPatterns", "surface id " + surface + " is not defined.", pattern);
-                        return; // 対象サーフェスがないのでスキップ
-                    }
-                    // 対象サーフェスを構築描画する
-                    var base = srf.base;
-                    var elements = srf.elements;
-                    var collisions = srf.collisions;
-                    var animations = srf.animations;
-
-                    var bind_backgrounds = [];
-                    var bind_fronts = [];
-                    _this11.bufferRender.reset();
-                    if (interval === "bind") {
-                        console.info("Surface#composeAnimationPatterns", "multiple binds detected");
-                        // 多重着せ替え定義（SSPのみ）
-                        // アニメーションのコマとして参照した先のsurfaceに、そのsurfaceのアニメーションが定義されていた場合、通常それらは無視される。
-                        // しかしSSPではintervalがbindのアニメーション（＝着せ替え）のみ無視されず反映されるようになっている。
-                        // これによって、着せ替えの影響を受けるような構造のアニメーションについて、アニメーションのコマ側で着せ替えに応じた定義を行う事が可能である。
-                        // なお多重着せ替えを入れ子にする事も可能であるが、循環的な参照は無視される。
-                        // http://ssp.shillest.net/ukadoc/manual/descript_shell_surfaces.html#introduction_mayuna
-                        // intervalがbindのときのみ対象サーフェスの着せ替えも有効にする
-                        // https://github.com/Ikagaka/cuttlebone/issues/23
-                        animations.forEach(function (anim) {
-                            var is = anim.is;
-                            var options = anim.options;
-                            var patterns = anim.patterns;
-
-                            if (_this11.isBind(is)) {
-                                options.forEach(function (_ref25) {
-                                    var _ref26 = _slicedToArray(_ref25, 2);
-
-                                    var option = _ref26[0];
-                                    var args = _ref26[1];
-
-                                    if ("background" === option) {
-                                        bind_backgrounds[is] = patterns;
-                                    } else {
-                                        bind_fronts[is] = patterns;
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    // 循環無視されずスタックオーバーフローします
-                    var _bind_backgrounds = _this11.composeAnimationPatterns(bind_backgrounds, interval);
-                    var _bind_fronts = _this11.composeAnimationPatterns(bind_fronts, interval);
-                    var _base_ = [];
-                    if (elements[0] != null) {
-                        // element0, element1...
-                        _base_ = elements;
-                    } else if (base != null) {
-                        // base, element1, element2...
-                        _base_ = [{ type: "overlay", canvas: base, x: 0, y: 0 }].concat(elements);
-                    } else {
-                        console.error("Surface#composeAnimationPatterns: cannot decide base");
-                        return;
-                    }
-                    // 対象サーフェスのbaseサーフェス(surface*.png)の上にelementを合成する
-                    _this11.bufferRender.composeElements(_bind_backgrounds.concat(_base_, _bind_fronts));
-                    if (type === "base") {
-                        // 構築したこのレイヤーのサーフェスはベースサーフェス指定
-                        // 12pattern0,300,30,base,0,0 みたいなの
-                        // baseの場合はthis.dynamicBaseにまかせて何も返さない
-                        _this11.dynamicBase = { type: type, x: x, y: y, canvas: _this11.bufferRender.getSurfaceCanvas() };
-                        return;
-                    } else {
-                        renderLayers.push({ type: type, x: x, y: y, canvas: _this11.bufferRender.getSurfaceCanvas() });
-                    }
-                });
-            });
-            return renderLayers;
-        }
-    }, {
-        key: "render",
-        value: function render() {
-            var _this12 = this;
-
-            if (this.destructed) return;
-            var backgrounds = this.composeAnimationPatterns(this.backgrounds); //再生途中のアニメーション含むレイヤ
-            var elements = this.surfaceNode.elements;
-            var base = this.surfaceNode.base;
-            var fronts = this.composeAnimationPatterns(this.layers); //再生途中のアニメーション含むレイヤ
-            var baseWidth = 0;
-            var baseHeight = 0;
-            this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
-            // ベースサーフェス作る
-            if (this.dynamicBase != null) {
-                // pattern base があればそちらを使用
-                this.bufferRender.composeElements([this.dynamicBase]);
-                baseWidth = this.bufferRender.cnv.width;
-                baseHeight = this.bufferRender.cnv.height;
-            } else {
-                // base+elementでベースサーフェス作る
-                this.bufferRender.composeElements(elements[0] != null ?
-                // element0, element1...
-                elements : base != null ?
-                // base, element1, element2...
-                [{ type: "overlay", canvas: base, x: 0, y: 0 }].concat(elements) : []);
-                // elementまでがベースサーフェス扱い
-                baseWidth = this.bufferRender.cnv.width;
-                baseHeight = this.bufferRender.cnv.height;
-            }
-            var composedBase = this.bufferRender.getSurfaceCanvas();
-            // アニメーションレイヤー
-            this.bufferRender.composeElements(backgrounds);
-            this.bufferRender.composeElements([{ type: "overlay", canvas: composedBase, x: 0, y: 0 }]); // 現在有効な ベースサーフェスのレイヤを合成
-            this.bufferRender.composeElements(fronts);
-            // 当たり判定を描画
-            if (this.enableRegionDraw) {
-                this.bufferRender.drawRegions(this.surfaceNode.collisions, "" + this.surfaceId);
-                this.backgrounds.forEach(function (_, animId) {
-                    _this12.bufferRender.drawRegions(_this12.surfaceNode.animations[animId].regions, "" + _this12.surfaceId);
-                });
-                this.layers.forEach(function (_, animId) {
-                    _this12.bufferRender.drawRegions(_this12.surfaceNode.animations[animId].regions, "" + _this12.surfaceId);
-                });
-            }
-            // debug用
-            //console.log(this.bufferRender.log);
-            //SurfaceUtil.log(SurfaceUtil.copy(this.bufferRender.cnv));
-            //document.body.scrollTop = 99999;
-            //this.endAll();
-            // バッファから実DOMTree上のcanvasへ描画
-            SurfaceUtil.init(this.cnv, this.ctx, this.bufferRender.cnv);
-            // 位置合わせとか
-            $(this.element).width(baseWidth); //this.cnv.width - bufRender.basePosX);
-            $(this.element).height(baseHeight); //this.cnv.height - bufRender.basePosY);
-            $(this.cnv).css("top", -this.bufferRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
-            $(this.cnv).css("left", -this.bufferRender.basePosX);
-        }
-    }, {
-        key: "getSurfaceSize",
-        value: function getSurfaceSize() {
-            return {
-                width: $(this.element).width(),
-                height: $(this.element).height()
-            };
-        }
     }]);
 
     return Surface;
@@ -1570,7 +1417,7 @@ var Surface = function (_EventEmitter$EventEm) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Surface;
-},{"./SurfaceRender":3,"./SurfaceUtil":4,"events":13,"jquery":19}],3:[function(require,module,exports){
+},{"./SurfaceRender":3,"./SurfaceTree":4,"./SurfaceUtil":5,"events":14,"jquery":20}],3:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
@@ -1949,17 +1796,17 @@ var SurfaceRender = function () {
                 case "circle":
                     var _region$radius = region.radius;
                     var radius = _region$radius === undefined ? 0 : _region$radius;
-                    var _region$center_x = region.center_x;
-                    var center_x = _region$center_x === undefined ? 0 : _region$center_x;
-                    var _region$center_y = region.center_y;
-                    var center_y = _region$center_y === undefined ? 0 : _region$center_y;
+                    var _region$centerX = region.centerX;
+                    var centerX = _region$centerX === undefined ? 0 : _region$centerX;
+                    var _region$centerY = region.centerY;
+                    var centerY = _region$centerY === undefined ? 0 : _region$centerY;
 
-                    center_x += this.basePosX;
-                    center_y += this.basePosY;
-                    left = center_x;
-                    top = center_y;
+                    centerX += this.basePosX;
+                    centerY += this.basePosY;
+                    left = centerX;
+                    top = centerY;
                     this.ctx.beginPath();
-                    this.ctx.arc(center_x, center_y, radius, 0, 2 * Math.PI, true);
+                    this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, true);
                     this.ctx.stroke();
                     break;
                 case "polygon":
@@ -2028,7 +1875,516 @@ var SurfaceRender = function () {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = SurfaceRender;
-},{"./SurfaceUtil":4}],4:[function(require,module,exports){
+},{"./SurfaceUtil":5}],4:[function(require,module,exports){
+/// <reference path="../typings/index.d.ts"/>
+"use strict";
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var SU = require("./SurfaceUtil");
+var $ = require("jquery");
+
+var SurfaceDefinitionTree = function () {
+    //regions: { [scopeID: number]: {[regionName: string]: ToolTipElement}; }; // 謎
+    function SurfaceDefinitionTree() {
+        _classCallCheck(this, SurfaceDefinitionTree);
+
+        this.descript = new SurfaceDescript();
+        this.surfaces = [];
+        this.aliases = [];
+    }
+
+    _createClass(SurfaceDefinitionTree, [{
+        key: "loadFromsurfacesTxt2Yaml",
+        value: function loadFromsurfacesTxt2Yaml(srfsTxt) {
+            var _this = this;
+
+            var descript = srfsTxt.descript != null ? srfsTxt.descript : {};
+            var surfaces = srfsTxt.surfaces != null ? srfsTxt.surfaces : {};
+            var aliases = srfsTxt.aliases != null ? srfsTxt.aliases : {};
+            new SurfaceDescript().loadFromsurfacesTxt2Yaml(descript).then(function (descriptDef) {
+                _this.descript = descriptDef;
+            }).catch(console.warn.bind(console));
+            Object.keys(surfaces).forEach(function (surfaceName) {
+                // typoef is === number なら実体のあるサーフェス定義
+                if (typeof surfaces[surfaceName].is === "number") {
+                    var parents = [];
+                    if (Array.isArray(surfaces[surfaceName].base)) {
+                        // .append持ってるので継承
+                        parents = surfaces[surfaceName].base.map(function (parentName) {
+                            return surfaces[parentName];
+                        });
+                    }
+                    var srf = {};
+                    $.extend.apply($, [true, srf, surfaces[surfaceName]].concat(parents));
+                    new SurfaceDefinition().loadFromsurfacesTxt2Yaml(srf).then(function (srfDef) {
+                        _this.surfaces[surfaces[surfaceName].is] = srfDef;
+                    }).catch(console.warn.bind(console));
+                }
+            });
+            Object.keys(aliases).forEach(function (scope) {
+                // scope: sakura, kero, char2... => 0, 1, 2
+                var scopeID = SU.unscope(scope);
+                _this.aliases[scopeID] = aliases[scope];
+            });
+            return Promise.resolve(this);
+        }
+    }]);
+
+    return SurfaceDefinitionTree;
+}();
+
+exports.SurfaceDefinitionTree = SurfaceDefinitionTree;
+
+var SurfaceDescript = function () {
+    function SurfaceDescript() {
+        _classCallCheck(this, SurfaceDescript);
+
+        this.collisionSort = "ascend";
+        this.animationSort = "ascend";
+    }
+
+    _createClass(SurfaceDescript, [{
+        key: "loadFromsurfacesTxt2Yaml",
+        value: function loadFromsurfacesTxt2Yaml(descript) {
+            // collision-sort: string => collisionSort: boolean
+            if (descript["collision-sort"] != null) {
+                this.collisionSort = descript["collision-sort"] === "ascend" ? "ascend" : descript["collision-sort"] === "descend" ? "descend" : (console.warn("SurfaceDescript#loadFromsurfacesTxt2Yaml: collision-sort ", descript["collision-sort"], "is not supported"), this.collisionSort);
+            }
+            if (descript["animation-sort"] != null) {
+                this.animationSort = descript["animation-sort"] === "ascend" ? "ascend" : descript["animation-sort"] === "descend" ? "descend" : (console.warn("SurfaceDescript#loadFromsurfacesTxt2Yaml: animation-sort ", descript["animation-sort"], "is not supported"), this.animationSort);
+            }
+            return Promise.resolve(this);
+        }
+    }]);
+
+    return SurfaceDescript;
+}();
+
+exports.SurfaceDescript = SurfaceDescript;
+
+var SurfaceDefinition = function () {
+    function SurfaceDefinition() {
+        _classCallCheck(this, SurfaceDefinition);
+
+        this.points = { basepos: { x: 0, y: 0 } };
+        this.balloons = { char: [], offsetX: 0, offsetY: 0 };
+        this.elements = [];
+        this.collisions = [];
+        this.animations = [];
+        this.base = { cnv: null, png: null, pna: null };
+    }
+
+    _createClass(SurfaceDefinition, [{
+        key: "loadFromsurfacesTxt2Yaml",
+        value: function loadFromsurfacesTxt2Yaml(srf) {
+            var _this2 = this;
+
+            var points = srf.points;
+            var balloons = srf.balloons;
+            var elements = srf.elements;
+            var collisions = srf.regions;
+            var animations = srf.animations;
+            if (points != null && points.basepos != null) {
+                if (typeof points.basepos.x === "number") {
+                    this.points.basepos.x = points.basepos.x;
+                }
+                if (typeof points.basepos.y === "number") {
+                    this.points.basepos.y = points.basepos.y;
+                }
+            }
+            if (balloons != null) {
+                if (typeof balloons.offsetx === "number") {
+                    this.balloons.offsetX = balloons.offsetx;
+                }
+                if (typeof balloons.offsety === "number") {
+                    this.balloons.offsetY = balloons.offsety;
+                }
+                Object.keys(balloons).filter(function (key) {
+                    return (/sakura$|kero$|char\d+/.test(key)
+                    );
+                }).forEach(function (charName) {
+                    var charID = SU.unscope(charName);
+                    if (typeof balloons[charName].offsetx === "number") {
+                        _this2.balloons.char[charID] = _this2.balloons.char[charID] != null ? _this2.balloons.char[charID] : { offsetX: 0, offsetY: 0 };
+                        _this2.balloons.char[charID].offsetX = balloons[charName].offsetx;
+                    }
+                    if (typeof balloons[charName].offsety === "number") {
+                        _this2.balloons.char[charID] = _this2.balloons.char[charID] != null ? _this2.balloons.char[charID] : { offsetX: 0, offsetY: 0 };
+                        _this2.balloons.char[charID].offsetY = balloons[charName].offsety;
+                    }
+                });
+            }
+            if (elements != null) {
+                Object.keys(elements).forEach(function (id) {
+                    new SurfaceElement().loadFromsurfacesTxt2Yaml(elements[id]).then(function (def) {
+                        _this2.elements[elements[id].is] = def;
+                    }).catch(console.warn.bind(console));
+                });
+            }
+            if (collisions != null) {
+                Object.keys(collisions).forEach(function (id) {
+                    new SurfaceCollision().loadFromsurfacesTxt2Yaml(collisions[id]).then(function (def) {
+                        _this2.collisions[collisions[id].is] = def;
+                    }).catch(console.warn.bind(console));
+                });
+            }
+            if (animations != null) {
+                Object.keys(animations).forEach(function (id) {
+                    new SurfaceAnimation().loadFromsurfacesTxt2Yaml(animations[id]).then(function (def) {
+                        _this2.animations[animations[id].is] = def;
+                    }).catch(console.warn.bind(console));
+                });
+            }
+            return Promise.resolve(this);
+        }
+    }]);
+
+    return SurfaceDefinition;
+}();
+
+exports.SurfaceDefinition = SurfaceDefinition;
+
+var SurfaceElement = function () {
+    function SurfaceElement() {
+        _classCallCheck(this, SurfaceElement);
+
+        this.type = "overlay";
+        this.file = "";
+        this.x = 0;
+        this.y = 0;
+        this.canvas = { cnv: null, png: null, pna: null };
+    }
+
+    _createClass(SurfaceElement, [{
+        key: "loadFromsurfacesTxt2Yaml",
+        value: function loadFromsurfacesTxt2Yaml(elm) {
+            if (!(typeof elm.file === "string" && typeof elm.type === "string")) {
+                console.warn("SurfaceElement#loadFromsurfacesTxt2Yaml: wrong parameters", elm);
+                return Promise.reject(elm);
+            } else {
+                this.file = elm.file;
+                this.type = elm.type;
+            }
+            if (typeof elm.x === "number") {
+                this.x = elm.x;
+            } else {
+                console.warn("SurfaceElement#loadFromsurfacesTxt2Yaml: faileback to", this.x);
+            }
+            if (typeof elm.y === "number") {
+                this.y = elm.y;
+            } else {
+                console.warn("SurfaceElement#loadFromsurfacesTxt2Yaml: faileback to", this.y);
+            }
+            return Promise.resolve(this);
+        }
+    }]);
+
+    return SurfaceElement;
+}();
+
+exports.SurfaceElement = SurfaceElement;
+
+var SurfaceCollision = function () {
+    function SurfaceCollision() {
+        _classCallCheck(this, SurfaceCollision);
+
+        this.name = "";
+        this.type = "";
+    }
+
+    _createClass(SurfaceCollision, [{
+        key: "loadFromsurfacesTxt2Yaml",
+        value: function loadFromsurfacesTxt2Yaml(collision) {
+            switch (collision.type) {
+                case "rect":
+                    return new SurfaceCollisionRect().loadFromsurfacesTxt2Yaml(collision);
+                case "circle":
+                    return new SurfaceCollisionCircle().loadFromsurfacesTxt2Yaml(collision);
+                case "ellipse":
+                    return new SurfaceCollisionEllipse().loadFromsurfacesTxt2Yaml(collision);
+                case "polygon":
+                    return new SurfaceCollisionPolygon().loadFromsurfacesTxt2Yaml(collision);
+                default:
+                    console.warn("SurfaceCollision#loadFromsurfacesTxt2Yaml: unknow collision type", collision.type, ", failback to rect");
+                    this.type = "rect";
+                    return new SurfaceCollisionRect().loadFromsurfacesTxt2Yaml(collision);
+            }
+        }
+    }]);
+
+    return SurfaceCollision;
+}();
+
+exports.SurfaceCollision = SurfaceCollision;
+
+var SurfaceCollisionRect = function (_SurfaceCollision) {
+    _inherits(SurfaceCollisionRect, _SurfaceCollision);
+
+    function SurfaceCollisionRect() {
+        _classCallCheck(this, SurfaceCollisionRect);
+
+        var _this3 = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionRect).call(this));
+
+        _this3.type = "rect";
+        _this3.left = 0;
+        _this3.top = 0;
+        _this3.right = 0;
+        _this3.bottom = 0;
+        return _this3;
+    }
+
+    _createClass(SurfaceCollisionRect, [{
+        key: "loadFromsurfacesTxt2Yaml",
+        value: function loadFromsurfacesTxt2Yaml(collision) {
+            this.name = collision.name;
+            this.type = collision.type;
+            if (!(typeof collision.left === "number" && typeof collision.top === "number" && typeof collision.bottom === "number" && typeof collision.right === "number")) {
+                console.warn(this.constructor.toString(), "#loadFromsurfacesTxt2Yaml: unkown parameter", collision);
+                return Promise.reject(collision);
+            }
+            this.top = collision.top;
+            this.left = collision.left;
+            this.bottom = collision.bottom;
+            this.right = collision.right;
+            return Promise.resolve(this);
+        }
+    }]);
+
+    return SurfaceCollisionRect;
+}(SurfaceCollision);
+
+exports.SurfaceCollisionRect = SurfaceCollisionRect;
+
+var SurfaceCollisionCircle = function (_SurfaceCollision2) {
+    _inherits(SurfaceCollisionCircle, _SurfaceCollision2);
+
+    function SurfaceCollisionCircle() {
+        _classCallCheck(this, SurfaceCollisionCircle);
+
+        var _this4 = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionCircle).call(this));
+
+        _this4.type = "circle";
+        _this4.centerX = 0;
+        _this4.centerY = 0;
+        _this4.radius = 0;
+        return _this4;
+    }
+
+    _createClass(SurfaceCollisionCircle, [{
+        key: "loadFromsurfacesTxt2Yaml",
+        value: function loadFromsurfacesTxt2Yaml(collision) {
+            this.name = collision.name;
+            this.type = collision.type;
+            if (!(typeof collision.center_y === "number" && typeof collision.center_y === "number" && typeof collision.radius === "number")) {
+                console.warn("SurfaceCollisionCircle#loadFromsurfacesTxt2Yaml: unkown parameter", collision);
+                return Promise.reject(collision);
+            }
+            this.centerX = collision.center_x;
+            this.centerY = collision.center_y;
+            this.radius = collision.radius;
+            return Promise.resolve(this);
+        }
+    }]);
+
+    return SurfaceCollisionCircle;
+}(SurfaceCollision);
+
+exports.SurfaceCollisionCircle = SurfaceCollisionCircle;
+
+var SurfaceCollisionEllipse = function (_SurfaceCollisionRect) {
+    _inherits(SurfaceCollisionEllipse, _SurfaceCollisionRect);
+
+    function SurfaceCollisionEllipse() {
+        _classCallCheck(this, SurfaceCollisionEllipse);
+
+        var _this5 = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionEllipse).call(this));
+
+        _this5.type = "ellipse";
+        return _this5;
+    }
+
+    return SurfaceCollisionEllipse;
+}(SurfaceCollisionRect);
+
+exports.SurfaceCollisionEllipse = SurfaceCollisionEllipse;
+
+var SurfaceCollisionPolygon = function (_SurfaceCollision3) {
+    _inherits(SurfaceCollisionPolygon, _SurfaceCollision3);
+
+    function SurfaceCollisionPolygon() {
+        _classCallCheck(this, SurfaceCollisionPolygon);
+
+        var _this6 = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionPolygon).call(this));
+
+        _this6.type = "polygon";
+        _this6.coordinates = [];
+        return _this6;
+    }
+
+    _createClass(SurfaceCollisionPolygon, [{
+        key: "loadFromsurfacesTxt2Yaml",
+        value: function loadFromsurfacesTxt2Yaml(col) {
+            this.name = col.name;
+            this.type = col.type;
+            var coordinates = col.coordinates != null ? col.coordinates : [];
+            if (coordinates.length < 2) {
+                console.warn("SurfaceRegionPolygon#loadFromsurfacesTxt2Yaml: coordinates need more than 3", col);
+                return Promise.reject(col);
+            }
+            if (coordinates.every(function (o) {
+                return typeof o.x !== "number" || typeof o.y !== "number";
+            })) {
+                console.warn("SurfaceRegionPolygon#loadFromsurfacesTxt2Yaml: coordinates has erro value", col);
+                return Promise.reject(col);
+            }
+            this.coordinates = coordinates;
+            return Promise.resolve(this);
+        }
+    }]);
+
+    return SurfaceCollisionPolygon;
+}(SurfaceCollision);
+
+exports.SurfaceCollisionPolygon = SurfaceCollisionPolygon;
+
+var SurfaceAnimation = function () {
+    function SurfaceAnimation() {
+        _classCallCheck(this, SurfaceAnimation);
+
+        this.intervals = [["never", []]];
+        this.options = [];
+        this.collisions = [];
+        this.patterns = [];
+    }
+
+    _createClass(SurfaceAnimation, [{
+        key: "loadFromsurfacesTxt2Yaml",
+        value: function loadFromsurfacesTxt2Yaml(animation) {
+            var _this7 = this;
+
+            var interval = typeof animation.interval === "string" ? animation.interval : "";
+            var option = typeof animation.option === "string" ? animation.option : "";
+            var regions = animation.regions != null ? animation.regions : {};
+            var patterns = animation.patterns != null ? animation.patterns : [];
+            // animation*.option,* の展開
+            // animation*.option,exclusive+background,(1,3,5)
+
+            var _option$split = option.split(",");
+
+            var _option$split2 = _toArray(_option$split);
+
+            var _option = _option$split2[0];
+
+            var opt_args = _option$split2.slice(1);
+
+            var _opt_args = opt_args.map(function (str) {
+                return str.replace("(", "").replace(")", "").trim();
+            });
+            var options = option.split("+");
+            this.options = options.map(function (option) {
+                return [option.trim(), _opt_args];
+            });
+            // bind+sometimes+talk,3
+
+            var _interval$split = interval.split(",");
+
+            var _interval$split2 = _toArray(_interval$split);
+
+            var _interval = _interval$split2[0];
+
+            var int_args = _interval$split2.slice(1);
+
+            var _int_args = int_args.map(function (str) {
+                return str.trim();
+            });
+            var intervals = _interval.split("+");
+            this.intervals = intervals.map(function (interval) {
+                return [interval.trim(), _int_args];
+            });
+            Object.keys(regions).forEach(function (key) {
+                new SurfaceCollision().loadFromsurfacesTxt2Yaml(regions[key]).then(function (col) {
+                    _this7.collisions[regions[key].is] = col;
+                }).catch(console.warn.bind(console));
+            });
+            patterns.forEach(function (pat, patId) {
+                new SurfaceAnimationPattern().loadFromsurfacesTxt2Yaml(pat).then(function (pat) {
+                    _this7.patterns[patId] = pat;
+                }).catch(console.warn.bind(console));
+            });
+            return Promise.resolve(this);
+        }
+    }]);
+
+    return SurfaceAnimation;
+}();
+
+exports.SurfaceAnimation = SurfaceAnimation;
+
+var SurfaceAnimationPattern = function () {
+    function SurfaceAnimationPattern() {
+        _classCallCheck(this, SurfaceAnimationPattern);
+
+        this.type = "ovelay";
+        this.surface = -1;
+        this.wait = [0, 0];
+        this.x = 0;
+        this.y = 0;
+        this.animation_ids = [];
+    }
+
+    _createClass(SurfaceAnimationPattern, [{
+        key: "loadFromsurfacesTxt2Yaml",
+        value: function loadFromsurfacesTxt2Yaml(pat) {
+            this.type = pat.type;
+            this.surface = pat.surface;
+
+            var _slice$map = (/(\d+)(?:\-(\d+))?/.exec(pat.wait) || ["", "0", ""]).slice(1).map(Number);
+
+            var _slice$map2 = _slicedToArray(_slice$map, 2);
+
+            var a = _slice$map2[0];
+            var b = _slice$map2[1];
+
+            if (!isFinite(a)) {
+                if (!isFinite(b)) {
+                    console.warn("SurfaceAnimationPattern#loadFromsurfacesTxt2Yaml: cannot parse wait", pat, ", failback to", 0);
+                    a = b = 0;
+                } else {
+                    console.warn("SurfaceAnimationPattern#loadFromsurfacesTxt2Yaml: cannot parse wait", a, ", failback to", b);
+                    a = b;
+                }
+            }
+            this.wait = isFinite(b) ? [a, b] : [a, a];
+            this.x = pat.x;
+            this.y = pat.y;
+            if (pat["animation_ids"] != null && pat["animation_id"] != null) {
+                console.warn("SurfaceAnimationPattern#loadFromsurfacesTxt2Yaml: something wrong", pat);
+            }
+            if (Array.isArray(pat["animation_ids"])) {
+                this.animation_ids = pat["animation_ids"];
+            } else if (isFinite(Number(pat["animation_id"]))) {
+                this.animation_ids = [Number(pat["animation_id"])];
+            }
+            return Promise.resolve(this);
+        }
+    }]);
+
+    return SurfaceAnimationPattern;
+}();
+
+exports.SurfaceAnimationPattern = SurfaceAnimationPattern;
+},{"./SurfaceUtil":5,"jquery":20}],5:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
@@ -2406,11 +2762,11 @@ function getRegion(element, collisions, offsetX, offsetY) {
                     };
                 case "circle":
                     var radius = collision.radius;
-                    var center_x = collision.center_x;
-                    var center_y = collision.center_y;
+                    var centerX = collision.centerX;
+                    var centerY = collision.centerY;
 
                     return {
-                        v: Math.pow((offsetX - center_x) / radius, 2) + Math.pow((offsetY - center_y) / radius, 2) < 1
+                        v: Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1
                     };
                 case "polygon":
                     var coordinates = collision.coordinates;
@@ -2499,7 +2855,7 @@ function getArrayBufferFromURL(url) {
     });
 }
 exports.getArrayBufferFromURL = getArrayBufferFromURL;
-},{"encoding-japanese":8}],5:[function(require,module,exports){
+},{"encoding-japanese":9}],6:[function(require,module,exports){
 'use strict';
 var prmNar;
 window.$ = require('jquery');
@@ -2675,8 +3031,8 @@ prmNar.then(function (nanikaDir) {
             filepath: 'es5/Shell.test.js',
             line: 128
         }));
-        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceNode, 'arguments/0/left/object/object/object').animations, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').interval, 'arguments/0/left') === 'sometimes', 'arguments/0'), {
-            content: 'assert.ok(srf.surfaceNode.animations[0].interval === \'sometimes\')',
+        assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object/object/object').surfaceNode, 'arguments/0/left/object/object/object/object/object').animations, 'arguments/0/left/object/object/object/object')[0], 'arguments/0/left/object/object/object').intervals, 'arguments/0/left/object/object')[0], 'arguments/0/left/object')[0], 'arguments/0/left') === 'sometimes', 'arguments/0'), {
+            content: 'assert.ok(srf.surfaceNode.animations[0].intervals[0][0] === \'sometimes\')',
             filepath: 'es5/Shell.test.js',
             line: 129
         }));
@@ -2860,7 +3216,7 @@ prmNar.then(function (nanikaDir) {
         });
     });
 });
-},{"./Shell":1,"./SurfaceUtil":4,"jquery":19,"narloader":128}],6:[function(require,module,exports){
+},{"./Shell":1,"./SurfaceUtil":5,"jquery":20,"narloader":129}],7:[function(require,module,exports){
 (function (process,global){
 /* @preserve
  * The MIT License (MIT)
@@ -8339,7 +8695,7 @@ module.exports = ret;
 },{"./es5":13}]},{},[4])(4)
 });                    ;if (typeof window !== 'undefined' && window !== null) {                               window.P = window.Promise;                                                     } else if (typeof self !== 'undefined' && self !== null) {                             self.P = self.Promise;                                                         }
 }).call(this,require("7YKIPe"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"7YKIPe":14}],7:[function(require,module,exports){
+},{"7YKIPe":15}],8:[function(require,module,exports){
 (function (Buffer){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -8450,7 +8806,7 @@ function objectToString(o) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":12}],8:[function(require,module,exports){
+},{"buffer":13}],9:[function(require,module,exports){
 /**
  * Encoding.js
  *
@@ -14737,7 +15093,7 @@ var zenkanaCase_table = [
 return Encoding;
 });
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -14863,11 +15219,11 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-},{}],10:[function(require,module,exports){
-
 },{}],11:[function(require,module,exports){
-module.exports=require(10)
+
 },{}],12:[function(require,module,exports){
+module.exports=require(11)
+},{}],13:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -15978,7 +16334,7 @@ function assert (test, message) {
   if (!test) throw new Error(message || 'Failed assertion')
 }
 
-},{"base64-js":9,"ieee754":15}],13:[function(require,module,exports){
+},{"base64-js":10,"ieee754":16}],14:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -16281,7 +16637,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -16346,7 +16702,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -16432,7 +16788,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 (function (global){
 'use strict';
 var Mutation = global.MutationObserver || global.WebKitMutationObserver;
@@ -16505,7 +16861,7 @@ function immediate(task) {
 }
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -16530,14 +16886,14 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /*eslint-disable no-unused-vars*/
 /*!
  * jQuery JavaScript Library v3.1.0
@@ -26613,7 +26969,7 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 'use strict';
 
 
@@ -26622,7 +26978,7 @@ var yaml = require('./lib/js-yaml.js');
 
 module.exports = yaml;
 
-},{"./lib/js-yaml.js":21}],21:[function(require,module,exports){
+},{"./lib/js-yaml.js":22}],22:[function(require,module,exports){
 'use strict';
 
 
@@ -26663,7 +27019,7 @@ module.exports.parse          = deprecated('parse');
 module.exports.compose        = deprecated('compose');
 module.exports.addConstructor = deprecated('addConstructor');
 
-},{"./js-yaml/dumper":23,"./js-yaml/exception":24,"./js-yaml/loader":25,"./js-yaml/schema":27,"./js-yaml/schema/core":28,"./js-yaml/schema/default_full":29,"./js-yaml/schema/default_safe":30,"./js-yaml/schema/failsafe":31,"./js-yaml/schema/json":32,"./js-yaml/type":33}],22:[function(require,module,exports){
+},{"./js-yaml/dumper":24,"./js-yaml/exception":25,"./js-yaml/loader":26,"./js-yaml/schema":28,"./js-yaml/schema/core":29,"./js-yaml/schema/default_full":30,"./js-yaml/schema/default_safe":31,"./js-yaml/schema/failsafe":32,"./js-yaml/schema/json":33,"./js-yaml/type":34}],23:[function(require,module,exports){
 'use strict';
 
 
@@ -26724,7 +27080,7 @@ module.exports.repeat         = repeat;
 module.exports.isNegativeZero = isNegativeZero;
 module.exports.extend         = extend;
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-use-before-define*/
@@ -27528,7 +27884,7 @@ function safeDump(input, options) {
 module.exports.dump     = dump;
 module.exports.safeDump = safeDump;
 
-},{"./common":22,"./exception":24,"./schema/default_full":29,"./schema/default_safe":30}],24:[function(require,module,exports){
+},{"./common":23,"./exception":25,"./schema/default_full":30,"./schema/default_safe":31}],25:[function(require,module,exports){
 // YAML error class. http://stackoverflow.com/questions/8458984
 //
 'use strict';
@@ -27573,7 +27929,7 @@ YAMLException.prototype.toString = function toString(compact) {
 
 module.exports = YAMLException;
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len,no-use-before-define*/
@@ -29161,7 +29517,7 @@ module.exports.load        = load;
 module.exports.safeLoadAll = safeLoadAll;
 module.exports.safeLoad    = safeLoad;
 
-},{"./common":22,"./exception":24,"./mark":26,"./schema/default_full":29,"./schema/default_safe":30}],26:[function(require,module,exports){
+},{"./common":23,"./exception":25,"./mark":27,"./schema/default_full":30,"./schema/default_safe":31}],27:[function(require,module,exports){
 'use strict';
 
 
@@ -29239,7 +29595,7 @@ Mark.prototype.toString = function toString(compact) {
 
 module.exports = Mark;
 
-},{"./common":22}],27:[function(require,module,exports){
+},{"./common":23}],28:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len*/
@@ -29345,7 +29701,7 @@ Schema.create = function createSchema() {
 
 module.exports = Schema;
 
-},{"./common":22,"./exception":24,"./type":33}],28:[function(require,module,exports){
+},{"./common":23,"./exception":25,"./type":34}],29:[function(require,module,exports){
 // Standard YAML's Core schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2804923
 //
@@ -29365,7 +29721,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":27,"./json":32}],29:[function(require,module,exports){
+},{"../schema":28,"./json":33}],30:[function(require,module,exports){
 // JS-YAML's default schema for `load` function.
 // It is not described in the YAML specification.
 //
@@ -29392,7 +29748,7 @@ module.exports = Schema.DEFAULT = new Schema({
   ]
 });
 
-},{"../schema":27,"../type/js/function":38,"../type/js/regexp":39,"../type/js/undefined":40,"./default_safe":30}],30:[function(require,module,exports){
+},{"../schema":28,"../type/js/function":39,"../type/js/regexp":40,"../type/js/undefined":41,"./default_safe":31}],31:[function(require,module,exports){
 // JS-YAML's default schema for `safeLoad` function.
 // It is not described in the YAML specification.
 //
@@ -29422,7 +29778,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":27,"../type/binary":34,"../type/merge":42,"../type/omap":44,"../type/pairs":45,"../type/set":47,"../type/timestamp":49,"./core":28}],31:[function(require,module,exports){
+},{"../schema":28,"../type/binary":35,"../type/merge":43,"../type/omap":45,"../type/pairs":46,"../type/set":48,"../type/timestamp":50,"./core":29}],32:[function(require,module,exports){
 // Standard YAML's Failsafe schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2802346
 
@@ -29441,7 +29797,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":27,"../type/map":41,"../type/seq":46,"../type/str":48}],32:[function(require,module,exports){
+},{"../schema":28,"../type/map":42,"../type/seq":47,"../type/str":49}],33:[function(require,module,exports){
 // Standard YAML's JSON schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2803231
 //
@@ -29468,7 +29824,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":27,"../type/bool":35,"../type/float":36,"../type/int":37,"../type/null":43,"./failsafe":31}],33:[function(require,module,exports){
+},{"../schema":28,"../type/bool":36,"../type/float":37,"../type/int":38,"../type/null":44,"./failsafe":32}],34:[function(require,module,exports){
 'use strict';
 
 var YAMLException = require('./exception');
@@ -29531,7 +29887,7 @@ function Type(tag, options) {
 
 module.exports = Type;
 
-},{"./exception":24}],34:[function(require,module,exports){
+},{"./exception":25}],35:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-bitwise*/
@@ -29668,7 +30024,7 @@ module.exports = new Type('tag:yaml.org,2002:binary', {
   represent: representYamlBinary
 });
 
-},{"../type":33}],35:[function(require,module,exports){
+},{"../type":34}],36:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -29705,7 +30061,7 @@ module.exports = new Type('tag:yaml.org,2002:bool', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":33}],36:[function(require,module,exports){
+},{"../type":34}],37:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -29812,7 +30168,7 @@ module.exports = new Type('tag:yaml.org,2002:float', {
   defaultStyle: 'lowercase'
 });
 
-},{"../common":22,"../type":33}],37:[function(require,module,exports){
+},{"../common":23,"../type":34}],38:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -29982,7 +30338,7 @@ module.exports = new Type('tag:yaml.org,2002:int', {
   }
 });
 
-},{"../common":22,"../type":33}],38:[function(require,module,exports){
+},{"../common":23,"../type":34}],39:[function(require,module,exports){
 'use strict';
 
 var esprima;
@@ -30068,7 +30424,7 @@ module.exports = new Type('tag:yaml.org,2002:js/function', {
   represent: representJavascriptFunction
 });
 
-},{"../../type":33}],39:[function(require,module,exports){
+},{"../../type":34}],40:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -30130,7 +30486,7 @@ module.exports = new Type('tag:yaml.org,2002:js/regexp', {
   represent: representJavascriptRegExp
 });
 
-},{"../../type":33}],40:[function(require,module,exports){
+},{"../../type":34}],41:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -30160,7 +30516,7 @@ module.exports = new Type('tag:yaml.org,2002:js/undefined', {
   represent: representJavascriptUndefined
 });
 
-},{"../../type":33}],41:[function(require,module,exports){
+},{"../../type":34}],42:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -30170,7 +30526,7 @@ module.exports = new Type('tag:yaml.org,2002:map', {
   construct: function (data) { return data !== null ? data : {}; }
 });
 
-},{"../type":33}],42:[function(require,module,exports){
+},{"../type":34}],43:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -30184,7 +30540,7 @@ module.exports = new Type('tag:yaml.org,2002:merge', {
   resolve: resolveYamlMerge
 });
 
-},{"../type":33}],43:[function(require,module,exports){
+},{"../type":34}],44:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -30220,7 +30576,7 @@ module.exports = new Type('tag:yaml.org,2002:null', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":33}],44:[function(require,module,exports){
+},{"../type":34}],45:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -30266,7 +30622,7 @@ module.exports = new Type('tag:yaml.org,2002:omap', {
   construct: constructYamlOmap
 });
 
-},{"../type":33}],45:[function(require,module,exports){
+},{"../type":34}],46:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -30321,7 +30677,7 @@ module.exports = new Type('tag:yaml.org,2002:pairs', {
   construct: constructYamlPairs
 });
 
-},{"../type":33}],46:[function(require,module,exports){
+},{"../type":34}],47:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -30331,7 +30687,7 @@ module.exports = new Type('tag:yaml.org,2002:seq', {
   construct: function (data) { return data !== null ? data : []; }
 });
 
-},{"../type":33}],47:[function(require,module,exports){
+},{"../type":34}],48:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -30362,7 +30718,7 @@ module.exports = new Type('tag:yaml.org,2002:set', {
   construct: constructYamlSet
 });
 
-},{"../type":33}],48:[function(require,module,exports){
+},{"../type":34}],49:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -30372,7 +30728,7 @@ module.exports = new Type('tag:yaml.org,2002:str', {
   construct: function (data) { return data !== null ? data : ''; }
 });
 
-},{"../type":33}],49:[function(require,module,exports){
+},{"../type":34}],50:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -30462,7 +30818,7 @@ module.exports = new Type('tag:yaml.org,2002:timestamp', {
   represent: representYamlTimestamp
 });
 
-},{"../type":33}],50:[function(require,module,exports){
+},{"../type":34}],51:[function(require,module,exports){
 'use strict';
 var utils = require('./utils');
 var support = require('./support');
@@ -30570,7 +30926,7 @@ exports.decode = function(input) {
     return output;
 };
 
-},{"./support":78,"./utils":80}],51:[function(require,module,exports){
+},{"./support":79,"./utils":81}],52:[function(require,module,exports){
 'use strict';
 
 var external = require("./external");
@@ -30647,7 +31003,7 @@ CompressedObject.createWorkerFrom = function (uncompressedWorker, compression, c
 
 module.exports = CompressedObject;
 
-},{"./external":55,"./stream/Crc32Probe":73,"./stream/DataLengthProbe":74,"./stream/DataWorker":75}],52:[function(require,module,exports){
+},{"./external":56,"./stream/Crc32Probe":74,"./stream/DataLengthProbe":75,"./stream/DataWorker":76}],53:[function(require,module,exports){
 'use strict';
 
 var GenericWorker = require("./stream/GenericWorker");
@@ -30663,7 +31019,7 @@ exports.STORE = {
 };
 exports.DEFLATE = require('./flate');
 
-},{"./flate":56,"./stream/GenericWorker":76}],53:[function(require,module,exports){
+},{"./flate":57,"./stream/GenericWorker":77}],54:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -30743,7 +31099,7 @@ module.exports = function crc32wrapper(input, crc) {
 };
 // vim: set shiftwidth=4 softtabstop=4:
 
-},{"./utils":80}],54:[function(require,module,exports){
+},{"./utils":81}],55:[function(require,module,exports){
 'use strict';
 exports.base64 = false;
 exports.binary = false;
@@ -30756,7 +31112,7 @@ exports.comment = null;
 exports.unixPermissions = null;
 exports.dosPermissions = null;
 
-},{}],55:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -30773,7 +31129,7 @@ module.exports = {
 };
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"lie":127}],56:[function(require,module,exports){
+},{"lie":128}],57:[function(require,module,exports){
 'use strict';
 var USE_TYPEDARRAY = (typeof Uint8Array !== 'undefined') && (typeof Uint16Array !== 'undefined') && (typeof Uint32Array !== 'undefined');
 
@@ -30843,7 +31199,7 @@ exports.uncompressWorker = function () {
     return new FlateWorker("Inflate", {});
 };
 
-},{"./stream/GenericWorker":76,"./utils":80,"pako":105}],57:[function(require,module,exports){
+},{"./stream/GenericWorker":77,"./utils":81,"pako":106}],58:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -31379,7 +31735,7 @@ ZipFileWorker.prototype.lock = function () {
 
 module.exports = ZipFileWorker;
 
-},{"../crc32":53,"../signature":71,"../stream/GenericWorker":76,"../utf8":79,"../utils":80}],58:[function(require,module,exports){
+},{"../crc32":54,"../signature":72,"../stream/GenericWorker":77,"../utf8":80,"../utils":81}],59:[function(require,module,exports){
 'use strict';
 
 var compressions = require('../compressions');
@@ -31438,7 +31794,7 @@ exports.generateWorker = function (zip, options, comment) {
     return zipFileWorker;
 };
 
-},{"../compressions":52,"./ZipFileWorker":57}],59:[function(require,module,exports){
+},{"../compressions":53,"./ZipFileWorker":58}],60:[function(require,module,exports){
 'use strict';
 
 /**
@@ -31492,7 +31848,7 @@ JSZip.loadAsync = function (content, options) {
 JSZip.external = require("./external");
 module.exports = JSZip;
 
-},{"./defaults":54,"./external":55,"./load":60,"./object":64,"./support":78}],60:[function(require,module,exports){
+},{"./defaults":55,"./external":56,"./load":61,"./object":65,"./support":79}],61:[function(require,module,exports){
 'use strict';
 var utils = require('./utils');
 var external = require("./external");
@@ -31576,7 +31932,7 @@ module.exports = function(data, options) {
     });
 };
 
-},{"./external":55,"./nodejsUtils":63,"./stream/Crc32Probe":73,"./utf8":79,"./utils":80,"./zipEntries":81}],61:[function(require,module,exports){
+},{"./external":56,"./nodejsUtils":64,"./stream/Crc32Probe":74,"./utf8":80,"./utils":81,"./zipEntries":82}],62:[function(require,module,exports){
 "use strict";
 
 var utils = require('../utils');
@@ -31652,7 +32008,7 @@ NodejsStreamInputAdapter.prototype.resume = function () {
 
 module.exports = NodejsStreamInputAdapter;
 
-},{"../stream/GenericWorker":76,"../utils":80}],62:[function(require,module,exports){
+},{"../stream/GenericWorker":77,"../utils":81}],63:[function(require,module,exports){
 'use strict';
 
 var Readable = require('readable-stream').Readable;
@@ -31696,7 +32052,7 @@ NodejsStreamOutputAdapter.prototype._read = function() {
 
 module.exports = NodejsStreamOutputAdapter;
 
-},{"readable-stream":126,"util":135}],63:[function(require,module,exports){
+},{"readable-stream":127,"util":136}],64:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -31734,7 +32090,7 @@ module.exports = {
 };
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":12}],64:[function(require,module,exports){
+},{"buffer":13}],65:[function(require,module,exports){
 'use strict';
 var utf8 = require('./utf8');
 var utils = require('./utils');
@@ -32123,7 +32479,7 @@ var out = {
 };
 module.exports = out;
 
-},{"./compressedObject":51,"./defaults":54,"./generate":58,"./nodejs/NodejsStreamInputAdapter":61,"./nodejsUtils":63,"./stream/GenericWorker":76,"./stream/StreamHelper":77,"./utf8":79,"./utils":80,"./zipObject":83}],65:[function(require,module,exports){
+},{"./compressedObject":52,"./defaults":55,"./generate":59,"./nodejs/NodejsStreamInputAdapter":62,"./nodejsUtils":64,"./stream/GenericWorker":77,"./stream/StreamHelper":78,"./utf8":80,"./utils":81,"./zipObject":84}],66:[function(require,module,exports){
 'use strict';
 var DataReader = require('./DataReader');
 var utils = require('../utils');
@@ -32182,7 +32538,7 @@ ArrayReader.prototype.readData = function(size) {
 };
 module.exports = ArrayReader;
 
-},{"../utils":80,"./DataReader":66}],66:[function(require,module,exports){
+},{"../utils":81,"./DataReader":67}],67:[function(require,module,exports){
 'use strict';
 var utils = require('../utils');
 
@@ -32300,7 +32656,7 @@ DataReader.prototype = {
 };
 module.exports = DataReader;
 
-},{"../utils":80}],67:[function(require,module,exports){
+},{"../utils":81}],68:[function(require,module,exports){
 'use strict';
 var Uint8ArrayReader = require('./Uint8ArrayReader');
 var utils = require('../utils');
@@ -32321,7 +32677,7 @@ NodeBufferReader.prototype.readData = function(size) {
 };
 module.exports = NodeBufferReader;
 
-},{"../utils":80,"./Uint8ArrayReader":69}],68:[function(require,module,exports){
+},{"../utils":81,"./Uint8ArrayReader":70}],69:[function(require,module,exports){
 'use strict';
 var DataReader = require('./DataReader');
 var utils = require('../utils');
@@ -32361,7 +32717,7 @@ StringReader.prototype.readData = function(size) {
 };
 module.exports = StringReader;
 
-},{"../utils":80,"./DataReader":66}],69:[function(require,module,exports){
+},{"../utils":81,"./DataReader":67}],70:[function(require,module,exports){
 'use strict';
 var ArrayReader = require('./ArrayReader');
 var utils = require('../utils');
@@ -32385,7 +32741,7 @@ Uint8ArrayReader.prototype.readData = function(size) {
 };
 module.exports = Uint8ArrayReader;
 
-},{"../utils":80,"./ArrayReader":65}],70:[function(require,module,exports){
+},{"../utils":81,"./ArrayReader":66}],71:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -32417,7 +32773,7 @@ module.exports = function (data) {
 
 // vim: set shiftwidth=4 softtabstop=4:
 
-},{"../support":78,"../utils":80,"./ArrayReader":65,"./NodeBufferReader":67,"./StringReader":68,"./Uint8ArrayReader":69}],71:[function(require,module,exports){
+},{"../support":79,"../utils":81,"./ArrayReader":66,"./NodeBufferReader":68,"./StringReader":69,"./Uint8ArrayReader":70}],72:[function(require,module,exports){
 'use strict';
 exports.LOCAL_FILE_HEADER = "PK\x03\x04";
 exports.CENTRAL_FILE_HEADER = "PK\x01\x02";
@@ -32426,7 +32782,7 @@ exports.ZIP64_CENTRAL_DIRECTORY_LOCATOR = "PK\x06\x07";
 exports.ZIP64_CENTRAL_DIRECTORY_END = "PK\x06\x06";
 exports.DATA_DESCRIPTOR = "PK\x07\x08";
 
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 'use strict';
 
 var GenericWorker = require('./GenericWorker');
@@ -32454,7 +32810,7 @@ ConvertWorker.prototype.processChunk = function (chunk) {
 };
 module.exports = ConvertWorker;
 
-},{"../utils":80,"./GenericWorker":76}],73:[function(require,module,exports){
+},{"../utils":81,"./GenericWorker":77}],74:[function(require,module,exports){
 'use strict';
 
 var GenericWorker = require('./GenericWorker');
@@ -32479,7 +32835,7 @@ Crc32Probe.prototype.processChunk = function (chunk) {
 };
 module.exports = Crc32Probe;
 
-},{"../crc32":53,"../utils":80,"./GenericWorker":76}],74:[function(require,module,exports){
+},{"../crc32":54,"../utils":81,"./GenericWorker":77}],75:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -32510,7 +32866,7 @@ DataLengthProbe.prototype.processChunk = function (chunk) {
 module.exports = DataLengthProbe;
 
 
-},{"../utils":80,"./GenericWorker":76}],75:[function(require,module,exports){
+},{"../utils":81,"./GenericWorker":77}],76:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -32628,7 +32984,7 @@ DataWorker.prototype._tick = function() {
 
 module.exports = DataWorker;
 
-},{"../utils":80,"./GenericWorker":76}],76:[function(require,module,exports){
+},{"../utils":81,"./GenericWorker":77}],77:[function(require,module,exports){
 'use strict';
 
 /**
@@ -32893,7 +33249,7 @@ GenericWorker.prototype = {
 
 module.exports = GenericWorker;
 
-},{}],77:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -33102,7 +33458,7 @@ StreamHelper.prototype = {
 module.exports = StreamHelper;
 
 }).call(this,require("buffer").Buffer)
-},{"../base64":50,"../external":55,"../nodejs/NodejsStreamOutputAdapter":62,"../utils":80,"./ConvertWorker":72,"./GenericWorker":76,"buffer":12}],78:[function(require,module,exports){
+},{"../base64":51,"../external":56,"../nodejs/NodejsStreamOutputAdapter":63,"../utils":81,"./ConvertWorker":73,"./GenericWorker":77,"buffer":13}],79:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -33140,7 +33496,7 @@ else {
 exports.nodestream = !!require("./nodejs/NodejsStreamOutputAdapter").prototype;
 
 }).call(this,require("buffer").Buffer)
-},{"./nodejs/NodejsStreamOutputAdapter":62,"buffer":12}],79:[function(require,module,exports){
+},{"./nodejs/NodejsStreamOutputAdapter":63,"buffer":13}],80:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -33417,7 +33773,7 @@ Utf8EncodeWorker.prototype.processChunk = function (chunk) {
 };
 exports.Utf8EncodeWorker = Utf8EncodeWorker;
 
-},{"./nodejsUtils":63,"./stream/GenericWorker":76,"./support":78,"./utils":80}],80:[function(require,module,exports){
+},{"./nodejsUtils":64,"./stream/GenericWorker":77,"./support":79,"./utils":81}],81:[function(require,module,exports){
 'use strict';
 
 var support = require('./support');
@@ -33885,7 +34241,7 @@ exports.prepareContent = function(name, inputData, isBinary, isOptimizedBinarySt
     });
 };
 
-},{"./base64":50,"./external":55,"./nodejsUtils":63,"./support":78,"core-js/library/fn/set-immediate":84}],81:[function(require,module,exports){
+},{"./base64":51,"./external":56,"./nodejsUtils":64,"./support":79,"core-js/library/fn/set-immediate":85}],82:[function(require,module,exports){
 'use strict';
 var readerFor = require('./reader/readerFor');
 var utils = require('./utils');
@@ -34149,7 +34505,7 @@ ZipEntries.prototype = {
 // }}} end of ZipEntries
 module.exports = ZipEntries;
 
-},{"./reader/readerFor":70,"./signature":71,"./support":78,"./utf8":79,"./utils":80,"./zipEntry":82}],82:[function(require,module,exports){
+},{"./reader/readerFor":71,"./signature":72,"./support":79,"./utf8":80,"./utils":81,"./zipEntry":83}],83:[function(require,module,exports){
 'use strict';
 var readerFor = require('./reader/readerFor');
 var utils = require('./utils');
@@ -34443,7 +34799,7 @@ ZipEntry.prototype = {
 };
 module.exports = ZipEntry;
 
-},{"./compressedObject":51,"./compressions":52,"./crc32":53,"./reader/readerFor":70,"./support":78,"./utf8":79,"./utils":80}],83:[function(require,module,exports){
+},{"./compressedObject":52,"./compressions":53,"./crc32":54,"./reader/readerFor":71,"./support":79,"./utf8":80,"./utils":81}],84:[function(require,module,exports){
 'use strict';
 
 var StreamHelper = require('./stream/StreamHelper');
@@ -34569,30 +34925,30 @@ for(var i = 0; i < removedMethods.length; i++) {
 }
 module.exports = ZipObject;
 
-},{"./compressedObject":51,"./stream/DataWorker":75,"./stream/GenericWorker":76,"./stream/StreamHelper":77,"./utf8":79}],84:[function(require,module,exports){
+},{"./compressedObject":52,"./stream/DataWorker":76,"./stream/GenericWorker":77,"./stream/StreamHelper":78,"./utf8":80}],85:[function(require,module,exports){
 require('../modules/web.immediate');
 module.exports = require('../modules/_core').setImmediate;
-},{"../modules/_core":88,"../modules/web.immediate":104}],85:[function(require,module,exports){
+},{"../modules/_core":89,"../modules/web.immediate":105}],86:[function(require,module,exports){
 module.exports = function(it){
   if(typeof it != 'function')throw TypeError(it + ' is not a function!');
   return it;
 };
-},{}],86:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 var isObject = require('./_is-object');
 module.exports = function(it){
   if(!isObject(it))throw TypeError(it + ' is not an object!');
   return it;
 };
-},{"./_is-object":99}],87:[function(require,module,exports){
+},{"./_is-object":100}],88:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = function(it){
   return toString.call(it).slice(8, -1);
 };
-},{}],88:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 var core = module.exports = {version: '2.3.0'};
 if(typeof __e == 'number')__e = core; // eslint-disable-line no-undef
-},{}],89:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 // optional / simple context binding
 var aFunction = require('./_a-function');
 module.exports = function(fn, that, length){
@@ -34613,12 +34969,12 @@ module.exports = function(fn, that, length){
     return fn.apply(that, arguments);
   };
 };
-},{"./_a-function":85}],90:[function(require,module,exports){
+},{"./_a-function":86}],91:[function(require,module,exports){
 // Thank's IE8 for his funny defineProperty
 module.exports = !require('./_fails')(function(){
   return Object.defineProperty({}, 'a', {get: function(){ return 7; }}).a != 7;
 });
-},{"./_fails":93}],91:[function(require,module,exports){
+},{"./_fails":94}],92:[function(require,module,exports){
 var isObject = require('./_is-object')
   , document = require('./_global').document
   // in old IE typeof document.createElement is 'object'
@@ -34626,7 +34982,7 @@ var isObject = require('./_is-object')
 module.exports = function(it){
   return is ? document.createElement(it) : {};
 };
-},{"./_global":94,"./_is-object":99}],92:[function(require,module,exports){
+},{"./_global":95,"./_is-object":100}],93:[function(require,module,exports){
 var global    = require('./_global')
   , core      = require('./_core')
   , ctx       = require('./_ctx')
@@ -34688,7 +35044,7 @@ $export.W = 32;  // wrap
 $export.U = 64;  // safe
 $export.R = 128; // real proto method for `library` 
 module.exports = $export;
-},{"./_core":88,"./_ctx":89,"./_global":94,"./_hide":95}],93:[function(require,module,exports){
+},{"./_core":89,"./_ctx":90,"./_global":95,"./_hide":96}],94:[function(require,module,exports){
 module.exports = function(exec){
   try {
     return !!exec();
@@ -34696,12 +35052,12 @@ module.exports = function(exec){
     return true;
   }
 };
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 // https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
 var global = module.exports = typeof window != 'undefined' && window.Math == Math
   ? window : typeof self != 'undefined' && self.Math == Math ? self : Function('return this')();
 if(typeof __g == 'number')__g = global; // eslint-disable-line no-undef
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 var dP         = require('./_object-dp')
   , createDesc = require('./_property-desc');
 module.exports = require('./_descriptors') ? function(object, key, value){
@@ -34710,13 +35066,13 @@ module.exports = require('./_descriptors') ? function(object, key, value){
   object[key] = value;
   return object;
 };
-},{"./_descriptors":90,"./_object-dp":100,"./_property-desc":101}],96:[function(require,module,exports){
+},{"./_descriptors":91,"./_object-dp":101,"./_property-desc":102}],97:[function(require,module,exports){
 module.exports = require('./_global').document && document.documentElement;
-},{"./_global":94}],97:[function(require,module,exports){
+},{"./_global":95}],98:[function(require,module,exports){
 module.exports = !require('./_descriptors') && !require('./_fails')(function(){
   return Object.defineProperty(require('./_dom-create')('div'), 'a', {get: function(){ return 7; }}).a != 7;
 });
-},{"./_descriptors":90,"./_dom-create":91,"./_fails":93}],98:[function(require,module,exports){
+},{"./_descriptors":91,"./_dom-create":92,"./_fails":94}],99:[function(require,module,exports){
 // fast apply, http://jsperf.lnkit.com/fast-apply/5
 module.exports = function(fn, args, that){
   var un = that === undefined;
@@ -34733,11 +35089,11 @@ module.exports = function(fn, args, that){
                       : fn.call(that, args[0], args[1], args[2], args[3]);
   } return              fn.apply(that, args);
 };
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 module.exports = function(it){
   return typeof it === 'object' ? it !== null : typeof it === 'function';
 };
-},{}],100:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 var anObject       = require('./_an-object')
   , IE8_DOM_DEFINE = require('./_ie8-dom-define')
   , toPrimitive    = require('./_to-primitive')
@@ -34754,7 +35110,7 @@ exports.f = require('./_descriptors') ? Object.defineProperty : function defineP
   if('value' in Attributes)O[P] = Attributes.value;
   return O;
 };
-},{"./_an-object":86,"./_descriptors":90,"./_ie8-dom-define":97,"./_to-primitive":103}],101:[function(require,module,exports){
+},{"./_an-object":87,"./_descriptors":91,"./_ie8-dom-define":98,"./_to-primitive":104}],102:[function(require,module,exports){
 module.exports = function(bitmap, value){
   return {
     enumerable  : !(bitmap & 1),
@@ -34763,7 +35119,7 @@ module.exports = function(bitmap, value){
     value       : value
   };
 };
-},{}],102:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 var ctx                = require('./_ctx')
   , invoke             = require('./_invoke')
   , html               = require('./_html')
@@ -34839,7 +35195,7 @@ module.exports = {
   set:   setTask,
   clear: clearTask
 };
-},{"./_cof":87,"./_ctx":89,"./_dom-create":91,"./_global":94,"./_html":96,"./_invoke":98}],103:[function(require,module,exports){
+},{"./_cof":88,"./_ctx":90,"./_dom-create":92,"./_global":95,"./_html":97,"./_invoke":99}],104:[function(require,module,exports){
 // 7.1.1 ToPrimitive(input [, PreferredType])
 var isObject = require('./_is-object');
 // instead of the ES6 spec version, we didn't implement @@toPrimitive case
@@ -34852,14 +35208,14 @@ module.exports = function(it, S){
   if(!S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it)))return val;
   throw TypeError("Can't convert object to primitive value");
 };
-},{"./_is-object":99}],104:[function(require,module,exports){
+},{"./_is-object":100}],105:[function(require,module,exports){
 var $export = require('./_export')
   , $task   = require('./_task');
 $export($export.G + $export.B, {
   setImmediate:   $task.set,
   clearImmediate: $task.clear
 });
-},{"./_export":92,"./_task":102}],105:[function(require,module,exports){
+},{"./_export":93,"./_task":103}],106:[function(require,module,exports){
 // Top level file is just a mixin of submodules & constants
 'use strict';
 
@@ -34875,7 +35231,7 @@ assign(pako, deflate, inflate, constants);
 
 module.exports = pako;
 
-},{"./lib/deflate":106,"./lib/inflate":107,"./lib/utils/common":108,"./lib/zlib/constants":111}],106:[function(require,module,exports){
+},{"./lib/deflate":107,"./lib/inflate":108,"./lib/utils/common":109,"./lib/zlib/constants":112}],107:[function(require,module,exports){
 'use strict';
 
 
@@ -35277,7 +35633,7 @@ exports.deflate = deflate;
 exports.deflateRaw = deflateRaw;
 exports.gzip = gzip;
 
-},{"./utils/common":108,"./utils/strings":109,"./zlib/deflate":113,"./zlib/messages":118,"./zlib/zstream":120}],107:[function(require,module,exports){
+},{"./utils/common":109,"./utils/strings":110,"./zlib/deflate":114,"./zlib/messages":119,"./zlib/zstream":121}],108:[function(require,module,exports){
 'use strict';
 
 
@@ -35697,7 +36053,7 @@ exports.inflate = inflate;
 exports.inflateRaw = inflateRaw;
 exports.ungzip  = inflate;
 
-},{"./utils/common":108,"./utils/strings":109,"./zlib/constants":111,"./zlib/gzheader":114,"./zlib/inflate":116,"./zlib/messages":118,"./zlib/zstream":120}],108:[function(require,module,exports){
+},{"./utils/common":109,"./utils/strings":110,"./zlib/constants":112,"./zlib/gzheader":115,"./zlib/inflate":117,"./zlib/messages":119,"./zlib/zstream":121}],109:[function(require,module,exports){
 'use strict';
 
 
@@ -35801,7 +36157,7 @@ exports.setTyped = function (on) {
 
 exports.setTyped(TYPED_OK);
 
-},{}],109:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 // String encode/decode helpers
 'use strict';
 
@@ -35988,7 +36344,7 @@ exports.utf8border = function (buf, max) {
   return (pos + _utf8len[buf[pos]] > max) ? pos : max;
 };
 
-},{"./common":108}],110:[function(require,module,exports){
+},{"./common":109}],111:[function(require,module,exports){
 'use strict';
 
 // Note: adler32 takes 12% for level 0 and 2% for level 6.
@@ -36022,7 +36378,7 @@ function adler32(adler, buf, len, pos) {
 
 module.exports = adler32;
 
-},{}],111:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 'use strict';
 
 
@@ -36074,7 +36430,7 @@ module.exports = {
   //Z_NULL:                 null // Use -1 or null inline, depending on var type
 };
 
-},{}],112:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 'use strict';
 
 // Note: we can't get significant speed boost here.
@@ -36117,7 +36473,7 @@ function crc32(crc, buf, len, pos) {
 
 module.exports = crc32;
 
-},{}],113:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 'use strict';
 
 var utils   = require('../utils/common');
@@ -37974,7 +38330,7 @@ exports.deflatePrime = deflatePrime;
 exports.deflateTune = deflateTune;
 */
 
-},{"../utils/common":108,"./adler32":110,"./crc32":112,"./messages":118,"./trees":119}],114:[function(require,module,exports){
+},{"../utils/common":109,"./adler32":111,"./crc32":113,"./messages":119,"./trees":120}],115:[function(require,module,exports){
 'use strict';
 
 
@@ -38016,7 +38372,7 @@ function GZheader() {
 
 module.exports = GZheader;
 
-},{}],115:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 'use strict';
 
 // See state defs from inflate.js
@@ -38344,7 +38700,7 @@ module.exports = function inflate_fast(strm, start) {
   return;
 };
 
-},{}],116:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 'use strict';
 
 
@@ -39884,7 +40240,7 @@ exports.inflateSyncPoint = inflateSyncPoint;
 exports.inflateUndermine = inflateUndermine;
 */
 
-},{"../utils/common":108,"./adler32":110,"./crc32":112,"./inffast":115,"./inftrees":117}],117:[function(require,module,exports){
+},{"../utils/common":109,"./adler32":111,"./crc32":113,"./inffast":116,"./inftrees":118}],118:[function(require,module,exports){
 'use strict';
 
 
@@ -40213,7 +40569,7 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
   return 0;
 };
 
-},{"../utils/common":108}],118:[function(require,module,exports){
+},{"../utils/common":109}],119:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -40228,7 +40584,7 @@ module.exports = {
   '-6':   'incompatible version' /* Z_VERSION_ERROR (-6) */
 };
 
-},{}],119:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 'use strict';
 
 
@@ -41432,7 +41788,7 @@ exports._tr_flush_block  = _tr_flush_block;
 exports._tr_tally = _tr_tally;
 exports._tr_align = _tr_align;
 
-},{"../utils/common":108}],120:[function(require,module,exports){
+},{"../utils/common":109}],121:[function(require,module,exports){
 'use strict';
 
 
@@ -41463,7 +41819,7 @@ function ZStream() {
 
 module.exports = ZStream;
 
-},{}],121:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 // a duplex stream is just a stream that is both readable and writable.
 // Since JS doesn't have multiple prototypal inheritance, this class
 // prototypally inherits from Readable, and then parasitically from
@@ -41539,7 +41895,7 @@ function forEach(xs, f) {
     f(xs[i], i);
   }
 }
-},{"./_stream_readable":123,"./_stream_writable":125,"core-util-is":7,"inherits":17,"process-nextick-args":129}],122:[function(require,module,exports){
+},{"./_stream_readable":124,"./_stream_writable":126,"core-util-is":8,"inherits":18,"process-nextick-args":130}],123:[function(require,module,exports){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
@@ -41566,7 +41922,7 @@ function PassThrough(options) {
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
-},{"./_stream_transform":124,"core-util-is":7,"inherits":17}],123:[function(require,module,exports){
+},{"./_stream_transform":125,"core-util-is":8,"inherits":18}],124:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -42449,7 +42805,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this,require("7YKIPe"))
-},{"./_stream_duplex":121,"7YKIPe":14,"buffer":12,"core-util-is":7,"events":13,"inherits":17,"isarray":18,"process-nextick-args":129,"string_decoder/":130,"util":10}],124:[function(require,module,exports){
+},{"./_stream_duplex":122,"7YKIPe":15,"buffer":13,"core-util-is":8,"events":14,"inherits":18,"isarray":19,"process-nextick-args":130,"string_decoder/":131,"util":11}],125:[function(require,module,exports){
 // a transform stream is a readable/writable stream where you do
 // something with the data.  Sometimes it's called a "filter",
 // but that's not a great name for it, since that implies a thing where
@@ -42630,7 +42986,7 @@ function done(stream, er) {
 
   return stream.push(null);
 }
-},{"./_stream_duplex":121,"core-util-is":7,"inherits":17}],125:[function(require,module,exports){
+},{"./_stream_duplex":122,"core-util-is":8,"inherits":18}],126:[function(require,module,exports){
 (function (process){
 // A bit simpler than readable streams.
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
@@ -43149,7 +43505,7 @@ function CorkedRequest(state) {
   };
 }
 }).call(this,require("7YKIPe"))
-},{"./_stream_duplex":121,"7YKIPe":14,"buffer":12,"core-util-is":7,"events":13,"inherits":17,"process-nextick-args":129,"util-deprecate":133}],126:[function(require,module,exports){
+},{"./_stream_duplex":122,"7YKIPe":15,"buffer":13,"core-util-is":8,"events":14,"inherits":18,"process-nextick-args":130,"util-deprecate":134}],127:[function(require,module,exports){
 var Stream = (function (){
   try {
     return require('st' + 'ream'); // hack to fix a circular dependency issue when used with browserify
@@ -43163,7 +43519,7 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":121,"./lib/_stream_passthrough.js":122,"./lib/_stream_readable.js":123,"./lib/_stream_transform.js":124,"./lib/_stream_writable.js":125}],127:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":122,"./lib/_stream_passthrough.js":123,"./lib/_stream_readable.js":124,"./lib/_stream_transform.js":125,"./lib/_stream_writable.js":126}],128:[function(require,module,exports){
 'use strict';
 var immediate = require('immediate');
 
@@ -43418,7 +43774,7 @@ function race(iterable) {
   }
 }
 
-},{"immediate":16}],128:[function(require,module,exports){
+},{"immediate":17}],129:[function(require,module,exports){
 (function (process){
 // Generated by CoffeeScript 1.10.0
 
@@ -43481,6 +43837,10 @@ function race(iterable) {
             filename: filename,
             zipped: zip.file(filename)
           };
+        }).filter(function(arg) {
+          var zipped;
+          zipped = arg.zipped;
+          return zipped != null;
         });
         proms = pairs.map(function(arg) {
           var filename, zipped;
@@ -43831,7 +44191,7 @@ function race(iterable) {
 }).call(this);
 
 }).call(this,require("7YKIPe"))
-},{"7YKIPe":14,"bluebird":6,"encoding-japanese":8,"fs":11,"jszip":59}],129:[function(require,module,exports){
+},{"7YKIPe":15,"bluebird":7,"encoding-japanese":9,"fs":12,"jszip":60}],130:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -43878,7 +44238,7 @@ function nextTick(fn, arg1, arg2, arg3) {
 }
 
 }).call(this,require("7YKIPe"))
-},{"7YKIPe":14}],130:[function(require,module,exports){
+},{"7YKIPe":15}],131:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -44101,10 +44461,10 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":12}],131:[function(require,module,exports){
+},{"buffer":13}],132:[function(require,module,exports){
 module.exports = require('./lib/surfaces_txt2yaml.js')
 
-},{"./lib/surfaces_txt2yaml.js":132}],132:[function(require,module,exports){
+},{"./lib/surfaces_txt2yaml.js":133}],133:[function(require,module,exports){
 // Generated by CoffeeScript 1.10.0
 
 /* (C) 2014 Narazaka : Licensed under The MIT License - http://narazaka.net/license/MIT?2014 */
@@ -45276,7 +45636,7 @@ if (typeof exports !== "undefined" && exports !== null) {
   exports.txt_to_yaml = SurfacesTxt2Yaml.txt_to_yaml;
 }
 
-},{"js-yaml":20}],133:[function(require,module,exports){
+},{"js-yaml":21}],134:[function(require,module,exports){
 (function (global){
 
 /**
@@ -45347,14 +45707,14 @@ function config (name) {
 }
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],134:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],135:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -45944,4 +46304,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require("7YKIPe"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":134,"7YKIPe":14,"inherits":17}]},{},[5])
+},{"./support/isBuffer":135,"7YKIPe":15,"inherits":18}]},{},[6])

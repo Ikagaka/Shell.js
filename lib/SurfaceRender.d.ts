@@ -1,5 +1,6 @@
 /// <reference path="../typings/index.d.ts" />
 import { SurfaceCanvas, SurfaceElement } from "./Interfaces";
+import * as ST from "./SurfaceTree";
 export default class SurfaceRender {
     cnv: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
@@ -29,7 +30,7 @@ export default class SurfaceRender {
     private move(x, y);
     private add(part, x, y);
     private reduce(part, x, y);
-    drawRegions(regions: SurfacesTxt2Yaml.SurfaceRegion[], description?: string): void;
+    drawRegions(regions: ST.SurfaceCollision[], description?: string): void;
     private drawRegion(region);
     private drawEllipseWithBezier(x, y, w, h);
 }

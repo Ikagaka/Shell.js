@@ -96,7 +96,7 @@ function changeShell(nanikaDir){
       var surfaceId = $("#surfaceId").val();
       $("<option />").val("").text("---").appendTo($frag);
       !!shell.surfaceTree[surfaceId] && shell.surfaceTree[surfaceId].animations.forEach(function(animation, i){
-        $("<option />").val(i).text(i+":"+animation.interval).appendTo($frag);
+        $("<option />").val(i).text(i+":"+animation.intervals.toString()).appendTo($frag);
       });
       $("#animationId").append($frag);
       changeSurface();

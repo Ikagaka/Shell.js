@@ -14,6 +14,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var Surface_1 = require('./Surface');
+var ST = require("./SurfaceTree");
 var SurfaceUtil = require("./SurfaceUtil");
 var SurfacesTxt2Yaml = require("surfaces_txt2yaml");
 var EventEmitter = require("events");
@@ -32,7 +33,8 @@ var Shell = function (_EventEmitter$EventEm) {
         _this.directory = directory;
         _this.attachedSurface = [];
         _this.surfacesTxt = {};
-        _this.surfaceTree = [];
+        _this.surfaceDefTree = new ST.SurfaceDefinitionTree();
+        _this.surfaceTree = _this.surfaceDefTree.surfaces;
         _this.cacheCanvas = {};
         _this.bindgroup = [];
         _this.enableRegion = false;
@@ -53,24 +55,26 @@ var Shell = function (_EventEmitter$EventEm) {
                 return _this2.loadBindGroup();
             }) // 2nd // 依存関係的なやつだと思われ
             .then(function () {
+                return console.log("descript done");
+            }).then(function () {
                 return _this2.loadSurfacesTxt();
             }) // 1st
             .then(function () {
                 return _this2.loadSurfaceTable();
             }) // 1st
             .then(function () {
+                return console.log("surfaces done");
+            }).then(function () {
                 return _this2.loadSurfacePNG();
             }) // 2nd
             .then(function () {
-                return _this2.loadCollisions();
-            }) // 3rd
-            .then(function () {
-                return _this2.loadAnimations();
-            }) // 3rd
-            .then(function () {
+                return console.log("base done");
+            }).then(function () {
                 return _this2.loadElements();
             }) // 3rd
             .then(function () {
+                return console.log("elements done");
+            }).then(function () {
                 return _this2;
             }) // 3rd
             .catch(function (err) {
@@ -267,44 +271,20 @@ var Shell = function (_EventEmitter$EventEm) {
         value: function loadSurfacesTxt() {
             var _this5 = this;
 
-            var surfaces_text_names = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
-            if (surfaces_text_names.length === 0) {
+            var filenames = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
+            if (filenames.length === 0) {
                 console.info("surfaces.txt is not found");
-                this.surfacesTxt = { surfaces: {}, descript: {}, aliases: {}, regions: {} };
-            } else {
-                // cat surfaces*.txt
-                var text = surfaces_text_names.reduce(function (text, filename) {
-                    return text + SurfaceUtil.convert(_this5.directory[filename]);
-                }, "");
-                this.surfacesTxt = SurfacesTxt2Yaml.txt_to_data(text, { compatible: 'ssp-lazy' });
-                // https://github.com/Ikagaka/Shell.js/issues/55
-                if (this.surfacesTxt.surfaces == null) {
-                    this.surfacesTxt.surfaces = {};
-                }
-                // SurfacesTxt2Yamlの継承の expand と remove
-                Object.keys(this.surfacesTxt.surfaces).forEach(function (name) {
-                    if (typeof _this5.surfacesTxt.surfaces[name].is === "number" && Array.isArray(_this5.surfacesTxt.surfaces[name].base)) {
-                        _this5.surfacesTxt.surfaces[name].base.forEach(function (key) {
-                            $.extend(true, _this5.surfacesTxt.surfaces[name], _this5.surfacesTxt.surfaces[key]);
-                        });
-                        delete _this5.surfacesTxt.surfaces[name].base;
-                    }
-                });
-                Object.keys(this.surfacesTxt.surfaces).forEach(function (name) {
-                    if (typeof _this5.surfacesTxt.surfaces[name].is === "undefined") {
-                        delete _this5.surfacesTxt.surfaces[name];
-                    }
-                });
-                // expand ここまで
-                this.surfacesTxt.descript = this.surfacesTxt.descript || {};
-                if (typeof this.surfacesTxt.descript["collision-sort"] === "string") {
-                    console.warn("Shell#loadSurfacesTxt", "collision-sort is not supported yet.");
-                }
-                if (typeof this.surfacesTxt.descript["animation-sort"] === "string") {
-                    console.warn("Shell#loadSurfacesTxt", "animation-sort is not supported yet.");
-                }
             }
-            return Promise.resolve(this);
+            var cat_text = filenames.reduce(function (text, filename) {
+                return text + SurfaceUtil.convert(_this5.directory[filename]);
+            }, "");
+            var surfacesTxt = SurfacesTxt2Yaml.txt_to_data(cat_text, { compatible: 'ssp-lazy' });
+            return new ST.SurfaceDefinitionTree().loadFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceTree) {
+                _this5.surfacesTxt = surfacesTxt;
+                _this5.surfaceDefTree = surfaceTree;
+                _this5.surfaceTree = _this5.surfaceDefTree.surfaces;
+                return _this5;
+            });
         }
         // surfacetable.txtを読む予定
 
@@ -341,17 +321,13 @@ var Shell = function (_EventEmitter$EventEm) {
                     if (!isFinite(n)) return;
                     i++;
                     _this6.getPNGFromDirectory(filename, function (err, cnv) {
-                        if (err != null) {
+                        if (err != null || cnv == null) {
                             console.warn("Shell#loadSurfacePNG > " + err);
                         } else {
                             if (!_this6.surfaceTree[n]) {
                                 // surfaces.txtで未定義なら追加
-                                _this6.surfaceTree[n] = {
-                                    base: cnv,
-                                    elements: [],
-                                    collisions: [],
-                                    animations: []
-                                };
+                                _this6.surfaceTree[n] = new ST.SurfaceDefinition();
+                                _this6.surfaceTree[n].base = cnv;
                             } else {
                                 // surfaces.txtで定義済み
                                 _this6.surfaceTree[n].base = cnv;
@@ -371,38 +347,23 @@ var Shell = function (_EventEmitter$EventEm) {
         value: function loadElements() {
             var _this7 = this;
 
-            var srfs = this.surfacesTxt.surfaces;
-            var hits = Object.keys(srfs).filter(function (name) {
-                return !!srfs[name].elements;
-            });
+            var srfs = this.surfaceTree;
             return new Promise(function (resolve, reject) {
                 var i = 0;
-                if (hits.length === 0) return resolve(_this7);
-                hits.forEach(function (defname) {
-                    var n = srfs[defname].is;
-                    var elms = srfs[defname].elements;
-                    var _prms = Object.keys(elms).map(function (elmname) {
-                        var _elms$elmname = elms[elmname];
-                        var is = _elms$elmname.is;
-                        var type = _elms$elmname.type;
-                        var file = _elms$elmname.file;
-                        var x = _elms$elmname.x;
-                        var y = _elms$elmname.y;
+                srfs.forEach(function (srf, n) {
+                    var elms = srf.elements;
+                    var _prms = elms.map(function (elm, elmId) {
+                        var type = elm.type;
+                        var file = elm.file;
+                        var x = elm.x;
+                        var y = elm.y;
 
                         i++;
                         _this7.getPNGFromDirectory(file, function (err, canvas) {
                             if (err != null || canvas == null) {
                                 console.warn("Shell#loadElements > " + err);
                             } else {
-                                if (!_this7.surfaceTree[n]) {
-                                    _this7.surfaceTree[n] = {
-                                        base: { cnv: null, png: null, pna: null },
-                                        elements: [],
-                                        collisions: [],
-                                        animations: []
-                                    };
-                                }
-                                _this7.surfaceTree[n].elements[is] = { type: type, canvas: canvas, x: x, y: y };
+                                _this7.surfaceTree[n].elements[elmId].canvas = canvas;
                             }
                             if (--i <= 0) {
                                 resolve(_this7);
@@ -410,116 +371,13 @@ var Shell = function (_EventEmitter$EventEm) {
                         });
                     });
                 });
+                // elementを一切使っていなかった
+                if (i === 0) {
+                    resolve(_this7);
+                }
+            }).then(function () {
+                return _this7;
             });
-        }
-        // this.surfacesTxt から collision を読み込んで this.surfaceTree に反映
-
-    }, {
-        key: "loadCollisions",
-        value: function loadCollisions() {
-            var _this8 = this;
-
-            var srfs = this.surfacesTxt.surfaces;
-            Object.keys(srfs).filter(function (name) {
-                return !!srfs[name].regions;
-            }).forEach(function (defname) {
-                var n = srfs[defname].is;
-                var regions = srfs[defname].regions;
-                Object.keys(regions).forEach(function (regname) {
-                    if (!_this8.surfaceTree[n]) {
-                        _this8.surfaceTree[n] = {
-                            base: { cnv: null, png: null, pna: null },
-                            elements: [],
-                            collisions: [],
-                            animations: []
-                        };
-                    }
-                    var is = regions[regname].is;
-
-                    _this8.surfaceTree[n].collisions[is] = regions[regname];
-                });
-            });
-            return Promise.resolve(this);
-        }
-        // this.surfacesTxt から animation を読み込んで this.surfaceTree に反映
-
-    }, {
-        key: "loadAnimations",
-        value: function loadAnimations() {
-            var _this9 = this;
-
-            var srfs = this.surfacesTxt.surfaces;
-            Object.keys(srfs).filter(function (name) {
-                return !!srfs[name].animations;
-            }).forEach(function (defname) {
-                var n = srfs[defname].is;
-                var animations = srfs[defname].animations;
-                Object.keys(animations).forEach(function (animId) {
-                    if (!_this9.surfaceTree[n]) {
-                        _this9.surfaceTree[n] = {
-                            base: { cnv: null, png: null, pna: null },
-                            elements: [],
-                            collisions: [],
-                            animations: []
-                        };
-                    }
-                    var _animations$animId = animations[animId];
-                    var is = _animations$animId.is;
-                    var _animations$animId$in = _animations$animId.interval;
-                    var interval = _animations$animId$in === undefined ? "never" : _animations$animId$in;
-                    var _animations$animId$op = _animations$animId.option;
-                    var option = _animations$animId$op === undefined ? "" : _animations$animId$op;
-                    var _animations$animId$pa = _animations$animId.patterns;
-                    var patterns = _animations$animId$pa === undefined ? [] : _animations$animId$pa;
-                    var _animations$animId$re = _animations$animId.regions;
-                    var regions = _animations$animId$re === undefined ? {} : _animations$animId$re;
-                    // animation*.option,* の展開
-                    // animation*.option,exclusive+background,(1,3,5)
-
-                    var _option$split = option.split(",");
-
-                    var _option$split2 = _toArray(_option$split);
-
-                    var _option = _option$split2[0];
-
-                    var opt_args = _option$split2.slice(1);
-
-                    var _opt_args = opt_args.map(function (str) {
-                        return str.replace("(", "").replace(")", "").trim();
-                    });
-                    var options = option.split("+");
-                    var _options = options.map(function (option) {
-                        return [option.trim(), _opt_args];
-                    });
-
-                    var _interval$split = interval.split(",");
-
-                    var _interval$split2 = _toArray(_interval$split);
-
-                    var _interval = _interval$split2[0];
-
-                    var int_args = _interval$split2.slice(1);
-
-                    var _int_args = int_args.map(function (str) {
-                        return str.trim();
-                    });
-                    var intervals = _interval.split("+"); // sometimes+talk
-                    var _intervals = intervals.map(function (interval) {
-                        return [interval.trim(), _int_args];
-                    });
-                    var _regions = [];
-                    Object.keys(regions).forEach(function (key) {
-                        _regions[regions[key].is] = regions[key];
-                    });
-                    _this9.surfaceTree[n].animations[is] = {
-                        options: _options,
-                        intervals: _intervals,
-                        regions: _regions,
-                        is: is, patterns: patterns, interval: interval
-                    };
-                });
-            });
-            return Promise.resolve(this);
         }
     }, {
         key: "hasFile",
@@ -533,7 +391,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "getPNGFromDirectory",
         value: function getPNGFromDirectory(filename, cb) {
-            var _this10 = this;
+            var _this8 = this;
 
             var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
             if (cached_filename !== "") {
@@ -557,22 +415,22 @@ var Shell = function (_EventEmitter$EventEm) {
                 if (err != null) return cb(err, null);
                 // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
                 if (_pnafilename === "") {
-                    _this10.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
-                    cb(null, _this10.cacheCanvas[_filename]);
+                    _this8.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
+                    cb(null, _this8.cacheCanvas[_filename]);
                     return;
                 }
-                var pnabuf = _this10.directory[_pnafilename];
+                var pnabuf = _this8.directory[_pnafilename];
                 SurfaceUtil.getImageFromArrayBuffer(pnabuf, function (err, pna) {
                     if (err != null) return cb(err, null);
-                    _this10.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
-                    cb(null, _this10.cacheCanvas[_filename]);
+                    _this8.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
+                    cb(null, _this8.cacheCanvas[_filename]);
                 });
             });
         }
     }, {
         key: "attachSurface",
         value: function attachSurface(div, scopeId, surfaceId) {
-            var _this11 = this;
+            var _this9 = this;
 
             var type = SurfaceUtil.scope(scopeId);
             var hits = this.attachedSurface.filter(function (_ref) {
@@ -591,13 +449,13 @@ var Shell = function (_EventEmitter$EventEm) {
                 console.warn("surfaceId:", _surfaceId, "is not defined in surfaceTree", this.surfaceTree);
                 return null;
             }
-            var srf = new Surface_1.default(div, scopeId, _surfaceId, this.surfaceTree, this.bindgroup);
+            var srf = new Surface_1.default(div, scopeId, _surfaceId, this.surfaceDefTree, this.bindgroup);
             srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
             if (this.enableRegion) {
                 srf.render();
             }
             srf.on("mouse", function (ev) {
-                _this11.emit("mouse", ev); // detachSurfaceで消える
+                _this9.emit("mouse", ev); // detachSurfaceで消える
             });
             this.attachedSurface.push({ div: div, surface: srf });
             return srf;
@@ -655,7 +513,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "bind",
         value: function bind(a, b) {
-            var _this12 = this;
+            var _this10 = this;
 
             if (typeof a === "number" && typeof b === "number") {
                 var scopeId = a;
@@ -675,14 +533,14 @@ var Shell = function (_EventEmitter$EventEm) {
                 (function () {
                     var _category = a;
                     var _parts = b;
-                    _this12.config.char.forEach(function (char, scopeId) {
+                    _this10.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name = bindgroup.name;
                             var category = _bindgroup$name.category;
                             var parts = _bindgroup$name.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this12.bind(scopeId, bindgroupId);
+                                _this10.bind(scopeId, bindgroupId);
                             }
                         });
                     });
@@ -694,7 +552,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "unbind",
         value: function unbind(a, b) {
-            var _this13 = this;
+            var _this11 = this;
 
             if (typeof a === "number" && typeof b === "number") {
                 var scopeId = a;
@@ -714,14 +572,14 @@ var Shell = function (_EventEmitter$EventEm) {
                 (function () {
                     var _category = a;
                     var _parts = b;
-                    _this13.config.char.forEach(function (char, scopeId) {
+                    _this11.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name2 = bindgroup.name;
                             var category = _bindgroup$name2.category;
                             var parts = _bindgroup$name2.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this13.unbind(scopeId, bindgroupId);
+                                _this11.unbind(scopeId, bindgroupId);
                             }
                         });
                     });

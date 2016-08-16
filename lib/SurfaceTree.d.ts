@@ -1,14 +1,11 @@
 /// <reference path="../typings/index.d.ts" />
+import { SurfaceCanvas } from "./Interfaces";
 export declare class SurfaceDefinitionTree {
     descript: SurfaceDescript;
-    surfaces: {
-        [surfaceID: number]: SurfaceDefinition;
-    };
+    surfaces: SurfaceDefinition[];
     aliases: {
-        [scopeID: number]: {
-            [aliasname: string]: number[];
-        };
-    };
+        [aliasname: string]: number[];
+    }[];
     constructor();
     loadFromsurfacesTxt2Yaml(srfsTxt: SurfacesTxt2Yaml.SurfacesTxt): Promise<this>;
 }
@@ -35,15 +32,10 @@ export declare class SurfaceDefinition {
         offsetX: number;
         offsetY: number;
     };
-    collisions: {
-        [id: number]: SurfaceCollision;
-    };
-    animations: {
-        [id: number]: SurfaceAnimation;
-    };
-    elements: {
-        [id: number]: SurfaceElement;
-    };
+    collisions: SurfaceCollision[];
+    animations: SurfaceAnimation[];
+    elements: SurfaceElement[];
+    base: SurfaceCanvas;
     constructor();
     loadFromsurfacesTxt2Yaml(srf: SurfacesTxt2Yaml.SurfaceDefinition): Promise<this>;
 }
@@ -52,6 +44,7 @@ export declare class SurfaceElement {
     file: string;
     x: number;
     y: number;
+    canvas: SurfaceCanvas;
     constructor();
     loadFromsurfacesTxt2Yaml(elm: SurfacesTxt2Yaml.ElementPattern): Promise<this>;
 }
@@ -90,12 +83,8 @@ export declare class SurfaceCollisionPolygon extends SurfaceCollision {
 export declare class SurfaceAnimation {
     intervals: [string, string[]][];
     options: [string, string[]][];
-    collisions: {
-        [id: number]: SurfaceCollision;
-    };
-    patterns: {
-        [id: number]: SurfaceAnimationPattern;
-    };
+    collisions: SurfaceCollision[];
+    patterns: SurfaceAnimationPattern[];
     constructor();
     loadFromsurfacesTxt2Yaml(animation: SurfacesTxt2Yaml.SurfaceAnimation): Promise<this>;
 }

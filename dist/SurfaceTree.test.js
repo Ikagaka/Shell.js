@@ -23,8 +23,8 @@ var SurfaceDefinitionTree = function () {
         _classCallCheck(this, SurfaceDefinitionTree);
 
         this.descript = new SurfaceDescript();
-        this.surfaces = {};
-        this.aliases = {};
+        this.surfaces = [];
+        this.aliases = [];
     }
 
     _createClass(SurfaceDefinitionTree, [{
@@ -101,10 +101,11 @@ var SurfaceDefinition = function () {
         _classCallCheck(this, SurfaceDefinition);
 
         this.points = { basepos: { x: 0, y: 0 } };
-        this.balloons = { char: {}, offsetX: 0, offsetY: 0 };
-        this.elements = {};
-        this.collisions = {};
-        this.animations = {};
+        this.balloons = { char: [], offsetX: 0, offsetY: 0 };
+        this.elements = [];
+        this.collisions = [];
+        this.animations = [];
+        this.base = { cnv: null, png: null, pna: null };
     }
 
     _createClass(SurfaceDefinition, [{
@@ -138,9 +139,11 @@ var SurfaceDefinition = function () {
                 }).forEach(function (charName) {
                     var charID = SU.unscope(charName);
                     if (typeof balloons[charName].offsetx === "number") {
+                        _this2.balloons.char[charID] = _this2.balloons.char[charID] != null ? _this2.balloons.char[charID] : { offsetX: 0, offsetY: 0 };
                         _this2.balloons.char[charID].offsetX = balloons[charName].offsetx;
                     }
                     if (typeof balloons[charName].offsety === "number") {
+                        _this2.balloons.char[charID] = _this2.balloons.char[charID] != null ? _this2.balloons.char[charID] : { offsetX: 0, offsetY: 0 };
                         _this2.balloons.char[charID].offsetY = balloons[charName].offsety;
                     }
                 });
@@ -183,6 +186,7 @@ var SurfaceElement = function () {
         this.file = "";
         this.x = 0;
         this.y = 0;
+        this.canvas = { cnv: null, png: null, pna: null };
     }
 
     _createClass(SurfaceElement, [{
@@ -201,7 +205,7 @@ var SurfaceElement = function () {
                 console.warn("SurfaceElement#loadFromsurfacesTxt2Yaml: faileback to", this.x);
             }
             if (typeof elm.y === "number") {
-                this.x = elm.y;
+                this.y = elm.y;
             } else {
                 console.warn("SurfaceElement#loadFromsurfacesTxt2Yaml: faileback to", this.y);
             }
@@ -362,7 +366,7 @@ var SurfaceCollisionPolygon = function (_SurfaceCollision3) {
                 return Promise.reject(col);
             }
             if (coordinates.every(function (o) {
-                return typeof o.x === "number" && typeof o.x === "number";
+                return typeof o.x !== "number" || typeof o.y !== "number";
             })) {
                 console.warn("SurfaceRegionPolygon#loadFromsurfacesTxt2Yaml: coordinates has erro value", col);
                 return Promise.reject(col);
@@ -383,8 +387,8 @@ var SurfaceAnimation = function () {
 
         this.intervals = [["never", []]];
         this.options = [];
-        this.collisions = {};
-        this.patterns = {};
+        this.collisions = [];
+        this.patterns = [];
     }
 
     _createClass(SurfaceAnimation, [{
@@ -881,11 +885,11 @@ function getRegion(element, collisions, offsetX, offsetY) {
                     };
                 case "circle":
                     var radius = collision.radius;
-                    var center_x = collision.center_x;
-                    var center_y = collision.center_y;
+                    var centerX = collision.centerX;
+                    var centerY = collision.centerY;
 
                     return {
-                        v: Math.pow((offsetX - center_x) / radius, 2) + Math.pow((offsetY - center_y) / radius, 2) < 1
+                        v: Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1
                     };
                 case "polygon":
                     var coordinates = collision.coordinates;
@@ -41654,6 +41658,10 @@ function race(iterable) {
             filename: filename,
             zipped: zip.file(filename)
           };
+        }).filter(function(arg) {
+          var zipped;
+          zipped = arg.zipped;
+          return zipped != null;
         });
         proms = pairs.map(function(arg) {
           var filename, zipped;

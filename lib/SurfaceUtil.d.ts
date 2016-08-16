@@ -1,5 +1,6 @@
 /// <reference path="../typings/index.d.ts" />
 import { SurfaceCanvas } from "./Interfaces";
+import * as ST from "./SurfaceTree";
 export declare function pna(srfCnv: SurfaceCanvas): SurfaceCanvas;
 export declare function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src: HTMLCanvasElement): void;
 export declare function chromakey_snipet(data: Uint8ClampedArray): void;
@@ -35,7 +36,7 @@ export declare function getEventPosition(ev: JQueryEventObject): {
     screenY: number;
 };
 export declare function randomRange(min: number, max: number): number;
-export declare function getRegion(element: HTMLCanvasElement, collisions: SurfacesTxt2Yaml.SurfaceRegion[], offsetX: number, offsetY: number): string;
+export declare function getRegion(element: HTMLCanvasElement, collisions: ST.SurfaceCollision[], offsetX: number, offsetY: number): string;
 export declare function getScrollXY(): {
     scrollX: number;
     scrollY: number;

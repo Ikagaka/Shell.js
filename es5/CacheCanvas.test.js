@@ -2,10 +2,11 @@
 "use strict";
 
 var CCC = require("./CacheCanvas");
-var SU = require("./SurfaceUtil");
-var JSZip = require("jszip");
+var narloader = require("narloader");
+var NL = narloader.NarLoader;
 QUnit.module('CCC');
-unzip("/nar/mobilemaster.nar").then(function (dic) {
+NL.loadFromURL("/nar/mobilemaster.nar").then(function (dir) {
+    var dic = dir.asArrayBuffer();
     QUnit.test('CCC.getPNGAndPNAImage', function (assert) {
         var done = assert.async();
         var pngBuf = dic["shell/master/surface0731.png"];
@@ -41,30 +42,3 @@ unzip("/nar/mobilemaster.nar").then(function (dic) {
         });
     });
 });
-function unzip(url) {
-    var jszip = new JSZip();
-    return SU.getArrayBufferFromURL(url).then(function (buf) {
-        return jszip.loadAsync(buf);
-    }).then(function (zip) {
-        var pairs = Object.keys(zip.files).map(function (filename) {
-            return { filename: filename, zipped: zip.file(filename) };
-        });
-        var proms = pairs.map(function (_ref) {
-            var filename = _ref.filename;
-            var zipped = _ref.zipped;
-            return zipped.async("arraybuffer").then(function (unzipped) {
-                return { filename: filename, unzipped: unzipped };
-            });
-        });
-        return Promise.all(proms);
-    }).then(function (pairs) {
-        console.warn(pairs);
-        var dic = pairs.reduce(function (o, _ref2) {
-            var filename = _ref2.filename;
-            var unzipped = _ref2.unzipped;
-            o[filename] = unzipped;return o;
-        }, {});
-        console.info(dic);
-        return dic;
-    });
-}

@@ -1,6 +1,7 @@
 /// <reference path="../typings/index.d.ts"/>
 
 import {SurfaceTreeNode, SurfaceCanvas} from "./Interfaces";
+import * as ST from "./SurfaceTree";
 import Encoding = require("encoding-japanese");
 
 export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
@@ -320,27 +321,27 @@ export function randomRange(min: number, max: number): number {
 
 // このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
 // collision設定されていれば name"hoge"
-export function getRegion(element: HTMLCanvasElement, collisions: SurfacesTxt2Yaml.SurfaceRegion[], offsetX: number, offsetY: number): string {
+export function getRegion(element: HTMLCanvasElement, collisions: ST.SurfaceCollision[], offsetX: number, offsetY: number): string {
   // canvas左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べるメソッド
 
   const hitCols = collisions.filter((collision, colId)=>{
     const {type, name} = collision;
     switch(collision.type){
       case "rect":
-        var {left, top, right, bottom} = <SurfacesTxt2Yaml.SurfaceRegionRect>collision;
+        var {left, top, right, bottom} = <ST.SurfaceCollisionRect>collision;
         return (left < offsetX && offsetX < right && top < offsetY && offsetY < bottom) ||
                (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
       case "ellipse":
-        var {left, top, right, bottom} = <SurfacesTxt2Yaml.SurfaceRegionEllipse>collision;
+        var {left, top, right, bottom} = <ST.SurfaceCollisionEllipse>collision;
         const width = Math.abs(right - left);
         const height = Math.abs(bottom - top);
         return Math.pow((offsetX-(left+width/2))/(width/2), 2) +
                Math.pow((offsetY-(top+height/2))/(height/2), 2) < 1;
       case "circle":
-        const {radius, center_x, center_y} = <SurfacesTxt2Yaml.SurfaceRegionCircle>collision;
-        return Math.pow((offsetX-center_x)/radius, 2)+Math.pow((offsetY-center_y)/radius, 2) < 1;
+        const {radius, centerX, centerY} = <ST.SurfaceCollisionCircle>collision;
+        return Math.pow((offsetX-centerX)/radius, 2)+Math.pow((offsetY-centerY)/radius, 2) < 1;
       case "polygon":
-        const {coordinates} = <SurfacesTxt2Yaml.SurfaceRegionPolygon>collision;
+        const {coordinates} = <ST.SurfaceCollisionPolygon>collision;
         const ptC = {x:offsetX, y:offsetY};
         const tuples = coordinates.reduce<[{x:number,y:number},{x:number,y:number}][]>(((arr, {x, y}, i)=>{
           arr.push([
@@ -381,7 +382,6 @@ export function getScrollXY(): {scrollX: number, scrollY: number} {
 export function findSurfacesTxt(filepaths: string[]): string[] {
   return filepaths.filter((name)=> /^surfaces.*\.txt$|^alias\.txt$/i.test(name));
 }
-
 
 
 
