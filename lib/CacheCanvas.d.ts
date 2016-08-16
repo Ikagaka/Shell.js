@@ -22,6 +22,3 @@ export declare class PNGWithPNA<T extends Done | Yet> extends PNGWithoutPNA<T> {
 export declare function applyChromakey(cc: Cache<Done | Yet>): Promise<Cache<Done>>;
 export declare function getPNGImage(pngBuffer: ArrayBuffer): Promise<PNGWithoutPNA<Yet>>;
 export declare function getPNGAndPNAImage(pngBuffer: ArrayBuffer, pnaBuffer: ArrayBuffer): Promise<PNGWithPNA<Yet>>;
-export declare function getImageFromArrayBuffer(buffer: ArrayBuffer): Promise<HTMLImageElement>;
-export declare function getImageFromURL(url: string): Promise<HTMLImageElement>;
-export declare function getArrayBufferFromURL(url: string): Promise<ArrayBuffer>;

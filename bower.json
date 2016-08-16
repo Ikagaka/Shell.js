@@ -9,7 +9,7 @@
     "qunit-tap": "*",
     "empower": "*",
     "power-assert-formatter": "*",
-    "narloader": "Ikagaka/NarLoader#master"
+    "narloader": "Ikagaka/NarLoader#jszip3"
   },
   "main": "./dist/Shell.js",
   "ignore": [

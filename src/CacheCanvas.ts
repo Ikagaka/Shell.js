@@ -1,5 +1,5 @@
 import "../typings/index.d.ts"
-
+import * as SU from "./SurfaceUtil";
 /*
 CacheCanvas型はサーフェスのロード状況を管理します。
 
@@ -34,6 +34,7 @@ export class PNGWithPNA<T extends Done | Yet > extends PNGWithoutPNA<T>{
   }
 }
 
+
 export function applyChromakey(cc: Cache<Done | Yet>): Promise<Cache<Done>> {
   return new Promise<Cache<Done>>((resolve, reject)=>{
     resolve(<Cache<Done>>cc);
@@ -42,52 +43,12 @@ export function applyChromakey(cc: Cache<Done | Yet>): Promise<Cache<Done>> {
 } 
 
 export function getPNGImage(pngBuffer: ArrayBuffer): Promise<PNGWithoutPNA<Yet>> {
-  return getImageFromArrayBuffer(pngBuffer).then((png)=> new PNGWithoutPNA<Yet>(png) );
+  return SU.fetchImageFromArrayBuffer(pngBuffer).then((png)=> new PNGWithoutPNA<Yet>(png) );
 }
 
 export function getPNGAndPNAImage(pngBuffer: ArrayBuffer, pnaBuffer: ArrayBuffer): Promise<PNGWithPNA<Yet>> {
   return Promise.all([
-    getImageFromArrayBuffer(pngBuffer),
-    getImageFromArrayBuffer(pnaBuffer)
+    SU.fetchImageFromArrayBuffer(pngBuffer),
+    SU.fetchImageFromArrayBuffer(pnaBuffer)
   ]).then(([png, pna])=> new PNGWithPNA<Yet>(png, pna) );
 }
-
-export function getImageFromArrayBuffer(buffer: ArrayBuffer): Promise<HTMLImageElement> {
-  const url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
-  return getImageFromURL(url).then((img)=>{
-    URL.revokeObjectURL(url);
-    return img;
-  });
-}
-
-export function getImageFromURL(url: string): Promise<HTMLImageElement> {
-  return new Promise<HTMLImageElement>((resolve, reject)=>{
-    const img = new Image();
-    img.src = url;
-    img.addEventListener("load", ()=> resolve(img));
-    img.addEventListener("error", reject);
-  });
-}
-
-export function getArrayBufferFromURL(url: string): Promise<ArrayBuffer> {
-  console.warn("getArrayBuffer for debbug");
-  return new Promise<ArrayBuffer>((resolve, reject)=> {
-    const xhr = new XMLHttpRequest();
-    xhr.addEventListener("load", ()=>{
-      if (200 <= xhr.status && xhr.status < 300) {
-        if (xhr.response.error == null) {
-          resolve(xhr.response);
-        } else {
-          reject(new Error("message: "+ xhr.response.error.message));
-        }
-      } else {
-        reject(new Error("status: "+xhr.status));
-      }
-    });
-    xhr.open("GET", url);
-    xhr.responseType = "arraybuffer";
-    xhr.send();
-  });
-}
-
-

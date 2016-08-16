@@ -382,3 +382,30 @@ export function findSurfacesTxt(filepaths: string[]): string[] {
   return filepaths.filter((name)=> /^surfaces.*\.txt$|^alias\.txt$/i.test(name));
 }
 
+
+
+
+
+
+export function getArrayBufferFromURL(url: string): Promise<ArrayBuffer> {
+  console.warn("getArrayBuffer for debbug");
+  return new Promise<ArrayBuffer>((resolve, reject)=> {
+    const xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", ()=>{
+      if (200 <= xhr.status && xhr.status < 300) {
+        if (xhr.response.error == null) {
+          resolve(xhr.response);
+        } else {
+          reject(new Error("message: "+ xhr.response.error.message));
+        }
+      } else {
+        reject(new Error("status: "+xhr.status));
+      }
+    });
+    xhr.open("GET", url);
+    xhr.responseType = "arraybuffer";
+    xhr.send();
+  });
+}
+
+

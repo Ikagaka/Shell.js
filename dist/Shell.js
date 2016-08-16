@@ -2478,6 +2478,27 @@ function findSurfacesTxt(filepaths) {
     });
 }
 exports.findSurfacesTxt = findSurfacesTxt;
+function getArrayBufferFromURL(url) {
+    console.warn("getArrayBuffer for debbug");
+    return new Promise(function (resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.addEventListener("load", function () {
+            if (200 <= xhr.status && xhr.status < 300) {
+                if (xhr.response.error == null) {
+                    resolve(xhr.response);
+                } else {
+                    reject(new Error("message: " + xhr.response.error.message));
+                }
+            } else {
+                reject(new Error("status: " + xhr.status));
+            }
+        });
+        xhr.open("GET", url);
+        xhr.responseType = "arraybuffer";
+        xhr.send();
+    });
+}
+exports.getArrayBufferFromURL = getArrayBufferFromURL;
 },{"encoding-japanese":6}],5:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
@@ -24238,7 +24259,7 @@ module.exports={
     "gulp-coffee": "^2.3.2",
     "gulp-espower": "^1.0.2",
     "jszip": "^3.1.1",
-    "narloader": "github:ikagaka/NarLoader",
+    "narloader": "github:ikagaka/NarLoader#jszip3",
     "typescript": "^2.0.0",
     "watchify": "^3.7.0"
   },

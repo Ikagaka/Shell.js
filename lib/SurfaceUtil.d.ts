@@ -41,3 +41,4 @@ export declare function getScrollXY(): {
     scrollY: number;
 };
 export declare function findSurfacesTxt(filepaths: string[]): string[];
+export declare function getArrayBufferFromURL(url: string): Promise<ArrayBuffer>;

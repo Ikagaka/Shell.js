@@ -9,6 +9,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 require("../typings/index.d.ts");
+var SU = require("./SurfaceUtil");
 /*
 CacheCanvas型はサーフェスのロード状況を管理します。
 
@@ -76,13 +77,13 @@ function applyChromakey(cc) {
 }
 exports.applyChromakey = applyChromakey;
 function getPNGImage(pngBuffer) {
-    return getImageFromArrayBuffer(pngBuffer).then(function (png) {
+    return SU.fetchImageFromArrayBuffer(pngBuffer).then(function (png) {
         return new PNGWithoutPNA(png);
     });
 }
 exports.getPNGImage = getPNGImage;
 function getPNGAndPNAImage(pngBuffer, pnaBuffer) {
-    return Promise.all([getImageFromArrayBuffer(pngBuffer), getImageFromArrayBuffer(pnaBuffer)]).then(function (_ref) {
+    return Promise.all([SU.fetchImageFromArrayBuffer(pngBuffer), SU.fetchImageFromArrayBuffer(pnaBuffer)]).then(function (_ref) {
         var _ref2 = _slicedToArray(_ref, 2);
 
         var png = _ref2[0];
@@ -91,43 +92,3 @@ function getPNGAndPNAImage(pngBuffer, pnaBuffer) {
     });
 }
 exports.getPNGAndPNAImage = getPNGAndPNAImage;
-function getImageFromArrayBuffer(buffer) {
-    var url = URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
-    return getImageFromURL(url).then(function (img) {
-        URL.revokeObjectURL(url);
-        return img;
-    });
-}
-exports.getImageFromArrayBuffer = getImageFromArrayBuffer;
-function getImageFromURL(url) {
-    return new Promise(function (resolve, reject) {
-        var img = new Image();
-        img.src = url;
-        img.addEventListener("load", function () {
-            return resolve(img);
-        });
-        img.addEventListener("error", reject);
-    });
-}
-exports.getImageFromURL = getImageFromURL;
-function getArrayBufferFromURL(url) {
-    console.warn("getArrayBuffer for debbug");
-    return new Promise(function (resolve, reject) {
-        var xhr = new XMLHttpRequest();
-        xhr.addEventListener("load", function () {
-            if (200 <= xhr.status && xhr.status < 300) {
-                if (xhr.response.error == null) {
-                    resolve(xhr.response);
-                } else {
-                    reject(new Error("message: " + xhr.response.error.message));
-                }
-            } else {
-                reject(new Error("status: " + xhr.status));
-            }
-        });
-        xhr.open("GET", url);
-        xhr.responseType = "arraybuffer";
-        xhr.send();
-    });
-}
-exports.getArrayBufferFromURL = getArrayBufferFromURL;
