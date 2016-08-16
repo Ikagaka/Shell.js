@@ -1,15 +1,14 @@
 /// <reference path="../typings/index.d.ts" />
 import Surface from './Surface';
-import { ShellConifg } from "./Interfaces";
+import * as SC from "./ShellConfig";
 import * as EventEmitter from "events";
 export default class Shell extends EventEmitter.EventEmitter {
     directory: {
         [filepath: string]: ArrayBuffer;
     };
-    descript: {
-        [key: string]: string;
-    };
-    config: ShellConifg;
+    descript: SC.Descript;
+    descriptJSON: SC.JSONLike;
+    config: SC.ShellConfig;
     attachedSurface: {
         div: HTMLDivElement;
         surface: Surface;

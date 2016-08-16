@@ -43,3 +43,4 @@ export declare function getScrollXY(): {
 };
 export declare function findSurfacesTxt(filepaths: string[]): string[];
 export declare function getArrayBufferFromURL(url: string): Promise<ArrayBuffer>;
+export declare function decolateJSONizeDescript<T, S>(o: T, key: string, value: S): void;

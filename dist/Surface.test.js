@@ -2208,6 +2208,57 @@ function getArrayBufferFromURL(url) {
     });
 }
 exports.getArrayBufferFromURL = getArrayBufferFromURL;
+function decolateJSONizeDescript(o, key, value) {
+    // オートマージ
+    // dic["a.b.c"]="d"なテキストをJSON形式に変換している気がする
+    var ptr = o;
+    var props = key.split(".");
+    for (var i = 0; i < props.length; i++) {
+        var prop = props[i];
+
+        var _Array$prototype$slic = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1);
+
+        var _Array$prototype$slic2 = _slicedToArray(_Array$prototype$slic, 2);
+
+        var _prop = _Array$prototype$slic2[0];
+        var num = _Array$prototype$slic2[1];
+
+        var _num = Number(num);
+        if (isFinite(_num)) {
+            if (!Array.isArray(ptr[_prop])) {
+                ptr[_prop] = [];
+            }
+            ptr[_prop][_num] = ptr[_prop][_num] || {};
+            if (i !== props.length - 1) {
+                ptr = ptr[_prop][_num];
+            } else {
+                if (ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0) {
+                    // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
+                    // menu, 0 -> menu.value
+                    // menu.font...
+                    // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
+                    // このifはその例外への対処である
+                    ptr[_prop][_num].value = Number(value) || value;
+                } else {
+                    ptr[_prop][_num] = Number(value) || value;
+                }
+            }
+        } else {
+            ptr[_prop] = ptr[_prop] || {};
+            if (i !== props.length - 1) {
+                ptr = ptr[_prop];
+            } else {
+                if (ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0) {
+                    ptr[_prop].value = Number(value) || value;
+                } else {
+                    ptr[_prop] = Number(value) || value;
+                }
+            }
+        }
+    }
+    return;
+}
+exports.decolateJSONizeDescript = decolateJSONizeDescript;
 },{"encoding-japanese":6}],5:[function(require,module,exports){
 'use strict';
 var _craetePictureFrame;

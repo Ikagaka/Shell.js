@@ -3,18 +3,19 @@
 import Surface from './Surface';
 import SurfaceRender from "./SurfaceRender";
 import * as ST from "./SurfaceTree";
-import * as SurfaceUtil from "./SurfaceUtil";
-import {SurfaceTreeNode, SurfaceCanvas, SurfaceMouseEvent, ShellConifg} from "./Interfaces";
+import * as SU from "./SurfaceUtil";
+import * as SC from "./ShellConfig";
+import {SurfaceTreeNode, SurfaceCanvas, SurfaceMouseEvent} from "./Interfaces";
 import SurfacesTxt2Yaml = require("surfaces_txt2yaml");
 import * as EventEmitter from "events";
-import $ = require("jquery");
 
 export default class Shell extends EventEmitter.EventEmitter {
   //public
 
   public directory: { [filepath: string]: ArrayBuffer; } // filepathに対応するファイルのArrayBuffer
-  public descript: { [key: string]: string; }; // descript.txtをcsvと解釈した時の値
-  public config: ShellConifg; // 実際に有効なdescript
+  public descript: SC.Descript; // descript.txtをcsvと解釈した時の値
+  public descriptJSON: SC.JSONLike; // descript.txtをjsonと解釈した時の値
+  public config: SC.ShellConfig; // 実際に有効なdescript
   public attachedSurface: { div: HTMLDivElement, surface: Surface }[]; // 現在このシェルが実DOM上にレンダリングしているcanvasとそのsurface一覧
   private surfacesTxt: SurfacesTxt2Yaml.SurfacesTxt; // SurfacesTxt2Yamlの内容
   private surfaceTree: ST.SurfaceDefinition[]; // このshell.jsが解釈しているShellのリソースツリー
@@ -27,7 +28,8 @@ export default class Shell extends EventEmitter.EventEmitter {
     super();
 
     this.descript = {};
-    this.config = <ShellConifg>{};
+    this.descriptJSON = {};
+    this.config = new SC.ShellConfig();
     this.directory = directory;
     this.attachedSurface = [];
     this.surfacesTxt = <SurfacesTxt2Yaml.SurfacesTxt>{};
@@ -61,152 +63,48 @@ export default class Shell extends EventEmitter.EventEmitter {
   // this.directoryからdescript.txtを探してthis.descriptに入れる
   private loadDescript(): Promise<Shell> {
     const dir = this.directory;
-    const getName = (dic: {[key: string]: any}, reg: RegExp)=>{
-      return Object.keys(dic).filter((name)=> reg.test(name))[0] || "";
-    };
-    const descript_name = getName(dir, /^descript\.txt$/i);
-    if (descript_name === "") {
+    const name = SU.fastfind(Object.keys(dir), "descript.txt");
+    if (name === "") {
       console.info("descript.txt is not found");
-      this.descript = {};
     } else {
-      this.descript = SurfaceUtil.parseDescript(SurfaceUtil.convert(dir[descript_name]));
+      let descript = this.descript = SU.parseDescript(SU.convert(dir[name]));
+      let json: SC.JSONLike = {};
+      Object.keys(descript).forEach((key)=>{
+        let _key = key
+          .replace(/^sakura\./, "char0.")
+          .replace(/^kero\./, "char1.");
+        SU.decolateJSONizeDescript<SC.JSONLike, string>(json, _key, descript[key]);
+      });
+      this.descriptJSON = json;
     }
     return Promise.resolve(this);
   }
 
   private loadConfig(): Promise<Shell> {
     // key-valueなdescriptをconfigへ変換
-    const descript = this.descript;
-    // オートマージ
-    // dic["a.b.c"]="d"なテキストをJSON形式に変換している気がする
-    Object.keys(descript).forEach((key)=>{
-      let ptr: any = this.config;
-      const props = key.split(".");
-      for(let i=0; i<props.length; i++){
-        const prop = props[i];
-        const [_prop, num] = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop)||["", "", ""], 1);
-        const _num = Number(num);
-        if(isFinite(_num)){
-          if(!Array.isArray(ptr[_prop])){
-            ptr[_prop] = [];
-          }
-          ptr[_prop][_num] = ptr[_prop][_num] || {};
-          if(i !== props.length-1){
-            ptr = ptr[_prop][_num];
-          }else{
-            if(ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0){
-              // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
-              // menu, 0 -> menu.value
-              // menu.font...
-              // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
-              // このifはその例外への対処である
-              ptr[_prop][_num].value = Number(descript[key]) || descript[key];
-            }else{
-              ptr[_prop][_num] = Number(descript[key]) || descript[key];
-            }
-          }
-        }else{
-          ptr[_prop] = ptr[_prop] || {};
-          if(i !== props.length-1){
-            ptr = ptr[_prop];
-          }else{
-            if(ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0){
-              ptr[_prop].value = Number(descript[key]) || descript[key];
-            }else{
-              ptr[_prop] = Number(descript[key]) || descript[key];
-            }
-          }
-        }
-      }
-    });
-    if(typeof this.config.menu !== "undefiend"){
-      // config型のデフォルト値を作り出すコンストラクタが存在しない（ゴミかよ）なので
-      // いちいちプロパティの存在チェックをしないといけないゴミさ加減
-      // このコード書いたやつ三週間便所掃除させたい
-      this.config.menu = {
-        value: false
-        // font: {...}
-        // background: {...}
-        // foreground: {...}
-        // ...
-        // いいから型コンストラクタ定義してくれ頼む
-      };
-    }
-    if(typeof this.config.menu.value === "number"){
-      this.config.menu.value = (+this.config.menu.value) > 0; // number -> boolean
-    }else{
-      this.config.menu.value = true; // default value
-    }
-    this.config.char = this.config.char|| [];
-    // sakura -> char0
-    this.config.char[0] = this.config.char[0] || <any>{};
-    $.extend(true, this.config["char"][0], this.config["sakura"]);
-    delete this.config["sakura"];
-    // kero -> char1
-    this.config.char = this.config.char|| [];
-    this.config.char[1] = this.config.char[1] || <any>{};
-    $.extend(true, this.config.char[1], this.config["kero"]);
-    delete this.config["kero"];
-    // char*
-    this.config.char.forEach((char)=>{
-      // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
-      if(!Array.isArray(char.bindgroup)){
-        char.bindgroup = [];
-      }
-      char.bindgroup.forEach((bindgroup)=>{
-        if(typeof bindgroup.name === "string"){
-          const [category, parts, thumbnail] = (""+bindgroup.name).split(",").map((a)=>a.trim())
-          bindgroup.name = {category, parts, thumbnail};
-        }
-      });
-      // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
-      if(!Array.isArray(char.bindoption)){
-        char.bindoption = [];
-      }
-      char.bindoption.forEach((bindoption)=>{
-        if(typeof bindoption.group === "string"){
-          const [category, ...options] = (""+bindoption.group).split(",").map((a)=>a.trim())
-          bindoption.group = {category, options};
-        }
-      });
-    });
-    return Promise.resolve(this);
+    return new SC.ShellConfig().loadFromJSONLike(this.descriptJSON).then((config)=>{
+      this.config = config;
+    }).then(()=> this);
   }
 
   // descript.txtからbindgroup探してデフォルト値を反映
   private loadBindGroup(): Promise<Shell> {
-    const descript = this.descript;
-    const grep = (dic:{[key:string]:any}, reg: RegExp)=>
-      Object.keys(dic).filter((key)=> reg.test(key))
-    const reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)(?:\.(default))?/;
-    grep(descript, reg).forEach((key)=>{
-      const [_, charId, bindgroupId, dflt] = <string[]>reg.exec(key);
-      const _charId = charId === "sakura" ? "0" :
-                               "kero"   ? "1" :
-                               (/char(\d+)/.exec(charId)||["", Number.NaN])[1];
-      const maybeNumCharId = Number(_charId);
-      const maybeNumBindgroupId = Number(bindgroupId);
-      if(isFinite(maybeNumCharId) && isFinite(maybeNumBindgroupId)){
-        this.bindgroup[maybeNumCharId] = this.bindgroup[maybeNumCharId] || [];
-        if(dflt === "default"){
-          this.bindgroup[maybeNumCharId][maybeNumBindgroupId] = !!Number(descript[key]);
-        }else{
-          this.bindgroup[maybeNumCharId][maybeNumBindgroupId] = this.bindgroup[maybeNumCharId][maybeNumBindgroupId] || false;
-        }
-      }else{
-        console.warn("CharId: "+ _charId + " or bindgroupId: " + bindgroupId + " is not number");
-      }
+    this.config.char.forEach((char, charId)=>{
+      this.bindgroup[charId] = [];
+      char.bindgroup.forEach((o, animId)=>{
+        this.bindgroup[charId][animId] = o.default;
+      });
     });
     return Promise.resolve(this);
   }
 
   // surfaces.txtを読んでthis.surfacesTxtに反映
   private loadSurfacesTxt(): Promise<Shell> {
-    const filenames = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
+    const filenames = SU.findSurfacesTxt(Object.keys(this.directory));
     if(filenames.length === 0){
       console.info("surfaces.txt is not found");
     }
-    const cat_text = filenames.reduce((text, filename)=> text + SurfaceUtil.convert(this.directory[filename]), "");
+    const cat_text = filenames.reduce((text, filename)=> text + SU.convert(this.directory[filename]), "");
     const surfacesTxt = SurfacesTxt2Yaml.txt_to_data(cat_text, {compatible: 'ssp-lazy'});
     return new ST.SurfaceDefinitionTree().loadFromsurfacesTxt2Yaml(surfacesTxt)
     .then((surfaceTree)=>{
@@ -223,7 +121,7 @@ export default class Shell extends EventEmitter.EventEmitter {
     if(surfacetable_name === ""){
       console.info("Shell#loadSurfaceTable", "surfacetable.txt is not found.");
     }else{
-      const txt = SurfaceUtil.convert(this.directory[surfacetable_name]);
+      const txt = SU.convert(this.directory[surfacetable_name]);
       console.info("Shell#loadSurfaceTable", "surfacetable.txt is not supported yet.");
       // TODO
     }
@@ -290,14 +188,14 @@ export default class Shell extends EventEmitter.EventEmitter {
   }
 
   private hasFile(filename: string): boolean {
-    return SurfaceUtil.fastfind(Object.keys(this.directory), filename) !== "";
+    return SU.fastfind(Object.keys(this.directory), filename) !== "";
   }
 
   // this.cacheCanvas から filename な SurfaceCanvas を探す。
   // なければ this.directory から探し this.cacheCanvas にキャッシュする
   // 非同期の理由：img.onload = blob url
   private getPNGFromDirectory(filename: string, cb: (err: any, srfCnv: SurfaceCanvas|null)=> any): void {
-    const cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
+    const cached_filename = SU.fastfind(Object.keys(this.cacheCanvas), filename);
     if(cached_filename !== ""){
       cb(null, this.cacheCanvas[cached_filename]);
       return;
@@ -311,12 +209,12 @@ export default class Shell extends EventEmitter.EventEmitter {
       }
       console.warn("Shell#getPNGFromDirectory", "element file " + filename.substr(0, filename.length - ".png".length) + " need '.png' extension");
     }
-    const _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
+    const _filename = SU.fastfind(Object.keys(this.directory), filename);
     const pnafilename = _filename.replace(/\.png$/i, ".pna");
-    const _pnafilename = SurfaceUtil.fastfind(Object.keys(this.directory), pnafilename);
+    const _pnafilename = SU.fastfind(Object.keys(this.directory), pnafilename);
     const pngbuf = this.directory[_filename];
 
-    SurfaceUtil.getImageFromArrayBuffer(pngbuf, (err, png)=>{
+    SU.getImageFromArrayBuffer(pngbuf, (err, png)=>{
       if(err != null) return cb(err, null);
       // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
       if(_pnafilename === ""){
@@ -325,7 +223,7 @@ export default class Shell extends EventEmitter.EventEmitter {
         return;
       }
       const pnabuf = this.directory[_pnafilename];
-      SurfaceUtil.getImageFromArrayBuffer(pnabuf, (err, pna)=>{
+      SU.getImageFromArrayBuffer(pnabuf, (err, pna)=>{
         if(err != null) return cb(err, null);
         this.cacheCanvas[_filename] = {cnv:null, png, pna};
         cb(null, this.cacheCanvas[_filename]);
@@ -334,7 +232,7 @@ export default class Shell extends EventEmitter.EventEmitter {
   }
 
   public attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number|string): Surface|null {
-    const type = SurfaceUtil.scope(scopeId);
+    const type = SU.scope(scopeId);
     const hits = this.attachedSurface.filter(({div: _div})=> _div === div);
     if(hits.length !== 0) throw new Error("Shell#attachSurface > ReferenceError: this HTMLDivElement is already attached");
     if(scopeId < 0){
@@ -376,12 +274,12 @@ export default class Shell extends EventEmitter.EventEmitter {
   }
 
   private getSurfaceAlias(scopeId: number, surfaceId: number|string): number {
-    const type = SurfaceUtil.scope(scopeId);
+    const type = SU.scope(scopeId);
     var _surfaceId = -1;
     if(typeof surfaceId === "string" || typeof surfaceId === "number"){
       if(!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]){
         // まずエイリアスを探す
-        _surfaceId = SurfaceUtil.choice<number>(this.surfacesTxt.aliases[type][surfaceId]);
+        _surfaceId = SU.choice<number>(this.surfacesTxt.aliases[type][surfaceId]);
       }else if(typeof surfaceId === "number"){
         // 通常の処理
         _surfaceId = surfaceId;

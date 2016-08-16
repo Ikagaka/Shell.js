@@ -1,11 +1,7 @@
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -15,10 +11,10 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var Surface_1 = require('./Surface');
 var ST = require("./SurfaceTree");
-var SurfaceUtil = require("./SurfaceUtil");
+var SU = require("./SurfaceUtil");
+var SC = require("./ShellConfig");
 var SurfacesTxt2Yaml = require("surfaces_txt2yaml");
 var EventEmitter = require("events");
-var $ = require("jquery");
 
 var Shell = function (_EventEmitter$EventEm) {
     _inherits(Shell, _EventEmitter$EventEm);
@@ -29,7 +25,8 @@ var Shell = function (_EventEmitter$EventEm) {
         var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Shell).call(this));
 
         _this.descript = {};
-        _this.config = {};
+        _this.descriptJSON = {};
+        _this.config = new SC.ShellConfig();
         _this.directory = directory;
         _this.attachedSurface = [];
         _this.surfacesTxt = {};
@@ -87,180 +84,49 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadDescript",
         value: function loadDescript() {
+            var _this3 = this;
+
             var dir = this.directory;
-            var getName = function getName(dic, reg) {
-                return Object.keys(dic).filter(function (name) {
-                    return reg.test(name);
-                })[0] || "";
-            };
-            var descript_name = getName(dir, /^descript\.txt$/i);
-            if (descript_name === "") {
+            var name = SU.fastfind(Object.keys(dir), "descript.txt");
+            if (name === "") {
                 console.info("descript.txt is not found");
-                this.descript = {};
             } else {
-                this.descript = SurfaceUtil.parseDescript(SurfaceUtil.convert(dir[descript_name]));
+                (function () {
+                    var descript = _this3.descript = SU.parseDescript(SU.convert(dir[name]));
+                    var json = {};
+                    Object.keys(descript).forEach(function (key) {
+                        var _key = key.replace(/^sakura\./, "char0.").replace(/^kero\./, "char1.");
+                        SU.decolateJSONizeDescript(json, _key, descript[key]);
+                    });
+                    _this3.descriptJSON = json;
+                })();
             }
             return Promise.resolve(this);
         }
     }, {
         key: "loadConfig",
         value: function loadConfig() {
-            var _this3 = this;
+            var _this4 = this;
 
             // key-valueなdescriptをconfigへ変換
-            var descript = this.descript;
-            // オートマージ
-            // dic["a.b.c"]="d"なテキストをJSON形式に変換している気がする
-            Object.keys(descript).forEach(function (key) {
-                var ptr = _this3.config;
-                var props = key.split(".");
-                for (var i = 0; i < props.length; i++) {
-                    var prop = props[i];
-
-                    var _Array$prototype$slic = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1);
-
-                    var _Array$prototype$slic2 = _slicedToArray(_Array$prototype$slic, 2);
-
-                    var _prop = _Array$prototype$slic2[0];
-                    var num = _Array$prototype$slic2[1];
-
-                    var _num = Number(num);
-                    if (isFinite(_num)) {
-                        if (!Array.isArray(ptr[_prop])) {
-                            ptr[_prop] = [];
-                        }
-                        ptr[_prop][_num] = ptr[_prop][_num] || {};
-                        if (i !== props.length - 1) {
-                            ptr = ptr[_prop][_num];
-                        } else {
-                            if (ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0) {
-                                // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
-                                // menu, 0 -> menu.value
-                                // menu.font...
-                                // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
-                                // このifはその例外への対処である
-                                ptr[_prop][_num].value = Number(descript[key]) || descript[key];
-                            } else {
-                                ptr[_prop][_num] = Number(descript[key]) || descript[key];
-                            }
-                        }
-                    } else {
-                        ptr[_prop] = ptr[_prop] || {};
-                        if (i !== props.length - 1) {
-                            ptr = ptr[_prop];
-                        } else {
-                            if (ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0) {
-                                ptr[_prop].value = Number(descript[key]) || descript[key];
-                            } else {
-                                ptr[_prop] = Number(descript[key]) || descript[key];
-                            }
-                        }
-                    }
-                }
+            return new SC.ShellConfig().loadFromJSONLike(this.descriptJSON).then(function (config) {
+                _this4.config = config;
+            }).then(function () {
+                return _this4;
             });
-            if (typeof this.config.menu !== "undefiend") {
-                // config型のデフォルト値を作り出すコンストラクタが存在しない（ゴミかよ）なので
-                // いちいちプロパティの存在チェックをしないといけないゴミさ加減
-                // このコード書いたやつ三週間便所掃除させたい
-                this.config.menu = {
-                    value: false
-                };
-            }
-            if (typeof this.config.menu.value === "number") {
-                this.config.menu.value = +this.config.menu.value > 0; // number -> boolean
-            } else {
-                this.config.menu.value = true; // default value
-            }
-            this.config.char = this.config.char || [];
-            // sakura -> char0
-            this.config.char[0] = this.config.char[0] || {};
-            $.extend(true, this.config["char"][0], this.config["sakura"]);
-            delete this.config["sakura"];
-            // kero -> char1
-            this.config.char = this.config.char || [];
-            this.config.char[1] = this.config.char[1] || {};
-            $.extend(true, this.config.char[1], this.config["kero"]);
-            delete this.config["kero"];
-            // char*
-            this.config.char.forEach(function (char) {
-                // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
-                if (!Array.isArray(char.bindgroup)) {
-                    char.bindgroup = [];
-                }
-                char.bindgroup.forEach(function (bindgroup) {
-                    if (typeof bindgroup.name === "string") {
-                        var _split$map = ("" + bindgroup.name).split(",").map(function (a) {
-                            return a.trim();
-                        });
-
-                        var _split$map2 = _slicedToArray(_split$map, 3);
-
-                        var category = _split$map2[0];
-                        var parts = _split$map2[1];
-                        var thumbnail = _split$map2[2];
-
-                        bindgroup.name = { category: category, parts: parts, thumbnail: thumbnail };
-                    }
-                });
-                // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
-                if (!Array.isArray(char.bindoption)) {
-                    char.bindoption = [];
-                }
-                char.bindoption.forEach(function (bindoption) {
-                    if (typeof bindoption.group === "string") {
-                        var _split$map3 = ("" + bindoption.group).split(",").map(function (a) {
-                            return a.trim();
-                        });
-
-                        var _split$map4 = _toArray(_split$map3);
-
-                        var category = _split$map4[0];
-
-                        var options = _split$map4.slice(1);
-
-                        bindoption.group = { category: category, options: options };
-                    }
-                });
-            });
-            return Promise.resolve(this);
         }
         // descript.txtからbindgroup探してデフォルト値を反映
 
     }, {
         key: "loadBindGroup",
         value: function loadBindGroup() {
-            var _this4 = this;
+            var _this5 = this;
 
-            var descript = this.descript;
-            var grep = function grep(dic, reg) {
-                return Object.keys(dic).filter(function (key) {
-                    return reg.test(key);
+            this.config.char.forEach(function (char, charId) {
+                _this5.bindgroup[charId] = [];
+                char.bindgroup.forEach(function (o, animId) {
+                    _this5.bindgroup[charId][animId] = o.default;
                 });
-            };
-            var reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)(?:\.(default))?/;
-            grep(descript, reg).forEach(function (key) {
-                var _reg$exec = reg.exec(key);
-
-                var _reg$exec2 = _slicedToArray(_reg$exec, 4);
-
-                var _ = _reg$exec2[0];
-                var charId = _reg$exec2[1];
-                var bindgroupId = _reg$exec2[2];
-                var dflt = _reg$exec2[3];
-
-                var _charId = charId === "sakura" ? "0" : "kero" ? "1" : (/char(\d+)/.exec(charId) || ["", Number.NaN])[1];
-                var maybeNumCharId = Number(_charId);
-                var maybeNumBindgroupId = Number(bindgroupId);
-                if (isFinite(maybeNumCharId) && isFinite(maybeNumBindgroupId)) {
-                    _this4.bindgroup[maybeNumCharId] = _this4.bindgroup[maybeNumCharId] || [];
-                    if (dflt === "default") {
-                        _this4.bindgroup[maybeNumCharId][maybeNumBindgroupId] = !!Number(descript[key]);
-                    } else {
-                        _this4.bindgroup[maybeNumCharId][maybeNumBindgroupId] = _this4.bindgroup[maybeNumCharId][maybeNumBindgroupId] || false;
-                    }
-                } else {
-                    console.warn("CharId: " + _charId + " or bindgroupId: " + bindgroupId + " is not number");
-                }
             });
             return Promise.resolve(this);
         }
@@ -269,21 +135,21 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadSurfacesTxt",
         value: function loadSurfacesTxt() {
-            var _this5 = this;
+            var _this6 = this;
 
-            var filenames = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
+            var filenames = SU.findSurfacesTxt(Object.keys(this.directory));
             if (filenames.length === 0) {
                 console.info("surfaces.txt is not found");
             }
             var cat_text = filenames.reduce(function (text, filename) {
-                return text + SurfaceUtil.convert(_this5.directory[filename]);
+                return text + SU.convert(_this6.directory[filename]);
             }, "");
             var surfacesTxt = SurfacesTxt2Yaml.txt_to_data(cat_text, { compatible: 'ssp-lazy' });
             return new ST.SurfaceDefinitionTree().loadFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceTree) {
-                _this5.surfacesTxt = surfacesTxt;
-                _this5.surfaceDefTree = surfaceTree;
-                _this5.surfaceTree = _this5.surfaceDefTree.surfaces;
-                return _this5;
+                _this6.surfacesTxt = surfacesTxt;
+                _this6.surfaceDefTree = surfaceTree;
+                _this6.surfaceTree = _this6.surfaceDefTree.surfaces;
+                return _this6;
             });
         }
         // surfacetable.txtを読む予定
@@ -298,7 +164,7 @@ var Shell = function (_EventEmitter$EventEm) {
             if (surfacetable_name === "") {
                 console.info("Shell#loadSurfaceTable", "surfacetable.txt is not found.");
             } else {
-                var txt = SurfaceUtil.convert(this.directory[surfacetable_name]);
+                var txt = SU.convert(this.directory[surfacetable_name]);
                 console.info("Shell#loadSurfaceTable", "surfacetable.txt is not supported yet.");
             }
             return Promise.resolve(this);
@@ -308,7 +174,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadSurfacePNG",
         value: function loadSurfacePNG() {
-            var _this6 = this;
+            var _this7 = this;
 
             var surface_names = Object.keys(this.directory).filter(function (filename) {
                 return (/^surface(\d+)\.png$/i.test(filename)
@@ -320,21 +186,21 @@ var Shell = function (_EventEmitter$EventEm) {
                     var n = Number((/^surface(\d+)\.png$/i.exec(filename) || ["", "NaN"])[1]);
                     if (!isFinite(n)) return;
                     i++;
-                    _this6.getPNGFromDirectory(filename, function (err, cnv) {
+                    _this7.getPNGFromDirectory(filename, function (err, cnv) {
                         if (err != null || cnv == null) {
                             console.warn("Shell#loadSurfacePNG > " + err);
                         } else {
-                            if (!_this6.surfaceTree[n]) {
+                            if (!_this7.surfaceTree[n]) {
                                 // surfaces.txtで未定義なら追加
-                                _this6.surfaceTree[n] = new ST.SurfaceDefinition();
-                                _this6.surfaceTree[n].base = cnv;
+                                _this7.surfaceTree[n] = new ST.SurfaceDefinition();
+                                _this7.surfaceTree[n].base = cnv;
                             } else {
                                 // surfaces.txtで定義済み
-                                _this6.surfaceTree[n].base = cnv;
+                                _this7.surfaceTree[n].base = cnv;
                             }
                         }
                         if (--i <= 0) {
-                            resolve(_this6);
+                            resolve(_this7);
                         }
                     });
                 });
@@ -345,7 +211,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadElements",
         value: function loadElements() {
-            var _this7 = this;
+            var _this8 = this;
 
             var srfs = this.surfaceTree;
             return new Promise(function (resolve, reject) {
@@ -359,30 +225,30 @@ var Shell = function (_EventEmitter$EventEm) {
                         var y = elm.y;
 
                         i++;
-                        _this7.getPNGFromDirectory(file, function (err, canvas) {
+                        _this8.getPNGFromDirectory(file, function (err, canvas) {
                             if (err != null || canvas == null) {
                                 console.warn("Shell#loadElements > " + err);
                             } else {
-                                _this7.surfaceTree[n].elements[elmId].canvas = canvas;
+                                _this8.surfaceTree[n].elements[elmId].canvas = canvas;
                             }
                             if (--i <= 0) {
-                                resolve(_this7);
+                                resolve(_this8);
                             }
                         });
                     });
                 });
                 // elementを一切使っていなかった
                 if (i === 0) {
-                    resolve(_this7);
+                    resolve(_this8);
                 }
             }).then(function () {
-                return _this7;
+                return _this8;
             });
         }
     }, {
         key: "hasFile",
         value: function hasFile(filename) {
-            return SurfaceUtil.fastfind(Object.keys(this.directory), filename) !== "";
+            return SU.fastfind(Object.keys(this.directory), filename) !== "";
         }
         // this.cacheCanvas から filename な SurfaceCanvas を探す。
         // なければ this.directory から探し this.cacheCanvas にキャッシュする
@@ -391,9 +257,9 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "getPNGFromDirectory",
         value: function getPNGFromDirectory(filename, cb) {
-            var _this8 = this;
+            var _this9 = this;
 
-            var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
+            var cached_filename = SU.fastfind(Object.keys(this.cacheCanvas), filename);
             if (cached_filename !== "") {
                 cb(null, this.cacheCanvas[cached_filename]);
                 return;
@@ -407,32 +273,32 @@ var Shell = function (_EventEmitter$EventEm) {
                 }
                 console.warn("Shell#getPNGFromDirectory", "element file " + filename.substr(0, filename.length - ".png".length) + " need '.png' extension");
             }
-            var _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
+            var _filename = SU.fastfind(Object.keys(this.directory), filename);
             var pnafilename = _filename.replace(/\.png$/i, ".pna");
-            var _pnafilename = SurfaceUtil.fastfind(Object.keys(this.directory), pnafilename);
+            var _pnafilename = SU.fastfind(Object.keys(this.directory), pnafilename);
             var pngbuf = this.directory[_filename];
-            SurfaceUtil.getImageFromArrayBuffer(pngbuf, function (err, png) {
+            SU.getImageFromArrayBuffer(pngbuf, function (err, png) {
                 if (err != null) return cb(err, null);
                 // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
                 if (_pnafilename === "") {
-                    _this8.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
-                    cb(null, _this8.cacheCanvas[_filename]);
+                    _this9.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
+                    cb(null, _this9.cacheCanvas[_filename]);
                     return;
                 }
-                var pnabuf = _this8.directory[_pnafilename];
-                SurfaceUtil.getImageFromArrayBuffer(pnabuf, function (err, pna) {
+                var pnabuf = _this9.directory[_pnafilename];
+                SU.getImageFromArrayBuffer(pnabuf, function (err, pna) {
                     if (err != null) return cb(err, null);
-                    _this8.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
-                    cb(null, _this8.cacheCanvas[_filename]);
+                    _this9.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
+                    cb(null, _this9.cacheCanvas[_filename]);
                 });
             });
         }
     }, {
         key: "attachSurface",
         value: function attachSurface(div, scopeId, surfaceId) {
-            var _this9 = this;
+            var _this10 = this;
 
-            var type = SurfaceUtil.scope(scopeId);
+            var type = SU.scope(scopeId);
             var hits = this.attachedSurface.filter(function (_ref) {
                 var _div = _ref.div;
                 return _div === div;
@@ -455,7 +321,7 @@ var Shell = function (_EventEmitter$EventEm) {
                 srf.render();
             }
             srf.on("mouse", function (ev) {
-                _this9.emit("mouse", ev); // detachSurfaceで消える
+                _this10.emit("mouse", ev); // detachSurfaceで消える
             });
             this.attachedSurface.push({ div: div, surface: srf });
             return srf;
@@ -486,12 +352,12 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "getSurfaceAlias",
         value: function getSurfaceAlias(scopeId, surfaceId) {
-            var type = SurfaceUtil.scope(scopeId);
+            var type = SU.scope(scopeId);
             var _surfaceId = -1;
             if (typeof surfaceId === "string" || typeof surfaceId === "number") {
                 if (!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]) {
                     // まずエイリアスを探す
-                    _surfaceId = SurfaceUtil.choice(this.surfacesTxt.aliases[type][surfaceId]);
+                    _surfaceId = SU.choice(this.surfacesTxt.aliases[type][surfaceId]);
                 } else if (typeof surfaceId === "number") {
                     // 通常の処理
                     _surfaceId = surfaceId;
@@ -513,7 +379,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "bind",
         value: function bind(a, b) {
-            var _this10 = this;
+            var _this11 = this;
 
             if (typeof a === "number" && typeof b === "number") {
                 var scopeId = a;
@@ -533,14 +399,14 @@ var Shell = function (_EventEmitter$EventEm) {
                 (function () {
                     var _category = a;
                     var _parts = b;
-                    _this10.config.char.forEach(function (char, scopeId) {
+                    _this11.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name = bindgroup.name;
                             var category = _bindgroup$name.category;
                             var parts = _bindgroup$name.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this10.bind(scopeId, bindgroupId);
+                                _this11.bind(scopeId, bindgroupId);
                             }
                         });
                     });
@@ -552,7 +418,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "unbind",
         value: function unbind(a, b) {
-            var _this11 = this;
+            var _this12 = this;
 
             if (typeof a === "number" && typeof b === "number") {
                 var scopeId = a;
@@ -572,14 +438,14 @@ var Shell = function (_EventEmitter$EventEm) {
                 (function () {
                     var _category = a;
                     var _parts = b;
-                    _this11.config.char.forEach(function (char, scopeId) {
+                    _this12.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name2 = bindgroup.name;
                             var category = _bindgroup$name2.category;
                             var parts = _bindgroup$name2.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this11.unbind(scopeId, bindgroupId);
+                                _this12.unbind(scopeId, bindgroupId);
                             }
                         });
                     });

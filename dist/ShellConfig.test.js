@@ -1,99 +1,215 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/// <reference path="../typings/index.d.ts"/>
 "use strict";
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-require("../typings/index.d.ts");
-var SU = require("./SurfaceUtil");
+var ShellConfig = function () {
+  function ShellConfig() {
+    _classCallCheck(this, ShellConfig);
+
+    this.seriko = new SerikoConfig();
+    this.menu = new MenuConfig();
+    this.char = [];
+  }
+
+  _createClass(ShellConfig, [{
+    key: "loadFromJSONLike",
+    value: function loadFromJSONLike(json) {
+      var _this = this;
+
+      var seriko = json["seriko"] != null ? json["seriko"] : {};
+      var menu = json["menu"] != null ? json["menu"] : {};
+      var char = Array.isArray(json["char"]) ? json["char"] : [];
+      // char*
+      char.forEach(function (_char, id) {
+        new CharConfig().loadFromJSONLike(_char).then(function (conf) {
+          _this.char[id] = conf;
+        });
+      });
+      return Promise.resolve(this);
+    }
+  }]);
+
+  return ShellConfig;
+}();
+
+exports.ShellConfig = ShellConfig;
+
+var SerikoConfig =
+// \![set,sticky-window,スコープID,スコープID,...]のdescript版。タグを実行しなくてもあらかじめ設定できる。
+function SerikoConfig() {
+  _classCallCheck(this, SerikoConfig);
+
+  this.use_self_alpha = false;
+  this.paint_transparent_region_black = true;
+  this.alignmenttodesktop = "bottom";
+  this.zorder = [];
+  this.stickyWindow = [];
+};
+
+exports.SerikoConfig = SerikoConfig;
+
+var MenuConfig =
+/*font: {
+  name: string; // オーナードローメニューに使用するフォント
+  height: number; // オーナードローメニューに使用する文字の大きさ。
+};*/
+/*background: {
+  bitmap: {
+    filename: string; // バックグラウンド表示画像ファイル名。
+  };
+  font: {
+    color: {
+      r: number; // バックグラウンド文字色赤(0～255)
+      b: number; // バックグラウンド文字色緑(0～255)
+      g: number; // バックグラウンド文字色青(0～255)
+    };
+  };
+  alignment: string; // バックグラウンド画像をrighttopで右寄せ、lefttopで左寄せ、centertopで中央寄せ。SSPのみrightbottom、leftbottom、centerbottomのような下方向固定も可。lefttop
+};*/
 /*
-CacheCanvas型はサーフェスのロード状況を管理します。
+foreground: {
+  bitmap: {
+    filename: string; // フォアグラウンド表示画像ファイル名。
+  };
+  font: {
+    color: {
+      r: number; // フォアグラウンド文字色赤(0～255)
+      b: number; // フォアグラウンド文字色緑(0～255)
+      g: number; // フォアグラウンド文字色青(0～255)
+    };
+  };
+  alignment: string; // フォアグラウンド画像をrighttopで右寄せ、lefttopで左寄せ、centertopで中央寄せ。SSPのみrightbottom、leftbottom、centerbottomのような下方向固定も可。lefttop
+};*/
+/*
+sidebar?: {
+  bitmap: {
+    filename: string; // サイドバー表示画像ファイル名。
+  };
+  alignment: string; // サイドバー画像をtopで上寄せ、bottomで下寄せ。bottom
+};
+separator?: {
+  color: {
+    r: number; // セパレータ色赤(0～255)
+    b: number; // セパレータ色緑(0～255)
+    g: number; // セパレータ色青(0～255)
+  };
+};*/
+/*disable: {// 選択不可文字
+  font: {
+    color: {
+      r: number; // フォアグラウンド文字色赤(0～255)
+      b: number; // フォアグラウンド文字色緑(0～255)
+      g: number; // フォアグラウンド文字色青(0～255)
+    };
+  };
+}*/
+function MenuConfig() {
+  _classCallCheck(this, MenuConfig);
 
-
-*/
-
-var Done = function Done() {
-    _classCallCheck(this, Done);
+  this.value = false;
 };
 
-exports.Done = Done;
+exports.MenuConfig = MenuConfig;
 
-var Yet = function Yet() {
-    _classCallCheck(this, Yet);
-};
-
-exports.Yet = Yet;
-
-var Cache = function Cache() {
-    _classCallCheck(this, Cache);
-
-    this.cnv = document.createElement("canvas");
-};
-
-exports.Cache = Cache;
-
-var PNGWithoutPNA = function (_Cache) {
-    _inherits(PNGWithoutPNA, _Cache);
-
-    function PNGWithoutPNA(png) {
-        _classCallCheck(this, PNGWithoutPNA);
-
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(PNGWithoutPNA).call(this));
-
-        _this.png = png;
-        return _this;
+var CharConfig = function () {
+  /*
+  bindoption: {
+    // char*.bindoption*.group,カテゴリ名,オプション
+    // その着せ替えカテゴリにオプションを設定。*は単に0から始まる通し番号(3人目以降)。
+    // mustselectでパーツを必ず1つ選択、multipleで複数のパーツを選択可能。
+    // オプションは+区切りで複数可。
+    group: {
+      category: string;
+      options: string[]; //multiple | mustselect
     }
+  }[];*/
+  function CharConfig() {
+    _classCallCheck(this, CharConfig);
 
-    return PNGWithoutPNA;
-}(Cache);
+    this.menu = "auto";
+    this.menuitem = [];
+    this.defaultX = 0;
+    this.defaultY = 0;
+    this.defaultLeft = 0;
+    this.defaultTop = 0;
+    this.balloon = {
+      offsetX: 0,
+      offsetY: 0,
+      alignment: "none"
+    };
+    this.bindgroup = [];
+  }
 
-exports.PNGWithoutPNA = PNGWithoutPNA;
+  _createClass(CharConfig, [{
+    key: "loadFromJSONLike",
+    value: function loadFromJSONLike(char) {
+      var _this2 = this;
 
-var PNGWithPNA = function (_PNGWithoutPNA) {
-    _inherits(PNGWithPNA, _PNGWithoutPNA);
+      // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
+      if (Array.isArray(char["bindgroup"])) {
+        char["bindgroup"].forEach(function (bindgroup, id) {
+          if (bindgroup != null && typeof bindgroup["name"] === "string") {
+            var _bindgroup$name$split = bindgroup["name"].split(",").map(function (a) {
+              return a.trim();
+            });
 
-    function PNGWithPNA(png, pna) {
-        _classCallCheck(this, PNGWithPNA);
+            var _bindgroup$name$split2 = _slicedToArray(_bindgroup$name$split, 3);
 
-        var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(PNGWithPNA).call(this, png));
+            var category = _bindgroup$name$split2[0];
+            var parts = _bindgroup$name$split2[1];
+            var thumbnail = _bindgroup$name$split2[2];
 
-        _this2.pna = pna;
-        return _this2;
+            _this2.bindgroup[id] = new BindGroupConfig(category, parts, thumbnail, !!Number(bindgroup["default"]));
+          }
+        });
+      }
+      /*
+      // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
+      if(Array.isArray(char["bindoption"])){
+        char["bindoption"].forEach((bindoption)=>{
+          if(typeof bindoption.group === "string"){
+            const [category, ...options] = (""+bindoption.group).split(",").map((a)=>a.trim())
+            bindoption.group = {category, options};
+          }
+        });
+      }
+      */
+      return Promise.resolve(this);
     }
+  }]);
 
-    return PNGWithPNA;
-}(PNGWithoutPNA);
+  return CharConfig;
+}();
 
-exports.PNGWithPNA = PNGWithPNA;
-function applyChromakey(cc) {
-    return new Promise(function (resolve, reject) {
-        resolve(cc);
-        //reject("not impl yet");
-    });
-}
-exports.applyChromakey = applyChromakey;
-function getPNGImage(pngBuffer) {
-    return SU.fetchImageFromArrayBuffer(pngBuffer).then(function (png) {
-        return new PNGWithoutPNA(png);
-    });
-}
-exports.getPNGImage = getPNGImage;
-function getPNGAndPNAImage(pngBuffer, pnaBuffer) {
-    return Promise.all([SU.fetchImageFromArrayBuffer(pngBuffer), SU.fetchImageFromArrayBuffer(pnaBuffer)]).then(function (_ref) {
-        var _ref2 = _slicedToArray(_ref, 2);
+exports.CharConfig = CharConfig;
 
-        var png = _ref2[0];
-        var pna = _ref2[1];
-        return new PNGWithPNA(png, pna);
-    });
-}
-exports.getPNGAndPNAImage = getPNGAndPNAImage;
-},{"../typings/index.d.ts":101,"./SurfaceUtil":2}],2:[function(require,module,exports){
+var BindGroupConfig =
+// 着せ替えの同時実行設定。アニメーションID*番の着せ替えが有効になった（表示された）時に、addidとして指定した着せ替えも同時に有効にする。カンマ区切りで複数指定可。
+// 同時実行中の着せ替えは、元となった着せ替えが無効になった時点で無効になる。複数の着せ替えのaddidとして同一の着せ替えが同時実行指定されている場合、元となったすべての着せ替えが無効になるまで同時実行指定の着せ替えも無効にならない。
+function BindGroupConfig(category, parts) {
+  var thumbnail = arguments.length <= 2 || arguments[2] === undefined ? "" : arguments[2];
+
+  var _default = arguments.length <= 3 || arguments[3] === undefined ? false : arguments[3];
+
+  _classCallCheck(this, BindGroupConfig);
+
+  this.name = {
+    category: category,
+    parts: parts,
+    thumbnail: thumbnail
+  };
+  this.default = _default;
+  this.addid = [];
+};
+
+exports.BindGroupConfig = BindGroupConfig;
+},{}],2:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
@@ -617,71 +733,33 @@ function decolateJSONizeDescript(o, key, value) {
 exports.decolateJSONizeDescript = decolateJSONizeDescript;
 },{"encoding-japanese":6}],3:[function(require,module,exports){
 'use strict';
-var CCC = require('./CacheCanvas');
+var SC = require('./ShellConfig');
+var SU = require('./SurfaceUtil');
 var narloader = require('narloader');
 var NL = narloader.NarLoader;
-QUnit.module('CCC');
+QUnit.module('ShellConfig');
 NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
     var dic = dir.asArrayBuffer();
-    QUnit.test('CCC.getPNGAndPNAImage', function (assert) {
+    var name = SU.fastfind(Object.keys(dic), 'descript.txt');
+    var descript = SU.parseDescript(SU.convert(dic[name]));
+    QUnit.test('SC.loadFromJSONLike', function (assert) {
         var done = assert.async();
-        var pngBuf = dic['shell/master/surface0731.png'];
-        var pnaBuf = dic['shell/master/surface0731.pna'];
-        return CCC.getPNGAndPNAImage(pngBuf, pnaBuf).then(function (cache) {
-            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cache, 'arguments/0/left/object').png, 'arguments/0/left') instanceof assert._capt(Image, 'arguments/0/right'), 'arguments/0'), {
-                content: 'assert.ok(cache.png instanceof Image)',
-                filepath: 'es5/CacheCanvas.test.js',
-                line: 15
-            }));
-            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cache, 'arguments/0/left/object').pna, 'arguments/0/left') instanceof assert._capt(Image, 'arguments/0/right'), 'arguments/0'), {
-                content: 'assert.ok(cache.pna instanceof Image)',
-                filepath: 'es5/CacheCanvas.test.js',
+        return new SC.ShellConfig().loadFromJSONLike(descript).then(function (config) {
+            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(config, 'arguments/0/left/object/object').seriko, 'arguments/0/left/object').use_self_alpha, 'arguments/0/left') === false, 'arguments/0'), {
+                content: 'assert.ok(config.seriko.use_self_alpha === false)',
+                filepath: 'es5/ShellConfig.test.js',
                 line: 16
             }));
-            done();
-        });
-    });
-    QUnit.test('CCC.getPNGImage', function (assert) {
-        var done = assert.async();
-        var pngBuf = dic['shell/master/surface0731.png'];
-        return CCC.getPNGImage(pngBuf).then(function (cache) {
-            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cache, 'arguments/0/left/object').png, 'arguments/0/left') instanceof assert._capt(Image, 'arguments/0/right'), 'arguments/0'), {
-                content: 'assert.ok(cache.png instanceof Image)',
-                filepath: 'es5/CacheCanvas.test.js',
-                line: 24
+            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(config, 'arguments/0/left/object/object').seriko, 'arguments/0/left/object').alignmenttodesktop, 'arguments/0/left') === 'bottom', 'arguments/0'), {
+                content: 'assert.ok(config.seriko.alignmenttodesktop === "bottom")',
+                filepath: 'es5/ShellConfig.test.js',
+                line: 17
             }));
-            done();
-        });
-    });
-    QUnit.test('CCC.applyChromakey', function (assert) {
-        var done = assert.async();
-        var pngBuf = dic['shell/master/surface0731.png'];
-        var pnaBuf = dic['shell/master/surface0731.pna'];
-        return Promise.all([
-            CCC.getPNGImage(pngBuf),
-            CCC.getPNGAndPNAImage(pngBuf, pnaBuf)
-        ]).then(function (caches) {
-            return Promise.all(caches.map(function (cache) {
-                return CCC.applyChromakey(cache);
-            }));
-        }).then(function (loadeds) {
-            loadeds.forEach(function (loaded) {
-                assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(loaded, 'arguments/0/left/object').cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
-                    content: 'assert.ok(loaded.cnv instanceof HTMLCanvasElement)',
-                    filepath: 'es5/CacheCanvas.test.js',
-                    line: 38
-                }));
-                assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(loaded, 'arguments/0/left/object').png, 'arguments/0/left') instanceof assert._capt(Image, 'arguments/0/right'), 'arguments/0'), {
-                    content: 'assert.ok(loaded.png instanceof Image)',
-                    filepath: 'es5/CacheCanvas.test.js',
-                    line: 39
-                }));
-            });
             done();
         });
     });
 });
-},{"./CacheCanvas":1,"narloader":95}],4:[function(require,module,exports){
+},{"./ShellConfig":1,"./SurfaceUtil":2,"narloader":95}],4:[function(require,module,exports){
 (function (process,global){
 /* @preserve
  * The MIT License (MIT)
@@ -28669,17 +28747,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require("7YKIPe"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":99,"7YKIPe":12,"inherits":15}],101:[function(require,module,exports){
-/// <reference path="globals/bluebird/index.d.ts" />
-/// <reference path="globals/empower/index.d.ts" />
-/// <reference path="globals/encoding-japanese/index.d.ts" />
-/// <reference path="globals/jquery/index.d.ts" />
-/// <reference path="globals/jszip/index.d.ts" />
-/// <reference path="globals/narloader/index.d.ts" />
-/// <reference path="globals/node/index.d.ts" />
-/// <reference path="globals/power-assert-formatter/index.d.ts" />
-/// <reference path="globals/power-assert/index.d.ts" />
-/// <reference path="globals/qunit/index.d.ts" />
-/// <reference path="globals/surfaces_yaml/index.d.ts" />
-
-},{}]},{},[3])
+},{"./support/isBuffer":99,"7YKIPe":12,"inherits":15}]},{},[3])

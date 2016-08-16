@@ -62,6 +62,8 @@
         "placeOpenBraceOnNewLineForControlBlocks": true
     },
     "files": [
+        "ShellConfig.ts",
+        "ShellConfig.test.ts",
         "SurfaceTree.ts",
         "SurfaceTree.test.ts",
         "index.ts",

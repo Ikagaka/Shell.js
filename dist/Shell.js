@@ -2,11 +2,7 @@
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -16,10 +12,10 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var Surface_1 = require('./Surface');
 var ST = require("./SurfaceTree");
-var SurfaceUtil = require("./SurfaceUtil");
+var SU = require("./SurfaceUtil");
+var SC = require("./ShellConfig");
 var SurfacesTxt2Yaml = require("surfaces_txt2yaml");
 var EventEmitter = require("events");
-var $ = require("jquery");
 
 var Shell = function (_EventEmitter$EventEm) {
     _inherits(Shell, _EventEmitter$EventEm);
@@ -30,7 +26,8 @@ var Shell = function (_EventEmitter$EventEm) {
         var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Shell).call(this));
 
         _this.descript = {};
-        _this.config = {};
+        _this.descriptJSON = {};
+        _this.config = new SC.ShellConfig();
         _this.directory = directory;
         _this.attachedSurface = [];
         _this.surfacesTxt = {};
@@ -88,180 +85,49 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadDescript",
         value: function loadDescript() {
+            var _this3 = this;
+
             var dir = this.directory;
-            var getName = function getName(dic, reg) {
-                return Object.keys(dic).filter(function (name) {
-                    return reg.test(name);
-                })[0] || "";
-            };
-            var descript_name = getName(dir, /^descript\.txt$/i);
-            if (descript_name === "") {
+            var name = SU.fastfind(Object.keys(dir), "descript.txt");
+            if (name === "") {
                 console.info("descript.txt is not found");
-                this.descript = {};
             } else {
-                this.descript = SurfaceUtil.parseDescript(SurfaceUtil.convert(dir[descript_name]));
+                (function () {
+                    var descript = _this3.descript = SU.parseDescript(SU.convert(dir[name]));
+                    var json = {};
+                    Object.keys(descript).forEach(function (key) {
+                        var _key = key.replace(/^sakura\./, "char0.").replace(/^kero\./, "char1.");
+                        SU.decolateJSONizeDescript(json, _key, descript[key]);
+                    });
+                    _this3.descriptJSON = json;
+                })();
             }
             return Promise.resolve(this);
         }
     }, {
         key: "loadConfig",
         value: function loadConfig() {
-            var _this3 = this;
+            var _this4 = this;
 
             // key-valueなdescriptをconfigへ変換
-            var descript = this.descript;
-            // オートマージ
-            // dic["a.b.c"]="d"なテキストをJSON形式に変換している気がする
-            Object.keys(descript).forEach(function (key) {
-                var ptr = _this3.config;
-                var props = key.split(".");
-                for (var i = 0; i < props.length; i++) {
-                    var prop = props[i];
-
-                    var _Array$prototype$slic = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1);
-
-                    var _Array$prototype$slic2 = _slicedToArray(_Array$prototype$slic, 2);
-
-                    var _prop = _Array$prototype$slic2[0];
-                    var num = _Array$prototype$slic2[1];
-
-                    var _num = Number(num);
-                    if (isFinite(_num)) {
-                        if (!Array.isArray(ptr[_prop])) {
-                            ptr[_prop] = [];
-                        }
-                        ptr[_prop][_num] = ptr[_prop][_num] || {};
-                        if (i !== props.length - 1) {
-                            ptr = ptr[_prop][_num];
-                        } else {
-                            if (ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0) {
-                                // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
-                                // menu, 0 -> menu.value
-                                // menu.font...
-                                // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
-                                // このifはその例外への対処である
-                                ptr[_prop][_num].value = Number(descript[key]) || descript[key];
-                            } else {
-                                ptr[_prop][_num] = Number(descript[key]) || descript[key];
-                            }
-                        }
-                    } else {
-                        ptr[_prop] = ptr[_prop] || {};
-                        if (i !== props.length - 1) {
-                            ptr = ptr[_prop];
-                        } else {
-                            if (ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0) {
-                                ptr[_prop].value = Number(descript[key]) || descript[key];
-                            } else {
-                                ptr[_prop] = Number(descript[key]) || descript[key];
-                            }
-                        }
-                    }
-                }
+            return new SC.ShellConfig().loadFromJSONLike(this.descriptJSON).then(function (config) {
+                _this4.config = config;
+            }).then(function () {
+                return _this4;
             });
-            if (typeof this.config.menu !== "undefiend") {
-                // config型のデフォルト値を作り出すコンストラクタが存在しない（ゴミかよ）なので
-                // いちいちプロパティの存在チェックをしないといけないゴミさ加減
-                // このコード書いたやつ三週間便所掃除させたい
-                this.config.menu = {
-                    value: false
-                };
-            }
-            if (typeof this.config.menu.value === "number") {
-                this.config.menu.value = +this.config.menu.value > 0; // number -> boolean
-            } else {
-                this.config.menu.value = true; // default value
-            }
-            this.config.char = this.config.char || [];
-            // sakura -> char0
-            this.config.char[0] = this.config.char[0] || {};
-            $.extend(true, this.config["char"][0], this.config["sakura"]);
-            delete this.config["sakura"];
-            // kero -> char1
-            this.config.char = this.config.char || [];
-            this.config.char[1] = this.config.char[1] || {};
-            $.extend(true, this.config.char[1], this.config["kero"]);
-            delete this.config["kero"];
-            // char*
-            this.config.char.forEach(function (char) {
-                // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
-                if (!Array.isArray(char.bindgroup)) {
-                    char.bindgroup = [];
-                }
-                char.bindgroup.forEach(function (bindgroup) {
-                    if (typeof bindgroup.name === "string") {
-                        var _split$map = ("" + bindgroup.name).split(",").map(function (a) {
-                            return a.trim();
-                        });
-
-                        var _split$map2 = _slicedToArray(_split$map, 3);
-
-                        var category = _split$map2[0];
-                        var parts = _split$map2[1];
-                        var thumbnail = _split$map2[2];
-
-                        bindgroup.name = { category: category, parts: parts, thumbnail: thumbnail };
-                    }
-                });
-                // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
-                if (!Array.isArray(char.bindoption)) {
-                    char.bindoption = [];
-                }
-                char.bindoption.forEach(function (bindoption) {
-                    if (typeof bindoption.group === "string") {
-                        var _split$map3 = ("" + bindoption.group).split(",").map(function (a) {
-                            return a.trim();
-                        });
-
-                        var _split$map4 = _toArray(_split$map3);
-
-                        var category = _split$map4[0];
-
-                        var options = _split$map4.slice(1);
-
-                        bindoption.group = { category: category, options: options };
-                    }
-                });
-            });
-            return Promise.resolve(this);
         }
         // descript.txtからbindgroup探してデフォルト値を反映
 
     }, {
         key: "loadBindGroup",
         value: function loadBindGroup() {
-            var _this4 = this;
+            var _this5 = this;
 
-            var descript = this.descript;
-            var grep = function grep(dic, reg) {
-                return Object.keys(dic).filter(function (key) {
-                    return reg.test(key);
+            this.config.char.forEach(function (char, charId) {
+                _this5.bindgroup[charId] = [];
+                char.bindgroup.forEach(function (o, animId) {
+                    _this5.bindgroup[charId][animId] = o.default;
                 });
-            };
-            var reg = /^(sakura|kero|char\d+)\.bindgroup(\d+)(?:\.(default))?/;
-            grep(descript, reg).forEach(function (key) {
-                var _reg$exec = reg.exec(key);
-
-                var _reg$exec2 = _slicedToArray(_reg$exec, 4);
-
-                var _ = _reg$exec2[0];
-                var charId = _reg$exec2[1];
-                var bindgroupId = _reg$exec2[2];
-                var dflt = _reg$exec2[3];
-
-                var _charId = charId === "sakura" ? "0" : "kero" ? "1" : (/char(\d+)/.exec(charId) || ["", Number.NaN])[1];
-                var maybeNumCharId = Number(_charId);
-                var maybeNumBindgroupId = Number(bindgroupId);
-                if (isFinite(maybeNumCharId) && isFinite(maybeNumBindgroupId)) {
-                    _this4.bindgroup[maybeNumCharId] = _this4.bindgroup[maybeNumCharId] || [];
-                    if (dflt === "default") {
-                        _this4.bindgroup[maybeNumCharId][maybeNumBindgroupId] = !!Number(descript[key]);
-                    } else {
-                        _this4.bindgroup[maybeNumCharId][maybeNumBindgroupId] = _this4.bindgroup[maybeNumCharId][maybeNumBindgroupId] || false;
-                    }
-                } else {
-                    console.warn("CharId: " + _charId + " or bindgroupId: " + bindgroupId + " is not number");
-                }
             });
             return Promise.resolve(this);
         }
@@ -270,21 +136,21 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadSurfacesTxt",
         value: function loadSurfacesTxt() {
-            var _this5 = this;
+            var _this6 = this;
 
-            var filenames = SurfaceUtil.findSurfacesTxt(Object.keys(this.directory));
+            var filenames = SU.findSurfacesTxt(Object.keys(this.directory));
             if (filenames.length === 0) {
                 console.info("surfaces.txt is not found");
             }
             var cat_text = filenames.reduce(function (text, filename) {
-                return text + SurfaceUtil.convert(_this5.directory[filename]);
+                return text + SU.convert(_this6.directory[filename]);
             }, "");
             var surfacesTxt = SurfacesTxt2Yaml.txt_to_data(cat_text, { compatible: 'ssp-lazy' });
             return new ST.SurfaceDefinitionTree().loadFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceTree) {
-                _this5.surfacesTxt = surfacesTxt;
-                _this5.surfaceDefTree = surfaceTree;
-                _this5.surfaceTree = _this5.surfaceDefTree.surfaces;
-                return _this5;
+                _this6.surfacesTxt = surfacesTxt;
+                _this6.surfaceDefTree = surfaceTree;
+                _this6.surfaceTree = _this6.surfaceDefTree.surfaces;
+                return _this6;
             });
         }
         // surfacetable.txtを読む予定
@@ -299,7 +165,7 @@ var Shell = function (_EventEmitter$EventEm) {
             if (surfacetable_name === "") {
                 console.info("Shell#loadSurfaceTable", "surfacetable.txt is not found.");
             } else {
-                var txt = SurfaceUtil.convert(this.directory[surfacetable_name]);
+                var txt = SU.convert(this.directory[surfacetable_name]);
                 console.info("Shell#loadSurfaceTable", "surfacetable.txt is not supported yet.");
             }
             return Promise.resolve(this);
@@ -309,7 +175,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadSurfacePNG",
         value: function loadSurfacePNG() {
-            var _this6 = this;
+            var _this7 = this;
 
             var surface_names = Object.keys(this.directory).filter(function (filename) {
                 return (/^surface(\d+)\.png$/i.test(filename)
@@ -321,21 +187,21 @@ var Shell = function (_EventEmitter$EventEm) {
                     var n = Number((/^surface(\d+)\.png$/i.exec(filename) || ["", "NaN"])[1]);
                     if (!isFinite(n)) return;
                     i++;
-                    _this6.getPNGFromDirectory(filename, function (err, cnv) {
+                    _this7.getPNGFromDirectory(filename, function (err, cnv) {
                         if (err != null || cnv == null) {
                             console.warn("Shell#loadSurfacePNG > " + err);
                         } else {
-                            if (!_this6.surfaceTree[n]) {
+                            if (!_this7.surfaceTree[n]) {
                                 // surfaces.txtで未定義なら追加
-                                _this6.surfaceTree[n] = new ST.SurfaceDefinition();
-                                _this6.surfaceTree[n].base = cnv;
+                                _this7.surfaceTree[n] = new ST.SurfaceDefinition();
+                                _this7.surfaceTree[n].base = cnv;
                             } else {
                                 // surfaces.txtで定義済み
-                                _this6.surfaceTree[n].base = cnv;
+                                _this7.surfaceTree[n].base = cnv;
                             }
                         }
                         if (--i <= 0) {
-                            resolve(_this6);
+                            resolve(_this7);
                         }
                     });
                 });
@@ -346,7 +212,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadElements",
         value: function loadElements() {
-            var _this7 = this;
+            var _this8 = this;
 
             var srfs = this.surfaceTree;
             return new Promise(function (resolve, reject) {
@@ -360,30 +226,30 @@ var Shell = function (_EventEmitter$EventEm) {
                         var y = elm.y;
 
                         i++;
-                        _this7.getPNGFromDirectory(file, function (err, canvas) {
+                        _this8.getPNGFromDirectory(file, function (err, canvas) {
                             if (err != null || canvas == null) {
                                 console.warn("Shell#loadElements > " + err);
                             } else {
-                                _this7.surfaceTree[n].elements[elmId].canvas = canvas;
+                                _this8.surfaceTree[n].elements[elmId].canvas = canvas;
                             }
                             if (--i <= 0) {
-                                resolve(_this7);
+                                resolve(_this8);
                             }
                         });
                     });
                 });
                 // elementを一切使っていなかった
                 if (i === 0) {
-                    resolve(_this7);
+                    resolve(_this8);
                 }
             }).then(function () {
-                return _this7;
+                return _this8;
             });
         }
     }, {
         key: "hasFile",
         value: function hasFile(filename) {
-            return SurfaceUtil.fastfind(Object.keys(this.directory), filename) !== "";
+            return SU.fastfind(Object.keys(this.directory), filename) !== "";
         }
         // this.cacheCanvas から filename な SurfaceCanvas を探す。
         // なければ this.directory から探し this.cacheCanvas にキャッシュする
@@ -392,9 +258,9 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "getPNGFromDirectory",
         value: function getPNGFromDirectory(filename, cb) {
-            var _this8 = this;
+            var _this9 = this;
 
-            var cached_filename = SurfaceUtil.fastfind(Object.keys(this.cacheCanvas), filename);
+            var cached_filename = SU.fastfind(Object.keys(this.cacheCanvas), filename);
             if (cached_filename !== "") {
                 cb(null, this.cacheCanvas[cached_filename]);
                 return;
@@ -408,32 +274,32 @@ var Shell = function (_EventEmitter$EventEm) {
                 }
                 console.warn("Shell#getPNGFromDirectory", "element file " + filename.substr(0, filename.length - ".png".length) + " need '.png' extension");
             }
-            var _filename = SurfaceUtil.fastfind(Object.keys(this.directory), filename);
+            var _filename = SU.fastfind(Object.keys(this.directory), filename);
             var pnafilename = _filename.replace(/\.png$/i, ".pna");
-            var _pnafilename = SurfaceUtil.fastfind(Object.keys(this.directory), pnafilename);
+            var _pnafilename = SU.fastfind(Object.keys(this.directory), pnafilename);
             var pngbuf = this.directory[_filename];
-            SurfaceUtil.getImageFromArrayBuffer(pngbuf, function (err, png) {
+            SU.getImageFromArrayBuffer(pngbuf, function (err, png) {
                 if (err != null) return cb(err, null);
                 // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
                 if (_pnafilename === "") {
-                    _this8.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
-                    cb(null, _this8.cacheCanvas[_filename]);
+                    _this9.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
+                    cb(null, _this9.cacheCanvas[_filename]);
                     return;
                 }
-                var pnabuf = _this8.directory[_pnafilename];
-                SurfaceUtil.getImageFromArrayBuffer(pnabuf, function (err, pna) {
+                var pnabuf = _this9.directory[_pnafilename];
+                SU.getImageFromArrayBuffer(pnabuf, function (err, pna) {
                     if (err != null) return cb(err, null);
-                    _this8.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
-                    cb(null, _this8.cacheCanvas[_filename]);
+                    _this9.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
+                    cb(null, _this9.cacheCanvas[_filename]);
                 });
             });
         }
     }, {
         key: "attachSurface",
         value: function attachSurface(div, scopeId, surfaceId) {
-            var _this9 = this;
+            var _this10 = this;
 
-            var type = SurfaceUtil.scope(scopeId);
+            var type = SU.scope(scopeId);
             var hits = this.attachedSurface.filter(function (_ref) {
                 var _div = _ref.div;
                 return _div === div;
@@ -456,7 +322,7 @@ var Shell = function (_EventEmitter$EventEm) {
                 srf.render();
             }
             srf.on("mouse", function (ev) {
-                _this9.emit("mouse", ev); // detachSurfaceで消える
+                _this10.emit("mouse", ev); // detachSurfaceで消える
             });
             this.attachedSurface.push({ div: div, surface: srf });
             return srf;
@@ -487,12 +353,12 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "getSurfaceAlias",
         value: function getSurfaceAlias(scopeId, surfaceId) {
-            var type = SurfaceUtil.scope(scopeId);
+            var type = SU.scope(scopeId);
             var _surfaceId = -1;
             if (typeof surfaceId === "string" || typeof surfaceId === "number") {
                 if (!!this.surfacesTxt.aliases && !!this.surfacesTxt.aliases[type] && !!this.surfacesTxt.aliases[type][surfaceId]) {
                     // まずエイリアスを探す
-                    _surfaceId = SurfaceUtil.choice(this.surfacesTxt.aliases[type][surfaceId]);
+                    _surfaceId = SU.choice(this.surfacesTxt.aliases[type][surfaceId]);
                 } else if (typeof surfaceId === "number") {
                     // 通常の処理
                     _surfaceId = surfaceId;
@@ -514,7 +380,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "bind",
         value: function bind(a, b) {
-            var _this10 = this;
+            var _this11 = this;
 
             if (typeof a === "number" && typeof b === "number") {
                 var scopeId = a;
@@ -534,14 +400,14 @@ var Shell = function (_EventEmitter$EventEm) {
                 (function () {
                     var _category = a;
                     var _parts = b;
-                    _this10.config.char.forEach(function (char, scopeId) {
+                    _this11.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name = bindgroup.name;
                             var category = _bindgroup$name.category;
                             var parts = _bindgroup$name.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this10.bind(scopeId, bindgroupId);
+                                _this11.bind(scopeId, bindgroupId);
                             }
                         });
                     });
@@ -553,7 +419,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "unbind",
         value: function unbind(a, b) {
-            var _this11 = this;
+            var _this12 = this;
 
             if (typeof a === "number" && typeof b === "number") {
                 var scopeId = a;
@@ -573,14 +439,14 @@ var Shell = function (_EventEmitter$EventEm) {
                 (function () {
                     var _category = a;
                     var _parts = b;
-                    _this11.config.char.forEach(function (char, scopeId) {
+                    _this12.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name2 = bindgroup.name;
                             var category = _bindgroup$name2.category;
                             var parts = _bindgroup$name2.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this11.unbind(scopeId, bindgroupId);
+                                _this12.unbind(scopeId, bindgroupId);
                             }
                         });
                     });
@@ -645,7 +511,218 @@ var Shell = function (_EventEmitter$EventEm) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Shell;
-},{"./Surface":2,"./SurfaceTree":4,"./SurfaceUtil":5,"events":8,"jquery":9,"surfaces_txt2yaml":40}],2:[function(require,module,exports){
+},{"./ShellConfig":2,"./Surface":3,"./SurfaceTree":5,"./SurfaceUtil":6,"events":9,"surfaces_txt2yaml":41}],2:[function(require,module,exports){
+/// <reference path="../typings/index.d.ts"/>
+"use strict";
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var ShellConfig = function () {
+  function ShellConfig() {
+    _classCallCheck(this, ShellConfig);
+
+    this.seriko = new SerikoConfig();
+    this.menu = new MenuConfig();
+    this.char = [];
+  }
+
+  _createClass(ShellConfig, [{
+    key: "loadFromJSONLike",
+    value: function loadFromJSONLike(json) {
+      var _this = this;
+
+      var seriko = json["seriko"] != null ? json["seriko"] : {};
+      var menu = json["menu"] != null ? json["menu"] : {};
+      var char = Array.isArray(json["char"]) ? json["char"] : [];
+      // char*
+      char.forEach(function (_char, id) {
+        new CharConfig().loadFromJSONLike(_char).then(function (conf) {
+          _this.char[id] = conf;
+        });
+      });
+      return Promise.resolve(this);
+    }
+  }]);
+
+  return ShellConfig;
+}();
+
+exports.ShellConfig = ShellConfig;
+
+var SerikoConfig =
+// \![set,sticky-window,スコープID,スコープID,...]のdescript版。タグを実行しなくてもあらかじめ設定できる。
+function SerikoConfig() {
+  _classCallCheck(this, SerikoConfig);
+
+  this.use_self_alpha = false;
+  this.paint_transparent_region_black = true;
+  this.alignmenttodesktop = "bottom";
+  this.zorder = [];
+  this.stickyWindow = [];
+};
+
+exports.SerikoConfig = SerikoConfig;
+
+var MenuConfig =
+/*font: {
+  name: string; // オーナードローメニューに使用するフォント
+  height: number; // オーナードローメニューに使用する文字の大きさ。
+};*/
+/*background: {
+  bitmap: {
+    filename: string; // バックグラウンド表示画像ファイル名。
+  };
+  font: {
+    color: {
+      r: number; // バックグラウンド文字色赤(0～255)
+      b: number; // バックグラウンド文字色緑(0～255)
+      g: number; // バックグラウンド文字色青(0～255)
+    };
+  };
+  alignment: string; // バックグラウンド画像をrighttopで右寄せ、lefttopで左寄せ、centertopで中央寄せ。SSPのみrightbottom、leftbottom、centerbottomのような下方向固定も可。lefttop
+};*/
+/*
+foreground: {
+  bitmap: {
+    filename: string; // フォアグラウンド表示画像ファイル名。
+  };
+  font: {
+    color: {
+      r: number; // フォアグラウンド文字色赤(0～255)
+      b: number; // フォアグラウンド文字色緑(0～255)
+      g: number; // フォアグラウンド文字色青(0～255)
+    };
+  };
+  alignment: string; // フォアグラウンド画像をrighttopで右寄せ、lefttopで左寄せ、centertopで中央寄せ。SSPのみrightbottom、leftbottom、centerbottomのような下方向固定も可。lefttop
+};*/
+/*
+sidebar?: {
+  bitmap: {
+    filename: string; // サイドバー表示画像ファイル名。
+  };
+  alignment: string; // サイドバー画像をtopで上寄せ、bottomで下寄せ。bottom
+};
+separator?: {
+  color: {
+    r: number; // セパレータ色赤(0～255)
+    b: number; // セパレータ色緑(0～255)
+    g: number; // セパレータ色青(0～255)
+  };
+};*/
+/*disable: {// 選択不可文字
+  font: {
+    color: {
+      r: number; // フォアグラウンド文字色赤(0～255)
+      b: number; // フォアグラウンド文字色緑(0～255)
+      g: number; // フォアグラウンド文字色青(0～255)
+    };
+  };
+}*/
+function MenuConfig() {
+  _classCallCheck(this, MenuConfig);
+
+  this.value = false;
+};
+
+exports.MenuConfig = MenuConfig;
+
+var CharConfig = function () {
+  /*
+  bindoption: {
+    // char*.bindoption*.group,カテゴリ名,オプション
+    // その着せ替えカテゴリにオプションを設定。*は単に0から始まる通し番号(3人目以降)。
+    // mustselectでパーツを必ず1つ選択、multipleで複数のパーツを選択可能。
+    // オプションは+区切りで複数可。
+    group: {
+      category: string;
+      options: string[]; //multiple | mustselect
+    }
+  }[];*/
+  function CharConfig() {
+    _classCallCheck(this, CharConfig);
+
+    this.menu = "auto";
+    this.menuitem = [];
+    this.defaultX = 0;
+    this.defaultY = 0;
+    this.defaultLeft = 0;
+    this.defaultTop = 0;
+    this.balloon = {
+      offsetX: 0,
+      offsetY: 0,
+      alignment: "none"
+    };
+    this.bindgroup = [];
+  }
+
+  _createClass(CharConfig, [{
+    key: "loadFromJSONLike",
+    value: function loadFromJSONLike(char) {
+      var _this2 = this;
+
+      // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
+      if (Array.isArray(char["bindgroup"])) {
+        char["bindgroup"].forEach(function (bindgroup, id) {
+          if (bindgroup != null && typeof bindgroup["name"] === "string") {
+            var _bindgroup$name$split = bindgroup["name"].split(",").map(function (a) {
+              return a.trim();
+            });
+
+            var _bindgroup$name$split2 = _slicedToArray(_bindgroup$name$split, 3);
+
+            var category = _bindgroup$name$split2[0];
+            var parts = _bindgroup$name$split2[1];
+            var thumbnail = _bindgroup$name$split2[2];
+
+            _this2.bindgroup[id] = new BindGroupConfig(category, parts, thumbnail, !!Number(bindgroup["default"]));
+          }
+        });
+      }
+      /*
+      // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
+      if(Array.isArray(char["bindoption"])){
+        char["bindoption"].forEach((bindoption)=>{
+          if(typeof bindoption.group === "string"){
+            const [category, ...options] = (""+bindoption.group).split(",").map((a)=>a.trim())
+            bindoption.group = {category, options};
+          }
+        });
+      }
+      */
+      return Promise.resolve(this);
+    }
+  }]);
+
+  return CharConfig;
+}();
+
+exports.CharConfig = CharConfig;
+
+var BindGroupConfig =
+// 着せ替えの同時実行設定。アニメーションID*番の着せ替えが有効になった（表示された）時に、addidとして指定した着せ替えも同時に有効にする。カンマ区切りで複数指定可。
+// 同時実行中の着せ替えは、元となった着せ替えが無効になった時点で無効になる。複数の着せ替えのaddidとして同一の着せ替えが同時実行指定されている場合、元となったすべての着せ替えが無効になるまで同時実行指定の着せ替えも無効にならない。
+function BindGroupConfig(category, parts) {
+  var thumbnail = arguments.length <= 2 || arguments[2] === undefined ? "" : arguments[2];
+
+  var _default = arguments.length <= 3 || arguments[3] === undefined ? false : arguments[3];
+
+  _classCallCheck(this, BindGroupConfig);
+
+  this.name = {
+    category: category,
+    parts: parts,
+    thumbnail: thumbnail
+  };
+  this.default = _default;
+  this.addid = [];
+};
+
+exports.BindGroupConfig = BindGroupConfig;
+},{}],3:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
@@ -1417,7 +1494,7 @@ var Surface = function (_EventEmitter$EventEm) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Surface;
-},{"./SurfaceRender":3,"./SurfaceTree":4,"./SurfaceUtil":5,"events":8,"jquery":9}],3:[function(require,module,exports){
+},{"./SurfaceRender":4,"./SurfaceTree":5,"./SurfaceUtil":6,"events":9,"jquery":10}],4:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
@@ -1875,7 +1952,7 @@ var SurfaceRender = function () {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = SurfaceRender;
-},{"./SurfaceUtil":5}],4:[function(require,module,exports){
+},{"./SurfaceUtil":6}],5:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
@@ -2384,7 +2461,7 @@ var SurfaceAnimationPattern = function () {
 }();
 
 exports.SurfaceAnimationPattern = SurfaceAnimationPattern;
-},{"./SurfaceUtil":5,"jquery":9}],5:[function(require,module,exports){
+},{"./SurfaceUtil":6,"jquery":10}],6:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
@@ -2855,7 +2932,58 @@ function getArrayBufferFromURL(url) {
     });
 }
 exports.getArrayBufferFromURL = getArrayBufferFromURL;
-},{"encoding-japanese":7}],6:[function(require,module,exports){
+function decolateJSONizeDescript(o, key, value) {
+    // オートマージ
+    // dic["a.b.c"]="d"なテキストをJSON形式に変換している気がする
+    var ptr = o;
+    var props = key.split(".");
+    for (var i = 0; i < props.length; i++) {
+        var prop = props[i];
+
+        var _Array$prototype$slic = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1);
+
+        var _Array$prototype$slic2 = _slicedToArray(_Array$prototype$slic, 2);
+
+        var _prop = _Array$prototype$slic2[0];
+        var num = _Array$prototype$slic2[1];
+
+        var _num = Number(num);
+        if (isFinite(_num)) {
+            if (!Array.isArray(ptr[_prop])) {
+                ptr[_prop] = [];
+            }
+            ptr[_prop][_num] = ptr[_prop][_num] || {};
+            if (i !== props.length - 1) {
+                ptr = ptr[_prop][_num];
+            } else {
+                if (ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0) {
+                    // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
+                    // menu, 0 -> menu.value
+                    // menu.font...
+                    // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
+                    // このifはその例外への対処である
+                    ptr[_prop][_num].value = Number(value) || value;
+                } else {
+                    ptr[_prop][_num] = Number(value) || value;
+                }
+            }
+        } else {
+            ptr[_prop] = ptr[_prop] || {};
+            if (i !== props.length - 1) {
+                ptr = ptr[_prop];
+            } else {
+                if (ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0) {
+                    ptr[_prop].value = Number(value) || value;
+                } else {
+                    ptr[_prop] = Number(value) || value;
+                }
+            }
+        }
+    }
+    return;
+}
+exports.decolateJSONizeDescript = decolateJSONizeDescript;
+},{"encoding-japanese":8}],7:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
@@ -2872,7 +3000,7 @@ exports.Shell = Shell_1.default;
 exports.version = _package.version;
 window["$"] = window["$"] || $;
 window["jQuery"] = window["jQuery"] || $;
-},{"../package.json":42,"./Shell":1,"./Surface":2,"./SurfaceRender":3,"./SurfaceUtil":5,"jquery":9}],7:[function(require,module,exports){
+},{"../package.json":43,"./Shell":1,"./Surface":3,"./SurfaceRender":4,"./SurfaceUtil":6,"jquery":10}],8:[function(require,module,exports){
 /**
  * Encoding.js
  *
@@ -9159,7 +9287,7 @@ var zenkanaCase_table = [
 return Encoding;
 });
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -9463,7 +9591,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /*eslint-disable no-unused-vars*/
 /*!
  * jQuery JavaScript Library v3.1.0
@@ -19539,7 +19667,7 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 'use strict';
 
 
@@ -19548,7 +19676,7 @@ var yaml = require('./lib/js-yaml.js');
 
 module.exports = yaml;
 
-},{"./lib/js-yaml.js":11}],11:[function(require,module,exports){
+},{"./lib/js-yaml.js":12}],12:[function(require,module,exports){
 'use strict';
 
 
@@ -19589,7 +19717,7 @@ module.exports.parse          = deprecated('parse');
 module.exports.compose        = deprecated('compose');
 module.exports.addConstructor = deprecated('addConstructor');
 
-},{"./js-yaml/dumper":13,"./js-yaml/exception":14,"./js-yaml/loader":15,"./js-yaml/schema":17,"./js-yaml/schema/core":18,"./js-yaml/schema/default_full":19,"./js-yaml/schema/default_safe":20,"./js-yaml/schema/failsafe":21,"./js-yaml/schema/json":22,"./js-yaml/type":23}],12:[function(require,module,exports){
+},{"./js-yaml/dumper":14,"./js-yaml/exception":15,"./js-yaml/loader":16,"./js-yaml/schema":18,"./js-yaml/schema/core":19,"./js-yaml/schema/default_full":20,"./js-yaml/schema/default_safe":21,"./js-yaml/schema/failsafe":22,"./js-yaml/schema/json":23,"./js-yaml/type":24}],13:[function(require,module,exports){
 'use strict';
 
 
@@ -19650,7 +19778,7 @@ module.exports.repeat         = repeat;
 module.exports.isNegativeZero = isNegativeZero;
 module.exports.extend         = extend;
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-use-before-define*/
@@ -20454,7 +20582,7 @@ function safeDump(input, options) {
 module.exports.dump     = dump;
 module.exports.safeDump = safeDump;
 
-},{"./common":12,"./exception":14,"./schema/default_full":19,"./schema/default_safe":20}],14:[function(require,module,exports){
+},{"./common":13,"./exception":15,"./schema/default_full":20,"./schema/default_safe":21}],15:[function(require,module,exports){
 // YAML error class. http://stackoverflow.com/questions/8458984
 //
 'use strict';
@@ -20499,7 +20627,7 @@ YAMLException.prototype.toString = function toString(compact) {
 
 module.exports = YAMLException;
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len,no-use-before-define*/
@@ -22087,7 +22215,7 @@ module.exports.load        = load;
 module.exports.safeLoadAll = safeLoadAll;
 module.exports.safeLoad    = safeLoad;
 
-},{"./common":12,"./exception":14,"./mark":16,"./schema/default_full":19,"./schema/default_safe":20}],16:[function(require,module,exports){
+},{"./common":13,"./exception":15,"./mark":17,"./schema/default_full":20,"./schema/default_safe":21}],17:[function(require,module,exports){
 'use strict';
 
 
@@ -22165,7 +22293,7 @@ Mark.prototype.toString = function toString(compact) {
 
 module.exports = Mark;
 
-},{"./common":12}],17:[function(require,module,exports){
+},{"./common":13}],18:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len*/
@@ -22271,7 +22399,7 @@ Schema.create = function createSchema() {
 
 module.exports = Schema;
 
-},{"./common":12,"./exception":14,"./type":23}],18:[function(require,module,exports){
+},{"./common":13,"./exception":15,"./type":24}],19:[function(require,module,exports){
 // Standard YAML's Core schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2804923
 //
@@ -22291,7 +22419,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":17,"./json":22}],19:[function(require,module,exports){
+},{"../schema":18,"./json":23}],20:[function(require,module,exports){
 // JS-YAML's default schema for `load` function.
 // It is not described in the YAML specification.
 //
@@ -22318,7 +22446,7 @@ module.exports = Schema.DEFAULT = new Schema({
   ]
 });
 
-},{"../schema":17,"../type/js/function":28,"../type/js/regexp":29,"../type/js/undefined":30,"./default_safe":20}],20:[function(require,module,exports){
+},{"../schema":18,"../type/js/function":29,"../type/js/regexp":30,"../type/js/undefined":31,"./default_safe":21}],21:[function(require,module,exports){
 // JS-YAML's default schema for `safeLoad` function.
 // It is not described in the YAML specification.
 //
@@ -22348,7 +22476,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":17,"../type/binary":24,"../type/merge":32,"../type/omap":34,"../type/pairs":35,"../type/set":37,"../type/timestamp":39,"./core":18}],21:[function(require,module,exports){
+},{"../schema":18,"../type/binary":25,"../type/merge":33,"../type/omap":35,"../type/pairs":36,"../type/set":38,"../type/timestamp":40,"./core":19}],22:[function(require,module,exports){
 // Standard YAML's Failsafe schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2802346
 
@@ -22367,7 +22495,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":17,"../type/map":31,"../type/seq":36,"../type/str":38}],22:[function(require,module,exports){
+},{"../schema":18,"../type/map":32,"../type/seq":37,"../type/str":39}],23:[function(require,module,exports){
 // Standard YAML's JSON schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2803231
 //
@@ -22394,7 +22522,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":17,"../type/bool":25,"../type/float":26,"../type/int":27,"../type/null":33,"./failsafe":21}],23:[function(require,module,exports){
+},{"../schema":18,"../type/bool":26,"../type/float":27,"../type/int":28,"../type/null":34,"./failsafe":22}],24:[function(require,module,exports){
 'use strict';
 
 var YAMLException = require('./exception');
@@ -22457,7 +22585,7 @@ function Type(tag, options) {
 
 module.exports = Type;
 
-},{"./exception":14}],24:[function(require,module,exports){
+},{"./exception":15}],25:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-bitwise*/
@@ -22594,7 +22722,7 @@ module.exports = new Type('tag:yaml.org,2002:binary', {
   represent: representYamlBinary
 });
 
-},{"../type":23}],25:[function(require,module,exports){
+},{"../type":24}],26:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -22631,7 +22759,7 @@ module.exports = new Type('tag:yaml.org,2002:bool', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":23}],26:[function(require,module,exports){
+},{"../type":24}],27:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -22738,7 +22866,7 @@ module.exports = new Type('tag:yaml.org,2002:float', {
   defaultStyle: 'lowercase'
 });
 
-},{"../common":12,"../type":23}],27:[function(require,module,exports){
+},{"../common":13,"../type":24}],28:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -22908,7 +23036,7 @@ module.exports = new Type('tag:yaml.org,2002:int', {
   }
 });
 
-},{"../common":12,"../type":23}],28:[function(require,module,exports){
+},{"../common":13,"../type":24}],29:[function(require,module,exports){
 'use strict';
 
 var esprima;
@@ -22994,7 +23122,7 @@ module.exports = new Type('tag:yaml.org,2002:js/function', {
   represent: representJavascriptFunction
 });
 
-},{"../../type":23}],29:[function(require,module,exports){
+},{"../../type":24}],30:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -23056,7 +23184,7 @@ module.exports = new Type('tag:yaml.org,2002:js/regexp', {
   represent: representJavascriptRegExp
 });
 
-},{"../../type":23}],30:[function(require,module,exports){
+},{"../../type":24}],31:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -23086,7 +23214,7 @@ module.exports = new Type('tag:yaml.org,2002:js/undefined', {
   represent: representJavascriptUndefined
 });
 
-},{"../../type":23}],31:[function(require,module,exports){
+},{"../../type":24}],32:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23096,7 +23224,7 @@ module.exports = new Type('tag:yaml.org,2002:map', {
   construct: function (data) { return data !== null ? data : {}; }
 });
 
-},{"../type":23}],32:[function(require,module,exports){
+},{"../type":24}],33:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23110,7 +23238,7 @@ module.exports = new Type('tag:yaml.org,2002:merge', {
   resolve: resolveYamlMerge
 });
 
-},{"../type":23}],33:[function(require,module,exports){
+},{"../type":24}],34:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23146,7 +23274,7 @@ module.exports = new Type('tag:yaml.org,2002:null', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":23}],34:[function(require,module,exports){
+},{"../type":24}],35:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23192,7 +23320,7 @@ module.exports = new Type('tag:yaml.org,2002:omap', {
   construct: constructYamlOmap
 });
 
-},{"../type":23}],35:[function(require,module,exports){
+},{"../type":24}],36:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23247,7 +23375,7 @@ module.exports = new Type('tag:yaml.org,2002:pairs', {
   construct: constructYamlPairs
 });
 
-},{"../type":23}],36:[function(require,module,exports){
+},{"../type":24}],37:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23257,7 +23385,7 @@ module.exports = new Type('tag:yaml.org,2002:seq', {
   construct: function (data) { return data !== null ? data : []; }
 });
 
-},{"../type":23}],37:[function(require,module,exports){
+},{"../type":24}],38:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23288,7 +23416,7 @@ module.exports = new Type('tag:yaml.org,2002:set', {
   construct: constructYamlSet
 });
 
-},{"../type":23}],38:[function(require,module,exports){
+},{"../type":24}],39:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23298,7 +23426,7 @@ module.exports = new Type('tag:yaml.org,2002:str', {
   construct: function (data) { return data !== null ? data : ''; }
 });
 
-},{"../type":23}],39:[function(require,module,exports){
+},{"../type":24}],40:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23388,10 +23516,10 @@ module.exports = new Type('tag:yaml.org,2002:timestamp', {
   represent: representYamlTimestamp
 });
 
-},{"../type":23}],40:[function(require,module,exports){
+},{"../type":24}],41:[function(require,module,exports){
 module.exports = require('./lib/surfaces_txt2yaml.js')
 
-},{"./lib/surfaces_txt2yaml.js":41}],41:[function(require,module,exports){
+},{"./lib/surfaces_txt2yaml.js":42}],42:[function(require,module,exports){
 // Generated by CoffeeScript 1.10.0
 
 /* (C) 2014 Narazaka : Licensed under The MIT License - http://narazaka.net/license/MIT?2014 */
@@ -24563,7 +24691,7 @@ if (typeof exports !== "undefined" && exports !== null) {
   exports.txt_to_yaml = SurfacesTxt2Yaml.txt_to_yaml;
 }
 
-},{"js-yaml":10}],42:[function(require,module,exports){
+},{"js-yaml":11}],43:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.shell.js",
   "version": "5.0.0",
@@ -24587,7 +24715,7 @@ module.exports={
     "babel": "babel lib -d es5",
     "espower": "gulp build",
     "browserify": "browserify es5/index.js --standalone Shell -o dist/Shell.js",
-    "check": "reset; tsc -p src --noEmit",
+    "check": "reset; tsc -w -p src --noEmit",
     "tree": "tree -C -L 2 -I node_modules",
     "clean": "rm -rf lib/* es5/* dist/*",
     "reset": "rm -rf bower_components node_modules typings",
@@ -24633,5 +24761,5 @@ module.exports={
   ]
 }
 
-},{}]},{},[6])(6)
+},{}]},{},[7])(7)
 });

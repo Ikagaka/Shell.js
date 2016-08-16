@@ -409,3 +409,48 @@ export function getArrayBufferFromURL(url: string): Promise<ArrayBuffer> {
 }
 
 
+
+
+export function decolateJSONizeDescript<T, S>(o: T, key: string, value: S): void {
+  // オートマージ
+  // dic["a.b.c"]="d"なテキストをJSON形式に変換している気がする
+  let ptr = o;
+  const props = key.split(".");
+  for(let i=0; i<props.length; i++){
+    const prop = props[i];
+    const [_prop, num]:[string, string] = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop)||["", "", ""], 1);
+    const _num = Number(num);
+    if(isFinite(_num)){
+      if(!Array.isArray(ptr[_prop])){
+        ptr[_prop] = [];
+      }
+      ptr[_prop][_num] = ptr[_prop][_num] || {};
+      if(i !== props.length-1){
+        ptr = ptr[_prop][_num];
+      }else{
+        if(ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0){
+          // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
+          // menu, 0 -> menu.value
+          // menu.font...
+          // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
+          // このifはその例外への対処である
+          ptr[_prop][_num].value = Number(value) || value;
+        }else{
+          ptr[_prop][_num] = Number(value) || value;
+        }
+      }
+    }else{
+      ptr[_prop] = ptr[_prop] || {};
+      if(i !== props.length-1){
+        ptr = ptr[_prop];
+      }else{
+        if(ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0){
+          ptr[_prop].value = Number(value) || value;
+        }else{
+          ptr[_prop] = Number(value) || value;
+        }
+      }
+    }
+  }
+  return;
+}
