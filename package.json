@@ -10,7 +10,7 @@
     "ukagaka"
   ],
   "scripts": {
-    "setup": "npm install -g gulp-cli typings http-server mversion",
+    "setup": "npm install -g gulp-cli bower typings http-server mversion",
     "init": "npm run update; npm run build",
     "update": "npm update; bower update; typings install",
     "build": "npm run clean&& tsc    -p src&& coffee -c -b -o lib src/*.coffee&& babel lib    -d es5&& gulp build&& browserify es5/index.js --standalone Shell -o dist/Shell.js",
