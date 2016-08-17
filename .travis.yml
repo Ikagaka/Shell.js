@@ -25,21 +25,15 @@ after_script:
   - cd ..
   - git clone https://github.com/Ikagaka/cuttlebone.git
   - cd cuttlebone
+  - git checkout dev
   - ls -la
-  - npm install -g coffee-script browserify
+  - npm run setup
   - npm run init
-  - mkdir gh-pages
-  - mv dist demo nar bower.json ./gh-pages
-  - cd gh-pages
-  - git init
-  - git checkout -b gh-pages
-  - bower install
   - git status
-  - git add -f dist demo nar bower_components
   - git commit -am "travis-auto-update"
   - git status
   - git ls-files
-  - '[ "$TRAVIS_BRANCH" == "5.x" ] && [ $GH_TOKEN ] && git push --force --quiet "https://${GH_TOKEN}@github.com/Ikagaka/cuttlebone.git" gh-pages:gh-pages > /dev/null 2>&1'
+  - '[ "$TRAVIS_BRANCH" == "5.x" ] && [ $GH_TOKEN ] && git push --quiet "https://${GH_TOKEN}@github.com/Ikagaka/cuttlebone.git" dev:dev > /dev/null 2>&1'
 
 
 env:
