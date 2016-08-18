@@ -2387,7 +2387,7 @@ module.exports = function ($) {
           $(document.body).off("mousemove", onmousemove);
           $(document.body).off("touchmove", onmousemove);
           $(document.body).off("touchend", onmouseup);
-          return _this.shell.removeListener("mouse");
+          return _this.shell.removeListeners("mouse");
         };
       })(this));
       this.shell.on("mouse", (function(_this) {
@@ -2479,7 +2479,7 @@ module.exports = function ($) {
           $(document.body).off("touchmove", onmousemove);
           $(document.body).off("touchend", onmouseup);
           console.log(_this);
-          return _this.balloon.removeListener("mouse");
+          return _this.balloon.removeListeners("mouse");
         };
       })(this));
       this.balloon.on("mouse", (function(_this) {
@@ -38035,7 +38035,7 @@ if (typeof exports !== "undefined" && exports !== null) {
 },{"js-yaml":20}],52:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.namedmanager.js",
-  "version": "4.1.26",
+  "version": "5.0.0",
   "description": "Ikagaka Window Manager",
   "url": "https://github.com/ikagaka/NamedManager.js",
   "keywords": [
