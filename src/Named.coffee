@@ -78,7 +78,7 @@ class Named extends EventEmitter
       $(document.body).off("mousemove", onmousemove)
       $(document.body).off("touchmove", onmousemove)
       $(document.body).off("touchend", onmouseup)
-      @shell.removeListeners("mouse")
+      @shell.removeAllListeners("mouse")
     @shell.on "mouse", (ev)=>
       @$named.find(".context-menu").contextMenu(false)
       if ev.transparency is true and
@@ -147,7 +147,7 @@ class Named extends EventEmitter
       $(document.body).off("touchmove", onmousemove)
       $(document.body).off("touchend", onmouseup)
       console.log @
-      @balloon.removeListeners "mouse"
+      @balloon.removeAllListeners "mouse"
     @balloon.on "mouse", (ev)=>
       # balloon.js の ev 見直す必要あるな？
       switch ev.event.button

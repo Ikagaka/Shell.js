@@ -2387,7 +2387,7 @@ module.exports = function ($) {
           $(document.body).off("mousemove", onmousemove);
           $(document.body).off("touchmove", onmousemove);
           $(document.body).off("touchend", onmouseup);
-          return _this.shell.removeListeners("mouse");
+          return _this.shell.removeAllListeners("mouse");
         };
       })(this));
       this.shell.on("mouse", (function(_this) {
@@ -2479,7 +2479,7 @@ module.exports = function ($) {
           $(document.body).off("touchmove", onmousemove);
           $(document.body).off("touchend", onmouseup);
           console.log(_this);
-          return _this.balloon.removeListeners("mouse");
+          return _this.balloon.removeAllListeners("mouse");
         };
       })(this));
       this.balloon.on("mouse", (function(_this) {
