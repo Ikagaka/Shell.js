@@ -1,12 +1,12 @@
 /// <reference path="../typings/index.d.ts" />
 import * as ST from "./SurfaceTree";
 import * as EventEmitter from "events";
+import * as SC from "./ShellConfig";
 export default class Surface extends EventEmitter.EventEmitter {
     element: HTMLDivElement;
     scopeId: number;
     surfaceId: number;
     position: string;
-    enableRegionDraw: boolean;
     private cnv;
     private ctx;
     private surfaceNode;
@@ -19,16 +19,12 @@ export default class Surface extends EventEmitter.EventEmitter {
     private stopFlags;
     private surfaceTree;
     private surfaceDefTree;
-    private bindgroup;
     private dynamicBase;
+    private config;
     private destructed;
     private destructors;
     private bufferRender;
-    constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceDefTree: ST.SurfaceDefinitionTree, bindgroup: {
-        [charId: number]: {
-            [bindgroupId: number]: boolean;
-        };
-    });
+    constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceDefTree: ST.SurfaceDefinitionTree, config: SC.ShellConfig);
     destructor(): void;
     private initDOMStructure();
     private initAnimation(animId, anim);

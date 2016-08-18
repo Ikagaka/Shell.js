@@ -17,15 +17,11 @@ export default class Shell extends EventEmitter.EventEmitter {
     private surfaceTree;
     private surfaceDefTree;
     private cacheCanvas;
-    private bindgroup;
-    enableRegion: boolean;
     constructor(directory: {
         [filepath: string]: ArrayBuffer;
     });
     load(): Promise<Shell>;
     private loadDescript();
-    private loadConfig();
-    private loadBindGroup();
     private loadSurfacesTxt();
     private loadSurfaceTable();
     private loadSurfacePNG();

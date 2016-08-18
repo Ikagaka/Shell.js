@@ -6,6 +6,7 @@ import * as ST from "./SurfaceTree";
 import {SurfaceCanvas, SurfaceElement, SurfaceTreeNode, SurfaceMouseEvent, SurfaceAnimationEx} from "./Interfaces";
 import * as EventEmitter from "events";
 import $ = require("jquery");
+import * as SC from "./ShellConfig";
 
 
 export default class Surface extends EventEmitter.EventEmitter {
@@ -14,7 +15,6 @@ export default class Surface extends EventEmitter.EventEmitter {
   public scopeId: number;
   public surfaceId: number;
   public position: string; // fixed|absolute
-  public enableRegionDraw: boolean; // Shell.tsから呼ばれるためpublic
 
   private cnv: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -30,15 +30,15 @@ export default class Surface extends EventEmitter.EventEmitter {
   private stopFlags:       { [animationId: number]: boolean };//keyがfalseのアニメーションの"自発的"再生を停止する、sometimesみたいのを止める。bindには関係ない
   private surfaceTree:     { [surfaceID: number]: ST.SurfaceDefinition };
   private surfaceDefTree:  ST.SurfaceDefinitionTree;
-  private bindgroup:       { [charId: number]: { [bindgroupId: number]: boolean } }
-  private dynamicBase:     {type: string, x: number, y: number, canvas: SurfaceCanvas}|null; // アニメーションパーツででbase指定されたもの
 
+  private dynamicBase:     {type: string, x: number, y: number, canvas: SurfaceCanvas}|null; // アニメーションパーツででbase指定されたもの
+  private config:          SC.ShellConfig;
   private destructed: boolean;
   private destructors: Function[]; // destructor実行時に実行される関数のリスト
 
   private bufferRender: SurfaceRender;
 
-  constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceDefTree: ST.SurfaceDefinitionTree, bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }) {
+  constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceDefTree: ST.SurfaceDefinitionTree, config: SC.ShellConfig) {
     super();
 
     this.element = div;
@@ -48,7 +48,7 @@ export default class Surface extends EventEmitter.EventEmitter {
     const ctx = this.cnv.getContext("2d");
     if(ctx == null) throw new Error("Surface#constructor: ctx is null");
     this.ctx = ctx;
-    this.bindgroup = bindgroup;
+    this.config = config;
     this.position = "fixed";
     this.surfaceDefTree = surfaceDefTree;
     this.surfaceTree = surfaceDefTree.surfaces;
@@ -81,7 +81,7 @@ export default class Surface extends EventEmitter.EventEmitter {
     this.element = document.createElement("div");
     this.surfaceNode = new ST.SurfaceDefinition();
     this.surfaceTree = [];
-    this.bindgroup = [];
+    this.config = new SC.ShellConfig();
     this.layers = [];
     this.animationsQueue = {};
     this.talkCounts = {};
@@ -154,7 +154,7 @@ export default class Surface extends EventEmitter.EventEmitter {
     const {intervals, patterns, options, collisions} = anim;
     if (this.isBind(animId)) {
       // 現在有効な bind
-      if(intervals.length > 0){
+      if(intervals.length > 1){// [[bind, []]].length === 1
         // bind+hogeは着せ替え付随アニメーション。
         // bind+sometimesを分解して実行
         intervals.forEach(([interval, args])=>{
@@ -193,6 +193,7 @@ export default class Surface extends EventEmitter.EventEmitter {
   public updateBind(): void {
     // Shell.tsから呼ばれるためpublic
     // Shell#bind,Shell#unbindで発動
+    // bindなレイヤ状態を変更する
     this.surfaceNode.animations.forEach((anim, animId)=>{
       if(anim.intervals.some(([interval, args])=> "bind" === interval)){
         this.initBind(animId, anim);
@@ -318,8 +319,8 @@ export default class Surface extends EventEmitter.EventEmitter {
   }
 
   private isBind(animId: number): boolean {
-    if (this.bindgroup[this.scopeId] == null) return false;
-    if (this.bindgroup[this.scopeId][animId] === false) return false;
+    if (this.config.bindgroup[this.scopeId] == null) return false;
+    if (this.config.bindgroup[this.scopeId][animId] === false) return false;
     return true;
   }
 
@@ -452,7 +453,7 @@ export default class Surface extends EventEmitter.EventEmitter {
     this.bufferRender.composeElements([{type: "overlay", canvas: composedBase, x: 0, y: 0}]); // 現在有効な ベースサーフェスのレイヤを合成
     this.bufferRender.composeElements(fronts);
     // 当たり判定を描画
-    if (this.enableRegionDraw) {
+    if (this.config.enableRegion) {
       this.bufferRender.drawRegions((this.surfaceNode.collisions), ""+this.surfaceId);
       this.backgrounds.forEach((_, animId)=>{
         this.bufferRender.drawRegions((this.surfaceNode.animations[animId].collisions), ""+this.surfaceId);

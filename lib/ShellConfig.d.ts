@@ -9,6 +9,12 @@ export declare class ShellConfig {
     seriko: SerikoConfig;
     menu: MenuConfig;
     char: CharConfig[];
+    bindgroup: {
+        [charId: number]: {
+            [bindgroupId: number]: boolean;
+        };
+    };
+    enableRegion: boolean;
     constructor();
     loadFromJSONLike(json: JSONLike): Promise<this>;
 }

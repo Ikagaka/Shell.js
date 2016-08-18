@@ -9,13 +9,20 @@ export type JSONLike = string | number | { [key: string]: JSONLike };
 
 export class ShellConfig {
   // 以下 descript
-  seriko: SerikoConfig;
-  menu: MenuConfig;
-  char: CharConfig[];
+  public seriko: SerikoConfig;
+  public menu: MenuConfig;
+  public char: CharConfig[];
+  // 以下 state
+  public bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
+  public enableRegion: boolean;
+
   constructor(){
     this.seriko = new SerikoConfig();
     this.menu = new MenuConfig();
     this.char = [];
+    // states
+    this.bindgroup = [];
+    this.enableRegion = false;
   }
   loadFromJSONLike(json: JSONLike): Promise<this> {
     const seriko: JSONLike   = json["seriko"] != null      ? json["seriko"] : {};
@@ -23,12 +30,20 @@ export class ShellConfig {
     const char = <JSONLike[]>(Array.isArray(json["char"]) ? json["char"]   : []);
     
     // char*
-    char.forEach((_char, id)=>{
-      new CharConfig().loadFromJSONLike(_char).then((conf)=>{
+    return Promise.all(char.map((_char, id)=>{
+      return new CharConfig().loadFromJSONLike(_char).then((conf)=>{
         this.char[id] = conf;
       });
+    })).then((configs)=>{
+      // descript.txtからbindgroup探してデフォルト値を反映
+      this.char.forEach((_char, charId)=>{
+        this.bindgroup[charId] = [];
+        _char.bindgroup.forEach((o, animId)=>{
+          this.bindgroup[charId][animId] = o.default;
+        });
+      });
+      return this;
     });
-    return Promise.resolve(this);
   }
 }
 

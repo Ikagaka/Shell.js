@@ -1,6 +1,8 @@
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -33,8 +35,6 @@ var Shell = function (_EventEmitter$EventEm) {
         _this.surfaceDefTree = new ST.SurfaceDefinitionTree();
         _this.surfaceTree = _this.surfaceDefTree.surfaces;
         _this.cacheCanvas = {};
-        _this.bindgroup = [];
-        _this.enableRegion = false;
         return _this;
     }
 
@@ -47,13 +47,9 @@ var Shell = function (_EventEmitter$EventEm) {
                 return _this2.loadDescript();
             }) // 1st // ←なにこれ（自問自
             .then(function () {
-                return _this2.loadConfig();
-            }).then(function () {
-                return _this2.loadBindGroup();
-            }) // 2nd // 依存関係的なやつだと思われ
-            .then(function () {
                 return console.log("descript done");
-            }).then(function () {
+            }) // 依存関係的なやつだと思われ
+            .then(function () {
                 return _this2.loadSurfacesTxt();
             }) // 1st
             .then(function () {
@@ -101,55 +97,33 @@ var Shell = function (_EventEmitter$EventEm) {
                     _this3.descriptJSON = json;
                 })();
             }
-            return Promise.resolve(this);
-        }
-    }, {
-        key: "loadConfig",
-        value: function loadConfig() {
-            var _this4 = this;
-
             // key-valueなdescriptをconfigへ変換
             return new SC.ShellConfig().loadFromJSONLike(this.descriptJSON).then(function (config) {
-                _this4.config = config;
+                _this3.config = config;
             }).then(function () {
-                return _this4;
+                return _this3;
             });
-        }
-        // descript.txtからbindgroup探してデフォルト値を反映
-
-    }, {
-        key: "loadBindGroup",
-        value: function loadBindGroup() {
-            var _this5 = this;
-
-            this.config.char.forEach(function (char, charId) {
-                _this5.bindgroup[charId] = [];
-                char.bindgroup.forEach(function (o, animId) {
-                    _this5.bindgroup[charId][animId] = o.default;
-                });
-            });
-            return Promise.resolve(this);
         }
         // surfaces.txtを読んでthis.surfacesTxtに反映
 
     }, {
         key: "loadSurfacesTxt",
         value: function loadSurfacesTxt() {
-            var _this6 = this;
+            var _this4 = this;
 
             var filenames = SU.findSurfacesTxt(Object.keys(this.directory));
             if (filenames.length === 0) {
                 console.info("surfaces.txt is not found");
             }
             var cat_text = filenames.reduce(function (text, filename) {
-                return text + SU.convert(_this6.directory[filename]);
+                return text + SU.convert(_this4.directory[filename]);
             }, "");
             var surfacesTxt = SurfacesTxt2Yaml.txt_to_data(cat_text, { compatible: 'ssp-lazy' });
             return new ST.SurfaceDefinitionTree().loadFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceTree) {
-                _this6.surfacesTxt = surfacesTxt;
-                _this6.surfaceDefTree = surfaceTree;
-                _this6.surfaceTree = _this6.surfaceDefTree.surfaces;
-                return _this6;
+                _this4.surfacesTxt = surfacesTxt;
+                _this4.surfaceDefTree = surfaceTree;
+                _this4.surfaceTree = _this4.surfaceDefTree.surfaces;
+                return _this4;
             });
         }
         // surfacetable.txtを読む予定
@@ -174,7 +148,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadSurfacePNG",
         value: function loadSurfacePNG() {
-            var _this7 = this;
+            var _this5 = this;
 
             var surface_names = Object.keys(this.directory).filter(function (filename) {
                 return (/^surface(\d+)\.png$/i.test(filename)
@@ -186,21 +160,21 @@ var Shell = function (_EventEmitter$EventEm) {
                     var n = Number((/^surface(\d+)\.png$/i.exec(filename) || ["", "NaN"])[1]);
                     if (!isFinite(n)) return;
                     i++;
-                    _this7.getPNGFromDirectory(filename, function (err, cnv) {
+                    _this5.getPNGFromDirectory(filename, function (err, cnv) {
                         if (err != null || cnv == null) {
                             console.warn("Shell#loadSurfacePNG > " + err);
                         } else {
-                            if (!_this7.surfaceTree[n]) {
+                            if (!_this5.surfaceTree[n]) {
                                 // surfaces.txtで未定義なら追加
-                                _this7.surfaceTree[n] = new ST.SurfaceDefinition();
-                                _this7.surfaceTree[n].base = cnv;
+                                _this5.surfaceTree[n] = new ST.SurfaceDefinition();
+                                _this5.surfaceTree[n].base = cnv;
                             } else {
                                 // surfaces.txtで定義済み
-                                _this7.surfaceTree[n].base = cnv;
+                                _this5.surfaceTree[n].base = cnv;
                             }
                         }
                         if (--i <= 0) {
-                            resolve(_this7);
+                            resolve(_this5);
                         }
                     });
                 });
@@ -211,7 +185,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadElements",
         value: function loadElements() {
-            var _this8 = this;
+            var _this6 = this;
 
             var srfs = this.surfaceTree;
             return new Promise(function (resolve, reject) {
@@ -225,24 +199,24 @@ var Shell = function (_EventEmitter$EventEm) {
                         var y = elm.y;
 
                         i++;
-                        _this8.getPNGFromDirectory(file, function (err, canvas) {
+                        _this6.getPNGFromDirectory(file, function (err, canvas) {
                             if (err != null || canvas == null) {
                                 console.warn("Shell#loadElements > " + err);
                             } else {
-                                _this8.surfaceTree[n].elements[elmId].canvas = canvas;
+                                _this6.surfaceTree[n].elements[elmId].canvas = canvas;
                             }
                             if (--i <= 0) {
-                                resolve(_this8);
+                                resolve(_this6);
                             }
                         });
                     });
                 });
                 // elementを一切使っていなかった
                 if (i === 0) {
-                    resolve(_this8);
+                    resolve(_this6);
                 }
             }).then(function () {
-                return _this8;
+                return _this6;
             });
         }
     }, {
@@ -257,7 +231,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "getPNGFromDirectory",
         value: function getPNGFromDirectory(filename, cb) {
-            var _this9 = this;
+            var _this7 = this;
 
             var cached_filename = SU.fastfind(Object.keys(this.cacheCanvas), filename);
             if (cached_filename !== "") {
@@ -281,22 +255,22 @@ var Shell = function (_EventEmitter$EventEm) {
                 if (err != null) return cb(err, null);
                 // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
                 if (_pnafilename === "") {
-                    _this9.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
-                    cb(null, _this9.cacheCanvas[_filename]);
+                    _this7.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
+                    cb(null, _this7.cacheCanvas[_filename]);
                     return;
                 }
-                var pnabuf = _this9.directory[_pnafilename];
+                var pnabuf = _this7.directory[_pnafilename];
                 SU.getImageFromArrayBuffer(pnabuf, function (err, pna) {
                     if (err != null) return cb(err, null);
-                    _this9.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
-                    cb(null, _this9.cacheCanvas[_filename]);
+                    _this7.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
+                    cb(null, _this7.cacheCanvas[_filename]);
                 });
             });
         }
     }, {
         key: "attachSurface",
         value: function attachSurface(div, scopeId, surfaceId) {
-            var _this10 = this;
+            var _this8 = this;
 
             var type = SU.scope(scopeId);
             var hits = this.attachedSurface.filter(function (_ref) {
@@ -315,13 +289,13 @@ var Shell = function (_EventEmitter$EventEm) {
                 console.warn("surfaceId:", _surfaceId, "is not defined in surfaceTree", this.surfaceTree);
                 return null;
             }
-            var srf = new Surface_1.default(div, scopeId, _surfaceId, this.surfaceDefTree, this.bindgroup);
-            srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
-            if (this.enableRegion) {
+            var srf = new Surface_1.default(div, scopeId, _surfaceId, this.surfaceDefTree, this.config);
+            // const srf = new Surface(div, scopeId, _surfaceId, this.surfaceDefTree, this.config, this.state);
+            if (this.config.enableRegion) {
                 srf.render();
             }
             srf.on("mouse", function (ev) {
-                _this10.emit("mouse", ev); // detachSurfaceで消える
+                _this8.emit("mouse", ev); // detachSurfaceで消える
             });
             this.attachedSurface.push({ div: div, surface: srf });
             return srf;
@@ -379,38 +353,46 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "bind",
         value: function bind(a, b) {
-            var _this11 = this;
+            var _this9 = this;
 
             if (typeof a === "number" && typeof b === "number") {
+                // public bind(scopeId: number, bindgroupId: number): void
                 var scopeId = a;
                 var bindgroupId = b;
-                if (this.bindgroup[scopeId] == null) {
+                if (this.config.bindgroup[scopeId] == null) {
                     console.warn("Shell#bind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
                     return;
                 }
-                this.bindgroup[scopeId][bindgroupId] = true;
+                this.config.bindgroup[scopeId][bindgroupId] = true;
                 this.attachedSurface.forEach(function (_ref4) {
                     var srf = _ref4.surface;
                     var div = _ref4.div;
 
                     srf.updateBind();
                 });
+                return;
             } else if (typeof a === "string" && typeof b === "string") {
-                (function () {
+                var _ret2 = function () {
+                    // public bind(scopeId: number, bindgroupId: number): void
                     var _category = a;
                     var _parts = b;
-                    _this11.config.char.forEach(function (char, scopeId) {
+                    _this9.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name = bindgroup.name;
                             var category = _bindgroup$name.category;
                             var parts = _bindgroup$name.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this11.bind(scopeId, bindgroupId);
+                                _this9.bind(scopeId, bindgroupId);
                             }
                         });
                     });
-                })();
+                    return {
+                        v: void 0
+                    };
+                }();
+
+                if ((typeof _ret2 === "undefined" ? "undefined" : _typeof(_ret2)) === "object") return _ret2.v;
             } else {
                 console.error("Shell#bind", "TypeError:", a, b);
             }
@@ -418,16 +400,17 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "unbind",
         value: function unbind(a, b) {
-            var _this12 = this;
+            var _this10 = this;
 
             if (typeof a === "number" && typeof b === "number") {
+                // 特定のスコープへのオンオフ
                 var scopeId = a;
                 var bindgroupId = b;
-                if (this.bindgroup[scopeId] == null) {
+                if (this.config.bindgroup[scopeId] == null) {
                     console.warn("Shell#unbind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
                     return;
                 }
-                this.bindgroup[scopeId][bindgroupId] = false;
+                this.config.bindgroup[scopeId][bindgroupId] = false;
                 this.attachedSurface.forEach(function (_ref5) {
                     var srf = _ref5.surface;
                     var div = _ref5.div;
@@ -436,16 +419,18 @@ var Shell = function (_EventEmitter$EventEm) {
                 });
             } else if (typeof a === "string" && typeof b === "string") {
                 (function () {
+                    // public unbind(category: string, parts: string): void
+                    // カテゴリ全体のオンオフ
                     var _category = a;
                     var _parts = b;
-                    _this12.config.char.forEach(function (char, scopeId) {
+                    _this10.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name2 = bindgroup.name;
                             var category = _bindgroup$name2.category;
                             var parts = _bindgroup$name2.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this12.unbind(scopeId, bindgroupId);
+                                _this10.unbind(scopeId, bindgroupId);
                             }
                         });
                     });
@@ -471,13 +456,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "showRegion",
         value: function showRegion() {
-            this.enableRegion = true;
-            this.attachedSurface.forEach(function (_ref7) {
-                var srf = _ref7.surface;
-                var div = _ref7.div;
-
-                srf.enableRegionDraw = true;
-            });
+            this.config.enableRegion = true;
             this.render();
         }
         //当たり判定非表示
@@ -485,13 +464,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "hideRegion",
         value: function hideRegion() {
-            this.enableRegion = false;
-            this.attachedSurface.forEach(function (_ref8) {
-                var srf = _ref8.surface;
-                var div = _ref8.div;
-
-                srf.enableRegionDraw = false;
-            });
+            this.config.enableRegion = false;
             this.render();
         }
         // 着せ替えメニュー用情報ていきょう

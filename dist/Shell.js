@@ -2,6 +2,8 @@
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -34,8 +36,6 @@ var Shell = function (_EventEmitter$EventEm) {
         _this.surfaceDefTree = new ST.SurfaceDefinitionTree();
         _this.surfaceTree = _this.surfaceDefTree.surfaces;
         _this.cacheCanvas = {};
-        _this.bindgroup = [];
-        _this.enableRegion = false;
         return _this;
     }
 
@@ -48,13 +48,9 @@ var Shell = function (_EventEmitter$EventEm) {
                 return _this2.loadDescript();
             }) // 1st // ←なにこれ（自問自
             .then(function () {
-                return _this2.loadConfig();
-            }).then(function () {
-                return _this2.loadBindGroup();
-            }) // 2nd // 依存関係的なやつだと思われ
-            .then(function () {
                 return console.log("descript done");
-            }).then(function () {
+            }) // 依存関係的なやつだと思われ
+            .then(function () {
                 return _this2.loadSurfacesTxt();
             }) // 1st
             .then(function () {
@@ -102,55 +98,33 @@ var Shell = function (_EventEmitter$EventEm) {
                     _this3.descriptJSON = json;
                 })();
             }
-            return Promise.resolve(this);
-        }
-    }, {
-        key: "loadConfig",
-        value: function loadConfig() {
-            var _this4 = this;
-
             // key-valueなdescriptをconfigへ変換
             return new SC.ShellConfig().loadFromJSONLike(this.descriptJSON).then(function (config) {
-                _this4.config = config;
+                _this3.config = config;
             }).then(function () {
-                return _this4;
+                return _this3;
             });
-        }
-        // descript.txtからbindgroup探してデフォルト値を反映
-
-    }, {
-        key: "loadBindGroup",
-        value: function loadBindGroup() {
-            var _this5 = this;
-
-            this.config.char.forEach(function (char, charId) {
-                _this5.bindgroup[charId] = [];
-                char.bindgroup.forEach(function (o, animId) {
-                    _this5.bindgroup[charId][animId] = o.default;
-                });
-            });
-            return Promise.resolve(this);
         }
         // surfaces.txtを読んでthis.surfacesTxtに反映
 
     }, {
         key: "loadSurfacesTxt",
         value: function loadSurfacesTxt() {
-            var _this6 = this;
+            var _this4 = this;
 
             var filenames = SU.findSurfacesTxt(Object.keys(this.directory));
             if (filenames.length === 0) {
                 console.info("surfaces.txt is not found");
             }
             var cat_text = filenames.reduce(function (text, filename) {
-                return text + SU.convert(_this6.directory[filename]);
+                return text + SU.convert(_this4.directory[filename]);
             }, "");
             var surfacesTxt = SurfacesTxt2Yaml.txt_to_data(cat_text, { compatible: 'ssp-lazy' });
             return new ST.SurfaceDefinitionTree().loadFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceTree) {
-                _this6.surfacesTxt = surfacesTxt;
-                _this6.surfaceDefTree = surfaceTree;
-                _this6.surfaceTree = _this6.surfaceDefTree.surfaces;
-                return _this6;
+                _this4.surfacesTxt = surfacesTxt;
+                _this4.surfaceDefTree = surfaceTree;
+                _this4.surfaceTree = _this4.surfaceDefTree.surfaces;
+                return _this4;
             });
         }
         // surfacetable.txtを読む予定
@@ -175,7 +149,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadSurfacePNG",
         value: function loadSurfacePNG() {
-            var _this7 = this;
+            var _this5 = this;
 
             var surface_names = Object.keys(this.directory).filter(function (filename) {
                 return (/^surface(\d+)\.png$/i.test(filename)
@@ -187,21 +161,21 @@ var Shell = function (_EventEmitter$EventEm) {
                     var n = Number((/^surface(\d+)\.png$/i.exec(filename) || ["", "NaN"])[1]);
                     if (!isFinite(n)) return;
                     i++;
-                    _this7.getPNGFromDirectory(filename, function (err, cnv) {
+                    _this5.getPNGFromDirectory(filename, function (err, cnv) {
                         if (err != null || cnv == null) {
                             console.warn("Shell#loadSurfacePNG > " + err);
                         } else {
-                            if (!_this7.surfaceTree[n]) {
+                            if (!_this5.surfaceTree[n]) {
                                 // surfaces.txtで未定義なら追加
-                                _this7.surfaceTree[n] = new ST.SurfaceDefinition();
-                                _this7.surfaceTree[n].base = cnv;
+                                _this5.surfaceTree[n] = new ST.SurfaceDefinition();
+                                _this5.surfaceTree[n].base = cnv;
                             } else {
                                 // surfaces.txtで定義済み
-                                _this7.surfaceTree[n].base = cnv;
+                                _this5.surfaceTree[n].base = cnv;
                             }
                         }
                         if (--i <= 0) {
-                            resolve(_this7);
+                            resolve(_this5);
                         }
                     });
                 });
@@ -212,7 +186,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "loadElements",
         value: function loadElements() {
-            var _this8 = this;
+            var _this6 = this;
 
             var srfs = this.surfaceTree;
             return new Promise(function (resolve, reject) {
@@ -226,24 +200,24 @@ var Shell = function (_EventEmitter$EventEm) {
                         var y = elm.y;
 
                         i++;
-                        _this8.getPNGFromDirectory(file, function (err, canvas) {
+                        _this6.getPNGFromDirectory(file, function (err, canvas) {
                             if (err != null || canvas == null) {
                                 console.warn("Shell#loadElements > " + err);
                             } else {
-                                _this8.surfaceTree[n].elements[elmId].canvas = canvas;
+                                _this6.surfaceTree[n].elements[elmId].canvas = canvas;
                             }
                             if (--i <= 0) {
-                                resolve(_this8);
+                                resolve(_this6);
                             }
                         });
                     });
                 });
                 // elementを一切使っていなかった
                 if (i === 0) {
-                    resolve(_this8);
+                    resolve(_this6);
                 }
             }).then(function () {
-                return _this8;
+                return _this6;
             });
         }
     }, {
@@ -258,7 +232,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "getPNGFromDirectory",
         value: function getPNGFromDirectory(filename, cb) {
-            var _this9 = this;
+            var _this7 = this;
 
             var cached_filename = SU.fastfind(Object.keys(this.cacheCanvas), filename);
             if (cached_filename !== "") {
@@ -282,22 +256,22 @@ var Shell = function (_EventEmitter$EventEm) {
                 if (err != null) return cb(err, null);
                 // 起動時にすべての画像を色抜きするのはgetimagedataが重いのでcnvはnullのままで
                 if (_pnafilename === "") {
-                    _this9.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
-                    cb(null, _this9.cacheCanvas[_filename]);
+                    _this7.cacheCanvas[_filename] = { cnv: null, png: png, pna: null };
+                    cb(null, _this7.cacheCanvas[_filename]);
                     return;
                 }
-                var pnabuf = _this9.directory[_pnafilename];
+                var pnabuf = _this7.directory[_pnafilename];
                 SU.getImageFromArrayBuffer(pnabuf, function (err, pna) {
                     if (err != null) return cb(err, null);
-                    _this9.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
-                    cb(null, _this9.cacheCanvas[_filename]);
+                    _this7.cacheCanvas[_filename] = { cnv: null, png: png, pna: pna };
+                    cb(null, _this7.cacheCanvas[_filename]);
                 });
             });
         }
     }, {
         key: "attachSurface",
         value: function attachSurface(div, scopeId, surfaceId) {
-            var _this10 = this;
+            var _this8 = this;
 
             var type = SU.scope(scopeId);
             var hits = this.attachedSurface.filter(function (_ref) {
@@ -316,13 +290,13 @@ var Shell = function (_EventEmitter$EventEm) {
                 console.warn("surfaceId:", _surfaceId, "is not defined in surfaceTree", this.surfaceTree);
                 return null;
             }
-            var srf = new Surface_1.default(div, scopeId, _surfaceId, this.surfaceDefTree, this.bindgroup);
-            srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
-            if (this.enableRegion) {
+            var srf = new Surface_1.default(div, scopeId, _surfaceId, this.surfaceDefTree, this.config);
+            // const srf = new Surface(div, scopeId, _surfaceId, this.surfaceDefTree, this.config, this.state);
+            if (this.config.enableRegion) {
                 srf.render();
             }
             srf.on("mouse", function (ev) {
-                _this10.emit("mouse", ev); // detachSurfaceで消える
+                _this8.emit("mouse", ev); // detachSurfaceで消える
             });
             this.attachedSurface.push({ div: div, surface: srf });
             return srf;
@@ -380,38 +354,46 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "bind",
         value: function bind(a, b) {
-            var _this11 = this;
+            var _this9 = this;
 
             if (typeof a === "number" && typeof b === "number") {
+                // public bind(scopeId: number, bindgroupId: number): void
                 var scopeId = a;
                 var bindgroupId = b;
-                if (this.bindgroup[scopeId] == null) {
+                if (this.config.bindgroup[scopeId] == null) {
                     console.warn("Shell#bind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
                     return;
                 }
-                this.bindgroup[scopeId][bindgroupId] = true;
+                this.config.bindgroup[scopeId][bindgroupId] = true;
                 this.attachedSurface.forEach(function (_ref4) {
                     var srf = _ref4.surface;
                     var div = _ref4.div;
 
                     srf.updateBind();
                 });
+                return;
             } else if (typeof a === "string" && typeof b === "string") {
-                (function () {
+                var _ret2 = function () {
+                    // public bind(scopeId: number, bindgroupId: number): void
                     var _category = a;
                     var _parts = b;
-                    _this11.config.char.forEach(function (char, scopeId) {
+                    _this9.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name = bindgroup.name;
                             var category = _bindgroup$name.category;
                             var parts = _bindgroup$name.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this11.bind(scopeId, bindgroupId);
+                                _this9.bind(scopeId, bindgroupId);
                             }
                         });
                     });
-                })();
+                    return {
+                        v: void 0
+                    };
+                }();
+
+                if ((typeof _ret2 === "undefined" ? "undefined" : _typeof(_ret2)) === "object") return _ret2.v;
             } else {
                 console.error("Shell#bind", "TypeError:", a, b);
             }
@@ -419,16 +401,17 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "unbind",
         value: function unbind(a, b) {
-            var _this12 = this;
+            var _this10 = this;
 
             if (typeof a === "number" && typeof b === "number") {
+                // 特定のスコープへのオンオフ
                 var scopeId = a;
                 var bindgroupId = b;
-                if (this.bindgroup[scopeId] == null) {
+                if (this.config.bindgroup[scopeId] == null) {
                     console.warn("Shell#unbind > bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
                     return;
                 }
-                this.bindgroup[scopeId][bindgroupId] = false;
+                this.config.bindgroup[scopeId][bindgroupId] = false;
                 this.attachedSurface.forEach(function (_ref5) {
                     var srf = _ref5.surface;
                     var div = _ref5.div;
@@ -437,16 +420,18 @@ var Shell = function (_EventEmitter$EventEm) {
                 });
             } else if (typeof a === "string" && typeof b === "string") {
                 (function () {
+                    // public unbind(category: string, parts: string): void
+                    // カテゴリ全体のオンオフ
                     var _category = a;
                     var _parts = b;
-                    _this12.config.char.forEach(function (char, scopeId) {
+                    _this10.config.char.forEach(function (char, scopeId) {
                         char.bindgroup.forEach(function (bindgroup, bindgroupId) {
                             var _bindgroup$name2 = bindgroup.name;
                             var category = _bindgroup$name2.category;
                             var parts = _bindgroup$name2.parts;
 
                             if (_category === category && _parts === parts) {
-                                _this12.unbind(scopeId, bindgroupId);
+                                _this10.unbind(scopeId, bindgroupId);
                             }
                         });
                     });
@@ -472,13 +457,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "showRegion",
         value: function showRegion() {
-            this.enableRegion = true;
-            this.attachedSurface.forEach(function (_ref7) {
-                var srf = _ref7.surface;
-                var div = _ref7.div;
-
-                srf.enableRegionDraw = true;
-            });
+            this.config.enableRegion = true;
             this.render();
         }
         //当たり判定非表示
@@ -486,13 +465,7 @@ var Shell = function (_EventEmitter$EventEm) {
     }, {
         key: "hideRegion",
         value: function hideRegion() {
-            this.enableRegion = false;
-            this.attachedSurface.forEach(function (_ref8) {
-                var srf = _ref8.surface;
-                var div = _ref8.div;
-
-                srf.enableRegionDraw = false;
-            });
+            this.config.enableRegion = false;
             this.render();
         }
         // 着せ替えメニュー用情報ていきょう
@@ -522,33 +495,44 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var ShellConfig = function () {
-  function ShellConfig() {
-    _classCallCheck(this, ShellConfig);
+    function ShellConfig() {
+        _classCallCheck(this, ShellConfig);
 
-    this.seriko = new SerikoConfig();
-    this.menu = new MenuConfig();
-    this.char = [];
-  }
-
-  _createClass(ShellConfig, [{
-    key: "loadFromJSONLike",
-    value: function loadFromJSONLike(json) {
-      var _this = this;
-
-      var seriko = json["seriko"] != null ? json["seriko"] : {};
-      var menu = json["menu"] != null ? json["menu"] : {};
-      var char = Array.isArray(json["char"]) ? json["char"] : [];
-      // char*
-      char.forEach(function (_char, id) {
-        new CharConfig().loadFromJSONLike(_char).then(function (conf) {
-          _this.char[id] = conf;
-        });
-      });
-      return Promise.resolve(this);
+        this.seriko = new SerikoConfig();
+        this.menu = new MenuConfig();
+        this.char = [];
+        // states
+        this.bindgroup = [];
+        this.enableRegion = false;
     }
-  }]);
 
-  return ShellConfig;
+    _createClass(ShellConfig, [{
+        key: "loadFromJSONLike",
+        value: function loadFromJSONLike(json) {
+            var _this = this;
+
+            var seriko = json["seriko"] != null ? json["seriko"] : {};
+            var menu = json["menu"] != null ? json["menu"] : {};
+            var char = Array.isArray(json["char"]) ? json["char"] : [];
+            // char*
+            return Promise.all(char.map(function (_char, id) {
+                return new CharConfig().loadFromJSONLike(_char).then(function (conf) {
+                    _this.char[id] = conf;
+                });
+            })).then(function (configs) {
+                // descript.txtからbindgroup探してデフォルト値を反映
+                _this.char.forEach(function (_char, charId) {
+                    _this.bindgroup[charId] = [];
+                    _char.bindgroup.forEach(function (o, animId) {
+                        _this.bindgroup[charId][animId] = o.default;
+                    });
+                });
+                return _this;
+            });
+        }
+    }]);
+
+    return ShellConfig;
 }();
 
 exports.ShellConfig = ShellConfig;
@@ -556,13 +540,13 @@ exports.ShellConfig = ShellConfig;
 var SerikoConfig =
 // \![set,sticky-window,スコープID,スコープID,...]のdescript版。タグを実行しなくてもあらかじめ設定できる。
 function SerikoConfig() {
-  _classCallCheck(this, SerikoConfig);
+    _classCallCheck(this, SerikoConfig);
 
-  this.use_self_alpha = false;
-  this.paint_transparent_region_black = true;
-  this.alignmenttodesktop = "bottom";
-  this.zorder = [];
-  this.stickyWindow = [];
+    this.use_self_alpha = false;
+    this.paint_transparent_region_black = true;
+    this.alignmenttodesktop = "bottom";
+    this.zorder = [];
+    this.stickyWindow = [];
 };
 
 exports.SerikoConfig = SerikoConfig;
@@ -623,81 +607,81 @@ separator?: {
   };
 }*/
 function MenuConfig() {
-  _classCallCheck(this, MenuConfig);
+    _classCallCheck(this, MenuConfig);
 
-  this.value = false;
+    this.value = false;
 };
 
 exports.MenuConfig = MenuConfig;
 
 var CharConfig = function () {
-  /*
-  bindoption: {
-    // char*.bindoption*.group,カテゴリ名,オプション
-    // その着せ替えカテゴリにオプションを設定。*は単に0から始まる通し番号(3人目以降)。
-    // mustselectでパーツを必ず1つ選択、multipleで複数のパーツを選択可能。
-    // オプションは+区切りで複数可。
-    group: {
-      category: string;
-      options: string[]; //multiple | mustselect
-    }
-  }[];*/
-  function CharConfig() {
-    _classCallCheck(this, CharConfig);
-
-    this.menu = "auto";
-    this.menuitem = [];
-    this.defaultX = 0;
-    this.defaultY = 0;
-    this.defaultLeft = 0;
-    this.defaultTop = 0;
-    this.balloon = {
-      offsetX: 0,
-      offsetY: 0,
-      alignment: "none"
-    };
-    this.bindgroup = [];
-  }
-
-  _createClass(CharConfig, [{
-    key: "loadFromJSONLike",
-    value: function loadFromJSONLike(char) {
-      var _this2 = this;
-
-      // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
-      if (Array.isArray(char["bindgroup"])) {
-        char["bindgroup"].forEach(function (bindgroup, id) {
-          if (bindgroup != null && typeof bindgroup["name"] === "string") {
-            var _bindgroup$name$split = bindgroup["name"].split(",").map(function (a) {
-              return a.trim();
-            });
-
-            var _bindgroup$name$split2 = _slicedToArray(_bindgroup$name$split, 3);
-
-            var category = _bindgroup$name$split2[0];
-            var parts = _bindgroup$name$split2[1];
-            var thumbnail = _bindgroup$name$split2[2];
-
-            _this2.bindgroup[id] = new BindGroupConfig(category, parts, thumbnail, !!Number(bindgroup["default"]));
-          }
-        });
+    /*
+    bindoption: {
+      // char*.bindoption*.group,カテゴリ名,オプション
+      // その着せ替えカテゴリにオプションを設定。*は単に0から始まる通し番号(3人目以降)。
+      // mustselectでパーツを必ず1つ選択、multipleで複数のパーツを選択可能。
+      // オプションは+区切りで複数可。
+      group: {
+        category: string;
+        options: string[]; //multiple | mustselect
       }
-      /*
-      // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
-      if(Array.isArray(char["bindoption"])){
-        char["bindoption"].forEach((bindoption)=>{
-          if(typeof bindoption.group === "string"){
-            const [category, ...options] = (""+bindoption.group).split(",").map((a)=>a.trim())
-            bindoption.group = {category, options};
-          }
-        });
-      }
-      */
-      return Promise.resolve(this);
-    }
-  }]);
+    }[];*/
+    function CharConfig() {
+        _classCallCheck(this, CharConfig);
 
-  return CharConfig;
+        this.menu = "auto";
+        this.menuitem = [];
+        this.defaultX = 0;
+        this.defaultY = 0;
+        this.defaultLeft = 0;
+        this.defaultTop = 0;
+        this.balloon = {
+            offsetX: 0,
+            offsetY: 0,
+            alignment: "none"
+        };
+        this.bindgroup = [];
+    }
+
+    _createClass(CharConfig, [{
+        key: "loadFromJSONLike",
+        value: function loadFromJSONLike(char) {
+            var _this2 = this;
+
+            // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
+            if (Array.isArray(char["bindgroup"])) {
+                char["bindgroup"].forEach(function (bindgroup, id) {
+                    if (bindgroup != null && typeof bindgroup["name"] === "string") {
+                        var _bindgroup$name$split = bindgroup["name"].split(",").map(function (a) {
+                            return a.trim();
+                        });
+
+                        var _bindgroup$name$split2 = _slicedToArray(_bindgroup$name$split, 3);
+
+                        var category = _bindgroup$name$split2[0];
+                        var parts = _bindgroup$name$split2[1];
+                        var thumbnail = _bindgroup$name$split2[2];
+
+                        _this2.bindgroup[id] = new BindGroupConfig(category, parts, thumbnail, !!Number(bindgroup["default"]));
+                    }
+                });
+            }
+            /*
+            // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
+            if(Array.isArray(char["bindoption"])){
+              char["bindoption"].forEach((bindoption)=>{
+                if(typeof bindoption.group === "string"){
+                  const [category, ...options] = (""+bindoption.group).split(",").map((a)=>a.trim())
+                  bindoption.group = {category, options};
+                }
+              });
+            }
+            */
+            return Promise.resolve(this);
+        }
+    }]);
+
+    return CharConfig;
 }();
 
 exports.CharConfig = CharConfig;
@@ -706,19 +690,19 @@ var BindGroupConfig =
 // 着せ替えの同時実行設定。アニメーションID*番の着せ替えが有効になった（表示された）時に、addidとして指定した着せ替えも同時に有効にする。カンマ区切りで複数指定可。
 // 同時実行中の着せ替えは、元となった着せ替えが無効になった時点で無効になる。複数の着せ替えのaddidとして同一の着せ替えが同時実行指定されている場合、元となったすべての着せ替えが無効になるまで同時実行指定の着せ替えも無効にならない。
 function BindGroupConfig(category, parts) {
-  var thumbnail = arguments.length <= 2 || arguments[2] === undefined ? "" : arguments[2];
+    var thumbnail = arguments.length <= 2 || arguments[2] === undefined ? "" : arguments[2];
 
-  var _default = arguments.length <= 3 || arguments[3] === undefined ? false : arguments[3];
+    var _default = arguments.length <= 3 || arguments[3] === undefined ? false : arguments[3];
 
-  _classCallCheck(this, BindGroupConfig);
+    _classCallCheck(this, BindGroupConfig);
 
-  this.name = {
-    category: category,
-    parts: parts,
-    thumbnail: thumbnail
-  };
-  this.default = _default;
-  this.addid = [];
+    this.name = {
+        category: category,
+        parts: parts,
+        thumbnail: thumbnail
+    };
+    this.default = _default;
+    this.addid = [];
 };
 
 exports.BindGroupConfig = BindGroupConfig;
@@ -741,11 +725,12 @@ var SurfaceUtil = require("./SurfaceUtil");
 var ST = require("./SurfaceTree");
 var EventEmitter = require("events");
 var $ = require("jquery");
+var SC = require("./ShellConfig");
 
 var Surface = function (_EventEmitter$EventEm) {
     _inherits(Surface, _EventEmitter$EventEm);
 
-    function Surface(div, scopeId, surfaceId, surfaceDefTree, bindgroup) {
+    function Surface(div, scopeId, surfaceId, surfaceDefTree, config) {
         _classCallCheck(this, Surface);
 
         var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Surface).call(this));
@@ -757,7 +742,7 @@ var Surface = function (_EventEmitter$EventEm) {
         var ctx = _this.cnv.getContext("2d");
         if (ctx == null) throw new Error("Surface#constructor: ctx is null");
         _this.ctx = ctx;
-        _this.bindgroup = bindgroup;
+        _this.config = config;
         _this.position = "fixed";
         _this.surfaceDefTree = surfaceDefTree;
         _this.surfaceTree = surfaceDefTree.surfaces;
@@ -793,7 +778,7 @@ var Surface = function (_EventEmitter$EventEm) {
             this.element = document.createElement("div");
             this.surfaceNode = new ST.SurfaceDefinition();
             this.surfaceTree = [];
-            this.bindgroup = [];
+            this.config = new SC.ShellConfig();
             this.layers = [];
             this.animationsQueue = {};
             this.talkCounts = {};
@@ -905,7 +890,7 @@ var Surface = function (_EventEmitter$EventEm) {
 
             if (this.isBind(animId)) {
                 // 現在有効な bind
-                if (intervals.length > 0) {
+                if (intervals.length > 1) {
                     // bind+hogeは着せ替え付随アニメーション。
                     // bind+sometimesを分解して実行
                     intervals.forEach(function (_ref5) {
@@ -962,6 +947,7 @@ var Surface = function (_EventEmitter$EventEm) {
 
             // Shell.tsから呼ばれるためpublic
             // Shell#bind,Shell#unbindで発動
+            // bindなレイヤ状態を変更する
             this.surfaceNode.animations.forEach(function (anim, animId) {
                 if (anim.intervals.some(function (_ref11) {
                     var _ref12 = _slicedToArray(_ref11, 2);
@@ -1170,8 +1156,8 @@ var Surface = function (_EventEmitter$EventEm) {
     }, {
         key: "isBind",
         value: function isBind(animId) {
-            if (this.bindgroup[this.scopeId] == null) return false;
-            if (this.bindgroup[this.scopeId][animId] === false) return false;
+            if (this.config.bindgroup[this.scopeId] == null) return false;
+            if (this.config.bindgroup[this.scopeId][animId] === false) return false;
             return true;
         }
     }, {
@@ -1321,7 +1307,7 @@ var Surface = function (_EventEmitter$EventEm) {
             this.bufferRender.composeElements([{ type: "overlay", canvas: composedBase, x: 0, y: 0 }]); // 現在有効な ベースサーフェスのレイヤを合成
             this.bufferRender.composeElements(fronts);
             // 当たり判定を描画
-            if (this.enableRegionDraw) {
+            if (this.config.enableRegion) {
                 this.bufferRender.drawRegions(this.surfaceNode.collisions, "" + this.surfaceId);
                 this.backgrounds.forEach(function (_, animId) {
                     _this10.bufferRender.drawRegions(_this10.surfaceNode.animations[animId].collisions, "" + _this10.surfaceId);
@@ -1494,7 +1480,7 @@ var Surface = function (_EventEmitter$EventEm) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Surface;
-},{"./SurfaceRender":4,"./SurfaceTree":5,"./SurfaceUtil":6,"events":9,"jquery":10}],4:[function(require,module,exports){
+},{"./ShellConfig":2,"./SurfaceRender":4,"./SurfaceTree":5,"./SurfaceUtil":6,"events":9,"jquery":10}],4:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
 
@@ -24704,7 +24690,7 @@ module.exports={
     "ukagaka"
   ],
   "scripts": {
-    "setup": "npm install -g gulp-cli typings http-server mversion",
+    "setup": "npm install -g gulp-cli bower typings http-server mversion",
     "init": "npm run update; npm run build",
     "update": "npm update; bower update; typings install",
     "build": "npm run clean&& tsc    -p src&& coffee -c -b -o lib src/*.coffee&& babel lib    -d es5&& gulp build&& browserify es5/index.js --standalone Shell -o dist/Shell.js",

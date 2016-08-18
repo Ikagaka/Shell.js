@@ -21,8 +21,6 @@ export default class Shell extends EventEmitter.EventEmitter {
   private surfaceTree: ST.SurfaceDefinition[]; // このshell.jsが解釈しているShellのリソースツリー
   private surfaceDefTree: ST.SurfaceDefinitionTree; // このshell.jsが解釈しているShellのリソースツリー
   private cacheCanvas: { [key: string]: SurfaceCanvas; };//keyはfilepath。element合成のときにすでに読み込んだファイルをキャッシュ
-  private bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
-  public enableRegion: boolean;
 
   constructor(directory: { [filepath: string]: ArrayBuffer; }) {
     super();
@@ -36,16 +34,12 @@ export default class Shell extends EventEmitter.EventEmitter {
     this.surfaceDefTree = new ST.SurfaceDefinitionTree();
     this.surfaceTree = this.surfaceDefTree.surfaces;
     this.cacheCanvas = {};
-    this.bindgroup = [];
-    this.enableRegion = false;
   }
 
   public load(): Promise<Shell> {
     return Promise.resolve(this)
     .then(()=> this.loadDescript()) // 1st // ←なにこれ（自問自
-    .then(()=> this.loadConfig())
-    .then(()=> this.loadBindGroup()) // 2nd // 依存関係的なやつだと思われ
-    .then(()=> console.log("descript done"))
+    .then(()=> console.log("descript done")) // 依存関係的なやつだと思われ
     .then(()=> this.loadSurfacesTxt()) // 1st
     .then(()=> this.loadSurfaceTable()) // 1st
     .then(()=> console.log("surfaces done"))
@@ -77,26 +71,13 @@ export default class Shell extends EventEmitter.EventEmitter {
       });
       this.descriptJSON = json;
     }
-    return Promise.resolve(this);
-  }
-
-  private loadConfig(): Promise<Shell> {
     // key-valueなdescriptをconfigへ変換
     return new SC.ShellConfig().loadFromJSONLike(this.descriptJSON).then((config)=>{
       this.config = config;
     }).then(()=> this);
   }
 
-  // descript.txtからbindgroup探してデフォルト値を反映
-  private loadBindGroup(): Promise<Shell> {
-    this.config.char.forEach((char, charId)=>{
-      this.bindgroup[charId] = [];
-      char.bindgroup.forEach((o, animId)=>{
-        this.bindgroup[charId][animId] = o.default;
-      });
-    });
-    return Promise.resolve(this);
-  }
+
 
   // surfaces.txtを読んでthis.surfacesTxtに反映
   private loadSurfacesTxt(): Promise<Shell> {
@@ -246,9 +227,9 @@ export default class Shell extends EventEmitter.EventEmitter {
       console.warn("surfaceId:", _surfaceId, "is not defined in surfaceTree", this.surfaceTree);
       return null;
     }
-    const srf = new Surface(div, scopeId, _surfaceId, this.surfaceDefTree, this.bindgroup);
-    srf.enableRegionDraw = this.enableRegion; // 当たり判定表示設定の反映
-    if(this.enableRegion){
+    const srf = new Surface(div, scopeId, _surfaceId, this.surfaceDefTree, this.config);
+    // const srf = new Surface(div, scopeId, _surfaceId, this.surfaceDefTree, this.config, this.state);
+    if(this.config.enableRegion){
       srf.render();
     }
     srf.on("mouse", (ev: SurfaceMouseEvent)=>{
@@ -302,17 +283,20 @@ export default class Shell extends EventEmitter.EventEmitter {
   public bind(scopeId: number, bindgroupId: number): void
   public bind(a: number|string, b: number|string): void {
     if(typeof a === "number" && typeof b === "number"){
+      // public bind(scopeId: number, bindgroupId: number): void
       const scopeId = a;
       const bindgroupId = b;
-      if(this.bindgroup[scopeId] == null){
+      if(this.config.bindgroup[scopeId] == null){
         console.warn("Shell#bind > bindgroup", "scopeId:",scopeId, "bindgroupId:",bindgroupId, "is not defined")
         return;
       }
-      this.bindgroup[scopeId][bindgroupId] = true;
+      this.config.bindgroup[scopeId][bindgroupId] = true;
       this.attachedSurface.forEach(({surface:srf, div})=>{
         srf.updateBind();
       });
+      return;
     }else if(typeof a === "string" && typeof b === "string"){
+      // public bind(scopeId: number, bindgroupId: number): void
       const _category = a;
       const _parts = b;
       this.config.char.forEach((char, scopeId)=>{
@@ -323,6 +307,7 @@ export default class Shell extends EventEmitter.EventEmitter {
           }
         });
       });
+      return;
     }else{
       console.error("Shell#bind", "TypeError:", a, b);
     }
@@ -333,17 +318,20 @@ export default class Shell extends EventEmitter.EventEmitter {
   public unbind(scopeId: number, bindgroupId: number): void
   public unbind(a: number|string, b: number|string): void {
     if(typeof a === "number" && typeof b === "number"){
+      // 特定のスコープへのオンオフ
       const scopeId = a;
       const bindgroupId = b;
-      if(this.bindgroup[scopeId] == null){
+      if(this.config.bindgroup[scopeId] == null){
         console.warn("Shell#unbind > bindgroup", "scopeId:",scopeId, "bindgroupId:",bindgroupId, "is not defined")
         return;
       }
-      this.bindgroup[scopeId][bindgroupId] = false;
+      this.config.bindgroup[scopeId][bindgroupId] = false;
       this.attachedSurface.forEach(({surface:srf, div})=>{
         srf.updateBind();
       });
     }else if(typeof a === "string" && typeof b === "string"){
+      // public unbind(category: string, parts: string): void
+      // カテゴリ全体のオンオフ
       const _category = a;
       const _parts = b;
       this.config.char.forEach((char, scopeId)=>{
@@ -368,19 +356,13 @@ export default class Shell extends EventEmitter.EventEmitter {
 
   //当たり判定表示
   public showRegion(): void {
-    this.enableRegion = true;
-    this.attachedSurface.forEach(({surface:srf, div})=>{
-      srf.enableRegionDraw = true;
-    });
+    this.config.enableRegion = true;
     this.render();
   }
 
   //当たり判定非表示
   public hideRegion(): void {
-    this.enableRegion = false;
-    this.attachedSurface.forEach(({surface:srf, div})=>{
-      srf.enableRegionDraw = false;
-    });
+    this.config.enableRegion = false;
     this.render();
   }
 

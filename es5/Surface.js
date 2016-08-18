@@ -16,11 +16,12 @@ var SurfaceUtil = require("./SurfaceUtil");
 var ST = require("./SurfaceTree");
 var EventEmitter = require("events");
 var $ = require("jquery");
+var SC = require("./ShellConfig");
 
 var Surface = function (_EventEmitter$EventEm) {
     _inherits(Surface, _EventEmitter$EventEm);
 
-    function Surface(div, scopeId, surfaceId, surfaceDefTree, bindgroup) {
+    function Surface(div, scopeId, surfaceId, surfaceDefTree, config) {
         _classCallCheck(this, Surface);
 
         var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Surface).call(this));
@@ -32,7 +33,7 @@ var Surface = function (_EventEmitter$EventEm) {
         var ctx = _this.cnv.getContext("2d");
         if (ctx == null) throw new Error("Surface#constructor: ctx is null");
         _this.ctx = ctx;
-        _this.bindgroup = bindgroup;
+        _this.config = config;
         _this.position = "fixed";
         _this.surfaceDefTree = surfaceDefTree;
         _this.surfaceTree = surfaceDefTree.surfaces;
@@ -68,7 +69,7 @@ var Surface = function (_EventEmitter$EventEm) {
             this.element = document.createElement("div");
             this.surfaceNode = new ST.SurfaceDefinition();
             this.surfaceTree = [];
-            this.bindgroup = [];
+            this.config = new SC.ShellConfig();
             this.layers = [];
             this.animationsQueue = {};
             this.talkCounts = {};
@@ -180,7 +181,7 @@ var Surface = function (_EventEmitter$EventEm) {
 
             if (this.isBind(animId)) {
                 // 現在有効な bind
-                if (intervals.length > 0) {
+                if (intervals.length > 1) {
                     // bind+hogeは着せ替え付随アニメーション。
                     // bind+sometimesを分解して実行
                     intervals.forEach(function (_ref5) {
@@ -237,6 +238,7 @@ var Surface = function (_EventEmitter$EventEm) {
 
             // Shell.tsから呼ばれるためpublic
             // Shell#bind,Shell#unbindで発動
+            // bindなレイヤ状態を変更する
             this.surfaceNode.animations.forEach(function (anim, animId) {
                 if (anim.intervals.some(function (_ref11) {
                     var _ref12 = _slicedToArray(_ref11, 2);
@@ -445,8 +447,8 @@ var Surface = function (_EventEmitter$EventEm) {
     }, {
         key: "isBind",
         value: function isBind(animId) {
-            if (this.bindgroup[this.scopeId] == null) return false;
-            if (this.bindgroup[this.scopeId][animId] === false) return false;
+            if (this.config.bindgroup[this.scopeId] == null) return false;
+            if (this.config.bindgroup[this.scopeId][animId] === false) return false;
             return true;
         }
     }, {
@@ -596,7 +598,7 @@ var Surface = function (_EventEmitter$EventEm) {
             this.bufferRender.composeElements([{ type: "overlay", canvas: composedBase, x: 0, y: 0 }]); // 現在有効な ベースサーフェスのレイヤを合成
             this.bufferRender.composeElements(fronts);
             // 当たり判定を描画
-            if (this.enableRegionDraw) {
+            if (this.config.enableRegion) {
                 this.bufferRender.drawRegions(this.surfaceNode.collisions, "" + this.surfaceId);
                 this.backgrounds.forEach(function (_, animId) {
                     _this10.bufferRender.drawRegions(_this10.surfaceNode.animations[animId].collisions, "" + _this10.surfaceId);
