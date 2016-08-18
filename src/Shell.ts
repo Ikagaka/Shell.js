@@ -251,7 +251,7 @@ export default class Shell extends EventEmitter.EventEmitter {
       surface.destructor();
     });
     this.removeAllListeners();
-    Shell.call(this, {}); // 初期化
+    Shell.call(this, {}); // 初期化 // ES6 Class ではできない:
   }
 
   private getSurfaceAlias(scopeId: number, surfaceId: number|string): number {

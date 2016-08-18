@@ -322,7 +322,7 @@ var Shell = function (_EventEmitter$EventEm) {
                 surface.destructor();
             });
             this.removeAllListeners();
-            Shell.call(this, {}); // 初期化
+            Shell.call(this, {}); // 初期化 // ES6 Class ではできない:
         }
     }, {
         key: "getSurfaceAlias",
