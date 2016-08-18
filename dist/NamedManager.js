@@ -2536,7 +2536,7 @@ module.exports = function ($) {
       })(this));
       this.destructors.push((function(_this) {
         return function() {
-          return _this.balloon.removeListener("select");
+          return _this.balloon.removeAllListeners("select");
         };
       })(this));
     };

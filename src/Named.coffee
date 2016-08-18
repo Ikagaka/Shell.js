@@ -186,7 +186,7 @@ class Named extends EventEmitter
         when "anchorselect" then @emit("anchorselect", ev)
       return
     @destructors.push =>
-      @balloon.removeListener("select")
+      @balloon.removeAllListeners("select")
     return
 
   initFileDropEvent: ->
