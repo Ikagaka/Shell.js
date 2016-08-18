@@ -1,11 +1,9 @@
-<script src="../bower_components/bluebird/js/browser/bluebird.min.js"></script>
-<script src="../bower_components/encoding-japanese/encoding.min.js"></script>
-<script src="../bower_components/jszip/dist/jszip.min.js"></script>
-<script src="../bower_components/narloader/NarLoader.js"></script>
+<script src="../bower_components/narloader/dist/NarLoader.js"></script>
 <script src="../bower_components/ikagaka.shell.js/dist/Shell.js"></script>
 <script src="../bower_components/ikagaka.balloon.js/dist/Balloon.js"></script>
 <script src="../dist/NamedManager.js"></script>
 <script>
+var NarLoader = NarLoader.NarLoader;
 var _NamedManager = NamedManager;
 var _Shell = Shell;
 var _Balloon = Balloon;
@@ -45,11 +43,11 @@ Promise.all([
     var nmdmgr = new NamedManager();
     document.body.appendChild(nmdmgr.element);
 
-    shell2.bindgroup.forEach(function (arr, i){
+    shell2.config.bindgroup.forEach(function (arr, i){
       arr.forEach(function(_, j){
-        shell2.bindgroup[i][j] = false});});
-    shell3.bindgroup[0][30] = false
-    shell3.bindgroup[0][31] = false
+        shell2.config.bindgroup[i][j] = false});});
+    shell3.config.bindgroup[0][30] = false
+    shell3.config.bindgroup[0][31] = false
 
     init(nmdmgr, shell, balloon, 1, shellNDir);
     init(nmdmgr, shell2, balloon2, 2, shellNDir);
