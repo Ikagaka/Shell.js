@@ -73,7 +73,8 @@
         "SurfaceUtil.ts",
         "SurfaceRender.ts",
         "CacheCanvas.ts",
-        "CacheCanvas.test.ts"
+        "CacheCanvas.test.ts",
+        "../typings/index.d.ts"
     ],
     "exclude": [
         "node_modules"
