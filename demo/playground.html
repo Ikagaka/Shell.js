@@ -1,0 +1,165 @@
+<script src="../bower_components/narloader/dist/NarLoader.js"></script>
+<script src="../dist/Shell.js"></script>
+<style media="screen">
+  #wrapper {
+    position: fixed;
+    bottom: 0px;
+    left: 300px;
+  }
+</style>
+<div id="wrapper"><div id="surface"></div></div>
+<fieldset>
+<legend id="version">surface test</legend>
+<p><label>nar: <input type="file" id="nar" /></label></p>
+<p><label>shell: <select name="shellId" id="shellId"></select></label></p>
+<p><label>scope: <input type="number" name="scopeId" id="scopeId" value="0" /></label></p>
+<p><label>surface: <select name="surfaceId" id="surfaceId"></select></label></p>
+<p><label>animation: <select name="animationId" id="animationId"></select></label></p>
+<p>bindgroup: <ol id="bindgroupId" start="0"/></ol></p>
+<p>collision: <input type="checkbox" id="collisionDraw" /></p>
+</fieldset>
+<script>
+var NarLoader = NarLoader.NarLoader;
+$("#version").append("(Shell@"+Shell.version+")");
+Shell.SurfaceRender.prototype.debug = false;//実際メモリの危機,GC多発
+
+//NarLoader.loadFromURL("../nar/raychel_second.nar").then(changeNar)
+NarLoader.loadFromURL("../nar/mobilemaster.nar").then(changeNar)
+//NarLoader.loadFromURL("../nar/Juda.zip").then(changeNar)
+//NarLoader.loadFromURL("../nar/yomefox.nar").then(changeNar)
+//NarLoader.loadFromURL("../nar/ku-ver06.1.nar").then(changeNar)
+$("#nar").change(function(ev){
+  NarLoader.loadFromBlob($(this).prop("files")[0]).then(changeNar);
+});
+
+var shell = null;
+
+function changeNar(nanikaDir){
+  console.log(nanikaDir.files);
+
+  var shelllist = nanikaDir.getDirectory("shell").listChildren();
+  var $frag = $(document.createDocumentFragment());
+  shelllist.forEach(function(shellId){
+    $("<option />").val(shellId).text(shellId).appendTo($frag);
+  });
+  $("#shellId").children().remove().end().append($frag).unbind().change(function(){ changeShell(nanikaDir); });
+  if(shelllist.length === 0) return console.warn("this nar does not have any shell");
+  if(shelllist.indexOf("master") !== -1) {
+    $("#shellId").val("master").change();
+  }else{
+    $("#shellId").val(shelllist[0]).change();
+  }
+}
+
+function changeShell(nanikaDir){
+  var shellDir = nanikaDir.getDirectory("shell/"+$("#shellId").val()).asArrayBuffer();
+  !!shell && shell.unload();
+  shell = new Shell.Shell(shellDir);
+  shell.load().then(function(shell){
+    console.log(shell);
+    shell.on("mouse", function(ev){
+      if(ev.type === "mousemove") return; // mousemoveは鬱陶しいので表示しない
+      console.log(ev);
+    });
+
+    //DOMTreeに大量のcanvasを撒き散らすのでメモリの危機
+    //$("#seriko_inspector").children().remove();
+    //$("#seriko_inspector").append(toHTML(shell.surfaceTree));
+
+
+    var srf = null;
+    var div = $("#surface")[0];
+
+    $("#surfaceId").children().remove();
+    var $frag = $(document.createDocumentFragment());
+    Object.keys(shell.surfaceTree).forEach(function(surfaceId){
+      $frag.append($("<option />").val(surfaceId).text(surfaceId));
+    });
+    $("#surfaceId").append($frag);
+
+    $("#bindgroupId").children().remove();
+    var $frag = $(document.createDocumentFragment());
+    Object.keys(shell.config.bindgroup).forEach(function(scopeId){
+      $li = $("<li />").appendTo($frag)
+      Object.keys(shell.config.bindgroup[scopeId]).forEach(function(bindgroupId){
+        $checkbox = $("<input type='checkbox' name='bindgroupId'/>")
+        .val(bindgroupId).prop("checked", shell.config.bindgroup[scopeId][bindgroupId]);
+        $label = $("<label />").text(bindgroupId+":").append($checkbox).appendTo($li);
+      });
+    });
+    $("#bindgroupId").append($frag);
+
+    $("#scopeId").unbind().change(changeSurface);
+    $("#surfaceId").unbind().change(function(){
+      $("#animationId").children().remove();
+      var $frag = $(document.createDocumentFragment());
+      var surfaceId = $("#surfaceId").val();
+      $("<option />").val("").text("---").appendTo($frag);
+      !!shell.surfaceTree[surfaceId] && shell.surfaceTree[surfaceId].animations.forEach(function(animation, i){
+        $("<option />").val(i).text(i+":"+animation.intervals.toString()).appendTo($frag);
+      });
+      $("#animationId").append($frag);
+      changeSurface();
+    }).val(0).change();
+    $("#animationId").unbind().change(function(){
+      var animationId = $(this).val();
+      if(!!srf && isFinite(Number(animationId))){
+        srf.stop(Number(animationId));
+        srf.play(Number(animationId));
+      }
+    });
+    $("#bindgroupId input[name='bindgroupId']").unbind().change(function(){
+      var scopeId = $("#scopeId").val();
+      var bindgroupIds = {};
+      $(this).each(function(){
+        var bindgroupId = $(this).val();
+        if($(this).prop("checked")) shell.bind(Number(scopeId), Number(bindgroupId));
+        else                        shell.unbind(Number(scopeId), Number(bindgroupId));
+      });
+      shell.render();
+    });
+    $("#collisionDraw").unbind().change(function(){
+      if($(this).prop("checked")){
+        shell.showRegion();
+      }else{
+        shell.hideRegion();
+      }
+    });
+
+    function changeSurface(){
+      var scopeId = $("#scopeId").val();
+      var surfaceId = $("#surfaceId").val();
+
+      console.log("scopeId:", scopeId, "surfaceId:", surfaceId);
+
+      shell.detachSurface(div);
+      srf = shell.attachSurface(div, Number(scopeId), Number(surfaceId));
+      console.log(srf);
+    }
+  }).catch(function(err){
+    console.error(err.stack);
+  });
+}
+
+function toHTML(obj){
+  if(false){
+  }else if(obj instanceof HTMLCanvasElement){
+    return Shell.SurfaceUtil.copy(obj);
+  }else if(typeof obj === "number"){ return JSON.stringify(obj);
+  }else if(typeof obj === "string"){ return JSON.stringify(obj);
+  }else if(typeof obj === "boolean"){ return JSON.stringify(obj);
+  }else if(obj === null){ return JSON.stringify(obj);
+  }else if(obj === undefined){ return JSON.stringify(obj);
+  }else if(obj instanceof Array || obj instanceof Object){
+    if(obj instanceof Array && obj.length === 0) return "[]";
+    if(obj instanceof Object && Object.keys(obj).length === 0) return "{}";
+    var $ul = $("<ul />");
+    Object.keys(obj).forEach(function(key){
+      $("<li />").text(key+": ").append(toHTML(obj[key])).appendTo($ul)
+    });
+    return $ul[0];
+  }else{
+    console.error(obj);
+  }
+}
+</script>
