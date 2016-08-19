@@ -25,9 +25,7 @@ export default class Shell extends EventEmitter.EventEmitter {
     private loadSurfacesTxt();
     private loadSurfaceTable();
     private loadSurfacePNG();
-    private loadElements();
     private hasFile(filename);
-    private getPNGFromDirectory(filename, cb);
     attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number | string): Surface | null;
     detachSurface(div: HTMLDivElement): void;
     unload(): void;

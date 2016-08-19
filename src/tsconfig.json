@@ -72,8 +72,8 @@
         "Surface.ts",
         "SurfaceUtil.ts",
         "SurfaceRender.ts",
-        "CacheCanvas.ts",
-        "CacheCanvas.test.ts",
+        "CanvasCache.ts",
+        "CanvasCache.test.ts",
         "../typings/index.d.ts"
     ],
     "exclude": [

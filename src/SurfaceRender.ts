@@ -1,108 +1,113 @@
 /// <reference path="../typings/index.d.ts"/>
 
-import {SurfaceCanvas, SurfaceElement} from "./Interfaces";
+import * as IF from "./Interfaces";
 import * as ST from "./SurfaceTree"
-import * as SurfaceUtil from "./SurfaceUtil";
+import * as SU from "./SurfaceUtil";
 
+export class SurfaceLayer { 
+  base:        Layer;
+  foregrounds: LayerSet[];
+  backgrounds: LayerSet[];
+}
+export type LayerSet = Layer[];
 
-export default class SurfaceRender {
+export class Layer {
+  type: string;
+  layer: LayerSet;
+  x: number;
+  y: number;
+}
+
+export class SurfaceCanvas {
   // baseCanvas
-  cnv: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  // GCの発生を抑えるためバッファを使いまわす
-  tmpcnv: HTMLCanvasElement;
-  tmpctx: CanvasRenderingContext2D;
-
+  cnv: HTMLCanvasElement
   // overlayではみ出した際canvasのリサイズがされるがその時の補正値
   basePosX: number;
   basePosY: number;
   baseWidth: number;
   baseHeight: number;
-
+  constructor(cnv: HTMLCanvasElement) {
+    this.cnv = cnv;
+    this.basePosX = 0;
+    this.basePosY = 0;
+    this.baseWidth = cnv.width;
+    this.baseHeight = cnv.height;
+  }
+}
+export class SurfaceRender extends SurfaceCanvas {
+  // GCの発生を抑えるためバッファを使いまわす
+  ctx: CanvasRenderingContext2D;
+  tmpcnv: HTMLCanvasElement
+  tmpctx: CanvasRenderingContext2D;
   debug: boolean;
-
   use_self_alpha: boolean;
 
   // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
   // nullならば1x1のCanvasをベースサーフェスとする。
   // 渡されたSurfaceCanvasは変更しない。
-  constructor(opt?:{use_self_alpha: boolean;}) {
+  constructor() {
+    super(SU.createCanvas());
+    this.ctx = <CanvasRenderingContext2D>this.cnv.getContext("2d");
+    this.tmpcnv = SU.createCanvas();
+    this.tmpctx = <CanvasRenderingContext2D>this.tmpcnv.getContext("2d");
     this.use_self_alpha = false;
-    this.cnv = SurfaceUtil.createCanvas();
-    const ctx = this.cnv.getContext("2d");
-    if(!ctx) throw new Error("SurfaceRender#Constructor:getContext failed");
-    this.ctx = ctx;
-    this.tmpcnv = SurfaceUtil.createCanvas();
-    const tmpctx = this.tmpcnv.getContext("2d");
-    if(!tmpctx) throw new Error("SurfaceRender#Constructor:getContext failed");
-    this.tmpctx = tmpctx;
-    this.basePosX = 0;
-    this.basePosY = 0;
-    this.baseWidth = 0;
-    this.baseHeight = 0;
     this.debug = false;
   }
 
   // バッファを使いまわすためのリセット
   // clearは短形を保つがリセットは1x1になる
   reset(): void {
-    this.cnv.width = 1;
-    this.cnv.height = 1;
-    this.tmpcnv.width = 1;
-    this.tmpcnv.height = 1;
+    // reshapeの機会を減らすため大きさはそのままにする
+    this.ctx.canvas.width = this.ctx.canvas.width;
+    this.tmpctx.canvas.width = this.tmpctx.canvas.width;
     this.basePosX = 0;
     this.basePosY = 0;
     this.baseWidth = 0;
     this.baseHeight = 0;
   }
 
-  public getSurfaceCanvas(): SurfaceCanvas {
-    return {cnv: SurfaceUtil.copy(this.cnv), png: null, pna: null};
+  public clear(): void {
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
   }
 
   // [
   //  {canvas: srfCnv1, type: "base",    x: 0,  y: 0}
   //  {canvas: srfCnv2, type: "overlay", x: 50, y: 50}
   // ]
-  public composeElements(elements: SurfaceElement[]): void {
-    // V8による最適化のためfor文に
-    const keys = Object.keys(elements);
-    for(let i=0; i<keys.length; i++){
-      const {canvas, type, x, y} = elements[keys[i]];
-      this.composeElement(canvas, type, x, y);
+  public composeElements(elms: {type: string, x: number, y:number, canvas:SurfaceCanvas}[]): SurfaceCanvas {
+    // baseを決定
+    const bases = elms.filter(({type})=> type === "base"); 
+    const others = elms.filter(({type})=> type !== "base");
+    // element[MAX].base > element0 > element[MIN]
+    let base = bases.slice(-1)[0]; /* last */
+    if(!(base instanceof ST.SurfaceElement)){
+      // element[MIN]
+      // elms.length > 0なのでundefinedにはならない…はず。
+      // お前がbaseになるんだよ
+      base = <ST.SurfaceElement&{canvas:SurfaceCanvas}>elms.shift();
+      console.warn("SurfaceRender#composeElements: base surface not found. failback.", base);
+      if(base == null){
+        console.warn("SurfaceRender#composeElements: cannot decide base surface", base);
+        return this;
+      }
     }
+    this.base(base.canvas);
+    others.forEach(({canvas, type, x, y})=>{
+      this.composeElement(canvas, type, x, y);
+    });
+    return this;
   }
 
   private composeElement(canvas: SurfaceCanvas, type: string, x=0, y=0): void {
-    if (canvas.cnv == null && canvas.png == null){
-      // element 合成のみで作られるサーフェスの base は dummy SurfaceCanvas
-      return;
-    }
-    if(!this.use_self_alpha) canvas = SurfaceUtil.pna(canvas);
-    if(this.baseWidth === 0 || this.baseHeight === 0){
-      // このサーフェスはまだ base を持たない
-      this.base(canvas);
-      return;
-    }
     switch (type) {
-      case "base":        this.base(canvas);              break;
       case "overlay":     this.overlay(canvas, x, y);     break;
-      case "add":         this.add(canvas, x, y);         break;
-      case "bind":        this.add(canvas, x, y);         break; // 旧仕様bindはaddへ
       case "overlayfast": this.overlayfast(canvas, x, y); break;
       case "replace":     this.replace(canvas, x, y);     break;
       case "interpolate": this.interpolate(canvas, x, y); break;
-      case "move":        this.move(x, y);                break;
-      case "asis":        this.asis(canvas, x, y);        break;
       case "reduce":      this.reduce(canvas, x, y);      break;
       default:
-        console.warn("SurfaceRender#composeElement", "unkown compose method", canvas, type, x, y);
+        console.warn("SurfaceRender#composeElement:", "unkown compose method", canvas, type, x, y);
     }
-  }
-
-  public clear(): void {
-    // this.cnv.width = this.cnv.width; // これDOM GC発生するので
-    this.ctx.clearRect(0, 0, this.cnv.width, this.cnv.height);
   }
 
   //下位レイヤをコマで完全に置き換える。collisionもコマのサーフェスに定義されたものに更新される。
@@ -110,73 +115,9 @@ export default class SurfaceRender {
   //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
   //着せ替え・elementでも使用できる。
   public base(part: SurfaceCanvas): void {
-    
-    if (! (part.cnv instanceof HTMLCanvasElement)){
-      console.error("SurfaceRender#base", "base surface is not defined", part);
-      return;
-    }
-    this.baseWidth = part.cnv.width;
-    this.baseHeight = part.cnv.height;
-    SurfaceUtil.init(this.cnv, this.ctx, part.cnv)
-  }
-
-  private prepareOverlay(part: SurfaceCanvas, x: number, y: number): void {
-    if(!part.cnv) throw new Error("SurfaceRender#prepareOverlay:cnv is null"); 
-    // baseのcanvasを拡大するためのキャッシュ
-    const tmp = SurfaceUtil.fastcopy(this.cnv, this.tmpcnv, this.tmpctx);
-    let offsetX = 0;
-    let offsetY = 0;
-    // もしパーツが右下へはみだす
-    if(x >= 0){
-      // 右
-      if (x + this.basePosX + part.cnv.width > this.cnv.width){
-        this.cnv.width = this.basePosX + x + part.cnv.width;
-        //offsetX = this.basePosX;
-      }else{
-        this.clear();
-      }
-    }
-    if(y >= 0){
-      // 下
-      if(y + this.basePosY + part.cnv.height > this.cnv.height){
-        this.cnv.height = y + this.basePosY + part.cnv.height;
-        //offsetY = this.basePosY;
-      }else{
-        this.cnv.height = this.cnv.height;
-      }
-    }
-    // もしパーツが左上へはみだす（ネガティブマージン
-    if(x + this.basePosX < 0){
-      // もし左へははみ出す
-      if(part.cnv.width + x > this.cnv.width){
-        // partの横幅がx考慮してもcnvよりでかい
-        this.cnv.width = part.cnv.width;
-        this.basePosX = -x;
-        offsetX = this.basePosX;
-      }else{
-        this.cnv.width = this.cnv.width - x;
-        this.basePosX = -x;
-        offsetX = this.cnv.width - tmp.width;
-      }
-    }
-    if(y + this.basePosY < 0){
-      // 上
-      if(part.cnv.height + y > this.cnv.height){
-        // partの縦幅がy考慮してもcnvよりでかい
-        this.cnv.height = part.cnv.height;
-        this.basePosY = -y;
-        offsetY = this.basePosY;
-      }else{
-        this.cnv.height = this.cnv.height - y;
-        this.basePosY = -y;
-        offsetY = this.cnv.height - tmp.height;
-      }
-    }
-    if(this.debug){
-      this.ctx.fillStyle = "lime";
-      this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
-    }
-    this.ctx.drawImage(tmp, offsetX, offsetY); //下位レイヤ再描画
+    this.reset();
+    this.ctx.globalCompositeOperation = "source-over";
+    this.ctx.drawImage(part.cnv, 0, 0);
   }
 
   //下位レイヤにコマを重ねる。
@@ -184,7 +125,7 @@ export default class SurfaceRender {
   private overlay(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "source-over";
-    this.ctx.drawImage(part.cnv!, this.basePosX + x, this.basePosY + y);//コマ追加
+    this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
   }
 
   //下位レイヤの非透過部分（半透明含む）にのみコマを重ねる。
@@ -192,7 +133,7 @@ export default class SurfaceRender {
   private overlayfast(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "source-atop";
-    this.ctx.drawImage(part.cnv!, this.basePosX + x, this.basePosY + y);
+    this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
   }
 
   //下位レイヤの透明なところにのみコマを重ねる。
@@ -203,58 +144,70 @@ export default class SurfaceRender {
   private interpolate(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "destination-over";
-    this.ctx.drawImage(part.cnv!, this.basePosX + x, this.basePosY + y);
+    this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
   }
 
   //下位レイヤにコマを重ねるが、コマの透過部分について下位レイヤにも反映する（reduce + overlayに近い）。
   //着せ替え・elementでも使用できる。
   private replace(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
-    this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv!.width, part.cnv!.height);
+    this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv.width, part.cnv.height);
     this.overlay(part, x, y);
   }
 
-  //下位レイヤに、抜き色やアルファチャンネルを適応しないままそのコマを重ねる。
-  //着せ替え・elementでも使用できる。
-  //なおelement合成されたサーフェスを他のサーフェスのアニメーションパーツとしてasisメソッドで合成した場合の表示は未定義であるが、
-  //Windows上では普通、透過領域は画像本来の抜き色に関係なく黒（#000000）で表示されるだろう。
-  private asis(part: SurfaceCanvas, x: number, y: number): void {
-    this.prepareOverlay(part, x, y);
-    this.ctx.globalCompositeOperation = "source-over";
-    // part.png で png画像をそのまま利用
-    this.ctx.drawImage(part.png!, this.basePosX + x, this.basePosY + y);
-  }
-
-  //下位レイヤをXY座標指定分ずらす。
-  //この描画メソッドが指定されたpattern定義では、サーフェスIDは無視される。
-  //着せ替え・elementでは使用不可。
-  private move(x: number, y: number): void{
-    // overlayするためだけのものなのでpngやpnaがnullでもまあ問題ない
-    const srfCnv:SurfaceCanvas = {cnv: SurfaceUtil.copy(this.cnv), png: null, pna: null};
-    this.clear(); // 大きさだけ残して一旦消す
-    this.overlay(srfCnv, x, y); //ずらした位置に再描画
-  }
-
-  //下位レイヤにそのコマを着せ替えパーツとして重ねる。本質的にはoverlayと同じ。
-  //着せ替え用に用意されたメソッドで、着せ替えでないアニメーション・elementでの使用は未定義。
-  private add(part: SurfaceCanvas, x: number, y: number): void {
-    this.overlay(part, x, y);
+  private prepareOverlay(part: SurfaceCanvas, x: number, y: number): void { 
+    // パーツがはみだす量
+    // もし負なら左へはみ出した量
+    let left  = this.basePosX + x;
+    // もし負なら右へはみ出した量
+    let right = this.cnv.width - ((this.basePosX + x) + part.cnv.width);
+    // もし負なら上へはみ出した量
+    let top  = this.basePosY + y;
+    // もし負なら↓へはみ出した量
+    let bottom = this.cnv.height - ((this.basePosY + y) + part.cnv.height);
+    if(left < 0 || right < 0 || top < 0 || bottom < 0){
+      // はみ出し発生
+      let offsetX = 0; // ずれた量
+      let offsetY = 0;
+      console.info("SurfaceRender#prepareOverlay: reshape occured");
+      // 現状をtmpcnvへコピー
+      SU.fastcopy(this.cnv, this.tmpctx);
+      if(left<0){
+        offsetX = (-left);
+        this.cnv.width += (-left); // reshape
+        this.basePosX += (-left);
+      }
+      if(right<0){
+        this.cnv.width += (-right); // reshape
+      }
+      if(top<0){
+        offsetY = (-top);
+        this.cnv.height += (-top); // reshape
+        this.basePosY += (-top);
+      }
+      if(bottom<0){
+        this.cnv.height += (-bottom); // reshape
+      }
+      if(this.debug){
+        // 基準点描画
+        this.ctx.fillStyle = "lime";
+        this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
+      }
+      this.ctx.drawImage(this.tmpctx.canvas, offsetX, offsetY); //下位レイヤ再描画
+    }
   }
 
   //下位レイヤの抜き色による透過領域に、そのコマの抜き色による透過領域を追加する。コマの抜き色で無い部分は無視される。
   //着せ替え用に用意されたメソッドだが、着せ替えでないアニメーション・elementでも使用可能。
   //http://usada.sakura.vg/contents/seriko.html
   private reduce(part: SurfaceCanvas, x: number, y: number): void {
-    if(!this.use_self_alpha) part = SurfaceUtil.pna(part);
-    if(!(part.cnv instanceof HTMLCanvasElement)) throw new Error("SurfaceRender#reduce: null")
-    // はみ出しちぇっく
-    // prepareOverlay はしない
+    // はみ出しちぇっく prepareOverlay はしない
     const width  = x + part.cnv.width  < this.cnv.width  ? part.cnv.width  : this.cnv.width  - x;
     const height = y + part.cnv.height < this.cnv.height ? part.cnv.height : this.cnv.height - y;
     const imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
     const dataA = imgdataA.data;
-    const ctxB = part.cnv.getContext("2d");
-    if(!ctxB) throw new Error("SurfaceRender#reduce: getContext failed");
+    // partの透明領域までアクセスする必要がある
+    const ctxB = <CanvasRenderingContext2D>part.cnv.getContext("2d");
     const imgdataB = ctxB.getImageData(0, 0, part.cnv.width, part.cnv.height)
     const dataB = imgdataB.data;
     for(let _y=0; _y<height; _y++){

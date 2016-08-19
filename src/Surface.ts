@@ -1,77 +1,98 @@
 /// <reference path="../typings/index.d.ts"/>
 
-import SurfaceRender from "./SurfaceRender";
-import * as SurfaceUtil from "./SurfaceUtil";
+import * as SR from "./SurfaceRender";
+import * as CC from "./CanvasCache";
+import * as SU from "./SurfaceUtil";
 import * as ST from "./SurfaceTree";
-import {SurfaceCanvas, SurfaceElement, SurfaceTreeNode, SurfaceMouseEvent, SurfaceAnimationEx} from "./Interfaces";
-import * as EventEmitter from "events";
-import $ = require("jquery");
 import * as SC from "./ShellConfig";
+import * as IF from "./Interfaces";
+import {EventEmitter} from "events";
+import $ = require("jquery");
+
+export class Layer{
+  background: boolean;
+}
+export class SerikoLayer extends Layer{
+  patternID: number;
+  timerID: any;
+  paused: boolean;
+  stop: boolean; // 現在排他されているアニメションID
+  exclusive: boolean; //keyがfalseのアニメーションの"自発的"再生を停止する、sometimesみたいのを止める。bindには関係ない
+  canceled: boolean; // 何らかの理由で強制停止された
+  constructor(patternID:number, background=false){
+    super();
+    this.patternID = patternID;
+    this.timerID = null;
+    this.paused = false;
+    this.stop = true;
+    this.exclusive = false;
+    this.canceled = false;
+    this.background = background;
+  }
+}
+
+export class MayunaLayer extends Layer{
+  visible: boolean;
+  constructor(visible:boolean, background=false){
+    super();
+    this.visible = visible;
+    this.background = background;
+  }
+}
 
 
-export default class Surface extends EventEmitter.EventEmitter {
+
+export class Surface extends EventEmitter {
 
   public element: HTMLDivElement;
+  private ctx: CanvasRenderingContext2D;
+  private bufferRender: SR.SurfaceRender;
+
   public scopeId: number;
   public surfaceId: number;
-  public position: string; // fixed|absolute
 
-  private cnv: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
+  private surfaceDefTree:  ST.SurfaceDefinitionTree;
+  private surfaceTree:     { [surfaceID: number]: ST.SurfaceDefinition };
   private surfaceNode: ST.SurfaceDefinition;
 
-  private backgrounds:     ST.SurfaceAnimationPattern[][];//背景レイヤ
-  private layers:          ST.SurfaceAnimationPattern[][];//アニメーションIDの現在のレイヤ。アニメで言う動画セル。
-
-  private exclusives: number[]; // 現在排他されているアニメションID
-  private talkCount: number;
-  private talkCounts:      { [animationId: number]: number };//key:タイミングがtalkのアニメーションid、number:talkCountの閾値
-  private animationsQueue: { [animationId: number]: Function[] }; // key:animationId, 再生中のアニメーションのコマごとのキュー。アニメーションの強制停止に使う
-  private stopFlags:       { [animationId: number]: boolean };//keyがfalseのアニメーションの"自発的"再生を停止する、sometimesみたいのを止める。bindには関係ない
-  private surfaceTree:     { [surfaceID: number]: ST.SurfaceDefinition };
-  private surfaceDefTree:  ST.SurfaceDefinitionTree;
-
-  private dynamicBase:     {type: string, x: number, y: number, canvas: SurfaceCanvas}|null; // アニメーションパーツででbase指定されたもの
   private config:          SC.ShellConfig;
+  private cache:           CC.CanvasCache;
+
+  private layers:          Layer[];//アニメーションIDの現在のレイヤ状態
+  private talkCount:   number;
+  public  moveX:       number;
+  public  moveY:       number;
+  
   private destructed: boolean;
   private destructors: Function[]; // destructor実行時に実行される関数のリスト
 
-  private bufferRender: SurfaceRender;
-
-  constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceDefTree: ST.SurfaceDefinitionTree, config: SC.ShellConfig) {
+  constructor(div: HTMLDivElement, scopeId: number, surfaceId: number, surfaceDefTree: ST.SurfaceDefinitionTree, config: SC.ShellConfig, cache: CC.CanvasCache) {
     super();
 
     this.element = div;
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
-    this.cnv = SurfaceUtil.createCanvas();
-    const ctx = this.cnv.getContext("2d");
+    const cnv = SU.createCanvas();
+    const ctx = cnv.getContext("2d");
     if(ctx == null) throw new Error("Surface#constructor: ctx is null");
     this.ctx = ctx;
     this.config = config;
-    this.position = "fixed";
+    this.cache  = cache;
     this.surfaceDefTree = surfaceDefTree;
     this.surfaceTree = surfaceDefTree.surfaces;
     this.surfaceNode = surfaceDefTree.surfaces[surfaceId];
 
-    this.exclusives = [];
     this.talkCount = 0;
-    this.talkCounts = {};
-    this.animationsQueue = {};
-    this.backgrounds = []
-    this.layers = [];
-    this.stopFlags = {};
-    this.dynamicBase = null;
 
     this.destructed = false;
     this.destructors = [];
 
-    // GCの発生を抑えるためレンダラはこれ１つを使いまわす
-    this.bufferRender = new SurfaceRender();
+    // DOM GCの発生を抑えるためレンダラはこれ１つを使いまわす
+    this.bufferRender = new SR.SurfaceRender();//{use_self_alpha: this.config.seriko.use_self_alpha });
 
     this.initDOMStructure();
     this.initMouseEvent();
-    this.surfaceNode.animations.forEach((anim, id)=>{ this.initAnimation(id, anim); });
+    this.surfaceNode.animations.forEach((anim, id)=>{ this.initAnimation(id); });
     this.render();
   }
 
@@ -83,228 +104,245 @@ export default class Surface extends EventEmitter.EventEmitter {
     this.surfaceTree = [];
     this.config = new SC.ShellConfig();
     this.layers = [];
-    this.animationsQueue = {};
-    this.talkCounts = {};
+    this.talkCount = 0;
     this.destructors = [];
     this.removeAllListeners();
     this.destructed = true;
   }
 
   private initDOMStructure(): void {
-    this.element.appendChild(this.cnv);
+    this.element.appendChild(this.ctx.canvas);
     $(this.element).css("position", "relative");
     $(this.element).css("display", "inline-block");
-    $(this.cnv).css("position", "absolute");
+    $(this.ctx.canvas).css("position", "absolute");
   }
 
-
-
-  private initAnimation(animId: number, anim: ST.SurfaceAnimation): void {
-    const {intervals, patterns, options, collisions} = anim;//isってなんだよって話は @narazaka さんに聞いて。SurfacesTxt2Yamlのせい。
+  private initAnimation(animId: number): void {
+    if (this.surfaceNode.animations[animId] == null){
+      console.warn("Surface#initAnimation: animationID", animId, "is not defined in ", this.surfaceId, this.surfaceNode);
+      return;
+    }
+    const {intervals, patterns, options, collisions} = this.surfaceNode.animations[animId];
+    const isBack = options.some(([opt, args])=> opt === "background");
     if(intervals.some(([interval, args])=> "bind" === interval)){
-      // bind+の場合は initBind にまるなげ
-      this.initBind(animId, anim);
-      return;
-    }
-    if (intervals.length > 1){
-      // bind+でなければ分解して再実行
-      intervals.forEach(([_interval, args])=>{
-        const a = new ST.SurfaceAnimation();
-        a.intervals = [[_interval, args]];
-        a.patterns = patterns;
-        a.options = options;
-        a.collisions = collisions;
-        this.initAnimation(animId, a);
-      });
-      return;
-    }
-    const [_interval, args] = intervals[0];
-    var n = 0; // tsc黙らせるため
-    if(args.length > 0){
-      n = Number(args[0]);
-      if(!isFinite(n)){
-        // rarelyにfaileback
-        n = 4;
+      // このanimIDは着せ替え機能付きレイヤ
+      if (this.isBind(animId)) {
+        // 現在有効な bind なら
+        if(intervals.length > 1){
+          // [[bind, []]].length === 1
+          // bind+hogeは着せ替え付随アニメーション。
+          // 現在のレイヤにSERIKOレイヤを追加
+          this.layers[animId] = new SerikoLayer(-1);
+          intervals.filter(([interval])=> interval !== "bind")
+          .forEach(([interval, args])=>{
+            // インターバルタイマの登録
+            this.setTimer(animId, interval, args);
+          });
+          return;
+        } 
+        // interval,bind
+        // 現在のレイヤにMAYUNAレイヤを追加
+        this.layers[animId] = new MayunaLayer(true, isBack);
+        return;
       }
-    }
-    // アニメーション描画タイミングの登録
-    const fn = (nextTick: Function) => {
-      if (this.destructed) return;
-      if (this.stopFlags[animId]) return;
-      this.play(animId, nextTick);
-    }
-    // アニメーションを止めるための準備
-    this.stopFlags[animId] = false;
-    switch (_interval) {
-      // nextTickを呼ぶともう一回random
-      case "sometimes": return SurfaceUtil.random(fn, 2);
-      case "rarely":    return SurfaceUtil.random(fn, 4);
-      case "random":    return SurfaceUtil.random(fn, n);
-      case "periodic":  return SurfaceUtil.periodic(fn, n);
-      case "always":    return SurfaceUtil.always(fn);
-      case "runonce":   return this.play(animId);
-      case "never":     return;
-      case "yen-e":     return;
-      case "talk": this.talkCounts[animId] = n; return;
-    }
-    console.warn("Surface#initAnimation > unkown interval:", _interval, anim);
-  }
-
-  private initBind(animId: number, anim: ST.SurfaceAnimation): void {
-    const {intervals, patterns, options, collisions} = anim;
-    if (this.isBind(animId)) {
-      // 現在有効な bind
-      if(intervals.length > 1){// [[bind, []]].length === 1
-        // bind+hogeは着せ替え付随アニメーション。
-        // bind+sometimesを分解して実行
-        intervals.forEach(([interval, args])=>{
-          if(interval !== "bind"){
-            const a = new ST.SurfaceAnimation
-            a.intervals = [[interval, args]];
-            a.patterns = patterns;
-            a.options = options;
-            a.collisions = collisions;
-            this.initAnimation(animId, a);
-          }
-        });
-      }
-      // レイヤに着せ替えを追加
-      options.forEach(([option, args])=>{
-        if(option === "background"){
-          this.backgrounds[animId] = patterns;
-        }else{
-          this.layers[animId] = patterns;
-        }
-      });
-    }else{
-      //現在の合成レイヤから着せ替えレイヤを削除
-      options.forEach(([option, args])=>{
-        if(option === "background"){
-          delete this.backgrounds[animId];
-        }else{
-          delete this.layers[animId];
-        }
-      });
-      // bind+sometimsなどを殺す
+      // 現在有効な bind でないなら
+      // 現在の合成レイヤの着せ替えレイヤを非表示設定
+      this.layers[animId] = new MayunaLayer(false, isBack);
+      // ついでにbind+sometimsなどを殺す
       this.end(animId);
+      return;
+    }
+    // 着せ替え機能なしレイヤ = 全てSERIKOレイヤ
+    // 現在のレイヤにSERIKOレイヤを追加
+      this.layers[animId] = new SerikoLayer(-1, isBack);
+    intervals.forEach(([interval, args])=>{
+      // インターバルタイマの登録
+      this.setTimer(animId, interval, args);
+    });
+  }
+  
+  private setTimer(animId:number, interval:string, args:number[]): void{
+    const layer = this.layers[animId];
+    if (layer instanceof SerikoLayer){
+      const n = isFinite(args[0]) ? args[0]
+                                  : (console.warn("Surface#setTimer: failback to", 4, interval, animId)
+                                  , 4);
+      // アニメーションを止めるための準備
+      layer.stop = false;
+      // アニメーション描画タイミングの登録
+      const fn = (nextTick: Function) => {
+        if (this.destructed) return;
+        if (layer.stop) return;
+        this.play(animId)
+        .catch((err)=> console.info("animation canceled", err))
+        .then(()=> nextTick());
+      };
+      switch (interval) {
+        // nextTickを呼ぶともう一回random
+        case "sometimes": layer.timerID = SU.random(fn, 2); return;
+        case "rarely":    layer.timerID = SU.random(fn, 4); return;
+        case "random":    layer.timerID = SU.random(fn, n); return;
+        case "periodic":  layer.timerID = SU.periodic(fn, n); return;
+        case "always":    layer.timerID = SU.always(fn);    return;
+        case "runonce":   this.play(animId); return;
+        case "never":     return;
+        case "yen-e":     return;
+        case "talk":      return;
+        default:
+          console.warn("Surface#setTimer > unkown interval:", interval, animId);
+          return; 
+      }
+    }else{
+      console.warn("Surface#setTimer: animId", animId,"is not SerikoLayer");
     }
   }
 
-  public updateBind(): void {
-    // Shell.tsから呼ばれるためpublic
-    // Shell#bind,Shell#unbindで発動
-    // bindなレイヤ状態を変更する
-    this.surfaceNode.animations.forEach((anim, animId)=>{
-      if(anim.intervals.some(([interval, args])=> "bind" === interval)){
-        this.initBind(animId, anim);
-      }
-    });
+  public update(): void {
+    // レイヤ状態の更新
+    this.surfaceNode.animations.forEach((anim, id)=>{ this.initAnimation(id); });
     // 即時に反映
     this.render();
   }
 
   // アニメーションタイミングループの開始要請
   public begin(animationId: number): void {
-    this.stopFlags[animationId] = false;
-    const anim = this.surfaceNode.animations[animationId];
-    this.initAnimation(animationId, anim);
-    this.render();
+    const layer = this.layers[animationId];
+    if(layer instanceof SerikoLayer){
+      layer.stop = false;
+      this.initAnimation(animationId);
+      this.render();
+    }
   }
 
   // アニメーションタイミングループの開始
   public end(animationId: number): void {
-    this.stopFlags[animationId] = true;
+    const layer = this.layers[animationId];
+    if(layer instanceof SerikoLayer){
+      layer.stop = true;
+    }
   }
 
   // すべての自発的アニメーション再生の停止
   public endAll(): void {
-    Object.keys(this.stopFlags).forEach((animationId)=>{
-      this.end(Number(animationId));
-    })
+    this.layers.forEach((layer, id)=>{
+      this.end(id);
+    });
   }
 
   // アニメーション再生
-  public play(animationId: number, callback?: Function): void {
-    if(this.destructed) return;
-    const anims = this.surfaceNode.animations;
-    const anim = this.surfaceNode.animations[animationId];
-    if(anim == null){
+  public play(animationId: number): Promise<void> {
+    if(this.destructed){ return Promise.reject("destructed"); }
+     if(!(this.layers[animationId] instanceof SerikoLayer)){
       console.warn("Surface#play", "animation", animationId, "is not defined");
-      return void setTimeout(callback); // そんなアニメーションはない
-    }
-    const {patterns, options} = anim;
-    this.animationsQueue[animationId] = patterns.map((pattern, i)=> ()=>{
-      const {surface, wait, type, x, y} = pattern;
-
-      switch(type){
-        case "start":            var {animation_ids} = pattern; this.play(animation_ids[0], nextTick); return;
-        case "stop":             var {animation_ids} = pattern; this.stop(animation_ids[0]          ); setTimeout(nextTick); return;
-        case "alternativestart": var {animation_ids} = pattern; this.play(SurfaceUtil.choice<number>(animation_ids), nextTick); return;
-        case "alternativestop":  var {animation_ids} = pattern; this.stop(SurfaceUtil.choice<number>(animation_ids)); setTimeout(nextTick); return;
+      return Promise.reject("no such animation"); // そんなアニメーションはない
+    }else{
+      let layer = <SerikoLayer>this.layers[animationId];
+      const anim = this.surfaceNode.animations[animationId];
+      if(layer.patternID >= 0){
+        // 既に再生中
+        // とりま殺す
+        layer.canceled = true;
+        clearTimeout(layer.timerID);
+        layer.timerID = null;
+        // とりま非表示に
+        layer = this.layers[animationId] = new SerikoLayer(-2);
       }
-      const _wait = SurfaceUtil.randomRange(wait[0], wait[1]);
-      setTimeout(()=>{
-        // 現在のコマをレイヤーに追加
-        options.forEach(([option, args])=>{
-          if(option === "background"){
-            this.backgrounds[animationId] = [pattern];
-          }else{
-            this.layers[animationId] = [pattern];
+      if(layer.paused){
+        // ポーズは解けた
+        layer.paused = false;
+      }
+      // これから再生開始するレイヤ
+      anim.options.forEach(([option, args])=>{
+        if(option === "exclusive"){
+          args.forEach((id)=>{
+            const layer = this.layers[id];
+            if(layer instanceof SerikoLayer){
+              // exclusive指定を反映
+              layer.exclusive = true;
+            }
+          });
+        }
+      });
+      return new Promise<void>((resolve, reject)=>{
+        let nextTick = ()=>{
+          // exclusive中のやつら探す
+          const existExclusiveLayers = this.layers.some((layer, id)=> {
+            return !(layer instanceof SerikoLayer) ? false // layer が mayuna なら 論外
+                  :                                  layer.exclusive // exclusive が存在
+          });
+          if(existExclusiveLayers){
+            // 自分はexclusiveか？
+            const amIexclusive = this.layers.some((layer, id)=> {
+              return !(layer instanceof SerikoLayer) ? false // layer が mayuna なら 論外
+                     : !layer.exclusive              ? false // exclusive が存在しない
+                     :                                 id === animationId // exclusiveが存在しなおかつ自分は含まれる
+            });
+            if(!amIexclusive){
+              // exclusiveが存在しなおかつ自分はそうではないなら
+              layer.canceled = true;
+            }
           }
-        });
-        const canIPlay = this.exclusives.every((exclusive)=> exclusive !== animationId);//自分のanimationIdはexclusivesリストに含まれていない
-        if(canIPlay){
+          if(layer.canceled || this.destructed){
+            // おわりですおわり
+            return reject("canceled");
+          }
+          if(layer.paused){
+            // 次にplayが呼び出されるまで何もしない 
+            return;
+          }
+          // 現在のレイヤを次のレイヤに
+          layer.patternID++;
+          const pattern = anim.patterns[layer.patternID];
+          // 正のレイヤIDなのに次のレイヤがない＝このアニメは終了
+          if(layer.patternID >= 0 && pattern == null){
+            // とりま非表示に
+            layer.patternID = -1;
+            layer.exclusive = false;
+            layer.timerID = null;
+            // nextTickがクロージャとしてもってるlayerを書き換えてしまわないように
+            const _layer = this.layers[animationId] = new SerikoLayer(-1);
+            return resolve();
+          }
+          const {surface, wait, type, x, y, animation_ids} = pattern;
+          switch(type){
+            // 付随再生であってこのアニメの再生終了は待たない・・・はず？
+            case "start":            this.play(animation_ids[0]); return;
+            case "stop":             this.stop(animation_ids[0]); return;
+            case "alternativestart": this.play(SU.choice<number>(animation_ids)); return;
+            case "alternativestop":  this.stop(SU.choice<number>(animation_ids)); return;
+            case "move":             this.moveX = x; this.moveY = y; return;
+          }
           this.render();
-        }
+          const _wait = SU.randomRange(wait[0], wait[1]);
+          // waitだけ待つ
+          layer.timerID = setTimeout(nextTick, _wait);
+        };/* nextTick ここまで */
         nextTick();
-      }, _wait);
-    });
-    options.forEach(([option, args])=>{
-      if(option === "exclusive"){
-        if(args.length > 0){
-          this.animationsQueue[animationId].unshift(()=>{
-            this.exclusives = args.map((arg)=> Number(arg));
-          });
-        }else{
-          this.animationsQueue[animationId].unshift(()=>{
-            this.exclusives = this.surfaceNode.animations.filter((anim, animId)=> animId !== animationId).map((anim, animId)=> animId);
-          });
-        }
-        this.animationsQueue[animationId].push(()=>{
-          this.exclusives = [];
-        });
-      }
-    });
-    var nextTick = ()=>{
-      if(this.destructed) return;
-      const next = this.animationsQueue[animationId].shift();
-      if(!(next instanceof Function) ){  // アニメーションキューを破棄されてるor これで終わり
-        // stop pattern animation.
-        this.animationsQueue[animationId] = [];
-        this.exclusives = [];
-        setTimeout(callback);
-      }else{
-        next();
-      }
-    };
-    if(this.animationsQueue[animationId][0] instanceof Function) {
-      nextTick();
+      });
     }
   }
 
   public stop(animationId: number): void {
-    this.animationsQueue[animationId] = []; // アニメーションキューを破棄
+    const layer = this.layers[animationId];
+    if(layer instanceof SerikoLayer){
+      layer.canceled = true;
+      layer.patternID = -1;
+    }
   }
 
   public talk(): void {
     const animations = this.surfaceNode.animations;
     this.talkCount++;
+    // talkなものでかつtalkCountとtalk,nのmodが0なもの
     const hits = animations.filter((anim, animId)=>
-        anim.intervals.some(([interval, args])=> "talk" === interval) && this.talkCount % this.talkCounts[animId] === 0);
+        anim.intervals.some(([interval, args])=> "talk" === interval && this.talkCount % args[0] === 0));
     hits.forEach((anim, animId)=>{
-      // そのアニメーションは再生が終了しているか？
-      if(this.animationsQueue[animId] == null || this.animationsQueue[animId].length === 0){
-        this.play(animId);
+      // そのtalkアニメーションは再生が終了しているか？
+      if(this.layers[animId] instanceof SerikoLayer){
+        const layer = <SerikoLayer>this.layers[animId];
+        if(layer.patternID < 0){
+          this.play(animId);
+        }
       }
     });
   }
@@ -324,102 +362,120 @@ export default class Surface extends EventEmitter.EventEmitter {
     return true;
   }
 
-  private composeAnimationPatterns(layers: ST.SurfaceAnimationPattern[][], interval?: string): SurfaceElement[] {
-    let renderLayers: SurfaceElement[] = [];
-    layers.forEach((patterns)=>{
-      patterns.forEach((pattern)=>{
-        const {surface, type, x, y, wait} = pattern;
-        if(type === "insert"){
-          // insertの場合は対象のIDをとってくる
-          // animation_id = animationN,x,y
-          const {animation_ids} = pattern;
-          const animId = animation_ids.length > 0 ? animation_ids[0] : -1
-          // 対象の着せ替えが有効かどうか判定
-          if (!this.isBind(animId)) return;
-          const anim = this.surfaceNode.animations[animId];
-          if(anim == null){
-            console.warn("Surface#composeAnimationPatterns",  "insert id", animation_ids, "is wrong target.", this.surfaceNode);
+  private composeBaseSurface(n: number): Promise<SR.SurfaceCanvas> {
+    // elements を合成するだけ
+    const srf = this.surfaceTree[n];
+    if(!(srf instanceof ST.SurfaceDefinition) || srf.elements.length === 0){
+      // そんな定義なかった || element0も何もなかった
+      console.warn("Surface#composeBaseSurface: no such a surface", n, srf);
+      return Promise.reject("no such a surface");
+    }
+    const elms = srf.elements;
+    return Promise.all(elms.map(({file, type, x, y})=>{
+      // asisはここで処理しちゃう
+      let asis = false;
+      if(type === "asis"){
+        type = "overlay"; // overlayにしとく
+        asis = true;
+      }
+      if(type === "bind" || type === "add"){
+        type = "overlay"; // overlayにしとく
+      }
+      // ファイルとりにいく
+      return this.cache.getCanvas(file, asis)
+      .then((cnv)=>{ return {file, type, x, y, canvas: new SR.SurfaceCanvas(cnv) }; })
+      .catch((err)=>{
+        console.warn("Surface#composeBaseSurface: no such a file", file, n, srf);
+      });
+    })).then((elms)=>{
+      return this.bufferRender.composeElements(elms);
+    }).then((srfCnv)=>{
+      // basesurfaceの大きさはbasesurfaceそのもの
+      srfCnv.basePosX = 0;
+      srfCnv.basePosY = 0;
+      srfCnv.baseWidth = srfCnv.cnv.width;
+      srfCnv.baseHeight = srfCnv.cnv.height;
+      return srfCnv;
+    });
+  }
+  private solveAnimationPattern(n:number): ST.SurfaceAnimationPattern[][]{
+    const patses: ST.SurfaceAnimationPattern[][] = [];
+    const srf = this.surfaceTree[n];
+    if(!(srf instanceof ST.SurfaceDefinition)){
+      // そんな定義なかった || element0も何もなかった
+      console.warn("Surface#solveAnimationPattern: no such a surface", n, srf);
+      return patses;
+    }
+    srf.animations.forEach(({intervals, options, patterns}, animId)=>{
+      if(intervals.length === 1 && intervals[0][0] === "bind" && this.isBind(animId)){
+        // 対象のサーフェスのパターンで bind で有効な着せ替えな animId
+        patses[animId] = [];
+        patterns.forEach(({type, animation_ids}, patId)=>{
+          if(type === "insert"){
+            // insertの場合は対象のIDをとってくる
+            const insertId = animation_ids[0];
+            const anim = this.surfaceNode.animations[insertId];
+            if(!(anim instanceof ST.SurfaceAnimation)){
+              console.warn("Surface#solveAnimationPattern", "insert id", animation_ids, "is wrong target.", n, patId);
+              return;
+            }
+            // insertをねじ込む
+            patses[animId] = patses[animId].concat(anim.patterns);
             return;
           }
-          renderLayers = renderLayers.concat(this.composeAnimationPatterns([anim.patterns], interval));
-          return;
-        }
-        if(surface < 0){
-          // idが-1つまり非表示指定
-          if(type === "base"){
-            // アニメーションパーツによるbaseを削除
-            this.dynamicBase = null;
-          }
-          return;
-        }
-        const srf = this.surfaceTree[surface]; // 該当のサーフェス
-        if(srf == null){
-          console.warn("Surface#composeAnimationPatterns", "surface id "+surface + " is not defined.", pattern);
-          return; // 対象サーフェスがないのでスキップ
-        }
-        // 対象サーフェスを構築描画する
-        const {base, elements, collisions, animations} = srf;
-        const bind_backgrounds: ST.SurfaceAnimationPattern[][] = [];
-        const bind_fronts: ST.SurfaceAnimationPattern[][] = [];
-        this.bufferRender.reset();
-        if(interval === "bind"){
-          console.info("Surface#composeAnimationPatterns", "multiple binds detected");
-          // 多重着せ替え定義（SSPのみ）
-          // アニメーションのコマとして参照した先のsurfaceに、そのsurfaceのアニメーションが定義されていた場合、通常それらは無視される。
-          // しかしSSPではintervalがbindのアニメーション（＝着せ替え）のみ無視されず反映されるようになっている。
-          // これによって、着せ替えの影響を受けるような構造のアニメーションについて、アニメーションのコマ側で着せ替えに応じた定義を行う事が可能である。
-          // なお多重着せ替えを入れ子にする事も可能であるが、循環的な参照は無視される。
-          // http://ssp.shillest.net/ukadoc/manual/descript_shell_surfaces.html#introduction_mayuna
-          // intervalがbindのときのみ対象サーフェスの着せ替えも有効にする
-          // https://github.com/Ikagaka/cuttlebone/issues/23
-          animations.forEach((anim, is)=>{
-            const {options, patterns} = anim;
-            if(this.isBind(is)){
-              options.forEach(([option, args])=>{
-                if ("background" === option){
-                  bind_backgrounds[is] = patterns;
-                }else{
-                  bind_fronts[is] = patterns;
-                }
-              });
-            }
-          });
-        }
-        // 循環無視されずスタックオーバーフローします
-        const _bind_backgrounds = this.composeAnimationPatterns(bind_backgrounds, interval);
-        const _bind_fronts = this.composeAnimationPatterns(bind_fronts, interval);
-        var _base_:SurfaceElement[] = [];
-        if(elements[0] != null){
-          // element0, element1...
-          _base_ = elements;
-        }else if(base != null){
-          // base, element1, element2...
-          _base_ = [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements);
-        }else{
-          console.error("Surface#composeAnimationPatterns: cannot decide base");
-          return;
-        }
-        // 対象サーフェスのbaseサーフェス(surface*.png)の上にelementを合成する
-
-        this.bufferRender.composeElements(
-          _bind_backgrounds.concat(_base_, _bind_fronts)
-        );
-        if(type === "base"){
-          // 構築したこのレイヤーのサーフェスはベースサーフェス指定
-          // 12pattern0,300,30,base,0,0 みたいなの
-          // baseの場合はthis.dynamicBaseにまかせて何も返さない
-          this.dynamicBase = {type, x, y, canvas: this.bufferRender.getSurfaceCanvas()};
-          return;
-        }else{
-          renderLayers.push({type, x, y, canvas: this.bufferRender.getSurfaceCanvas()});
-        }
-      });
+          // insertでない処理
+          patses[animId].push(patterns[patId]);
+        });
+      }
     });
-    return renderLayers;
+    return patses;
   }
 
+  private composeAnimationPart(n: number, log: number[]=[]): Promise<SR.SurfaceCanvas> {
+    if(log.indexOf(n) != -1){
+      // 循環参照
+      console.warn("Surface#composeAnimationPart: recursive definition detected", n, log);
+      return Promise.reject("recursive definition detected");
+    }
+    const srf = this.surfaceTree[n];
+    if(!(srf instanceof ST.SurfaceDefinition)){
+      // そんな定義なかった || element0も何もなかった
+      console.warn("Surface#composeAnimationPart: no such a surface", n, srf);
+      return Promise.reject("no such a surface");
+    }
+    // サーフェス n で表示すべきpatternをもらってくる
+    const patses = this.solveAnimationPattern(n);
+    const layers = patses.map((patterns, animId)=>{
+      // n の animId な MAYUNA レイヤセットのレイヤが pats
+      const layerset = Promise.all(patterns.map(({type, surface, wait, x, y}, patId)=>{
+        // 再帰的に画像読むよ
+        return this.composeAnimationPart(n, log.concat(n)).then((canvas)=>{
+          return {type, x, y, canvas};
+        }); 
+      }));
+      return layerset;
+    });
+    return Promise.all(layers).then((layers)=>{
+      // パターン全部読めたっぽいので分ける
+      const backgrounds = layers.filter((_, animId)=>{
+        const options = srf.animations[animId].options
+        return options.some(([opt, args])=> opt === "background")
+      })
+      const foregrounds = layers.filter((_, animId)=>{
+        const options = srf.animations[animId].options
+        return options.every(([opt, args])=> opt !== "background")
+      });
+      // パターン全部読めたっぽいのでベースを読む
+      return this.composeBaseSurface(n).then((base)=>{
+        this.bufferRender.composePatterns({base, foregrounds, backgrounds});
+        return this.bufferRender;
+      });
+    });
+  }
+  /*
   public render(): void {
     if(this.destructed) return;
+    this.layers.filter((anim_id)=>{})
     const backgrounds = this.composeAnimationPatterns(this.backgrounds);//再生途中のアニメーション含むレイヤ
     const elements = (this.surfaceNode.elements);
     const base = this.surfaceNode.base;
@@ -566,6 +622,7 @@ export default class Surface extends EventEmitter.EventEmitter {
     }
     this.emit("mouse", custom);
   }
+  */
 
 }
 

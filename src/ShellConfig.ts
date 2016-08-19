@@ -15,6 +15,7 @@ export class ShellConfig {
   // 以下 state
   public bindgroup: { [charId: number]: { [bindgroupId: number]: boolean } }; //keyはbindgroupのid、値はその着せ替えグループがデフォルトでオンかどうかの真偽値
   public enableRegion: boolean;
+  public position: "fixed"|"absolute";
 
   constructor(){
     this.seriko = new SerikoConfig();
@@ -23,6 +24,7 @@ export class ShellConfig {
     // states
     this.bindgroup = [];
     this.enableRegion = false;
+    this.position = "fixed";
   }
   loadFromJSONLike(json: JSONLike): Promise<this> {
     const seriko: JSONLike   = json["seriko"] != null      ? json["seriko"] : {};

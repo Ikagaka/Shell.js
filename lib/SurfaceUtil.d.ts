@@ -2,6 +2,8 @@
 import { SurfaceCanvas } from "./Interfaces";
 import * as ST from "./SurfaceTree";
 export declare function pna(srfCnv: SurfaceCanvas): SurfaceCanvas;
+export declare function chromakey(png: HTMLCanvasElement | HTMLImageElement): HTMLCanvasElement;
+export declare function png_pna(png: HTMLCanvasElement | HTMLImageElement, pna: HTMLCanvasElement | HTMLImageElement): HTMLCanvasElement;
 export declare function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src: HTMLCanvasElement): void;
 export declare function chromakey_snipet(data: Uint8ClampedArray): void;
 export declare function log(element: Element, description?: string): void;
@@ -44,3 +46,11 @@ export declare function getScrollXY(): {
 export declare function findSurfacesTxt(filepaths: string[]): string[];
 export declare function getArrayBufferFromURL(url: string): Promise<ArrayBuffer>;
 export declare function decolateJSONizeDescript<T, S>(o: T, key: string, value: S): void;
+export declare function changeFileExtension(filename: string, without_dot_new_extention: string): string;
+export declare function ABToCav(ab: ArrayBuffer): Promise<HTMLCanvasElement>;
+export declare function has<T>(dir: {
+    [key: string]: T;
+}, path: string): string;
+export declare function get<T>(dir: {
+    [key: string]: T;
+}, path: string): Promise<T>;

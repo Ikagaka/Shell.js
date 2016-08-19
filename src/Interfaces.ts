@@ -6,6 +6,7 @@ export interface SurfaceCanvas {
   pna: HTMLImageElement|null; // 色抜き前の素材。SurfaceUtil.pna しないかぎり nullable
 }
 
+
 export interface SurfaceMouseEvent {
   button: number; // マウスのボタン
   offsetX: number; // canvas左上からのx座標

@@ -1,10 +1,13 @@
 /// <reference path="../typings/index.d.ts"/>
 
-import {SurfaceTreeNode, SurfaceCanvas} from "./Interfaces";
+import * as IF from "./Interfaces";
 import * as ST from "./SurfaceTree";
 import Encoding = require("encoding-japanese");
 
-export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
+
+
+
+export function pna(srfCnv: IF.SurfaceCanvas): IF.SurfaceCanvas {
   const {cnv, png, pna} = srfCnv;
   if (cnv != null) {
     // 色抜き済みだった
@@ -12,40 +15,49 @@ export function pna(srfCnv: SurfaceCanvas): SurfaceCanvas {
   }
   if (cnv == null && png != null && pna == null){
     // 背景色抜き
-    const cnvA = copy(png);
-    const ctxA = cnvA.getContext("2d");
-    if(!ctxA) throw new Error("getContext failed");
-    const imgdata = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
-    chromakey_snipet(<Uint8ClampedArray><any>imgdata.data);
-    ctxA.putImageData(imgdata, 0, 0);
+    let cnvA = chromakey(png);
     srfCnv.cnv = cnvA; // キャッシュに反映
     return srfCnv;
   }
   if (cnv == null && png != null && pna != null) {
     // pna
-    const cnvA = copy(png);
-    const ctxA = cnvA.getContext("2d");
-    if(!ctxA) throw new Error("getContext failed");
-    const imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
-    const dataA = imgdataA.data;
-    const cnvB = copy(pna);
-    const ctxB = cnvB.getContext("2d")
-    if(!ctxB) throw new Error("getContext failed");
-    const imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
-    const dataB = imgdataB.data;
-    for(let y=0; y<cnvB.height; y++){
-      for(let x=0; x<cnvB.width; x++){
-        const iA = x*4 + y*cnvA.width*4; // baseのxy座標とインデックス
-        const iB = x*4 + y*cnvB.width*4; // pnaのxy座標とインデックス
-        dataA[iA+3] = dataB[iB]; // pnaのRの値をpngのalphaチャネルへ代入
-      }
-    }
-    ctxA.putImageData(imgdataA, 0, 0);
+    let cnvA = png_pna(png, pna);
     srfCnv.cnv = cnvA; // キャッシュに反映
     return srfCnv;
   }
   // png, cnv が null なのは element だけで構成されたサーフェスの dummy base
   return srfCnv;
+}
+
+export function chromakey(png: HTMLCanvasElement|HTMLImageElement):HTMLCanvasElement{
+  const cnvA = copy(png);
+  const ctxA = cnvA.getContext("2d");
+  if(!ctxA) throw new Error("getContext failed");
+  const imgdata = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
+  chromakey_snipet(<Uint8ClampedArray><any>imgdata.data);
+  ctxA.putImageData(imgdata, 0, 0);
+  return cnvA;
+}
+export function png_pna(png: HTMLCanvasElement|HTMLImageElement, pna: HTMLCanvasElement|HTMLImageElement) {
+  const cnvA = png instanceof HTMLCanvasElement ? png : copy(png);
+  const ctxA = cnvA.getContext("2d");
+  if(!ctxA) throw new Error("getContext failed");
+  const imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
+  const dataA = imgdataA.data;
+  const cnvB = pna instanceof HTMLCanvasElement ? pna : copy(pna);
+  const ctxB = cnvB.getContext("2d")
+  if(!ctxB) throw new Error("getContext failed");
+  const imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
+  const dataB = imgdataB.data;
+  for(let y=0; y<cnvB.height; y++){
+    for(let x=0; x<cnvB.width; x++){
+      const iA = x*4 + y*cnvA.width*4; // baseのxy座標とインデックス
+      const iB = x*4 + y*cnvB.width*4; // pnaのxy座標とインデックス
+      dataA[iA+3] = dataB[iB]; // pnaのRの値をpngのalphaチャネルへ代入
+    }
+  }
+  ctxA.putImageData(imgdataA, 0, 0);
+  return cnvA;
 }
 
 
@@ -105,37 +117,29 @@ export function parseDescript(text: string): {[key:string]:string}{
 // XMLHttpRequest, xhr.responseType = "arraybuffer"
 export function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
   return new Promise<ArrayBuffer>((resolve, reject)=>{
-    getArrayBuffer(url, (err, buffer)=>{
-      if(!!err) reject(err);
-      else      resolve(buffer!);
-    });
+      const xhr = new XMLHttpRequest();
+      const warn = (msg: string)=>{
+        console.warn("SurfaceUtil.fetchArrayBuffer: error", msg, xhr);
+        reject(msg);
+      };
+      xhr.addEventListener("load", function() {
+        if (200 <= xhr.status && xhr.status < 300) {
+          if (xhr.response.error == null) {
+            resolve(<ArrayBuffer>xhr.response);
+          } else {
+            warn(xhr.response.error.message);
+          }
+        } else {
+          warn(""+xhr.status);
+        }
+      });
+      xhr.addEventListener("error", function() {
+        warn(xhr.response.error.message);
+      });
+      xhr.open("GET", url);
+      xhr.responseType = "arraybuffer";
+      return xhr.send();
   });
-}
-
-// XMLHttpRequest, xhr.responseType = "arraybuffer"
-export function getArrayBuffer(url: string, cb: (err: any, buffer: ArrayBuffer|null)=> any): void {
-  const xhr = new XMLHttpRequest();
-  const _cb = (a: any, b: ArrayBuffer|null)=>{
-    cb(a, b);
-    cb = (a, b)=>{ console.warn("SurfaceUtil.getArrayBuffer", url, a, b); };
-  };
-  xhr.addEventListener("load", function() {
-    if (200 <= xhr.status && xhr.status < 300) {
-      if (xhr.response.error == null) {
-        _cb(null, <ArrayBuffer>xhr.response);
-      } else {
-        _cb(new Error("message: "+ xhr.response.error.message), null);
-      }
-    } else {
-      _cb(new Error("status: "+xhr.status), null);
-    }
-  });
-  xhr.addEventListener("error", function() {
-    _cb(new Error("error: "+ xhr.response.error.message), null);
-  });
-  xhr.open("GET", url);
-  xhr.responseType = "arraybuffer";
-  return xhr.send();
 }
 
 // convert some encoding txt file arraybuffer to js string
@@ -187,59 +191,40 @@ export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement
 }
 
 // tmpcnvにコピー
-export function fastcopy(cnv: HTMLCanvasElement|HTMLImageElement, tmpcnv:HTMLCanvasElement , tmpctx: CanvasRenderingContext2D) {
-  tmpcnv.width = cnv.width;
-  tmpcnv.height = cnv.height;
+export function fastcopy(cnv: HTMLCanvasElement|HTMLImageElement, tmpctx: CanvasRenderingContext2D): void {
+  tmpctx.canvas.width = cnv.width;
+  tmpctx.canvas.height = cnv.height;
   tmpctx.drawImage(<HTMLCanvasElement>cnv, 0, 0); // type hack
-  return tmpcnv;
 }
 
 // ArrayBuffer -> HTMLImageElement
 export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string): Promise<HTMLImageElement> {
   return new Promise<HTMLImageElement>((resolve, reject)=>{
-    getImageFromArrayBuffer(buffer, (err, img)=>{
-      if(!!err) reject(err);
-      else      resolve(img!);
-    })
-  });
-}
-
-// ArrayBuffer -> HTMLImageElement
-export function getImageFromArrayBuffer(buffer: ArrayBuffer, cb: (err: any, img: HTMLImageElement|null)=> any): void {
-  const url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
-  getImageFromURL(url, (err, img)=>{
-    URL.revokeObjectURL(url);
-    if (err == null) cb(null, img);
-    else             cb(err, null);
+    const url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
+    return fetchImageFromURL(url);
   });
 }
 
 // URL -> HTMLImageElement
 export function fetchImageFromURL(url: string): Promise<HTMLImageElement> {
   return new Promise<HTMLImageElement>((resolve, reject)=>{
-    getImageFromURL(url, (err, img)=>{
-      if(!!err) reject(err);
-      else      resolve(img!);
+    const img = new Image();
+    img.src = url;
+    img.addEventListener("load", function() {
+      resolve(img);
+    });
+    img.addEventListener("error", function(ev) {
+      console.error("SurfaceUtil.fetchImageFromURL:", ev);
+      reject(ev.error);
     });
   });
 }
 
-// URL -> HTMLImageElement
-export function getImageFromURL(url: string, cb: (err: any, img: HTMLImageElement | null)=> any): void {
-  const img = new Image();
-  img.src = url;
-  img.addEventListener("load", function() {
-    cb(null, img);
-  });
-  img.addEventListener("error", function(ev) {
-    console.error("SurfaceUtil.getImageFromURL", ev);
-    cb(ev, null);
-  });
-}
+
 
 // random(func, n) means call func 1/n per sec
-export function random(callback: (nextTick: () => void) => void, probability: number): void {
-  setTimeout((() =>{
+export function random(callback: (nextTick: Function) => void, probability: number): NodeJS.Timer {
+  return setTimeout((() =>{
     function nextTick(){ random(callback, probability); }
     if (Math.random() < 1/probability) callback(nextTick)
     else nextTick();
@@ -247,16 +232,18 @@ export function random(callback: (nextTick: () => void) => void, probability: nu
 }
 
 // cron
-export function periodic(callback: (callback: () => void) => void, sec: number): void {
-  setTimeout((() =>
+export function periodic(callback: (nextTick: Function) => void, sec: number): NodeJS.Timer {
+  return setTimeout((() =>
     callback(()=>
       periodic(callback, sec) )
   ), sec * 1000);
 }
 
 // 非同期ループするだけ
-export function always(  callback: (callback: () => void) => void): void {
-  callback(() => always(callback) );
+export function always(  callback: (nextTick: Function) => void): NodeJS.Timer {
+  return setTimeout((() =>
+    callback(() => always(callback) )
+  ), 0);
 }
 
 // canvasの座標のアルファチャンネルが不透明ならtrue
@@ -454,3 +441,23 @@ export function decolateJSONizeDescript<T, S>(o: T, key: string, value: S): void
   }
   return;
 }
+
+
+export function changeFileExtension(filename: string, without_dot_new_extention:string):string{
+  return filename.replace(/\.[^\.]+$/i, "") + "." + without_dot_new_extention;
+}
+
+export function ABToCav(ab: ArrayBuffer): Promise<HTMLCanvasElement>{
+  return fetchImageFromArrayBuffer(ab).then(copy);
+}
+export function has<T>(dir: {[key: string]: T }, path: string): string {
+  return fastfind(Object.keys(dir), path);
+}
+export function get<T>(dir: {[key:string]: T }, path: string): Promise<T> {
+  let key = "";
+  if((key = this.has(dir, path)) === ""){
+    return Promise.reject("file not find");
+  }
+  return Promise.resolve(dir[key]);
+}
+
