@@ -1,13 +1,12 @@
 /// <reference path="../typings/index.d.ts"/>
 
-import _CanvasCache from "./CanvasCache";
-import _SurfaceRender from "./SurfaceRender";
+import * as _CanvasCache from "./CanvasCache";
+import * as _SurfaceRender from "./SurfaceRender";
 import * as _SurfaceUtil from "./SurfaceUtil";
 import * as _SurfaceTree from "./SurfaceTree";
-import * as _Interfaces from "./Interfaces";
-import _Surface from './Surface';
+import * as _Surface from './Surface';
 import * as _ShellConfig from "./ShellConfig";
-import _Shell from "./Shell";
+import * as _Shell from "./Shell";
 
 var _package = require("../package.json");
 
@@ -19,7 +18,6 @@ export var Surface = _Surface;
 export var ShellConfig = _ShellConfig;
 export var Shell = _Shell;
 export var version = _package.version;
-export var Interfaces = _Interfaces;
 
 
 import $ = require("jquery");

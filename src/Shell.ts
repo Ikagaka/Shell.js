@@ -5,22 +5,21 @@ import * as ST from "./SurfaceTree";
 import * as SU from "./SurfaceUtil";
 import * as SC from "./ShellConfig";
 import * as CC from "./CanvasCache";
-import * as IF from "./Interfaces";
+import * as SL from "./ShellLoader";
 import * as SY from "surfaces_txt2yaml";
 import {EventEmitter} from "events";
 
-export default class Shell extends EventEmitter {
+export class Shell extends EventEmitter {
   //public
 
   public directory: { [filepath: string]: ArrayBuffer; } // filepathに対応するファイルのArrayBuffer
   public descript: SC.Descript; // descript.txtをcsvと解釈した時の値
   public descriptJSON: SC.JSONLike; // descript.txtをjsonと解釈した時の値
   public config: SC.ShellConfig; // 実際に有効なdescript
-  private cache: CC.CanvasCache;
+  public cache: CC.CanvasCache;
   public attachedSurface: { div: HTMLDivElement, surface: SF.Surface }[]; // 現在このシェルが実DOM上にレンダリングしているcanvasとそのsurface一覧
-  private surfacesTxt: SY.SurfacesTxt; // SurfacesTxt2Yamlの内容
-  private surfaceTree: ST.SurfaceDefinition[]; // このshell.jsが解釈しているShellのリソースツリー
-  private surfaceDefTree: ST.SurfaceDefinitionTree; // このshell.jsが解釈しているShellのリソースツリー
+  public surfacesTxt: SY.SurfacesTxt; // SurfacesTxt2Yamlの内容
+  public surfaceDefTree: ST.SurfaceDefinitionTree; // このshell.jsが解釈しているShellのリソースツリー
   
 
   constructor(directory: { [filepath: string]: ArrayBuffer; }) {
@@ -33,108 +32,15 @@ export default class Shell extends EventEmitter {
     this.attachedSurface = [];
     this.surfacesTxt = <SY.SurfacesTxt>{};
     this.surfaceDefTree = new ST.SurfaceDefinitionTree();
-    this.surfaceTree = this.surfaceDefTree.surfaces;
     this.cache = new CC.CanvasCache(this.directory);
   }
 
   public load(): Promise<Shell> {
-    return Promise.resolve(this)
-    .then(()=> this.loadDescript()) // 1st // ←なにこれ（自問自
-    .then(()=> console.log("descript done")) // 依存関係的なやつだと思われ
-    .then(()=> this.loadSurfacesTxt()) // 1st
-    .then(()=> this.loadSurfaceTable()) // 1st
-    .then(()=> console.log("surfaces done"))
-    .then(()=> this.loadSurfacePNG())   // 2nd
-    .then(()=> console.log("base done"))
-    .then(()=> this) // 3rd
-    .catch((err)=>{
-      console.error("Shell#load > ", err);
-      return Promise.reject(err);
-    });
+    return SL.load(this.directory, this);
   }
 
-  // this.directoryからdescript.txtを探してthis.descriptに入れる
-  private loadDescript(): Promise<Shell> {
-    const dir = this.directory;
-    const name = SU.fastfind(Object.keys(dir), "descript.txt");
-    if (name === "") {
-      console.info("descript.txt is not found");
-    } else {
-      let descript = this.descript = SU.parseDescript(SU.convert(dir[name]));
-      let json: SC.JSONLike = {};
-      Object.keys(descript).forEach((key)=>{
-        let _key = key
-          .replace(/^sakura\./, "char0.")
-          .replace(/^kero\./, "char1.");
-        SU.decolateJSONizeDescript<SC.JSONLike, string>(json, _key, descript[key]);
-      });
-      this.descriptJSON = json;
-    }
-    // key-valueなdescriptをconfigへ変換
-    return new SC.ShellConfig().loadFromJSONLike(this.descriptJSON).then((config)=>{
-      this.config = config;
-    }).then(()=> this);
-  }
-
-
-
-  // surfaces.txtを読んでthis.surfacesTxtに反映
-  private loadSurfacesTxt(): Promise<Shell> {
-    const filenames = SU.findSurfacesTxt(Object.keys(this.directory));
-    if(filenames.length === 0){
-      console.info("surfaces.txt is not found");
-    }
-    const cat_text = filenames.reduce((text, filename)=> text + SU.convert(this.directory[filename]), "");
-    const surfacesTxt = SY.txt_to_data(cat_text, {compatible: 'ssp-lazy'});
-    return ST.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt)
-    .then((surfaceTree)=>{
-      this.surfacesTxt = surfacesTxt;
-      this.surfaceDefTree = surfaceTree;
-      this.surfaceTree = this.surfaceDefTree.surfaces;
-      return this;
-    });
-  }
-
-  // surfacetable.txtを読む予定
-  private loadSurfaceTable(): Promise<Shell> {
-    const surfacetable_name = Object.keys(this.directory).filter((name)=> /^surfacetable.*\.txt$/i.test(name))[0] || "";
-    if(surfacetable_name === ""){
-      console.info("Shell#loadSurfaceTable", "surfacetable.txt is not found.");
-    }else{
-      const txt = SU.convert(this.directory[surfacetable_name]);
-      console.info("Shell#loadSurfaceTable", "surfacetable.txt is not supported yet.");
-      // TODO
-    }
-    return Promise.resolve(this);
-  }
-
-  // this.directory から surface*.png をelement0として読み込んで this.surfaceTree に反映
-  private loadSurfacePNG(): Promise<Shell>{
-    const surface_names = Object.keys(this.directory).filter((filename)=> /^surface(\d+)\.png$/i.test(filename));
-    surface_names.forEach((filename)=>{
-      const n = Number((/^surface(\d+)\.png$/i.exec(filename)||["","NaN"])[1]);
-      if(!isFinite(n)){ return; }
-      // 存在した
-      if(this.surfaceTree[n] == null){
-        // surfaces.txtで未定義なら追加
-        this.surfaceTree[n] = new ST.SurfaceDefinition();
-        this.surfaceTree[n].elements[0] = new ST.SurfaceElement("base", filename);
-      }else if(this.surfaceTree[n].elements[0] != null){
-        // surfaces.txtで定義済みだけどelement0ではない
-        this.surfaceTree[n].elements[0] = new ST.SurfaceElement("base", filename);
-      }else{
-        // surfaces.txtでelement0まで定義済み
-      }
-    });
-    return Promise.resolve(this);
-  }
-
-  private hasFile(filename: string): boolean {
-    return SU.fastfind(Object.keys(this.directory), filename) !== "";
-  }
-
-
-  public attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number|string): SF.Surface|null {
+  public attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number|string): Promise<SF.Surface> {
+    const surfaceTree = this.surfaceDefTree;
     const type = SU.scope(scopeId);
     const hits = this.attachedSurface.filter(({div: _div})=> _div === div);
     if(hits.length !== 0) throw new Error("Shell#attachSurface > ReferenceError: this HTMLDivElement is already attached");
@@ -145,20 +51,20 @@ export default class Shell extends EventEmitter {
     if(_surfaceId !== surfaceId){
       console.info("Shell#attachSurface", "surface alias is decided on", _surfaceId, "as", type, surfaceId);
     }
-    if(!this.surfaceTree[_surfaceId]){
-      console.warn("surfaceId:", _surfaceId, "is not defined in surfaceTree", this.surfaceTree);
-      return null;
+    if(!surfaceTree[_surfaceId]){
+      console.warn("surfaceId:", _surfaceId, "is not defined in surfaceTree", surfaceTree);
+      return Promise.reject("not defined");
     }
     const srf = new SF.Surface(div, scopeId, _surfaceId, this.surfaceDefTree, this.config, this.cache);
     // const srf = new Surface(div, scopeId, _surfaceId, this.surfaceDefTree, this.config, this.state);
     if(this.config.enableRegion){
       srf.render();
     }
-    srf.on("mouse", (ev: IF.SurfaceMouseEvent)=>{
+    srf.on("mouse", (ev: SF.SurfaceMouseEvent)=>{
       this.emit("mouse", ev); // detachSurfaceで消える
     });
     this.attachedSurface.push({div, surface:srf});
-    return srf;
+    return Promise.resolve(srf);
   }
 
   public detachSurface(div: HTMLDivElement): void {

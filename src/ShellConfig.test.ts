@@ -1,6 +1,7 @@
 /// <reference path="../typings/index.d.ts"/>
 
 import * as SC from "./ShellConfig";
+import * as SCL from "./ShellConfigLoader";
 import * as SU from "./SurfaceUtil";
 import narloader = require("narloader");
 const NL = narloader.NarLoader;
@@ -15,7 +16,7 @@ NL.loadFromURL("/nar/mobilemaster.nar").then((dir)=>{
 
   QUnit.test('SC.loadFromJSONLike', (assert)=>{
     const done = assert.async();
-    return new SC.ShellConfig().loadFromJSONLike(descript)
+    return SCL.loadFromJSONLike(descript)
     .then((config)=>{
       assert.ok(config.seriko.use_self_alpha === false);
       assert.ok(config.seriko.alignmenttodesktop === "bottom");

@@ -62,18 +62,21 @@
         "placeOpenBraceOnNewLineForControlBlocks": true
     },
     "files": [
-        "ShellConfig.ts",
-        "ShellConfig.test.ts",
-        "SurfaceTree.ts",
-        "SurfaceTree.test.ts",
+        "CanvasCache.ts",
+        "CanvasCache.test.ts",
         "index.ts",
         "Interfaces.ts",
         "Shell.ts",
+        "ShellConfig.ts",
+        "ShellConfig.test.ts",
+        "ShellConfigLoader.ts",
+        "ShellLoader.ts",
         "Surface.ts",
-        "SurfaceUtil.ts",
         "SurfaceRender.ts",
-        "CanvasCache.ts",
-        "CanvasCache.test.ts",
+        "SurfaceTree.ts",
+        "SurfaceTree.test.ts",
+        "SurfaceTreeLoader.ts",
+        "SurfaceUtil.ts",
         "../typings/index.d.ts"
     ],
     "exclude": [

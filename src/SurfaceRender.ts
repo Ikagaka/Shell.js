@@ -1,6 +1,5 @@
 /// <reference path="../typings/index.d.ts"/>
 
-import * as IF from "./Interfaces";
 import * as ST from "./SurfaceTree"
 import * as SU from "./SurfaceUtil";
 
@@ -34,6 +33,7 @@ export class SurfaceCanvas {
     this.baseHeight = cnv.height;
   }
 }
+
 export class SurfaceRender extends SurfaceCanvas {
   // GCの発生を抑えるためバッファを使いまわす
   ctx: CanvasRenderingContext2D;

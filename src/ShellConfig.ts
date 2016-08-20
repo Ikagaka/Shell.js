@@ -1,7 +1,4 @@
-/// <reference path="../typings/index.d.ts"/>
-
 import * as SU from "./SurfaceUtil";
-import $ = require("jquery");
 
 export type Descript = { [key: string]: string; };
 
@@ -25,27 +22,6 @@ export class ShellConfig {
     this.bindgroup = [];
     this.enableRegion = false;
     this.position = "fixed";
-  }
-  loadFromJSONLike(json: JSONLike): Promise<this> {
-    const seriko: JSONLike   = json["seriko"] != null      ? json["seriko"] : {};
-    const menu:   JSONLike   = json["menu"]   != null      ? json["menu"]   : {};
-    const char = <JSONLike[]>(Array.isArray(json["char"]) ? json["char"]   : []);
-    
-    // char*
-    return Promise.all(char.map((_char, id)=>{
-      return new CharConfig().loadFromJSONLike(_char).then((conf)=>{
-        this.char[id] = conf;
-      });
-    })).then((configs)=>{
-      // descript.txtからbindgroup探してデフォルト値を反映
-      this.char.forEach((_char, charId)=>{
-        this.bindgroup[charId] = [];
-        _char.bindgroup.forEach((o, animId)=>{
-          this.bindgroup[charId][animId] = o.default;
-        });
-      });
-      return this;
-    });
   }
 }
 
@@ -183,29 +159,7 @@ export class CharConfig {
     };
     this.bindgroup = [];
   }
-  loadFromJSONLike(char: JSONLike): Promise<this> {
-    // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
-    if(Array.isArray(char["bindgroup"])){
-      char["bindgroup"].forEach((bindgroup: JSONLike, id: number)=>{
-        if(bindgroup != null && typeof bindgroup["name"] === "string"){
-          const [category, parts, thumbnail]:string[] = bindgroup["name"].split(",").map((a:string)=> a.trim())
-          this.bindgroup[id] = new BindGroupConfig(category, parts, thumbnail, !!Number(bindgroup["default"]));
-        }
-      });
-    }
-    /*
-    // sakura.bindoption0.group = "アクセサリ,multiple" -> {category: "アクセサリ", options: "multiple"}
-    if(Array.isArray(char["bindoption"])){
-      char["bindoption"].forEach((bindoption)=>{
-        if(typeof bindoption.group === "string"){
-          const [category, ...options] = (""+bindoption.group).split(",").map((a)=>a.trim())
-          bindoption.group = {category, options};
-        }
-      });
-    }
-    */
-    return Promise.resolve(this);
-  }
+  
 }
 
 export class BindGroupConfig {

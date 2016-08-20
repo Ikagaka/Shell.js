@@ -1,33 +1,8 @@
-/// <reference path="../typings/index.d.ts"/>
-
-import * as IF from "./Interfaces";
 import * as ST from "./SurfaceTree";
 import Encoding = require("encoding-japanese");
+import $ = require("jquery");
 
-
-
-
-export function pna(srfCnv: IF.SurfaceCanvas): IF.SurfaceCanvas {
-  const {cnv, png, pna} = srfCnv;
-  if (cnv != null) {
-    // 色抜き済みだった
-    return srfCnv;
-  }
-  if (cnv == null && png != null && pna == null){
-    // 背景色抜き
-    let cnvA = chromakey(png);
-    srfCnv.cnv = cnvA; // キャッシュに反映
-    return srfCnv;
-  }
-  if (cnv == null && png != null && pna != null) {
-    // pna
-    let cnvA = png_pna(png, pna);
-    srfCnv.cnv = cnvA; // キャッシュに反映
-    return srfCnv;
-  }
-  // png, cnv が null なのは element だけで構成されたサーフェスの dummy base
-  return srfCnv;
-}
+export var extend = $.extend;
 
 export function chromakey(png: HTMLCanvasElement|HTMLImageElement):HTMLCanvasElement{
   const cnvA = copy(png);
@@ -38,6 +13,7 @@ export function chromakey(png: HTMLCanvasElement|HTMLImageElement):HTMLCanvasEle
   ctxA.putImageData(imgdata, 0, 0);
   return cnvA;
 }
+
 export function png_pna(png: HTMLCanvasElement|HTMLImageElement, pna: HTMLCanvasElement|HTMLImageElement) {
   const cnvA = png instanceof HTMLCanvasElement ? png : copy(png);
   const ctxA = cnvA.getContext("2d");
@@ -374,8 +350,7 @@ export function findSurfacesTxt(filepaths: string[]): string[] {
 
 
 
-export function getArrayBufferFromURL(url: string): Promise<ArrayBuffer> {
-  console.warn("getArrayBuffer for debbug");
+export function fetchArrayBufferFromURL(url: string): Promise<ArrayBuffer> {
   return new Promise<ArrayBuffer>((resolve, reject)=> {
     const xhr = new XMLHttpRequest();
     xhr.addEventListener("load", ()=>{

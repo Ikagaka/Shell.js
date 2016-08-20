@@ -5,7 +5,6 @@ import * as CC from "./CanvasCache";
 import * as SU from "./SurfaceUtil";
 import * as ST from "./SurfaceTree";
 import * as SC from "./ShellConfig";
-import * as IF from "./Interfaces";
 import {EventEmitter} from "events";
 import $ = require("jquery");
 
@@ -472,8 +471,9 @@ export class Surface extends EventEmitter {
       });
     });
   }
-  /*
+  
   public render(): void {
+    /*
     if(this.destructed) return;
     this.layers.filter((anim_id)=>{})
     const backgrounds = this.composeAnimationPatterns(this.backgrounds);//再生途中のアニメーション含むレイヤ
@@ -531,6 +531,7 @@ export class Surface extends EventEmitter {
     $(this.element).height(baseHeight);//this.cnv.height - bufRender.basePosY);
     $(this.cnv).css("top", -this.bufferRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
     $(this.cnv).css("left", -this.bufferRender.basePosX);
+    */
   }
 
   public getSurfaceSize(): {width: number, height: number} {
@@ -541,6 +542,7 @@ export class Surface extends EventEmitter {
   }
 
   private initMouseEvent(): void {
+    /*
     const $elm = $(this.element);
     let tid:any = null;
     let touchCount = 0;
@@ -570,9 +572,11 @@ export class Surface extends EventEmitter {
     this.destructors.push(()=>{
       tuples.forEach(([ev, handler])=> $elm.off(ev, handler));// イベント解除
     });
+    */
   }
 
   private processMouseEvent(ev: JQueryEventObject, type:string ): void {// マウスイベントの共通処理
+    /*
     $(ev.target).css({"cursor": "default"});//これDOMアクセスして重いのでは←mousemoveタイミングで他のライブラリでもっとDOMアクセスしてるし気になるなら計測しろ
     const {pageX, pageY, clientX, clientY} = SurfaceUtil.getEventPosition(ev);
     const {left, top} = $(ev.target).offset();
@@ -621,9 +625,23 @@ export class Surface extends EventEmitter {
       $(ev.target).css({"cursor": "pointer"}); //当たり判定でマウスポインタを指に
     }
     this.emit("mouse", custom);
+    */
   }
-  */
+  
 
 }
 
+
+
+export interface SurfaceMouseEvent {
+  button: number; // マウスのボタン
+  offsetX: number; // canvas左上からのx座標
+  offsetY: number; // canvas左上からのy座標
+  region: string; // collisionの名前
+  scopeId: number; // このサーフェスのスコープ番号
+  wheel: number; // 0
+  type: string; // "Bust"
+  transparency: boolean; // 透明領域ならtrue,
+  event: JQueryEventObject;
+}
 

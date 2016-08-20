@@ -1,6 +1,7 @@
 /// <reference path="../typings/index.d.ts"/>
 
 import * as ST from "./SurfaceTree";
+import * as STL from "./SurfaceTreeLoader";
 import * as SU from "./SurfaceUtil";
 import narloader = require("narloader");
 import ST2Y = require("surfaces_txt2yaml");
@@ -21,7 +22,7 @@ NL.loadFromURL('../nar/mobilemaster.nar')
   QUnit.test('SurfaceTree.loadFromsurfacesTxt2Yaml', (assert)=>{
     const done = assert.async();
     console.log(surfacesTxt);
-    return ST.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt)
+    return STL.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt)
     .then((surfaceTree)=>{
       console.log(surfaceTree);
       assert.ok(Object.keys(surfaceTree.aliases).every((a)=> isFinite(Number(a))));
