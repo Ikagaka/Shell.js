@@ -466,7 +466,7 @@ export class Surface extends EventEmitter {
       });
       // パターン全部読めたっぽいのでベースを読む
       return this.composeBaseSurface(n).then((base)=>{
-        this.bufferRender.composePatterns({base, foregrounds, backgrounds});
+        //this.bufferRender.composePatterns({base, foregrounds, backgrounds});
         return this.bufferRender;
       });
     });

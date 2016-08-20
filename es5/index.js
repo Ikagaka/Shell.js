@@ -1,12 +1,13 @@
 /// <reference path="../typings/index.d.ts"/>
 "use strict";
-const _CanvasCache = require("./CanvasCache");
-const _SurfaceRender = require("./SurfaceRender");
-const _SurfaceUtil = require("./SurfaceUtil");
-const _SurfaceTree = require("./SurfaceTree");
-const _Surface = require('./Surface');
-const _ShellConfig = require("./ShellConfig");
-const _Shell = require("./Shell");
+
+var _CanvasCache = require("./CanvasCache");
+var _SurfaceRender = require("./SurfaceRender");
+var _SurfaceUtil = require("./SurfaceUtil");
+var _SurfaceTree = require("./SurfaceTree");
+var _Surface = require('./Surface');
+var _ShellConfig = require("./ShellConfig");
+var _Shell = require("./Shell");
 var _package = require("../package.json");
 exports.CanvasCache = _CanvasCache;
 exports.SurfaceRender = _SurfaceRender;
@@ -16,6 +17,6 @@ exports.Surface = _Surface;
 exports.ShellConfig = _ShellConfig;
 exports.Shell = _Shell;
 exports.version = _package.version;
-const $ = require("jquery");
+var $ = require("jquery");
 window["$"] = window["$"] || $;
 window["jQuery"] = window["jQuery"] || $;

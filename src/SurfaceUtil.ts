@@ -37,12 +37,6 @@ export function png_pna(png: HTMLCanvasElement|HTMLImageElement, pna: HTMLCanvas
 }
 
 
-export function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src: HTMLCanvasElement): void {
-  cnv.width = src.width;
-  cnv.height = src.height;
-  ctx.globalCompositeOperation = "source-over";
-  ctx.drawImage(src, 0, 0);
-}
 
 export function chromakey_snipet(data: Uint8ClampedArray): void { // side effect
   const r = data[0], g = data[1], b = data[2], a = data[3];
@@ -158,13 +152,15 @@ export function choice<T>(arr: T[]): T {
 // see also: http://stackoverflow.com/questions/4405336/how-to-copy-contents-of-one-canvas-to-another-canvas-locally
 export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement {
   const _copy = document.createElement("canvas");
-  const ctx = _copy.getContext("2d");
-  if(!ctx) throw new Error("getContext failed");
+  const ctx = <CanvasRenderingContext2D>_copy.getContext("2d");
   _copy.width = cnv.width;
   _copy.height = cnv.height;
+  ctx.globalCompositeOperation = "source-over";
   ctx.drawImage(<HTMLCanvasElement>cnv, 0, 0); // type hack
   return _copy;
 }
+
+
 
 // tmpcnvにコピー
 export function fastcopy(cnv: HTMLCanvasElement|HTMLImageElement, tmpctx: CanvasRenderingContext2D): void {
@@ -436,3 +432,16 @@ export function get<T>(dir: {[key:string]: T }, path: string): Promise<T> {
   return Promise.resolve(dir[key]);
 }
 
+
+
+export function setPictureFrame(element: HTMLElement, description: string){
+  const fieldset = document.createElement('fieldset');
+  const legend = document.createElement('legend');
+  legend.appendChild(document.createTextNode(description));
+  fieldset.appendChild(legend);
+  fieldset.appendChild(element);
+  fieldset.style.display = 'inline-block';
+  fieldset.style.backgroundColor = "#D2E0E6";
+  document.body.appendChild(fieldset);
+  return;
+}

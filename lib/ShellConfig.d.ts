@@ -1,4 +1,3 @@
-/// <reference path="../typings/index.d.ts" />
 export declare type Descript = {
     [key: string]: string;
 };
@@ -15,8 +14,8 @@ export declare class ShellConfig {
         };
     };
     enableRegion: boolean;
+    position: "fixed" | "absolute";
     constructor();
-    loadFromJSONLike(json: JSONLike): Promise<this>;
 }
 export declare class SerikoConfig {
     use_self_alpha: boolean;
@@ -47,7 +46,6 @@ export declare class CharConfig {
     };
     bindgroup: BindGroupConfig[];
     constructor();
-    loadFromJSONLike(char: JSONLike): Promise<this>;
 }
 export declare class BindGroupConfig {
     name: {

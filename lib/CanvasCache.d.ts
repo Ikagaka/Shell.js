@@ -1,5 +1,5 @@
 import "../typings/index.d.ts";
-export default class CanvasCache {
+export declare class CanvasCache {
     private directory;
     private cache;
     constructor(dir: {

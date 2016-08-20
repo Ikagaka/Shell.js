@@ -11,7 +11,7 @@ window["SurfaceTree"] = ST;
 window["SurfaceUtil"] = SU;
 window["SurfacesTxt2Yaml"] = ST2Y;
 
-QUnit.module('SurfaceTree');
+QUnit.module('SurfaceTreeLoader');
 NL.loadFromURL('../nar/mobilemaster.nar')
 .then((nanikaDir) =>{
   const shellDir = nanikaDir.getDirectory('shell/master').asArrayBuffer()
@@ -19,7 +19,7 @@ NL.loadFromURL('../nar/mobilemaster.nar')
   const cat_text = filenames.reduce((text, filename)=> text + SU.convert(shellDir[filename]), "");
   const surfacesTxt = ST2Y.txt_to_data(cat_text, {compatible: 'ssp-lazy'});
   
-  QUnit.test('SurfaceTree.loadFromsurfacesTxt2Yaml', (assert)=>{
+  QUnit.test('SurfaceTreeLoader.loadFromsurfacesTxt2Yaml', (assert)=>{
     const done = assert.async();
     console.log(surfacesTxt);
     return STL.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt)

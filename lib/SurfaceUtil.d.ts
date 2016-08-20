@@ -1,30 +1,27 @@
-/// <reference path="../typings/index.d.ts" />
-import { SurfaceCanvas } from "./Interfaces";
 import * as ST from "./SurfaceTree";
-export declare function pna(srfCnv: SurfaceCanvas): SurfaceCanvas;
+export declare var extend: {
+    (target: any, object1?: any, ...objectN: any[]): any;
+    (deep: boolean, target: any, object1?: any, ...objectN: any[]): any;
+};
 export declare function chromakey(png: HTMLCanvasElement | HTMLImageElement): HTMLCanvasElement;
 export declare function png_pna(png: HTMLCanvasElement | HTMLImageElement, pna: HTMLCanvasElement | HTMLImageElement): HTMLCanvasElement;
-export declare function init(cnv: HTMLCanvasElement, ctx: CanvasRenderingContext2D, src: HTMLCanvasElement): void;
 export declare function chromakey_snipet(data: Uint8ClampedArray): void;
 export declare function log(element: Element, description?: string): void;
 export declare function parseDescript(text: string): {
     [key: string]: string;
 };
 export declare function fetchArrayBuffer(url: string): Promise<ArrayBuffer>;
-export declare function getArrayBuffer(url: string, cb: (err: any, buffer: ArrayBuffer | null) => any): void;
 export declare function convert(buffer: ArrayBuffer): string;
 export declare function find(paths: string[], filename: string): string[];
 export declare function fastfind(paths: string[], filename: string): string;
 export declare function choice<T>(arr: T[]): T;
 export declare function copy(cnv: HTMLCanvasElement | HTMLImageElement): HTMLCanvasElement;
-export declare function fastcopy(cnv: HTMLCanvasElement | HTMLImageElement, tmpcnv: HTMLCanvasElement, tmpctx: CanvasRenderingContext2D): HTMLCanvasElement;
+export declare function fastcopy(cnv: HTMLCanvasElement | HTMLImageElement, tmpctx: CanvasRenderingContext2D): void;
 export declare function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?: string): Promise<HTMLImageElement>;
-export declare function getImageFromArrayBuffer(buffer: ArrayBuffer, cb: (err: any, img: HTMLImageElement | null) => any): void;
 export declare function fetchImageFromURL(url: string): Promise<HTMLImageElement>;
-export declare function getImageFromURL(url: string, cb: (err: any, img: HTMLImageElement | null) => any): void;
-export declare function random(callback: (nextTick: () => void) => void, probability: number): void;
-export declare function periodic(callback: (callback: () => void) => void, sec: number): void;
-export declare function always(callback: (callback: () => void) => void): void;
+export declare function random(callback: (nextTick: Function) => void, probability: number): NodeJS.Timer;
+export declare function periodic(callback: (nextTick: Function) => void, sec: number): NodeJS.Timer;
+export declare function always(callback: (nextTick: Function) => void): NodeJS.Timer;
 export declare function isHit(cnv: HTMLCanvasElement, x: number, y: number): boolean;
 export declare function createCanvas(): HTMLCanvasElement;
 export declare function scope(scopeId: number): string;
@@ -44,7 +41,7 @@ export declare function getScrollXY(): {
     scrollY: number;
 };
 export declare function findSurfacesTxt(filepaths: string[]): string[];
-export declare function getArrayBufferFromURL(url: string): Promise<ArrayBuffer>;
+export declare function fetchArrayBufferFromURL(url: string): Promise<ArrayBuffer>;
 export declare function decolateJSONizeDescript<T, S>(o: T, key: string, value: S): void;
 export declare function changeFileExtension(filename: string, without_dot_new_extention: string): string;
 export declare function ABToCav(ab: ArrayBuffer): Promise<HTMLCanvasElement>;
@@ -54,3 +51,4 @@ export declare function has<T>(dir: {
 export declare function get<T>(dir: {
     [key: string]: T;
 }, path: string): Promise<T>;
+export declare function setPictureFrame(element: HTMLElement, description: string): void;

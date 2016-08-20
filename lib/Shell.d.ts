@@ -1,32 +1,29 @@
 /// <reference path="../typings/index.d.ts" />
-import Surface from './Surface';
+import * as SF from './Surface';
+import * as ST from "./SurfaceTree";
 import * as SC from "./ShellConfig";
-import * as EventEmitter from "events";
-export default class Shell extends EventEmitter.EventEmitter {
+import * as CC from "./CanvasCache";
+import * as SY from "surfaces_txt2yaml";
+import { EventEmitter } from "events";
+export declare class Shell extends EventEmitter {
     directory: {
         [filepath: string]: ArrayBuffer;
     };
     descript: SC.Descript;
     descriptJSON: SC.JSONLike;
     config: SC.ShellConfig;
+    cache: CC.CanvasCache;
     attachedSurface: {
         div: HTMLDivElement;
-        surface: Surface;
+        surface: SF.Surface;
     }[];
-    private surfacesTxt;
-    private surfaceTree;
-    private surfaceDefTree;
-    private cacheCanvas;
+    surfacesTxt: SY.SurfacesTxt;
+    surfaceDefTree: ST.SurfaceDefinitionTree;
     constructor(directory: {
         [filepath: string]: ArrayBuffer;
     });
     load(): Promise<Shell>;
-    private loadDescript();
-    private loadSurfacesTxt();
-    private loadSurfaceTable();
-    private loadSurfacePNG();
-    private hasFile(filename);
-    attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number | string): Surface | null;
+    attachSurface(div: HTMLDivElement, scopeId: number, surfaceId: number | string): Promise<SF.Surface>;
     detachSurface(div: HTMLDivElement): void;
     unload(): void;
     private getSurfaceAlias(scopeId, surfaceId);
