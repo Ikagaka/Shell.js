@@ -2638,9 +2638,10 @@ function fastcopy(cnv, tmpctx) {
 exports.fastcopy = fastcopy;
 // ArrayBuffer -> HTMLImageElement
 function fetchImageFromArrayBuffer(buffer, mimetype) {
-    return new Promise(function (resolve, reject) {
-        var url = URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
-        return fetchImageFromURL(url);
+    var url = URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
+    return fetchImageFromURL(url).then(function (img) {
+        URL.revokeObjectURL(url);
+        return img;
     });
 }
 exports.fetchImageFromArrayBuffer = fetchImageFromArrayBuffer;
@@ -2954,6 +2955,34 @@ function setPictureFrame(element, description) {
     return;
 }
 exports.setPictureFrame = setPictureFrame;
+function craetePictureFrame(description) {
+    var target = arguments.length <= 1 || arguments[1] === undefined ? document.body : arguments[1];
+
+    var fieldset = document.createElement('fieldset');
+    var legend = document.createElement('legend');
+    legend.appendChild(document.createTextNode(description));
+    fieldset.appendChild(legend);
+    fieldset.style.display = 'inline-block';
+    target.appendChild(fieldset);
+    fieldset.style.backgroundColor = "#D2E0E6";
+    var add = function add(element) {
+        var txt = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
+
+        if (txt === "") {
+            var frame = craetePictureFrame(txt, fieldset);
+            frame.add(element);
+        } else if (typeof element === "string") {
+            var txtNode = document.createTextNode(element);
+            var p = document.createElement("p");
+            p.appendChild(txtNode);
+            fieldset.appendChild(p);
+        } else {
+            fieldset.appendChild(element);
+        }
+    };
+    return { add: add };
+}
+exports.craetePictureFrame = craetePictureFrame;
 },{"encoding-japanese":14,"jquery":25}],11:[function(require,module,exports){
 'use strict';
 var prmNar;
@@ -2965,39 +2994,39 @@ prmNar = NarLoader.loadFromURL('../nar/mobilemaster.nar');
 $(function () {
     return $('<style />').html('body{background-color:#D2E0E6;}canvas,img{border:1px solid black;}').appendTo($('body'));
 });
+SU.setPictureFrame = function (srf, description) {
+    var fieldset, legend, p;
+    fieldset = document.createElement('fieldset');
+    legend = document.createElement('legend');
+    p = document.createElement('p');
+    legend.appendChild(document.createTextNode('' + srf.surfaceId));
+    p.appendChild(document.createTextNode(description || ''));
+    fieldset.appendChild(legend);
+    fieldset.appendChild(srf.element);
+    fieldset.appendChild(p);
+    fieldset.style.display = 'inline-block';
+    fieldset.style.width = '310px';
+    document.body.appendChild(fieldset);
+    srf.element.addEventListener('mousemove', function (ev) {
+        var hit, left, offsetX, offsetY, pageX, pageY, tmp, top;
+        pageX = ev.pageX;
+        pageY = ev.pageY;
+        tmp = $(ev.target).offset();
+        left = tmp.left;
+        top = tmp.top;
+        offsetX = pageX - left;
+        offsetY = pageY - top;
+        hit = SurfaceUtil.getRegion(srf.element, srf.surfaceNode.collisions, offsetX, offsetY);
+        console.log(hit);
+        if (hit.isHit) {
+            $(ev.target).css({ 'cursor': 'pointer' });
+        } else {
+            $(ev.target).css({ 'cursor': 'default' });
+        }
+    });
+};
 prmNar.then(function (nanikaDir) {
-    var setPictureFrame, shell, shellDir;
-    setPictureFrame = function setPictureFrame(srf, description) {
-        var fieldset, legend, p;
-        fieldset = document.createElement('fieldset');
-        legend = document.createElement('legend');
-        p = document.createElement('p');
-        legend.appendChild(document.createTextNode('' + srf.surfaceId));
-        p.appendChild(document.createTextNode(description || ''));
-        fieldset.appendChild(legend);
-        fieldset.appendChild(srf.element);
-        fieldset.appendChild(p);
-        fieldset.style.display = 'inline-block';
-        fieldset.style.width = '310px';
-        document.body.appendChild(fieldset);
-        srf.element.addEventListener('mousemove', function (ev) {
-            var hit, left, offsetX, offsetY, pageX, pageY, tmp, top;
-            pageX = ev.pageX;
-            pageY = ev.pageY;
-            tmp = $(ev.target).offset();
-            left = tmp.left;
-            top = tmp.top;
-            offsetX = pageX - left;
-            offsetY = pageY - top;
-            hit = SurfaceUtil.getRegion(srf.element, srf.surfaceNode.collisions, offsetX, offsetY);
-            console.log(hit);
-            if (hit.isHit) {
-                $(ev.target).css({ 'cursor': 'pointer' });
-            } else {
-                $(ev.target).css({ 'cursor': 'default' });
-            }
-        });
-    };
+    var shell, shellDir;
     QUnit.module('Shell');
     shellDir = nanikaDir.getDirectory('shell/master').asArrayBuffer();
     console.dir(shellDir);
@@ -3038,51 +3067,51 @@ prmNar.then(function (nanikaDir) {
         assert.ok(assert._expr(assert._capt(assert._capt(shell, 'arguments/0/callee/object').hasFile('surface0.png'), 'arguments/0'), {
             content: 'assert.ok(shell.hasFile(\'surface0.png\'))',
             filepath: 'es5/Shell.test.js',
-            line: 94
+            line: 95
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(shell, 'arguments/0/callee/object').hasFile('surface0.PNG'), 'arguments/0'), {
             content: 'assert.ok(shell.hasFile(\'surface0.PNG\'))',
             filepath: 'es5/Shell.test.js',
-            line: 95
+            line: 96
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(shell, 'arguments/0/callee/object').hasFile('.\\SURFACE0.PNG'), 'arguments/0'), {
             content: 'assert.ok(shell.hasFile(\'.\\\\SURFACE0.PNG\'))',
             filepath: 'es5/Shell.test.js',
-            line: 96
+            line: 97
         }));
         assert.ok(assert._expr(assert._capt(!assert._capt(assert._capt(shell, 'arguments/0/argument/callee/object').hasFile('surface0+png'), 'arguments/0/argument'), 'arguments/0'), {
             content: 'assert.ok(!shell.hasFile(\'surface0+png\'))',
             filepath: 'es5/Shell.test.js',
-            line: 97
+            line: 98
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(shell, 'arguments/0/callee/object').hasFile('./surface0.png'), 'arguments/0'), {
             content: 'assert.ok(shell.hasFile(\'./surface0.png\'))',
             filepath: 'es5/Shell.test.js',
-            line: 98
+            line: 99
         }));
         assert.ok(assert._expr(assert._capt(!assert._capt(assert._capt(shell, 'arguments/0/argument/callee/object').hasFile('/surface0/png'), 'arguments/0/argument'), 'arguments/0'), {
             content: 'assert.ok(!shell.hasFile(\'/surface0/png\'))',
             filepath: 'es5/Shell.test.js',
-            line: 99
+            line: 100
         }));
     });
     QUnit.test('shell.descript', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(shell, 'arguments/0/left/object/object').descript, 'arguments/0/left/object')['kero.bindgroup20.name'], 'arguments/0/left') === '装備,飛行装備', 'arguments/0'), {
             content: 'assert.ok(shell.descript[\'kero.bindgroup20.name\'] === \'装備,飛行装備\')',
             filepath: 'es5/Shell.test.js',
-            line: 102
+            line: 103
         }));
     });
     QUnit.test('shell.surfacesTxt', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(shell, 'arguments/0/left/object/object').surfacesTxt, 'arguments/0/left/object').charset, 'arguments/0/left') === 'Shift_JIS', 'arguments/0'), {
             content: 'assert.ok(shell.surfacesTxt.charset === \'Shift_JIS\')',
             filepath: 'es5/Shell.test.js',
-            line: 105
+            line: 106
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(shell, 'arguments/0/left/object/object/object').surfacesTxt, 'arguments/0/left/object/object').descript, 'arguments/0/left/object').version, 'arguments/0/left') === 1, 'arguments/0'), {
             content: 'assert.ok(shell.surfacesTxt.descript.version === 1)',
             filepath: 'es5/Shell.test.js',
-            line: 106
+            line: 107
         }));
     });
     QUnit.test('shell#attachSurface (periodic)', function (assert) {
@@ -3093,12 +3122,12 @@ prmNar.then(function (nanikaDir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 0, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 0)',
             filepath: 'es5/Shell.test.js',
-            line: 113
+            line: 114
         }));
         setInterval(function () {
             srf.talk();
         }, 80);
-        setPictureFrame(srf, '\u203Bs[0]\u3002periodic,5瞬き\u3001talk,4口パク\u3002');
+        SU.setPictureFrame(srf, '\u203Bs[0]\u3002periodic,5瞬き\u3001talk,4口パク\u3002');
     });
     QUnit.test('shell#attachSurface (basic element and animation)', function (assert) {
         var div, srf;
@@ -3108,37 +3137,37 @@ prmNar.then(function (nanikaDir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 3, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 3)',
             filepath: 'es5/Shell.test.js',
-            line: 124
+            line: 125
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/object/callee/object/arguments/0/object').element, 'arguments/0/left/object/callee/object/arguments/0')), 'arguments/0/left/object/callee/object').children(), 'arguments/0/left/object')[0], 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok($(srf.element).children()[0] instanceof HTMLCanvasElement)',
             filepath: 'es5/Shell.test.js',
-            line: 125
+            line: 126
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === 445, 'arguments/0'), {
             content: 'assert.ok($(srf.element).height() === 445)',
             filepath: 'es5/Shell.test.js',
-            line: 126
+            line: 127
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === 182, 'arguments/0'), {
             content: 'assert.ok($(srf.element).width() === 182)',
             filepath: 'es5/Shell.test.js',
-            line: 127
+            line: 128
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceNode, 'arguments/0/left/object/object/object').collisions, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').name, 'arguments/0/left') === 'Head', 'arguments/0'), {
             content: 'assert.ok(srf.surfaceNode.collisions[0].name === \'Head\')',
             filepath: 'es5/Shell.test.js',
-            line: 128
+            line: 129
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object/object/object').surfaceNode, 'arguments/0/left/object/object/object/object/object').animations, 'arguments/0/left/object/object/object/object')[0], 'arguments/0/left/object/object/object').intervals, 'arguments/0/left/object/object')[0], 'arguments/0/left/object')[0], 'arguments/0/left') === 'sometimes', 'arguments/0'), {
             content: 'assert.ok(srf.surfaceNode.animations[0].intervals[0][0] === \'sometimes\')',
             filepath: 'es5/Shell.test.js',
-            line: 129
+            line: 130
         }));
         setInterval(function () {
             srf.talk();
         }, 80);
-        setPictureFrame(srf, '\u203B胸を腕で覆っている\u3002sometimes瞬き\u3001random,6目そらし\u3001talk,4口パク\u3002');
+        SU.setPictureFrame(srf, '\u203B胸を腕で覆っている\u3002sometimes瞬き\u3001random,6目そらし\u3001talk,4口パク\u3002');
     });
     QUnit.test('shell#attachSurface (animation always)', function (assert) {
         var div, srf;
@@ -3147,32 +3176,32 @@ prmNar.then(function (nanikaDir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 7, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 7)',
             filepath: 'es5/Shell.test.js',
-            line: 139
+            line: 140
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLDivElement, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(srf.element instanceof HTMLDivElement)',
             filepath: 'es5/Shell.test.js',
-            line: 140
+            line: 141
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === 445, 'arguments/0'), {
             content: 'assert.ok($(srf.element).height() === 445)',
             filepath: 'es5/Shell.test.js',
-            line: 141
+            line: 142
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === 182, 'arguments/0'), {
             content: 'assert.ok($(srf.element).width() === 182)',
             filepath: 'es5/Shell.test.js',
-            line: 142
+            line: 143
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceNode, 'arguments/0/left/object/object/object').collisions, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').name, 'arguments/0/left') === 'Head', 'arguments/0'), {
             content: 'assert.ok(srf.surfaceNode.collisions[0].name === \'Head\')',
             filepath: 'es5/Shell.test.js',
-            line: 143
+            line: 144
         }));
         setInterval(function () {
             srf.talk();
         }, 80);
-        setPictureFrame(srf, '\u203B腕組み\u3002瞬き\u3001always怒り\u3001口パク\u3002');
+        SU.setPictureFrame(srf, '\u203B腕組み\u3002瞬き\u3001always怒り\u3001口パク\u3002');
     });
     QUnit.test('shell#attachSurface (runonce)', function (assert) {
         var div, srf;
@@ -3181,24 +3210,24 @@ prmNar.then(function (nanikaDir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 401, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 401)',
             filepath: 'es5/Shell.test.js',
-            line: 153
+            line: 154
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLDivElement, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(srf.element instanceof HTMLDivElement)',
             filepath: 'es5/Shell.test.js',
-            line: 154
+            line: 155
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === 445, 'arguments/0'), {
             content: 'assert.ok($(srf.element).height() === 445)',
             filepath: 'es5/Shell.test.js',
-            line: 155
+            line: 156
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === 182, 'arguments/0'), {
             content: 'assert.ok($(srf.element).width() === 182)',
             filepath: 'es5/Shell.test.js',
-            line: 156
+            line: 157
         }));
-        setPictureFrame(srf, '\u203B寝ぼけ\u3002runonce口に手を当ててから直ぐ離し目パチ\u3002');
+        SU.setPictureFrame(srf, '\u203B寝ぼけ\u3002runonce口に手を当ててから直ぐ離し目パチ\u3002');
     });
     QUnit.test('shell#attachSurface ', function (assert) {
         var div, srf;
@@ -3208,32 +3237,32 @@ prmNar.then(function (nanikaDir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 11, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 11)',
             filepath: 'es5/Shell.test.js',
-            line: 164
+            line: 165
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLDivElement, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(srf.element instanceof HTMLDivElement)',
             filepath: 'es5/Shell.test.js',
-            line: 165
+            line: 166
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === 210, 'arguments/0'), {
             content: 'assert.ok($(srf.element).height() === 210)',
             filepath: 'es5/Shell.test.js',
-            line: 166
+            line: 167
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === 230, 'arguments/0'), {
             content: 'assert.ok($(srf.element).width() === 230)',
             filepath: 'es5/Shell.test.js',
-            line: 167
+            line: 168
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object/object/object/object').surfaceNode, 'arguments/0/left/object/object/object').collisions, 'arguments/0/left/object/object')[0], 'arguments/0/left/object').name, 'arguments/0/left') === 'Screen', 'arguments/0'), {
             content: 'assert.ok(srf.surfaceNode.collisions[0].name === \'Screen\')',
             filepath: 'es5/Shell.test.js',
-            line: 168
+            line: 169
         }));
         setInterval(function () {
             srf.talk();
         }, 80);
-        setPictureFrame(srf, 'CRTゅう');
+        SU.setPictureFrame(srf, 'CRTゅう');
     });
     QUnit.test('shell#attachSurface (srf.play())', function (assert) {
         var div, srf;
@@ -3243,9 +3272,9 @@ prmNar.then(function (nanikaDir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 5000, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 5000)',
             filepath: 'es5/Shell.test.js',
-            line: 179
+            line: 180
         }));
-        setPictureFrame(srf, '\u203B１回のみ爆発アニメ\u3002');
+        SU.setPictureFrame(srf, '\u203B１回のみ爆発アニメ\u3002');
     });
     QUnit.test('shell#attachSurface (error filepath handle)', function (assert) {
         var div, srf;
@@ -3255,24 +3284,24 @@ prmNar.then(function (nanikaDir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').surfaceId, 'arguments/0/left') === 5001, 'arguments/0'), {
             content: 'assert.ok(srf.surfaceId === 5001)',
             filepath: 'es5/Shell.test.js',
-            line: 187
+            line: 188
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srf, 'arguments/0/left/object').element, 'arguments/0/left') instanceof assert._capt(HTMLDivElement, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(srf.element instanceof HTMLDivElement)',
             filepath: 'es5/Shell.test.js',
-            line: 188
+            line: 189
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').height(), 'arguments/0/left') === 300, 'arguments/0'), {
             content: 'assert.ok($(srf.element).height() === 300)',
             filepath: 'es5/Shell.test.js',
-            line: 189
+            line: 190
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt($(assert._capt(assert._capt(srf, 'arguments/0/left/callee/object/arguments/0/object').element, 'arguments/0/left/callee/object/arguments/0')), 'arguments/0/left/callee/object').width(), 'arguments/0/left') === 300, 'arguments/0'), {
             content: 'assert.ok($(srf.element).width() === 300)',
             filepath: 'es5/Shell.test.js',
-            line: 190
+            line: 191
         }));
-        setPictureFrame(srf, '\u203B透明です\u3002ファイル名エラー補正のテスト\u3002');
+        SU.setPictureFrame(srf, '\u203B透明です\u3002ファイル名エラー補正のテスト\u3002');
     });
     QUnit.test('shell#getBindGroups', function (assert) {
         var arr, expected;
@@ -3305,12 +3334,12 @@ prmNar.then(function (nanikaDir) {
             assert.ok(assert._expr(assert._capt(category = assert._capt(assert._capt(assert._capt(expected, 'arguments/0/right/object/object')[assert._capt(bindId, 'arguments/0/right/object/property')], 'arguments/0/right/object').category, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(category = expected[bindId].category)',
                 filepath: 'es5/Shell.test.js',
-                line: 221
+                line: 222
             }));
             return assert.ok(assert._expr(assert._capt(parts = assert._capt(assert._capt(assert._capt(expected, 'arguments/0/right/object/object')[assert._capt(bindId, 'arguments/0/right/object/property')], 'arguments/0/right/object').parts, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(parts = expected[bindId].parts)',
                 filepath: 'es5/Shell.test.js',
-                line: 222
+                line: 223
             }));
         });
     });

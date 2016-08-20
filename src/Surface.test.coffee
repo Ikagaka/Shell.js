@@ -4,26 +4,6 @@ window.ST = require("./SurfaceTree")
 window.Surface = require("./Surface").default
 
 $ -> $("<style />").html("canvas{border:1px solid black;}").appendTo($("body"))
-craetePictureFrame = (description, target=document.body) ->
-  fieldset = document.createElement('fieldset')
-  legend = document.createElement('legend')
-  legend.appendChild document.createTextNode(description)
-  fieldset.appendChild legend
-  fieldset.style.display = 'inline-block'
-  target.appendChild fieldset
-  fieldset.style.backgroundColor = "#D2E0E6"
-  return {
-    add: (element, txt)->
-      if txt?
-        frame = craetePictureFrame txt, fieldset
-        frame.add element
-      else if typeof element is "string"
-        txtNode = document.createTextNode element
-        p = document.createElement("p")
-        p.appendChild txtNode
-        fieldset.appendChild p
-      else fieldset.appendChild element
-  }
 
 
 
@@ -102,7 +82,7 @@ QUnit.test 'surface0', (assert) ->
     setTimeout ->
       assert.ok $(srf.element).width() is base.cnv.width
       assert.ok $(srf.element).height() is base.cnv.height
-      frame = craetePictureFrame("surface0")
+      frame = SU.craetePictureFrame("surface0")
       frame.add srf.element, "マリちゃんの\\0\\s[0]のまばたき"
       done()
 
@@ -190,7 +170,7 @@ QUnit.test 'surface overlay', (assert) ->
     srf = new Surface(document.createElement("div"), 0, 0, surfaceTree)
     assert.ok $(srf.element).width() is base.cnv.width
     assert.ok $(srf.element).height() is base.cnv.height
-    frame = craetePictureFrame("overlay テスト")
+    frame = SU.craetePictureFrame("overlay テスト")
     frame.add srf.element, "マリちゃんのセルフエグザイル"
     done()
 
@@ -256,7 +236,7 @@ QUnit.test 'surface overlay negative', (assert) ->
     srf = new Surface(document.createElement("div"), 0, 0, surfaceTree)
     assert.ok $(srf.element).width() is base.cnv.width
     assert.ok $(srf.element).height() is base.cnv.height
-    frame = craetePictureFrame("overlay テスト")
+    frame = SU.craetePictureFrame("overlay テスト")
     frame.add srf.element, "マリちゃんが左上へ向かう"
     done()
 

@@ -23,17 +23,20 @@ NL.loadFromURL('../nar/mobilemaster.nar').then(function (nanikaDir) {
         console.log(surfacesTxt);
         return STL.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceTree) {
             console.log(surfaceTree);
-            assert.ok(Object.keys(surfaceTree.aliases).every(function (a) {
-                return isFinite(Number(a));
-            }));
-            assert.ok(Object.keys(surfaceTree.surfaces).every(function (a) {
-                return isFinite(Number(a)) && Object.keys(surfaceTree.surfaces[a].elements).every(function (b) {
-                    return isFinite(Number(b));
-                }) && Object.keys(surfaceTree.surfaces[a].collisions).every(function (b) {
-                    return isFinite(Number(b));
-                }) && Object.keys(surfaceTree.surfaces[a].animations).every(function (b) {
-                    return isFinite(Number(b)) && Object.keys(surfaceTree.surfaces[a].animations[b].patterns).every(function (c) {
-                        return isFinite(Number(c));
+            var aliases = surfaceTree.aliases;
+            var surfaces = surfaceTree.surfaces;
+
+            assert.ok(surfaces.every(function (srf) {
+                return srf.elements.every(function (b) {
+                    return true;
+                } /* todo */) && srf.collisions.every(function (b) {
+                    return true;
+                } /* todo */) && srf.animations.every(function (anim) {
+                    return anim.patterns.every(function (c) {
+                        return (
+                            // todo
+                            true
+                        );
                     });
                 });
             }));

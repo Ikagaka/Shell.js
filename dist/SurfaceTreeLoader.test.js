@@ -710,9 +710,10 @@ function fastcopy(cnv, tmpctx) {
 exports.fastcopy = fastcopy;
 // ArrayBuffer -> HTMLImageElement
 function fetchImageFromArrayBuffer(buffer, mimetype) {
-    return new Promise(function (resolve, reject) {
-        var url = URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
-        return fetchImageFromURL(url);
+    var url = URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
+    return fetchImageFromURL(url).then(function (img) {
+        URL.revokeObjectURL(url);
+        return img;
     });
 }
 exports.fetchImageFromArrayBuffer = fetchImageFromArrayBuffer;
@@ -1026,6 +1027,34 @@ function setPictureFrame(element, description) {
     return;
 }
 exports.setPictureFrame = setPictureFrame;
+function craetePictureFrame(description) {
+    var target = arguments.length <= 1 || arguments[1] === undefined ? document.body : arguments[1];
+
+    var fieldset = document.createElement('fieldset');
+    var legend = document.createElement('legend');
+    legend.appendChild(document.createTextNode(description));
+    fieldset.appendChild(legend);
+    fieldset.style.display = 'inline-block';
+    target.appendChild(fieldset);
+    fieldset.style.backgroundColor = "#D2E0E6";
+    var add = function add(element) {
+        var txt = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
+
+        if (txt === "") {
+            var frame = craetePictureFrame(txt, fieldset);
+            frame.add(element);
+        } else if (typeof element === "string") {
+            var txtNode = document.createTextNode(element);
+            var p = document.createElement("p");
+            p.appendChild(txtNode);
+            fieldset.appendChild(p);
+        } else {
+            fieldset.appendChild(element);
+        }
+    };
+    return { add: add };
+}
+exports.craetePictureFrame = craetePictureFrame;
 },{"encoding-japanese":7,"jquery":18}],4:[function(require,module,exports){
 'use strict';
 var ST = require('./SurfaceTree');
@@ -1050,37 +1079,32 @@ NL.loadFromURL('../nar/mobilemaster.nar').then(function (nanikaDir) {
         console.log(surfacesTxt);
         return STL.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceTree) {
             console.log(surfaceTree);
-            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(Object, 'arguments/0/callee/object/callee/object').keys(assert._capt(assert._capt(surfaceTree, 'arguments/0/callee/object/arguments/0/object').aliases, 'arguments/0/callee/object/arguments/0')), 'arguments/0/callee/object').every(function (a) {
-                return isFinite(Number(a));
-            }), 'arguments/0'), {
-                content: 'assert.ok(Object.keys(surfaceTree.aliases).every(function (a) {return isFinite(Number(a));}))',
-                filepath: 'es5/SurfaceTreeLoader.test.js',
-                line: 26
-            }));
-            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(Object, 'arguments/0/callee/object/callee/object').keys(assert._capt(assert._capt(surfaceTree, 'arguments/0/callee/object/arguments/0/object').surfaces, 'arguments/0/callee/object/arguments/0')), 'arguments/0/callee/object').every(function (a) {
-                return isFinite(Number(a)) && Object.keys(surfaceTree.surfaces[a].elements).every(function (b) {
-                    return isFinite(Number(b));
-                }) && Object.keys(surfaceTree.surfaces[a].collisions).every(function (b) {
-                    return isFinite(Number(b));
-                }) && Object.keys(surfaceTree.surfaces[a].animations).every(function (b) {
-                    return isFinite(Number(b)) && Object.keys(surfaceTree.surfaces[a].animations[b].patterns).every(function (c) {
-                        return isFinite(Number(c));
+            var aliases = surfaceTree.aliases;
+            var surfaces = surfaceTree.surfaces;
+            assert.ok(assert._expr(assert._capt(assert._capt(surfaces, 'arguments/0/callee/object').every(function (srf) {
+                return srf.elements.every(function (b) {
+                    return true;
+                }) && srf.collisions.every(function (b) {
+                    return true;
+                }) && srf.animations.every(function (anim) {
+                    return anim.patterns.every(function (c) {
+                        return true;
                     });
                 });
             }), 'arguments/0'), {
-                content: 'assert.ok(Object.keys(surfaceTree.surfaces).every(function (a) {return isFinite(Number(a)) && Object.keys(surfaceTree.surfaces[a].elements).every(function (b) {return isFinite(Number(b));}) && Object.keys(surfaceTree.surfaces[a].collisions).every(function (b) {return isFinite(Number(b));}) && Object.keys(surfaceTree.surfaces[a].animations).every(function (b) {return isFinite(Number(b)) && Object.keys(surfaceTree.surfaces[a].animations[b].patterns).every(function (c) {return isFinite(Number(c));});});}))',
+                content: 'assert.ok(surfaces.every(function (srf) {return srf.elements.every(function (b) {return true;}) && srf.collisions.every(function (b) {return true;}) && srf.animations.every(function (anim) {return anim.patterns.every(function (c) {return true;});});}))',
                 filepath: 'es5/SurfaceTreeLoader.test.js',
                 line: 29
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(surfaceTree, 'arguments/0/left/object/object').descript, 'arguments/0/left/object').collisionSort, 'arguments/0/left') === 'ascend', 'arguments/0'), {
                 content: 'assert.ok(surfaceTree.descript.collisionSort === "ascend")',
                 filepath: 'es5/SurfaceTreeLoader.test.js',
-                line: 40
+                line: 43
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(surfaceTree, 'arguments/0/left/object/object').descript, 'arguments/0/left/object').animationSort, 'arguments/0/left') === 'ascend', 'arguments/0'), {
                 content: 'assert.ok(surfaceTree.descript.animationSort === "ascend")',
                 filepath: 'es5/SurfaceTreeLoader.test.js',
-                line: 41
+                line: 44
             }));
             return done();
         });

@@ -17,43 +17,44 @@ $(function () {
   return $("<style />").html("body{background-color:#D2E0E6;}canvas,img{border:1px solid black;}").appendTo($("body"));
 });
 
+SU.setPictureFrame = function (srf, description) {
+  var fieldset, legend, p;
+  fieldset = document.createElement('fieldset');
+  legend = document.createElement('legend');
+  p = document.createElement('p');
+  legend.appendChild(document.createTextNode('' + srf.surfaceId));
+  p.appendChild(document.createTextNode(description || ''));
+  fieldset.appendChild(legend);
+  fieldset.appendChild(srf.element);
+  fieldset.appendChild(p);
+  fieldset.style.display = 'inline-block';
+  fieldset.style.width = '310px';
+  document.body.appendChild(fieldset);
+  srf.element.addEventListener('mousemove', function (ev) {
+    var hit, left, offsetX, offsetY, pageX, pageY, tmp, top;
+    pageX = ev.pageX;
+    pageY = ev.pageY;
+    tmp = $(ev.target).offset();
+    left = tmp.left;
+    top = tmp.top;
+    offsetX = pageX - left;
+    offsetY = pageY - top;
+    hit = SurfaceUtil.getRegion(srf.element, srf.surfaceNode.collisions, offsetX, offsetY);
+    console.log(hit);
+    if (hit.isHit) {
+      $(ev.target).css({
+        'cursor': 'pointer'
+      });
+    } else {
+      $(ev.target).css({
+        'cursor': 'default'
+      });
+    }
+  });
+};
+
 prmNar.then(function (nanikaDir) {
-  var setPictureFrame, shell, shellDir;
-  setPictureFrame = function setPictureFrame(srf, description) {
-    var fieldset, legend, p;
-    fieldset = document.createElement('fieldset');
-    legend = document.createElement('legend');
-    p = document.createElement('p');
-    legend.appendChild(document.createTextNode('' + srf.surfaceId));
-    p.appendChild(document.createTextNode(description || ''));
-    fieldset.appendChild(legend);
-    fieldset.appendChild(srf.element);
-    fieldset.appendChild(p);
-    fieldset.style.display = 'inline-block';
-    fieldset.style.width = '310px';
-    document.body.appendChild(fieldset);
-    srf.element.addEventListener('mousemove', function (ev) {
-      var hit, left, offsetX, offsetY, pageX, pageY, tmp, top;
-      pageX = ev.pageX;
-      pageY = ev.pageY;
-      tmp = $(ev.target).offset();
-      left = tmp.left;
-      top = tmp.top;
-      offsetX = pageX - left;
-      offsetY = pageY - top;
-      hit = SurfaceUtil.getRegion(srf.element, srf.surfaceNode.collisions, offsetX, offsetY);
-      console.log(hit);
-      if (hit.isHit) {
-        $(ev.target).css({
-          'cursor': 'pointer'
-        });
-      } else {
-        $(ev.target).css({
-          'cursor': 'default'
-        });
-      }
-    });
-  };
+  var shell, shellDir;
   QUnit.module('Shell');
   shellDir = nanikaDir.getDirectory('shell/master').asArrayBuffer();
   console.dir(shellDir);
@@ -114,7 +115,7 @@ prmNar.then(function (nanikaDir) {
     setInterval(function () {
       srf.talk();
     }, 80);
-    setPictureFrame(srf, '※s[0]。periodic,5瞬き、talk,4口パク。');
+    SU.setPictureFrame(srf, '※s[0]。periodic,5瞬き、talk,4口パク。');
   });
   QUnit.test('shell#attachSurface (basic element and animation)', function (assert) {
     var div, srf;
@@ -130,7 +131,7 @@ prmNar.then(function (nanikaDir) {
     setInterval(function () {
       srf.talk();
     }, 80);
-    setPictureFrame(srf, '※胸を腕で覆っている。sometimes瞬き、random,6目そらし、talk,4口パク。');
+    SU.setPictureFrame(srf, '※胸を腕で覆っている。sometimes瞬き、random,6目そらし、talk,4口パク。');
   });
   QUnit.test('shell#attachSurface (animation always)', function (assert) {
     var div, srf;
@@ -144,7 +145,7 @@ prmNar.then(function (nanikaDir) {
     setInterval(function () {
       srf.talk();
     }, 80);
-    setPictureFrame(srf, '※腕組み。瞬き、always怒り、口パク。');
+    SU.setPictureFrame(srf, '※腕組み。瞬き、always怒り、口パク。');
   });
   QUnit.test('shell#attachSurface (runonce)', function (assert) {
     var div, srf;
@@ -154,7 +155,7 @@ prmNar.then(function (nanikaDir) {
     assert.ok(srf.element instanceof HTMLDivElement);
     assert.ok($(srf.element).height() === 445);
     assert.ok($(srf.element).width() === 182);
-    setPictureFrame(srf, '※寝ぼけ。runonce口に手を当ててから直ぐ離し目パチ。');
+    SU.setPictureFrame(srf, '※寝ぼけ。runonce口に手を当ててから直ぐ離し目パチ。');
   });
   QUnit.test('shell#attachSurface ', function (assert) {
     var div, srf;
@@ -169,7 +170,7 @@ prmNar.then(function (nanikaDir) {
     setInterval(function () {
       srf.talk();
     }, 80);
-    setPictureFrame(srf, 'CRTゅう');
+    SU.setPictureFrame(srf, 'CRTゅう');
   });
   QUnit.test('shell#attachSurface (srf.play())', function (assert) {
     var div, srf;
@@ -177,7 +178,7 @@ prmNar.then(function (nanikaDir) {
     srf = shell.attachSurface(div, 0, 5000);
     srf.play(100);
     assert.ok(srf.surfaceId === 5000);
-    setPictureFrame(srf, '※１回のみ爆発アニメ。');
+    SU.setPictureFrame(srf, '※１回のみ爆発アニメ。');
   });
   QUnit.test('shell#attachSurface (error filepath handle)', function (assert) {
     var div, srf;
@@ -188,7 +189,7 @@ prmNar.then(function (nanikaDir) {
     assert.ok(srf.element instanceof HTMLDivElement);
     assert.ok($(srf.element).height() === 300);
     assert.ok($(srf.element).width() === 300);
-    setPictureFrame(srf, '※透明です。ファイル名エラー補正のテスト。');
+    SU.setPictureFrame(srf, '※透明です。ファイル名エラー補正のテスト。');
   });
   QUnit.test('shell#getBindGroups', function (assert) {
     var arr, expected;

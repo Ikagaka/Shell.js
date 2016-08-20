@@ -398,9 +398,10 @@ function fastcopy(cnv, tmpctx) {
 exports.fastcopy = fastcopy;
 // ArrayBuffer -> HTMLImageElement
 function fetchImageFromArrayBuffer(buffer, mimetype) {
-    return new Promise(function (resolve, reject) {
-        var url = URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
-        return fetchImageFromURL(url);
+    var url = URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
+    return fetchImageFromURL(url).then(function (img) {
+        URL.revokeObjectURL(url);
+        return img;
     });
 }
 exports.fetchImageFromArrayBuffer = fetchImageFromArrayBuffer;
@@ -714,29 +715,57 @@ function setPictureFrame(element, description) {
     return;
 }
 exports.setPictureFrame = setPictureFrame;
+function craetePictureFrame(description) {
+    var target = arguments.length <= 1 || arguments[1] === undefined ? document.body : arguments[1];
+
+    var fieldset = document.createElement('fieldset');
+    var legend = document.createElement('legend');
+    legend.appendChild(document.createTextNode(description));
+    fieldset.appendChild(legend);
+    fieldset.style.display = 'inline-block';
+    target.appendChild(fieldset);
+    fieldset.style.backgroundColor = "#D2E0E6";
+    var add = function add(element) {
+        var txt = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
+
+        if (txt === "") {
+            var frame = craetePictureFrame(txt, fieldset);
+            frame.add(element);
+        } else if (typeof element === "string") {
+            var txtNode = document.createTextNode(element);
+            var p = document.createElement("p");
+            p.appendChild(txtNode);
+            fieldset.appendChild(p);
+        } else {
+            fieldset.appendChild(element);
+        }
+    };
+    return { add: add };
+}
+exports.craetePictureFrame = craetePictureFrame;
 },{"encoding-japanese":7,"jquery":18}],4:[function(require,module,exports){
 'use strict';
 var SCL = require('./ShellConfigLoader');
 var SU = require('./SurfaceUtil');
 var narloader = require('narloader');
 var NL = narloader.NarLoader;
-QUnit.module('ShellConfig');
+QUnit.module('ShellConfigLoader');
 NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
     var dic = dir.asArrayBuffer();
     var name = SU.fastfind(Object.keys(dic), 'descript.txt');
     var descript = SU.parseDescript(SU.convert(dic[name]));
-    QUnit.test('SC.loadFromJSONLike', function (assert) {
+    QUnit.test('ShellConfigLoader.loadFromJSONLike', function (assert) {
         var done = assert.async();
         return SCL.loadFromJSONLike(descript).then(function (config) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(config, 'arguments/0/left/object/object').seriko, 'arguments/0/left/object').use_self_alpha, 'arguments/0/left') === false, 'arguments/0'), {
                 content: 'assert.ok(config.seriko.use_self_alpha === false)',
-                filepath: 'es5/ShellConfig.test.js',
-                line: 16
+                filepath: 'es5/ShellConfigLoader.test.js',
+                line: 15
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(config, 'arguments/0/left/object/object').seriko, 'arguments/0/left/object').alignmenttodesktop, 'arguments/0/left') === 'bottom', 'arguments/0'), {
                 content: 'assert.ok(config.seriko.alignmenttodesktop === "bottom")',
-                filepath: 'es5/ShellConfig.test.js',
-                line: 17
+                filepath: 'es5/ShellConfigLoader.test.js',
+                line: 16
             }));
             done();
         });

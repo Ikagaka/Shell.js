@@ -52,3 +52,6 @@ export declare function get<T>(dir: {
     [key: string]: T;
 }, path: string): Promise<T>;
 export declare function setPictureFrame(element: HTMLElement, description: string): void;
+export declare function craetePictureFrame(description: string, target?: HTMLElement): {
+    add: (element: HTMLElement | string, txt?: string) => void;
+};

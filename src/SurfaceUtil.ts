@@ -171,9 +171,10 @@ export function fastcopy(cnv: HTMLCanvasElement|HTMLImageElement, tmpctx: Canvas
 
 // ArrayBuffer -> HTMLImageElement
 export function fetchImageFromArrayBuffer(buffer: ArrayBuffer, mimetype?:string): Promise<HTMLImageElement> {
-  return new Promise<HTMLImageElement>((resolve, reject)=>{
-    const url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
-    return fetchImageFromURL(url);
+  const url = URL.createObjectURL(new Blob([buffer], {type: "image/png"}));
+  return fetchImageFromURL(url).then((img)=>{
+    URL.revokeObjectURL(url);
+    return img;
   });
 }
 
@@ -444,4 +445,29 @@ export function setPictureFrame(element: HTMLElement, description: string){
   fieldset.style.backgroundColor = "#D2E0E6";
   document.body.appendChild(fieldset);
   return;
+}
+
+
+export function craetePictureFrame(description: string, target=document.body){
+  const fieldset = document.createElement('fieldset');
+  const legend = document.createElement('legend');
+  legend.appendChild(document.createTextNode(description));
+  fieldset.appendChild(legend);
+  fieldset.style.display = 'inline-block';
+  target.appendChild(fieldset);
+  fieldset.style.backgroundColor = "#D2E0E6";
+  const add = (element: HTMLElement|string, txt="")=>{
+      if(txt === ""){
+        const frame = craetePictureFrame(txt, fieldset);
+        frame.add(element);
+      }else if(typeof element === "string"){
+        const txtNode = document.createTextNode(element);
+        const p = document.createElement("p");
+        p.appendChild(txtNode);
+        fieldset.appendChild(p);
+      }else{
+        fieldset.appendChild(element);
+      }
+  };
+  return { add };
 }

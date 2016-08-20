@@ -11,6 +11,7 @@ import $ = require("jquery");
 export class Layer{
   background: boolean;
 }
+
 export class SerikoLayer extends Layer{
   patternID: number;
   timerID: any;
