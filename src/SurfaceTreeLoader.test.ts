@@ -24,7 +24,7 @@ NL.loadFromURL('../nar/mobilemaster.nar')
     console.log(surfacesTxt);
     return STL.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt)
     .then((surfaceTree)=>{
-      console.log(surfaceTree);
+
       var {aliases, surfaces} = surfaceTree;
       assert.ok(surfaces.every((srf)=>{
         return srf.elements.every((b)=> true /* todo */ )

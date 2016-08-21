@@ -21,7 +21,7 @@
     "babel": "babel lib -d es5",
     "espower": "gulp build",
     "browserify": "browserify es5/index.js --standalone Shell -o dist/Shell.js",
-    "check": "reset; tsc -w --noEmit",
+    "check": "tsc -w --noEmit",
     "tree": "tree -C -L 2 -I node_modules",
     "clean": "rm -rf lib/* es5/* dist/*",
     "reset": "rm -rf bower_components node_modules typings",

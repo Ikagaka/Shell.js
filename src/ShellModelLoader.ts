@@ -12,32 +12,28 @@ import * as SY from "surfaces_txt2yaml";
 
 export type Directory = { [filepath: string]: ArrayBuffer };
 
-export function load(directory: Directory){
+export function load(directory: Directory): Promise<SH.Shell>{
   return loadDescript(directory)
-  .then(({descript, descriptJSON, config})=>{
+  .then(({descript, descriptJSON, config})=>
     loadSurfacesTxt(directory)
-    .then(({ surfacesTxt, surfaceDefTree })=>{
+    .then(({ surfacesTxt, surfaceDefTree })=>
       loadSurfaceTable(directory)
-      .then(()=>{
+      .then(()=>
         loadSurfacePNG(directory, surfaceDefTree)
         .then((surfaceDefTree)=>{
           const shell = new SH.Shell();
+          
+          shell.directory = directory;
+
           shell.descript = descript;
           shell.descriptJSON = descriptJSON;
           shell.config = config;
-          shell.surfaceDefTree = surfaceDefTree;
+
           shell.surfacesTxt = surfacesTxt;
           shell.surfaceDefTree = surfaceDefTree;
-          shell.directory = directory;
+
           return shell;
-        })
-        .catch((err)=>{
-          console.error("ShellLoader.load > ", err);
-          return Promise.reject(err);
-        });
-      })
-    })
-  });
+        }) ) ) );
 }
 
 // directoryからdescript.txtを探して descript
@@ -47,7 +43,7 @@ export function loadDescript(directory: Directory): Promise<{descript:SC.Descrip
   let descript: SC.Descript = {};
   let descriptJSON: SC.JSONLike = {};
   if (name === "") {
-    console.info("ShellLoader.loadDescript: descript.txt is not found");
+    console.info("ShellModelLoader.loadDescript: descript.txt is not found");
   } else {
     let descript = SU.parseDescript(SU.convert(dir[name]));
     let json: SC.JSONLike = {};
@@ -69,7 +65,7 @@ export function loadDescript(directory: Directory): Promise<{descript:SC.Descrip
 export function loadSurfacesTxt(directory: Directory): Promise<{ surfacesTxt: SY.SurfacesTxt, surfaceDefTree: ST.SurfaceDefinitionTree }> {
   const filenames = SU.findSurfacesTxt(Object.keys(directory));
   if(filenames.length === 0){
-    console.info("ShellLoader.loadSurfacesTxt: surfaces.txt is not found");
+    console.info("ShellModelLoader.loadSurfacesTxt: surfaces.txt is not found");
   }
   const cat_text = filenames.reduce((text, filename)=> text + SU.convert(directory[filename]), "");
   const surfacesTxt = SY.txt_to_data(cat_text, {compatible: 'ssp-lazy'});
@@ -84,10 +80,10 @@ export function loadSurfacesTxt(directory: Directory): Promise<{ surfacesTxt: SY
 export function loadSurfaceTable(directory: Directory): Promise<void> {
   const surfacetable_name = Object.keys(directory).filter((name)=> /^surfacetable.*\.txt$/i.test(name))[0] || "";
   if(surfacetable_name === ""){
-    console.info("ShellLoader.loadSurfaceTable", "surfacetable.txt is not found.");
+    console.info("ShellModelLoader.loadSurfaceTable", "surfacetable.txt is not found.");
   }else{
     const txt = SU.convert(directory[surfacetable_name]);
-    console.info("ShellLoader.loadSurfaceTable", "surfacetable.txt is not supported yet.");
+    console.info("ShellModelLoader.loadSurfaceTable", "surfacetable.txt is not supported yet.");
     // TODO
   }
   return Promise.resolve();

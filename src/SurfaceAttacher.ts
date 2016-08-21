@@ -153,7 +153,16 @@ export function processMouseEvent(ev: JQueryEventObject, type:string ): void {//
 }
 
 
+/*
 
+
+  // 位置合わせとか
+  $(this.element).width(baseWidth);//this.cnv.width - bufRender.basePosX);
+  $(this.element).height(baseHeight);//this.cnv.height - bufRender.basePosY);
+  $(this.cnv).css("top", -this.bufferRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
+  $(this.cnv).css("left", -this.bufferRender.basePosX);
+
+*/
 
 
 
@@ -168,4 +177,6 @@ export interface SurfaceMouseEvent {
   transparency: boolean; // 透明領域ならtrue,
   event: JQueryEventObject;
 }
+
+
 

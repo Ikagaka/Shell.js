@@ -45,6 +45,16 @@ export class SurfaceRenderer extends SurfaceCanvas {
     this.debug = false;
   }
 
+  init(srfCnv: SurfaceCanvas){
+    // this を srfCnv の値で置き換え
+    this.base(srfCnv);
+    this.basePosX = srfCnv.basePosX;
+    this.basePosY = srfCnv.basePosY;
+    this.baseWidth = srfCnv.baseWidth;
+    this.baseHeight = srfCnv.baseHeight;
+  }
+
+
   // バッファを使いまわすためのリセット
   // clearは短形を保つがリセットは1x1になる
   reset(): void {
@@ -57,7 +67,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
     this.baseHeight = 0;
   }
 
-  public clear(): void {
+  clear(): void {
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
   }
 
@@ -65,7 +75,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
   //  {canvas: srfCnv1, type: "base",    x: 0,  y: 0}
   //  {canvas: srfCnv2, type: "overlay", x: 50, y: 50}
   // ]
-  public composeElements(elms: {type: string, x: number, y:number, canvas:SurfaceCanvas}[]): SurfaceCanvas {
+  composeElements(elms: {type: string, x: number, y: number, canvas: SurfaceCanvas}[]): SurfaceCanvas {
     // baseを決定
     const bases = elms.filter(({type})=> type === "base"); 
     const others = elms.filter(({type})=> type !== "base");
@@ -89,7 +99,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
     return this;
   }
 
-  private composeElement(canvas: SurfaceCanvas, type: string, x=0, y=0): void {
+  composeElement(canvas: SurfaceCanvas, type: string, x=0, y=0): void {
     switch (type) {
       case "overlay":     this.overlay(canvas, x, y);     break;
       case "overlayfast": this.overlayfast(canvas, x, y); break;
@@ -105,7 +115,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
   //このメソッドのパターンを重ねると、サーフェス全面を描画し直すことによるアニメーション（いわばパラパラ漫画）が実現される。
   //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
   //着せ替え・elementでも使用できる。
-  public base(part: SurfaceCanvas): void {
+  base(part: SurfaceCanvas): void {
     this.reset();
     this.ctx.globalCompositeOperation = "source-over";
     this.ctx.drawImage(part.cnv, 0, 0);
@@ -113,7 +123,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
 
   //下位レイヤにコマを重ねる。
   //着せ替え・elementでも使用できる。
-  private overlay(part: SurfaceCanvas, x: number, y: number): void {
+  overlay(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "source-over";
     this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
@@ -121,7 +131,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
 
   //下位レイヤの非透過部分（半透明含む）にのみコマを重ねる。
   //着せ替え・elementでも使用できる。
-  private overlayfast(part: SurfaceCanvas, x: number, y: number): void {
+  overlayfast(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "source-atop";
     this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
@@ -132,7 +142,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
   //interpolateで重なる部分はベースより上位（手前）側になければならない
   //（interpolateのコマが描画している部分に、上位のレイヤで不透明な部分が重なると反映されなくなる）。
   //着せ替え・elementでも使用できる。
-  private interpolate(part: SurfaceCanvas, x: number, y: number): void {
+  interpolate(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
     this.ctx.globalCompositeOperation = "destination-over";
     this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
@@ -140,13 +150,13 @@ export class SurfaceRenderer extends SurfaceCanvas {
 
   //下位レイヤにコマを重ねるが、コマの透過部分について下位レイヤにも反映する（reduce + overlayに近い）。
   //着せ替え・elementでも使用できる。
-  private replace(part: SurfaceCanvas, x: number, y: number): void {
+  replace(part: SurfaceCanvas, x: number, y: number): void {
     this.prepareOverlay(part, x, y);
     this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv.width, part.cnv.height);
     this.overlay(part, x, y);
   }
 
-  private prepareOverlay(part: SurfaceCanvas, x: number, y: number): void { 
+  prepareOverlay(part: SurfaceCanvas, x: number, y: number): void { 
     // パーツがはみだす量
     // もし負なら左へはみ出した量
     let left  = this.basePosX + x;
@@ -191,7 +201,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
   //下位レイヤの抜き色による透過領域に、そのコマの抜き色による透過領域を追加する。コマの抜き色で無い部分は無視される。
   //着せ替え用に用意されたメソッドだが、着せ替えでないアニメーション・elementでも使用可能。
   //http://usada.sakura.vg/contents/seriko.html
-  private reduce(part: SurfaceCanvas, x: number, y: number): void {
+  reduce(part: SurfaceCanvas, x: number, y: number): void {
     // はみ出しちぇっく prepareOverlay はしない
     const width  = x + part.cnv.width  < this.cnv.width  ? part.cnv.width  : this.cnv.width  - x;
     const height = y + part.cnv.height < this.cnv.height ? part.cnv.height : this.cnv.height - y;
@@ -212,7 +222,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
     this.ctx.putImageData(imgdataA, 0, 0);
   }
 
-  public drawRegions(regions: ST.SurfaceCollision[], description="notitle"): void {
+  drawRegions(regions: ST.SurfaceCollision[], description="notitle"): void {
     this.ctx.font = "35px";
     this.ctx.lineWidth = 4;
     this.ctx.strokeStyle = "white";
@@ -224,7 +234,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
     });
   }
 
-  private drawRegion(region: ST.SurfaceCollision): void {
+  drawRegion(region: ST.SurfaceCollision): void {
     const {type="", name=""} = region;
     this.ctx.lineWidth = 1;
     this.ctx.strokeStyle = "#00FF00";
@@ -287,7 +297,7 @@ export class SurfaceRenderer extends SurfaceCanvas {
   }
 
   // ctx.ellipseは非標準
-  private drawEllipseWithBezier(x: number, y: number, w: number, h: number): void {
+  drawEllipseWithBezier(x: number, y: number, w: number, h: number): void {
     const kappa = .5522848,
         ox = (w / 2) * kappa, // control point offset horizontal
         oy = (h / 2) * kappa, // control point offset vertical
@@ -315,10 +325,11 @@ export function isHit(srfCnv: SurfaceCanvas, cols: ST.SurfaceCollision[], x: num
 }
 
 export function copy(srfCnv: SurfaceCanvas): SurfaceCanvas{
-  const ret = new SurfaceCanvas(SU.copy(srfCnv.cnv));
-  ret.basePosX = srfCnv.basePosX;
-  ret.basePosY = srfCnv.basePosY;
-  ret.baseWidth = srfCnv.baseWidth;
-  ret.baseHeight = srfCnv.baseHeight;
-  return ret;
+  // SurfaceCanvas を元に新しい SurfaceCanvas をつくる
+  const srfCnv2 = new SurfaceCanvas(SU.copy(srfCnv.cnv));
+  srfCnv2.basePosX = srfCnv.basePosX;
+  srfCnv2.basePosY = srfCnv.basePosY;
+  srfCnv2.baseWidth = srfCnv.baseWidth;
+  srfCnv2.baseHeight = srfCnv.baseHeight;
+  return srfCnv2;
 }

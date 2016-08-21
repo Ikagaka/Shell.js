@@ -4,6 +4,7 @@
  * 歴史的経緯と変更コストを鑑みてこのままにしている
  */
 
+/// <reference path="../typings/index.d.ts" />
 import * as ST from "./SurfaceTree";
 import Encoding = require("encoding-japanese");
 import $ = require("jquery");
@@ -12,8 +13,7 @@ export var extend = $.extend;
 
 export function chromakey(png: HTMLCanvasElement|HTMLImageElement):HTMLCanvasElement{
   const cnvA = copy(png);
-  const ctxA = cnvA.getContext("2d");
-  if(!ctxA) throw new Error("getContext failed");
+  const ctxA = <CanvasRenderingContext2D>cnvA.getContext("2d");
   const imgdata = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
   chromakey_snipet(<Uint8ClampedArray><any>imgdata.data);
   ctxA.putImageData(imgdata, 0, 0);
@@ -22,13 +22,11 @@ export function chromakey(png: HTMLCanvasElement|HTMLImageElement):HTMLCanvasEle
 
 export function png_pna(png: HTMLCanvasElement|HTMLImageElement, pna: HTMLCanvasElement|HTMLImageElement) {
   const cnvA = png instanceof HTMLCanvasElement ? png : copy(png);
-  const ctxA = cnvA.getContext("2d");
-  if(!ctxA) throw new Error("getContext failed");
+  const ctxA = <CanvasRenderingContext2D>cnvA.getContext("2d");
   const imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
   const dataA = imgdataA.data;
   const cnvB = pna instanceof HTMLCanvasElement ? pna : copy(pna);
-  const ctxB = cnvB.getContext("2d")
-  if(!ctxB) throw new Error("getContext failed");
+  const ctxB = <CanvasRenderingContext2D>cnvB.getContext("2d")
   const imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
   const dataB = imgdataB.data;
   for(let y=0; y<cnvB.height; y++){
@@ -172,6 +170,7 @@ export function copy(cnv: HTMLCanvasElement|HTMLImageElement): HTMLCanvasElement
 export function fastcopy(cnv: HTMLCanvasElement|HTMLImageElement, tmpctx: CanvasRenderingContext2D): void {
   tmpctx.canvas.width = cnv.width;
   tmpctx.canvas.height = cnv.height;
+  tmpctx.globalCompositeOperation = "source-over";
   tmpctx.drawImage(<HTMLCanvasElement>cnv, 0, 0); // type hack
 }
 

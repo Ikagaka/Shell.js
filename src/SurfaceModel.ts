@@ -5,7 +5,6 @@
 import * as ST from "./SurfaceTree";
 import * as SC from "./ShellConfig";
 import * as SH from "./ShellModel";
-import * as SRT from "./SurfaceRenderingTree";
 
 export class Surface {
   scopeId: number;
@@ -18,7 +17,7 @@ export class Surface {
   config:          SC.ShellConfig;
 
   layers:          Layer[];   // アニメーションIDの現在のレイヤ状態
-  renderingTree:   SRT.SurfaceRenderingTree;
+  renderingTree:   SurfaceRenderingTree; // 実際に表示されるべき再帰的なbindも含めたレイヤツリー
   seriko:          boolean[]; // interval再生が有効なアニメーションID
   talkCount:       number;
   move:            {x: number, y: number};
@@ -34,7 +33,7 @@ export class Surface {
     this.surfaceNode = shell.surfaceDefTree.surfaces[surfaceId];
     
     this.config = shell.config;
-    this.renderingTree = new SRT.SurfaceRenderingTree(surfaceId);
+    this.renderingTree = new SurfaceRenderingTree(surfaceId);
     this.layers = [];
     this.seriko = [];
     this.talkCount = 0;
@@ -47,34 +46,63 @@ export class Surface {
 
 export class Layer{
   background: boolean;
+  patterns: ST.SurfaceAnimationPattern[];
+  constructor(patterns: ST.SurfaceAnimationPattern[], background: boolean){
+    this.patterns   = [];
+    this.background = background;
+  }
 }
 
 
 export class SerikoLayer extends Layer{
+  patternID:  number;
   waiting:    boolean; // interval待ち
-  patternID:  number;  // 現在表示してる pattern 。 -1でpattern0への再生開始待ち、0でpattern0を表示
   paused:     boolean; // \![anim,pause] みたいなの 
   exclusive:  boolean; // このアニメーションは排他されているか
   canceled:   boolean; // 何らかの理由で強制停止された
   finished:   boolean; // このアニメーションは正常終了した
 
-  constructor(background: boolean){
-    super();
-    this.patternID  = -1;
+  constructor(patterns: ST.SurfaceAnimationPattern[], background: boolean, patternID=-1){
+    super(patterns, background);
+    this.patternID = patternID;
     this.paused     = false;
     this.exclusive  = false;
     this.canceled   = false;
-    this.finished = false;
-    this.background = background;
+    this.finished   = false;
   }
 }
 
 export class MayunaLayer extends Layer{
   visible: boolean;
   
-  constructor(visible: boolean, background: boolean){
-    super();
-    this.visible = true;
-    this.background = background;
+  constructor(patterns: ST.SurfaceAnimationPattern[], background: boolean, visible: boolean){
+    super(patterns, background);
+    this.visible    = true;
+  }
+}
+
+export class SurfaceRenderingTree { 
+  base:        number;
+  foregrounds: SurfaceRenderingLayerSet[];
+  backgrounds: SurfaceRenderingLayerSet[];
+  constructor(surface: number){
+    this.base = surface;
+    this.foregrounds = [];
+    this.backgrounds = [];
+  }
+}
+
+export type SurfaceRenderingLayerSet = SurfaceRenderingLayer[];
+
+export class SurfaceRenderingLayer {
+  type: string;
+  surface: SurfaceRenderingTree;
+  x: number;
+  y: number;
+  constructor(type: string, surface: SurfaceRenderingTree, x: number, y: number){
+    this.type = type;
+    this.surface = surface;
+    this.x = x;
+    this.y = y;
   }
 }

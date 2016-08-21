@@ -3,6 +3,7 @@
  */
 
 import * as SC from "./ShellConfig";
+import * as SU from "./SurfaceUtil";
 
 export function loadFromJSONLike(json: SC.JSONLike): Promise<SC.ShellConfig> {
   const that = new SC.ShellConfig();
