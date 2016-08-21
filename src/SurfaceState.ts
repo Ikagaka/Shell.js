@@ -13,7 +13,8 @@ import {EventEmitter} from "events";
 export class SurfaceState extends EventEmitter {
   surface: SM.Surface;
   shellState: SS.ShellState;
-  section: {resolve:Function, reject:Function}[];
+  continuations: {resolve:Function, reject:Function}[];
+  // アニメーション終了時に呼び出す手はずになっているプロミス値への継続
 
   // on("move", callback: Function)
   //   move メソッドが発生したことを伝えており暗にウィンドウマネージャへウインドウ位置を変更するよう恫喝している
@@ -24,15 +25,16 @@ export class SurfaceState extends EventEmitter {
     super();
     this.shellState = shellState;
     this.surface = new SM.Surface(scopeId, surfaceId, shellState.shell);
-    this.section = [];
+    this.continuations = [];
     
     this.surface.surfaceNode.animations.forEach((_, animId)=>{
       this.initLayer(animId);
     });
     this.shellState.on("bindgroup_update", ()=>{
+      // ShellConfig の値が変化し bindgroup_update の構成が変化した！
       this.updateBind();
     });
-    this.emit("render");
+    this.constructRenderingTree();
   }
 
   private initLayer(animId: number): void {
@@ -81,7 +83,8 @@ export class SurfaceState extends EventEmitter {
       if(intervals.some(([interval, args])=> "bind" === interval)){
         this.initLayer(animId);
       }
-    })
+    });
+    this.constructRenderingTree();
   }
 
   // アニメーションタイミングループの開始要請
@@ -177,7 +180,7 @@ export class SurfaceState extends EventEmitter {
       }
     });
     return new Promise<void>((resolve, reject)=>{
-      this.section[animId] = {resolve, reject};
+      this.continuations[animId] = {resolve, reject};
       this.step(animId, layer);
     });
   }
@@ -186,7 +189,7 @@ export class SurfaceState extends EventEmitter {
   private step(animId: number, layer: SM.SerikoLayer): void {
     const srf = this.surface;
     const {surfaceNode, layers, destructed, move} = this.surface;
-    const {resolve, reject} = this.section[animId];
+    const {resolve, reject} = this.continuations[animId];
     const anim = surfaceNode.animations[animId];
     // patternをすすめる
     // exclusive中のやつら探す
@@ -213,7 +216,7 @@ export class SurfaceState extends EventEmitter {
     }
     if(layer.finished){
       layers[animId] = new SM.SerikoLayer(ST.isBack(anim));
-      delete this.section[animId];
+      delete this.continuations[animId];
       return resolve();
     }
     // 再生中っぽい
@@ -231,7 +234,7 @@ export class SurfaceState extends EventEmitter {
     setTimeout(()=>{
       this.step(animId, layer);
     }, SU.randomRange(wait[0], wait[1]));
-    this.emit("render");
+    this.constructRenderingTree();
   }
 
   // 再生中のアニメーションを停止しろ
@@ -286,6 +289,16 @@ export class SurfaceState extends EventEmitter {
         this.play(animId);
       }
     });
+  }
+
+  constructRenderingTree(): void {
+    // 再帰的にpatternで読んでいるベースサーフェス先のbindまで考慮してレンダリングツリーを構築し反映
+    const srf = this.surface;
+    const {layers} = srf;
+    //srf.renderingTree = hoge(layers);
+
+    // レンダリングツリーが更新された！
+    this.emit("render");
   }
 
 }

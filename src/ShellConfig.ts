@@ -2,8 +2,6 @@
  * shell/master/descript.txt および現在の シェル 状態を表す構造体
  */
 
-import * as SU from "./SurfaceUtil";
-
 export type Descript = { [key: string]: string; };
 
 export type JSONLike = string | number | { [key: string]: JSONLike };

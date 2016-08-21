@@ -9,30 +9,18 @@ import * as SU from "./SurfaceUtil";
 import * as SH from "./ShellModel";
 import * as SR from "./SurfaceRenderer";
 import * as SM from "./SurfaceModel";
+import * as SRT from "./SurfaceRenderingTree";
 
 export class SurfacePatternRenderer extends SBR.SurfaceBaseRenderer {
   constructor(shell: SH.Shell){
     super(shell);
   }
-  render(srf: SM.Surface): Promise<SR.SurfaceCanvas> {
+  render(tree: SRT.SurfaceRenderingTree): Promise<SR.SurfaceCanvas> {
     return Promise.resolve(SR.copy(this.renderer));
   }
 }
 
 
-export class SurfaceLayer { 
-  base:        Layer;
-  foregrounds: LayerSet[];
-  backgrounds: LayerSet[];
-}
-export type LayerSet = Layer[];
-
-export class Layer {
-  type: string;
-  layer: LayerSet;
-  x: number;
-  y: number;
-}
 
 
 /*

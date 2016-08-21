@@ -5,6 +5,7 @@
 import * as ST from "./SurfaceTree";
 import * as SC from "./ShellConfig";
 import * as SH from "./ShellModel";
+import * as SRT from "./SurfaceRenderingTree";
 
 export class Surface {
   scopeId: number;
@@ -17,6 +18,7 @@ export class Surface {
   config:          SC.ShellConfig;
 
   layers:          Layer[];   // アニメーションIDの現在のレイヤ状態
+  renderingTree:   SRT.SurfaceRenderingTree;
   seriko:          boolean[]; // interval再生が有効なアニメーションID
   talkCount:       number;
   move:            {x: number, y: number};
@@ -32,7 +34,7 @@ export class Surface {
     this.surfaceNode = shell.surfaceDefTree.surfaces[surfaceId];
     
     this.config = shell.config;
-
+    this.renderingTree = new SRT.SurfaceRenderingTree(surfaceId);
     this.layers = [];
     this.seriko = [];
     this.talkCount = 0;
