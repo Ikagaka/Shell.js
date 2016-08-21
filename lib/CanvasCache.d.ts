@@ -1,4 +1,3 @@
-import "../typings/index.d.ts";
 export declare type Directory = {
     [filepath: string]: ArrayBuffer;
 };

@@ -1,4 +1,3 @@
-import * as ST from "./SurfaceTree";
 export declare var extend: {
     (target: any, object1?: any, ...objectN: any[]): any;
     (deep: boolean, target: any, object1?: any, ...objectN: any[]): any;
@@ -35,7 +34,6 @@ export declare function getEventPosition(ev: JQueryEventObject): {
     screenY: number;
 };
 export declare function randomRange(min: number, max: number): number;
-export declare function getRegion(element: HTMLCanvasElement, collisions: ST.SurfaceCollision[], offsetX: number, offsetY: number): string;
 export declare function getScrollXY(): {
     scrollX: number;
     scrollY: number;

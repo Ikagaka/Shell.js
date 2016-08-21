@@ -5,8 +5,6 @@
  */
 "use strict";
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
@@ -249,7 +247,6 @@ function isHit(cnv, x, y) {
     // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
     if (!(cnv.width > 0 || cnv.height > 0)) return false;
     var ctx = cnv.getContext("2d");
-    if (!ctx) throw new Error("getContext failed");
     var imgdata = ctx.getImageData(0, 0, x, y);
     var data = imgdata.data;
     return data[data.length - 1] !== 0;
@@ -299,100 +296,6 @@ function randomRange(min, max) {
     return min + Math.floor(Math.random() * (max - min + 1));
 }
 exports.randomRange = randomRange;
-// このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
-// collision設定されていれば name"hoge"
-function getRegion(element, collisions, offsetX, offsetY) {
-    var _this = this;
-
-    // canvas左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べるメソッド
-    var hitCols = collisions.filter(function (collision, colId) {
-        var type = collision.type;
-        var name = collision.name;
-        var left, top, right, bottom;
-        var left, top, right, bottom;
-
-        var _ret = function () {
-            switch (collision.type) {
-                case "rect":
-                    left = collision.left;
-                    top = collision.top;
-                    right = collision.right;
-                    bottom = collision.bottom;
-
-                    return {
-                        v: left < offsetX && offsetX < right && top < offsetY && offsetY < bottom || right < offsetX && offsetX < left && bottom < offsetX && offsetX < top
-                    };
-                case "ellipse":
-                    left = collision.left;
-                    top = collision.top;
-                    right = collision.right;
-                    bottom = collision.bottom;
-
-                    var width = Math.abs(right - left);
-                    var height = Math.abs(bottom - top);
-                    return {
-                        v: Math.pow((offsetX - (left + width / 2)) / (width / 2), 2) + Math.pow((offsetY - (top + height / 2)) / (height / 2), 2) < 1
-                    };
-                case "circle":
-                    var radius = collision.radius;
-                    var centerX = collision.centerX;
-                    var centerY = collision.centerY;
-
-                    return {
-                        v: Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1
-                    };
-                case "polygon":
-                    var coordinates = collision.coordinates;
-
-                    var ptC = { x: offsetX, y: offsetY };
-                    var tuples = coordinates.reduce(function (arr, _ref, i) {
-                        var x = _ref.x;
-                        var y = _ref.y;
-
-                        arr.push([coordinates[i], !!coordinates[i + 1] ? coordinates[i + 1] : coordinates[0]]);
-                        return arr;
-                    }, []);
-                    var deg = tuples.reduce(function (sum, _ref2) {
-                        var _ref3 = _slicedToArray(_ref2, 2);
-
-                        var ptA = _ref3[0];
-                        var ptB = _ref3[1];
-
-                        var vctA = [ptA.x - ptC.x, ptA.y - ptC.y];
-                        var vctB = [ptB.x - ptC.x, ptB.y - ptC.y];
-                        var dotP = vctA[0] * vctB[0] + vctA[1] * vctB[1];
-                        var absA = Math.sqrt(vctA.map(function (a) {
-                            return Math.pow(a, 2);
-                        }).reduce(function (a, b) {
-                            return a + b;
-                        }));
-                        var absB = Math.sqrt(vctB.map(function (a) {
-                            return Math.pow(a, 2);
-                        }).reduce(function (a, b) {
-                            return a + b;
-                        }));
-                        var rad = Math.acos(dotP / (absA * absB));
-                        return sum + rad;
-                    }, 0);
-                    return {
-                        v: deg / (2 * Math.PI) >= 1
-                    };
-                default:
-                    console.warn("unkown collision type:", _this.surfaceId, colId, name, collision);
-                    return {
-                        v: false
-                    };
-            }
-        }();
-
-        if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;
-    });
-    if (hitCols.length > 0) {
-        return hitCols[hitCols.length - 1].name;
-    }
-    return "";
-}
-exports.getRegion = getRegion;
 function getScrollXY() {
     return {
         scrollX: window.scrollX || window.pageXOffset || (document.documentElement || document.body.parentNode || document.body).scrollLeft,

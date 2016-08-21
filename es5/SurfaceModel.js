@@ -9,14 +9,15 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Surface = function Surface(scopeId, surfaceId, surfaceDefTree, config) {
+var Surface = function Surface(scopeId, surfaceId, shell) {
     _classCallCheck(this, Surface);
 
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
-    this.surfaceDefTree = surfaceDefTree;
-    this.surfaceNode = surfaceDefTree.surfaces[surfaceId];
-    this.config = config;
+    this.shell = shell;
+    this.surfaceDefTree = shell.surfaceDefTree;
+    this.surfaceNode = shell.surfaceDefTree.surfaces[surfaceId];
+    this.config = shell.config;
     this.layers = [];
     this.seriko = [];
     this.talkCount = 0;
@@ -71,11 +72,3 @@ var MayunaLayer = function (_Layer2) {
 }(Layer);
 
 exports.MayunaLayer = MayunaLayer;
-function getSurfaceSize(srf) {
-    return {
-        // TODO
-        width: 0,
-        height: 0 //$(this.element).height()
-    };
-}
-exports.getSurfaceSize = getSurfaceSize;

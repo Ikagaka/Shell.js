@@ -1,13 +1,16 @@
+import * as SS from "./ShellState";
 import * as SM from "./SurfaceModel";
 import { EventEmitter } from "events";
 export declare class SurfaceState extends EventEmitter {
     surface: SM.Surface;
+    shellState: SS.ShellState;
     section: {
         resolve: Function;
         reject: Function;
     }[];
-    constructor(surface: SM.Surface);
+    constructor(scopeId: number, surfaceId: number, shellState: SS.ShellState);
     private initLayer(animId);
+    private updateBind();
     begin(animId: number): void;
     end(animId: number): void;
     endAll(): void;

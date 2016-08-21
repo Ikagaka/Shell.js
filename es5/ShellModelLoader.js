@@ -8,7 +8,6 @@ var SU = require("./SurfaceUtil");
 var SCL = require("./ShellConfigLoader");
 var ST = require("./SurfaceTree");
 var STL = require("./SurfaceTreeLoader");
-var CC = require("./CanvasCache");
 var SY = require("surfaces_txt2yaml");
 function load(directory) {
     return loadDescript(directory).then(function (_ref) {
@@ -30,7 +29,6 @@ function load(directory) {
                     shell.surfacesTxt = surfacesTxt;
                     shell.surfaceDefTree = surfaceDefTree;
                     shell.directory = directory;
-                    shell.cache = new CC.CanvasCache(directory);
                     return shell;
                 }).catch(function (err) {
                     console.error("ShellLoader.load > ", err);

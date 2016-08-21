@@ -8,13 +8,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var ST = require("./SurfaceTree");
 var SU = require("./SurfaceUtil");
 var SC = require("./ShellConfig");
-var CC = require("./CanvasCache");
 
 var Shell = function Shell() {
     _classCallCheck(this, Shell);
 
     this.directory = {};
-    this.cache = new CC.CanvasCache(this.directory);
     this.descript = {};
     this.descriptJSON = {};
     this.config = new SC.ShellConfig();

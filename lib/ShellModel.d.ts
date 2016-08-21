@@ -1,13 +1,11 @@
 import * as ST from "./SurfaceTree";
 import * as SC from "./ShellConfig";
-import * as CC from "./CanvasCache";
 import * as SY from "surfaces_txt2yaml";
 export declare type Directory = {
     [filepath: string]: ArrayBuffer;
 };
 export declare class Shell {
     directory: Directory;
-    cache: CC.CanvasCache;
     descript: SC.Descript;
     descriptJSON: SC.JSONLike;
     config: SC.ShellConfig;

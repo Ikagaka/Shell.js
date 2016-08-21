@@ -1,8 +1,10 @@
 import * as ST from "./SurfaceTree";
 import * as SC from "./ShellConfig";
+import * as SH from "./ShellModel";
 export declare class Surface {
     scopeId: number;
     surfaceId: number;
+    shell: SH.Shell;
     surfaceDefTree: ST.SurfaceDefinitionTree;
     surfaceNode: ST.SurfaceDefinition;
     config: SC.ShellConfig;
@@ -14,7 +16,7 @@ export declare class Surface {
         y: number;
     };
     destructed: boolean;
-    constructor(scopeId: number, surfaceId: number, surfaceDefTree: ST.SurfaceDefinitionTree, config: SC.ShellConfig);
+    constructor(scopeId: number, surfaceId: number, shell: SH.Shell);
 }
 export declare class Layer {
     background: boolean;
@@ -32,7 +34,3 @@ export declare class MayunaLayer extends Layer {
     visible: boolean;
     constructor(visible: boolean, background: boolean);
 }
-export declare function getSurfaceSize(srf: Surface): {
-    width: number;
-    height: number;
-};

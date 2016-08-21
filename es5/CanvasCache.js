@@ -8,7 +8,6 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-require("../typings/index.d.ts");
 var SU = require("./SurfaceUtil");
 
 var CanvasCache = function () {

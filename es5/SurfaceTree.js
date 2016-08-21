@@ -1,7 +1,9 @@
-"use strict";
 /*
  * surfaces.txt の内容を構造化したもの
  */
+"use strict";
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -240,3 +242,99 @@ function getExclusives(anim) {
     }, []);
 }
 exports.getExclusives = getExclusives;
+function getRegion(collisions, offsetX, offsetY) {
+    var _this5 = this;
+
+    // このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
+    // collision設定されていれば name"hoge"
+    // basepos 左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べる
+    // offsetX: number, offsetY: number は basepos からの相対座標である必要がある、間違ってもcanvas左上からにしてはいけない 
+    var hitCols = collisions.filter(function (collision, colId) {
+        var type = collision.type;
+        var name = collision.name;
+        var left, top, right, bottom;
+        var left, top, right, bottom;
+
+        var _ret = function () {
+            switch (collision.type) {
+                case "rect":
+                    left = collision.left;
+                    top = collision.top;
+                    right = collision.right;
+                    bottom = collision.bottom;
+
+                    return {
+                        v: left < offsetX && offsetX < right && top < offsetY && offsetY < bottom || right < offsetX && offsetX < left && bottom < offsetX && offsetX < top
+                    };
+                case "ellipse":
+                    left = collision.left;
+                    top = collision.top;
+                    right = collision.right;
+                    bottom = collision.bottom;
+
+                    var width = Math.abs(right - left);
+                    var height = Math.abs(bottom - top);
+                    return {
+                        v: Math.pow((offsetX - (left + width / 2)) / (width / 2), 2) + Math.pow((offsetY - (top + height / 2)) / (height / 2), 2) < 1
+                    };
+                case "circle":
+                    var radius = collision.radius;
+                    var centerX = collision.centerX;
+                    var centerY = collision.centerY;
+
+                    return {
+                        v: Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1
+                    };
+                case "polygon":
+                    var coordinates = collision.coordinates;
+
+                    var ptC = { x: offsetX, y: offsetY };
+                    var tuples = coordinates.reduce(function (arr, _ref7, i) {
+                        var x = _ref7.x;
+                        var y = _ref7.y;
+
+                        arr.push([coordinates[i], !!coordinates[i + 1] ? coordinates[i + 1] : coordinates[0]]);
+                        return arr;
+                    }, []);
+                    // TODO: acos使わない奴に変える
+                    var deg = tuples.reduce(function (sum, _ref8) {
+                        var _ref9 = _slicedToArray(_ref8, 2);
+
+                        var ptA = _ref9[0];
+                        var ptB = _ref9[1];
+
+                        var vctA = [ptA.x - ptC.x, ptA.y - ptC.y];
+                        var vctB = [ptB.x - ptC.x, ptB.y - ptC.y];
+                        var dotP = vctA[0] * vctB[0] + vctA[1] * vctB[1];
+                        var absA = Math.sqrt(vctA.map(function (a) {
+                            return Math.pow(a, 2);
+                        }).reduce(function (a, b) {
+                            return a + b;
+                        }));
+                        var absB = Math.sqrt(vctB.map(function (a) {
+                            return Math.pow(a, 2);
+                        }).reduce(function (a, b) {
+                            return a + b;
+                        }));
+                        var rad = Math.acos(dotP / (absA * absB));
+                        return sum + rad;
+                    }, 0);
+                    return {
+                        v: deg / (2 * Math.PI) >= 1
+                    };
+                default:
+                    console.warn("unkown collision type:", _this5.surfaceId, colId, name, collision);
+                    return {
+                        v: false
+                    };
+            }
+        }();
+
+        if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;
+    });
+    if (hitCols.length > 0) {
+        return hitCols[hitCols.length - 1].name;
+    }
+    return "";
+}
+exports.getRegion = getRegion;

@@ -101,3 +101,4 @@ export declare class SurfaceAnimationPattern {
 }
 export declare function isBack(anim: SurfaceAnimation): boolean;
 export declare function getExclusives(anim: SurfaceAnimation): number[];
+export declare function getRegion(collisions: SurfaceCollision[], offsetX: number, offsetY: number): string;

@@ -23,15 +23,19 @@ var SurfaceState = function (_events_1$EventEmitte) {
     //   move メソッドが発生したことを伝えており暗にウィンドウマネージャへウインドウ位置を変更するよう恫喝している
     // on("render", callback: Function)
     //   描画すべきタイミングなので canvas に描画してくれ 
-    function SurfaceState(surface) {
+    function SurfaceState(scopeId, surfaceId, shellState) {
         _classCallCheck(this, SurfaceState);
 
         var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceState).call(this));
 
-        _this.surface = surface;
+        _this.shellState = shellState;
+        _this.surface = new SM.Surface(scopeId, surfaceId, shellState.shell);
         _this.section = [];
         _this.surface.surfaceNode.animations.forEach(function (_, animId) {
             _this.initLayer(animId);
+        });
+        _this.shellState.on("bindgroup_update", function () {
+            _this.updateBind();
         });
         _this.emit("render");
         return _this;
@@ -93,12 +97,32 @@ var SurfaceState = function (_events_1$EventEmitte) {
             layers[animId] = new SM.SerikoLayer(ST.isBack(anim));
             this.begin(animId);
         }
+    }, {
+        key: "updateBind",
+        value: function updateBind() {
+            var _this2 = this;
+
+            var animations = this.surface.surfaceNode.animations;
+            animations.forEach(function (_ref3, animId) {
+                var intervals = _ref3.intervals;
+
+                if (intervals.some(function (_ref4) {
+                    var _ref5 = _slicedToArray(_ref4, 2);
+
+                    var interval = _ref5[0];
+                    var args = _ref5[1];
+                    return "bind" === interval;
+                })) {
+                    _this2.initLayer(animId);
+                }
+            });
+        }
         // アニメーションタイミングループの開始要請
 
     }, {
         key: "begin",
         value: function begin(animId) {
-            var _this2 = this;
+            var _this3 = this;
 
             var _surface2 = this.surface;
             var surfaceNode = _surface2.surfaceNode;
@@ -110,19 +134,19 @@ var SurfaceState = function (_events_1$EventEmitte) {
             var collisions = _surfaceNode$animatio.collisions;
 
             if (SC.isBind(config, animId)) {
-                intervals.filter(function (_ref3) {
-                    var _ref4 = _slicedToArray(_ref3, 1);
+                intervals.filter(function (_ref6) {
+                    var _ref7 = _slicedToArray(_ref6, 1);
 
-                    var interval = _ref4[0];
+                    var interval = _ref7[0];
                     return interval !== "bind";
-                }).forEach(function (_ref5) {
-                    var _ref6 = _slicedToArray(_ref5, 2);
+                }).forEach(function (_ref8) {
+                    var _ref9 = _slicedToArray(_ref8, 2);
 
-                    var interval = _ref6[0];
-                    var args = _ref6[1];
+                    var interval = _ref9[0];
+                    var args = _ref9[1];
 
                     // インターバルタイマの登録
-                    _this2.setIntervalTimer(animId, interval, args);
+                    _this3.setIntervalTimer(animId, interval, args);
                 });
             }
         }
@@ -141,18 +165,18 @@ var SurfaceState = function (_events_1$EventEmitte) {
     }, {
         key: "endAll",
         value: function endAll() {
-            var _this3 = this;
+            var _this4 = this;
 
             var layers = this.surface.layers;
 
             layers.forEach(function (layer, animId) {
-                _this3.end(animId);
+                _this4.end(animId);
             });
         }
     }, {
         key: "setIntervalTimer",
         value: function setIntervalTimer(animId, interval, args) {
-            var _this4 = this;
+            var _this5 = this;
 
             // setTimeoutする、beginからのみ呼ばれてほしい
             var _surface3 = this.surface;
@@ -166,7 +190,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
                 var fn = function fn(nextTick) {
                     // nextTick は アニメーション終わってから呼ぶともういっぺん random や always されるもの
                     if (!seriko[animId]) return; // nextTick 呼ばないのでintervalを終了する
-                    _this4.play(animId).catch(function (err) {
+                    _this5.play(animId).catch(function (err) {
                         return console.info("animation canceled", err);
                     }).then(function () {
                         return nextTick();
@@ -212,7 +236,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
     }, {
         key: "play",
         value: function play(animId) {
-            var _this5 = this;
+            var _this6 = this;
 
             var srf = this.surface;
             var _surface4 = this.surface;
@@ -244,14 +268,14 @@ var SurfaceState = function (_events_1$EventEmitte) {
                 }
             });
             return new Promise(function (resolve, reject) {
-                _this5.section[animId] = { resolve: resolve, reject: reject };
-                _this5.step(animId, layer);
+                _this6.section[animId] = { resolve: resolve, reject: reject };
+                _this6.step(animId, layer);
             });
         }
     }, {
         key: "step",
         value: function step(animId, layer) {
-            var _this6 = this;
+            var _this7 = this;
 
             var srf = this.surface;
             var _surface5 = this.surface;
@@ -325,7 +349,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
             }
             // waitだけ待つ
             setTimeout(function () {
-                _this6.step(animId, layer);
+                _this7.step(animId, layer);
             }, SU.randomRange(wait[0], wait[1]));
             this.emit("render");
         }
@@ -360,7 +384,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
     }, {
         key: "talk",
         value: function talk() {
-            var _this7 = this;
+            var _this8 = this;
 
             var srf = this.surface;
             var _surface6 = this.surface;
@@ -371,11 +395,11 @@ var SurfaceState = function (_events_1$EventEmitte) {
             srf.talkCount++;
             // talkなものでかつtalkCountとtalk,nのmodが0なもの
             var hits = animations.filter(function (anim, animId) {
-                return anim.intervals.some(function (_ref7) {
-                    var _ref8 = _slicedToArray(_ref7, 2);
+                return anim.intervals.some(function (_ref10) {
+                    var _ref11 = _slicedToArray(_ref10, 2);
 
-                    var interval = _ref8[0];
-                    var args = _ref8[1];
+                    var interval = _ref11[0];
+                    var args = _ref11[1];
                     return "talk" === interval && srf.talkCount % args[0] === 0;
                 });
             });
@@ -384,7 +408,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
                 if (layers[animId] instanceof SM.SerikoLayer) {
                     var layer = layers[animId];
                     if (layer.patternID < 0) {
-                        _this7.play(animId);
+                        _this8.play(animId);
                     }
                 }
             });
@@ -392,7 +416,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
     }, {
         key: "yenE",
         value: function yenE() {
-            var _this8 = this;
+            var _this9 = this;
 
             var srf = this.surface;
             var _surface7 = this.surface;
@@ -401,14 +425,14 @@ var SurfaceState = function (_events_1$EventEmitte) {
 
             var anims = surfaceNode.animations;
             anims.forEach(function (anim, animId) {
-                if (anim.intervals.some(function (_ref9) {
-                    var _ref10 = _slicedToArray(_ref9, 2);
+                if (anim.intervals.some(function (_ref12) {
+                    var _ref13 = _slicedToArray(_ref12, 2);
 
-                    var interval = _ref10[0];
-                    var args = _ref10[1];
+                    var interval = _ref13[0];
+                    var args = _ref13[1];
                     return interval === "yen-e";
                 })) {
-                    _this8.play(animId);
+                    _this9.play(animId);
                 }
             });
         }
