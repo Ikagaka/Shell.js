@@ -3,7 +3,6 @@
  * 比較的重い処理である surface*.png の色抜き処理をキャッシングする
  */
 
-import "../typings/index.d.ts"
 import * as SU from "./SurfaceUtil";
 
 export type Directory = { [filepath: string]: ArrayBuffer };

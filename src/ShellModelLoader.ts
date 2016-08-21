@@ -8,7 +8,6 @@ import * as SC from "./ShellConfig";
 import * as SCL from "./ShellConfigLoader";
 import * as ST from "./SurfaceTree";
 import * as STL from "./SurfaceTreeLoader";
-import * as CC from "./CanvasCache";
 import * as SY from "surfaces_txt2yaml";
 
 export type Directory = { [filepath: string]: ArrayBuffer };
@@ -30,7 +29,6 @@ export function load(directory: Directory){
           shell.surfacesTxt = surfacesTxt;
           shell.surfaceDefTree = surfaceDefTree;
           shell.directory = directory;
-          shell.cache = new CC.CanvasCache(directory);
           return shell;
         })
         .catch((err)=>{

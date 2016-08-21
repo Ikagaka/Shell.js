@@ -5,21 +5,7 @@
 
 import * as ST from "./SurfaceTree";
 import * as SU from "./SurfaceUtil";
-import * as CC from "./CanvasCache";
 
-export class SurfaceLayer { 
-  base:        Layer;
-  foregrounds: LayerSet[];
-  backgrounds: LayerSet[];
-}
-export type LayerSet = Layer[];
-
-export class Layer {
-  type: string;
-  layer: LayerSet;
-  x: number;
-  y: number;
-}
 
 export class SurfaceCanvas {
   // baseCanvas
@@ -38,7 +24,8 @@ export class SurfaceCanvas {
   }
 }
 
-export class SurfaceRender extends SurfaceCanvas {
+
+export class SurfaceRenderer extends SurfaceCanvas {
   // GCの発生を抑えるためバッファを使いまわす
   ctx: CanvasRenderingContext2D;
   tmpcnv: HTMLCanvasElement
@@ -89,9 +76,9 @@ export class SurfaceRender extends SurfaceCanvas {
       // elms.length > 0なのでundefinedにはならない…はず。
       // お前がbaseになるんだよ
       base = <ST.SurfaceElement&{canvas:SurfaceCanvas}>elms.shift();
-      console.warn("SurfaceRender#composeElements: base surface not found. failback.", base);
+      console.warn("SurfaceRenderer#composeElements: base surface not found. failback.", base);
       if(base == null){
-        console.warn("SurfaceRender#composeElements: cannot decide base surface", base);
+        console.warn("SurfaceRenderer#composeElements: cannot decide base surface", base);
         return this;
       }
     }
@@ -110,7 +97,7 @@ export class SurfaceRender extends SurfaceCanvas {
       case "interpolate": this.interpolate(canvas, x, y); break;
       case "reduce":      this.reduce(canvas, x, y);      break;
       default:
-        console.warn("SurfaceRender#composeElement:", "unkown compose method", canvas, type, x, y);
+        console.warn("SurfaceRenderer#composeElement:", "unkown compose method", canvas, type, x, y);
     }
   }
 
@@ -173,7 +160,7 @@ export class SurfaceRender extends SurfaceCanvas {
       // はみ出し発生
       let offsetX = 0; // ずれた量
       let offsetY = 0;
-      console.info("SurfaceRender#prepareOverlay: reshape occured");
+      console.info("SurfaceRenderer#prepareOverlay: reshape occured");
       // 現状をtmpcnvへコピー
       SU.fastcopy(this.cnv, this.tmpctx);
       if(left<0){
@@ -288,7 +275,7 @@ export class SurfaceRender extends SurfaceCanvas {
         this.ctx.stroke();
         break;
       default:
-        console.warn("SurfaceRender#drawRegion", "unkown collision shape:", region);
+        console.warn("SurfaceRenderer#drawRegion", "unkown collision shape:", region);
         break;
     }
     this.ctx.font = "35px";
@@ -321,176 +308,17 @@ export class SurfaceRender extends SurfaceCanvas {
 
 
 
-
-export function composeBaseSurface(n: number): Promise<SurfaceCanvas> {
-  // elements を合成するだけ
-  const srf = this.surfaceTree[n];
-  if(!(srf instanceof ST.SurfaceDefinition) || srf.elements.length === 0){
-    // そんな定義なかった || element0も何もなかった
-    console.warn("Surface#composeBaseSurface: no such a surface", n, srf);
-    return Promise.reject("no such a surface");
-  }
-  const elms = srf.elements;
-  return Promise.all(elms.map(({file, type, x, y})=>{
-    // asisはここで処理しちゃう
-    let asis = false;
-    if(type === "asis"){
-      type = "overlay"; // overlayにしとく
-      asis = true;
-    }
-    if(type === "bind" || type === "add"){
-      type = "overlay"; // overlayにしとく
-    }
-    // ファイルとりにいく
-    return this.cache.getCanvas(file, asis)
-    .then((cnv)=>{ return {file, type, x, y, canvas: new SurfaceCanvas(cnv) }; })
-    .catch((err)=>{
-      console.warn("Surface#composeBaseSurface: no such a file", file, n, srf);
-    });
-  })).then((elms)=>{
-    return this.bufferRender.composeElements(elms);
-  }).then((srfCnv)=>{
-    // basesurfaceの大きさはbasesurfaceそのもの
-    srfCnv.basePosX = 0;
-    srfCnv.basePosY = 0;
-    srfCnv.baseWidth = srfCnv.cnv.width;
-    srfCnv.baseHeight = srfCnv.cnv.height;
-    return srfCnv;
-  });
-}
-export function solveAnimationPattern(n:number): ST.SurfaceAnimationPattern[][]{
-  const patses: ST.SurfaceAnimationPattern[][] = [];
-  const srf = this.surfaceTree[n];
-  if(!(srf instanceof ST.SurfaceDefinition)){
-    // そんな定義なかった || element0も何もなかった
-    console.warn("Surface#solveAnimationPattern: no such a surface", n, srf);
-    return patses;
-  }
-  srf.animations.forEach(({intervals, options, patterns}, animId)=>{
-    if(intervals.length === 1 && intervals[0][0] === "bind" && this.isBind(animId)){
-      // 対象のサーフェスのパターンで bind で有効な着せ替えな animId
-      patses[animId] = [];
-      patterns.forEach(({type, animation_ids}, patId)=>{
-        if(type === "insert"){
-          // insertの場合は対象のIDをとってくる
-          const insertId = animation_ids[0];
-          const anim = this.surfaceNode.animations[insertId];
-          if(!(anim instanceof ST.SurfaceAnimation)){
-            console.warn("Surface#solveAnimationPattern", "insert id", animation_ids, "is wrong target.", n, patId);
-            return;
-          }
-          // insertをねじ込む
-          patses[animId] = patses[animId].concat(anim.patterns);
-          return;
-        }
-        // insertでない処理
-        patses[animId].push(patterns[patId]);
-      });
-    }
-  });
-  return patses;
+export function isHit(srfCnv: SurfaceCanvas, cols: ST.SurfaceCollision[], x: number, y: number):{transparency: boolean, name: string}{
+  const transparency =  SU.isHit(this.cnv, x, y);
+  const name = ST.getRegion(cols, x - this.basePosX, y - this.basePosY);
+  return {transparency, name};
 }
 
-export function composeAnimationPart(n: number, log: number[]=[]): Promise<SurfaceCanvas> {
-  if(log.indexOf(n) != -1){
-    // 循環参照
-    console.warn("Surface#composeAnimationPart: recursive definition detected", n, log);
-    return Promise.reject("recursive definition detected");
-  }
-  const srf = this.surfaceTree[n];
-  if(!(srf instanceof ST.SurfaceDefinition)){
-    // そんな定義なかった || element0も何もなかった
-    console.warn("Surface#composeAnimationPart: no such a surface", n, srf);
-    return Promise.reject("no such a surface");
-  }
-  // サーフェス n で表示すべきpatternをもらってくる
-  const patses = this.solveAnimationPattern(n);
-  const layers = patses.map((patterns, animId)=>{
-    // n の animId な MAYUNA レイヤセットのレイヤが pats
-    const layerset = Promise.all(patterns.map(({type, surface, wait, x, y}, patId)=>{
-      // 再帰的に画像読むよ
-      return this.composeAnimationPart(n, log.concat(n)).then((canvas)=>{
-        return {type, x, y, canvas};
-      }); 
-    }));
-    return layerset;
-  });
-  return Promise.all(layers).then((layers)=>{
-    // パターン全部読めたっぽいので分ける
-    const backgrounds = layers.filter((_, animId)=>{
-      const options = srf.animations[animId].options
-      return options.some(([opt, args])=> opt === "background")
-    })
-    const foregrounds = layers.filter((_, animId)=>{
-      const options = srf.animations[animId].options
-      return options.every(([opt, args])=> opt !== "background")
-    });
-    // パターン全部読めたっぽいのでベースを読む
-    return this.composeBaseSurface(n).then((base)=>{
-      //this.bufferRender.composePatterns({base, foregrounds, backgrounds});
-      return this.bufferRender;
-    });
-  });
-}
-
-export function render(): void {
-  /*
-  if(this.destructed) return;
-  this.layers.filter((anim_id)=>{})
-  const backgrounds = this.composeAnimationPatterns(this.backgrounds);//再生途中のアニメーション含むレイヤ
-  const elements = (this.surfaceNode.elements);
-  const base = this.surfaceNode.base;
-  const fronts = this.composeAnimationPatterns(this.layers);//再生途中のアニメーション含むレイヤ
-  let baseWidth = 0;
-  let baseHeight = 0;
-  this.bufferRender.reset(); // ベースサーフェスをバッファに描画。surface*.pngとかsurface *{base,*}とか
-  // ベースサーフェス作る
-  if(this.dynamicBase != null){
-    // pattern base があればそちらを使用
-    this.bufferRender.composeElements([this.dynamicBase]);
-    baseWidth = this.bufferRender.cnv.width;
-    baseHeight = this.bufferRender.cnv.height;
-  } else {
-    // base+elementでベースサーフェス作る
-    this.bufferRender.composeElements(
-      elements[0] != null ?
-        // element0, element1...
-        elements :
-          base !=null ?
-            // base, element1, element2...
-            [{type: "overlay", canvas: base, x: 0, y: 0}].concat(elements)
-            : []);
-    // elementまでがベースサーフェス扱い
-    baseWidth = this.bufferRender.cnv.width;
-    baseHeight = this.bufferRender.cnv.height;
-  }
-  const composedBase = this.bufferRender.getSurfaceCanvas();
-  // アニメーションレイヤー
-  this.bufferRender.composeElements(backgrounds);
-  this.bufferRender.composeElements([{type: "overlay", canvas: composedBase, x: 0, y: 0}]); // 現在有効な ベースサーフェスのレイヤを合成
-  this.bufferRender.composeElements(fronts);
-  // 当たり判定を描画
-  if (this.config.enableRegion) {
-    this.bufferRender.drawRegions((this.surfaceNode.collisions), ""+this.surfaceId);
-    this.backgrounds.forEach((_, animId)=>{
-      this.bufferRender.drawRegions((this.surfaceNode.animations[animId].collisions), ""+this.surfaceId);
-    });
-    this.layers.forEach((_, animId)=>{
-      this.bufferRender.drawRegions((this.surfaceNode.animations[animId].collisions), ""+this.surfaceId);
-    });
-  }
-  // debug用
-  //console.log(this.bufferRender.log);
-  //SurfaceUtil.log(SurfaceUtil.copy(this.bufferRender.cnv));
-  //document.body.scrollTop = 99999;
-  //this.endAll();
-
-  // バッファから実DOMTree上のcanvasへ描画
-  SurfaceUtil.init(this.cnv, this.ctx, this.bufferRender.cnv);
-  // 位置合わせとか
-  $(this.element).width(baseWidth);//this.cnv.width - bufRender.basePosX);
-  $(this.element).height(baseHeight);//this.cnv.height - bufRender.basePosY);
-  $(this.cnv).css("top", -this.bufferRender.basePosY); // overlayでキャンバスサイズ拡大したときのためのネガティブマージン
-  $(this.cnv).css("left", -this.bufferRender.basePosX);
-  */
+export function copy(srfCnv: SurfaceCanvas): SurfaceCanvas{
+  const ret = new SurfaceCanvas(SU.copy(srfCnv.cnv));
+  ret.basePosX = srfCnv.basePosX;
+  ret.basePosY = srfCnv.basePosY;
+  ret.baseWidth = srfCnv.baseWidth;
+  ret.baseHeight = srfCnv.baseHeight;
+  return ret;
 }

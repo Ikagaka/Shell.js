@@ -4,7 +4,6 @@
 import * as ST from "./SurfaceTree";
 import * as SU from "./SurfaceUtil";
 import * as SC from "./ShellConfig";
-import * as CC from "./CanvasCache";
 import * as SY from "surfaces_txt2yaml";
 
 export type Directory = { [filepath: string]: ArrayBuffer };
@@ -12,7 +11,6 @@ export type Directory = { [filepath: string]: ArrayBuffer };
 export class Shell {
 
   directory: Directory; // filepathに対応するファイルのArrayBuffer
-  cache:     CC.CanvasCache;
 
   descript:     SC.Descript; // descript.txtをcsvと解釈した時の値
   descriptJSON: SC.JSONLike; // descript.txtをjsonと解釈した時の値
@@ -23,7 +21,6 @@ export class Shell {
   
   constructor() {
     this.directory = {};
-    this.cache = new CC.CanvasCache(this.directory);
 
     this.descript = {};
     this.descriptJSON = {};

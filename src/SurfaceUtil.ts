@@ -230,8 +230,7 @@ export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
   if(!(x > 0 && y > 0)) return false;
   // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
   if(!(cnv.width > 0 || cnv.height > 0)) return false;
-  const ctx = cnv.getContext("2d");
-  if(!ctx) throw new Error("getContext failed");
+  const ctx = <CanvasRenderingContext2D>cnv.getContext("2d");
   const imgdata = ctx.getImageData(0, 0, x, y);
   const data = imgdata.data;
   return data[data.length - 1] !== 0;
@@ -285,57 +284,6 @@ export function randomRange(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
 }
 
-// このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
-// collision設定されていれば name"hoge"
-export function getRegion(element: HTMLCanvasElement, collisions: ST.SurfaceCollision[], offsetX: number, offsetY: number): string {
-  // canvas左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べるメソッド
-
-  const hitCols = collisions.filter((collision, colId)=>{
-    const {type, name} = collision;
-    switch(collision.type){
-      case "rect":
-        var {left, top, right, bottom} = <ST.SurfaceCollisionRect>collision;
-        return (left < offsetX && offsetX < right && top < offsetY && offsetY < bottom) ||
-               (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
-      case "ellipse":
-        var {left, top, right, bottom} = <ST.SurfaceCollisionEllipse>collision;
-        const width = Math.abs(right - left);
-        const height = Math.abs(bottom - top);
-        return Math.pow((offsetX-(left+width/2))/(width/2), 2) +
-               Math.pow((offsetY-(top+height/2))/(height/2), 2) < 1;
-      case "circle":
-        const {radius, centerX, centerY} = <ST.SurfaceCollisionCircle>collision;
-        return Math.pow((offsetX-centerX)/radius, 2)+Math.pow((offsetY-centerY)/radius, 2) < 1;
-      case "polygon":
-        const {coordinates} = <ST.SurfaceCollisionPolygon>collision;
-        const ptC = {x:offsetX, y:offsetY};
-        const tuples = coordinates.reduce<[{x:number,y:number},{x:number,y:number}][]>(((arr, {x, y}, i)=>{
-          arr.push([
-            coordinates[i],
-            (!!coordinates[i+1] ? coordinates[i+1] : coordinates[0])
-          ]);
-          return arr;
-        }), []);
-        const deg = tuples.reduce(((sum, [ptA, ptB])=>{
-          const vctA = [ptA.x-ptC.x, ptA.y-ptC.y];
-          const vctB = [ptB.x-ptC.x, ptB.y-ptC.y];
-          const dotP = vctA[0]*vctB[0] + vctA[1]*vctB[1];
-          const absA = Math.sqrt(vctA.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
-          const absB = Math.sqrt(vctB.map((a)=> Math.pow(a, 2)).reduce((a, b)=> a+b));
-          const rad = Math.acos(dotP/(absA*absB))
-          return sum + rad;
-        }), 0)
-        return deg/(2*Math.PI) >= 1;
-      default:
-        console.warn("unkown collision type:", this.surfaceId, colId, name, collision);
-        return false;
-    }
-  });
-  if(hitCols.length > 0){
-    return hitCols[hitCols.length-1].name;
-  }
-  return "";
-}
 
 export function getScrollXY(): {scrollX: number, scrollY: number} {
   return {

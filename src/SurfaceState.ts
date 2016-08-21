@@ -1,6 +1,7 @@
 /*
  * Surface 状態モデルを更新する副作用関数群
  */
+import * as SS from "./ShellState";
 import * as CC from "./CanvasCache";
 import * as SU from "./SurfaceUtil";
 import * as ST from "./SurfaceTree";
@@ -11,6 +12,7 @@ import {EventEmitter} from "events";
 
 export class SurfaceState extends EventEmitter {
   surface: SM.Surface;
+  shellState: SS.ShellState;
   section: {resolve:Function, reject:Function}[];
 
   // on("move", callback: Function)
@@ -18,14 +20,17 @@ export class SurfaceState extends EventEmitter {
   // on("render", callback: Function)
   //   描画すべきタイミングなので canvas に描画してくれ 
 
-  constructor(surface: SM.Surface){
+  constructor(scopeId: number, surfaceId: number, shellState: SS.ShellState) {
     super();
-
-    this.surface = surface;
+    this.shellState = shellState;
+    this.surface = new SM.Surface(scopeId, surfaceId, shellState.shell);
     this.section = [];
     
     this.surface.surfaceNode.animations.forEach((_, animId)=>{
       this.initLayer(animId);
+    });
+    this.shellState.on("bindgroup_update", ()=>{
+      this.updateBind();
     });
     this.emit("render");
   }
@@ -68,6 +73,15 @@ export class SurfaceState extends EventEmitter {
     // 現在のレイヤにSERIKOレイヤを追加
     layers[animId] = new SM.SerikoLayer(ST.isBack(anim));
     this.begin(animId);
+  }
+
+  private updateBind(){
+    const animations = this.surface.surfaceNode.animations;
+    animations.forEach(({intervals}, animId)=>{
+      if(intervals.some(([interval, args])=> "bind" === interval)){
+        this.initLayer(animId);
+      }
+    })
   }
 
   // アニメーションタイミングループの開始要請
