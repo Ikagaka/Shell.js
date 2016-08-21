@@ -3,8 +3,9 @@
  * HTMLCanvasElement もこの層で抽象化する
  */
 
-import * as ST from "./SurfaceTree"
+import * as ST from "./SurfaceTree";
 import * as SU from "./SurfaceUtil";
+import * as CC from "./CanvasCache";
 
 export class SurfaceLayer { 
   base:        Layer;

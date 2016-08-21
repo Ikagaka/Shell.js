@@ -18,8 +18,7 @@ export class Surface {
   layers:          Layer[];   // アニメーションIDの現在のレイヤ状態
   seriko:          boolean[]; // interval再生が有効なアニメーションID
   talkCount:       number;
-  moveX:           number;
-  moveY:           number;
+  move:            {x: number, y: number};
   destructed:      boolean;
 
   constructor(scopeId: number, surfaceId: number, surfaceDefTree: ST.SurfaceDefinitionTree, config: SC.ShellConfig) {
@@ -34,8 +33,7 @@ export class Surface {
     this.layers = [];
     this.seriko = [];
     this.talkCount = 0;
-    this.moveX = 0;
-    this.moveY = 0;
+    this.move = {x: 0, y: 0};
 
     this.destructed = false;
   }

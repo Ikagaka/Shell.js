@@ -1,7 +1,12 @@
 import "../typings/index.d.ts";
+export declare type Directory = {
+    [filepath: string]: ArrayBuffer;
+};
 export declare class CanvasCache {
-    private directory;
-    private cache;
+    directory: Directory;
+    cache: {
+        [path: string]: HTMLCanvasElement;
+    };
     constructor(dir: {
         [path: string]: ArrayBuffer;
     });

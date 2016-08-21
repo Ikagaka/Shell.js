@@ -13,8 +13,6 @@ export class SurfaceState extends EventEmitter {
   surface: SM.Surface;
   section: {resolve:Function, reject:Function}[];
 
-
-
   // on("move", callback: Function)
   //   move メソッドが発生したことを伝えており暗にウィンドウマネージャへウインドウ位置を変更するよう恫喝している
   // on("render", callback: Function)
@@ -173,7 +171,7 @@ export class SurfaceState extends EventEmitter {
 
   private step(animId: number, layer: SM.SerikoLayer): void {
     const srf = this.surface;
-    const {surfaceNode, layers, destructed} = this.surface;
+    const {surfaceNode, layers, destructed, move} = this.surface;
     const {resolve, reject} = this.section[animId];
     const anim = surfaceNode.animations[animId];
     // patternをすすめる
@@ -213,7 +211,7 @@ export class SurfaceState extends EventEmitter {
       case "stop":             this.stop(animation_ids[0]); return;
       case "alternativestart": this.play(SU.choice<number>(animation_ids)); return;
       case "alternativestop":  this.stop(SU.choice<number>(animation_ids)); return;
-      case "move":             srf.moveX = x; srf.moveY = y; this.emit("move"); return;
+      case "move":             move.x = x; move.y = y; this.emit("move"); return;
     }
     // waitだけ待つ
     setTimeout(()=>{

@@ -7,6 +7,10 @@ import {EventEmitter} from "events";
 
 export class ShellState extends EventEmitter {
   shell: SH.Shell;
+  
+  // on("bindgroup_update")
+  //   config の bindgroup が書き換わったので 全ての surface の状態を変更するように上位存在へお伺いを立てている
+
   constructor(shell: SH.Shell){
     super();
     this.shell = shell;
@@ -17,7 +21,7 @@ export class ShellState extends EventEmitter {
   bind(a: number|string, b: number|string): void {
     const {config} = this.shell;
     bind_value(config, a, b, true);
-    this.emit("update");
+    this.emit("bindgroup_update");
   }
 
   // 着せ替えオフ
@@ -26,7 +30,7 @@ export class ShellState extends EventEmitter {
   unbind(a: number|string, b: number|string): void {
     const {config} = this.shell;
     bind_value(config, a, b, false);
-    this.emit("update");
+    this.emit("bindgroup_update");
   }
 }
 

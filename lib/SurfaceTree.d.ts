@@ -99,3 +99,5 @@ export declare class SurfaceAnimationPattern {
     animation_ids: number[];
     constructor(type?: string, surface?: number, wait?: [number, number], x?: number, y?: number, animation_ids?: number[]);
 }
+export declare function isBack(anim: SurfaceAnimation): boolean;
+export declare function getExclusives(anim: SurfaceAnimation): number[];
