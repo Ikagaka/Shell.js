@@ -1,7 +1,7 @@
-/// <reference path="../typings/index.d.ts"/>
 
+/*
 import * as _CanvasCache from "./CanvasCache";
-import * as _SurfaceRender from "./SurfaceRender";
+import * as _SurfaceRender from "./SurfaceRenderer";
 import * as _SurfaceUtil from "./SurfaceUtil";
 import * as _SurfaceTree from "./SurfaceTree";
 import * as _Surface from './Surface';
@@ -19,7 +19,7 @@ export var ShellConfig = _ShellConfig;
 export var Shell = _Shell;
 export var version = _package.version;
 
-
+*/
 import $ = require("jquery");
 window["$"] = window["$"] || $;
 window["jQuery"] = window["jQuery"] || $;

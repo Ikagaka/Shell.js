@@ -1,3 +1,7 @@
+/*
+ * shell/master/descript.txt から ShellConfig 構造体を作る
+ */
+
 import * as SC from "./ShellConfig";
 
 export function loadFromJSONLike(json: SC.JSONLike): Promise<SC.ShellConfig> {

@@ -1,4 +1,6 @@
-
+/*
+ * surfaces.txt の内容を構造化したもの
+ */
 export class SurfaceDefinitionTree {
   descript: SurfaceDescript;
   surfaces: SurfaceDefinition[];

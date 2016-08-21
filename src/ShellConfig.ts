@@ -1,3 +1,7 @@
+/*
+ * shell/master/descript.txt を表す構造体
+ */
+
 import * as SU from "./SurfaceUtil";
 
 export type Descript = { [key: string]: string; };
@@ -187,4 +191,12 @@ export class BindGroupConfig {
     this.default = _default;
     this.addid = [];
   }
+}
+
+
+export function isBind(config: ShellConfig, animId: number): boolean {
+  const {bindgroup} = config;
+  if (bindgroup[this.scopeId] == null) return false;
+  if (bindgroup[this.scopeId][animId] === false) return false;
+  return true;
 }

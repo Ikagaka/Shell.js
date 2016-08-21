@@ -1,28 +1,32 @@
+/*
+ * CacheCanvas は ディレクトリアクセスをフックし
+ * 比較的重い処理である surface*.png の色抜き処理をキャッシングする
+ */
+
 import "../typings/index.d.ts"
 import * as SU from "./SurfaceUtil";
-/*
-CacheCanvas型はサーフェスのロード状況を管理します。
-*/
+
+
 export class CanvasCache {
-  private directory: {[path: string]: ArrayBuffer };
-  private cache: {[path: string]: HTMLCanvasElement }; // 色抜きキャッシュ
+  directory: {[path: string]: ArrayBuffer };
+  cache: {[path: string]: HTMLCanvasElement }; // 色抜きキャッシュ
   constructor(dir: {[path: string]: ArrayBuffer }){
     this.directory = dir;
     this.cache = {};
   }
-  public hasFile(path: string): string {
+  hasFile(path: string): string {
     return SU.has(this.directory, path);
   }
-  public hasCache(path: string): string {
+  hasCache(path: string): string {
     return SU.has(this.cache, path);
   }
-  public getFile(path: string): Promise<ArrayBuffer> {
+  getFile(path: string): Promise<ArrayBuffer> {
     return SU.get(this.directory, path);
   }
-  public getCache(path: string): Promise<HTMLCanvasElement> {
+  getCache(path: string): Promise<HTMLCanvasElement> {
     return SU.get(this.cache, path);
   }
-  public getCanvas(path: string, asis=false, retry=true): Promise<HTMLCanvasElement> {
+  getCanvas(path: string, asis=false, retry=true): Promise<HTMLCanvasElement> {
     if(asis && this.hasCache(path) !== ""){
       // 色抜き後のキャッシュがあった
       return Promise.resolve(this.cache[path]);
@@ -62,7 +66,7 @@ export class CanvasCache {
       return this.getCanvas(path+".png", asis, false/* 二度目はない */);
     });
   }
-  public clear(){
+  clear(){
     this.cache = {};
   }
 }

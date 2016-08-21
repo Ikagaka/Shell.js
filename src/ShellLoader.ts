@@ -1,3 +1,7 @@
+/*
+ * shell/master/*** ディレクトリから shell モデルを構築する
+ */
+
 import * as SH from "./Shell";
 import * as SU from "./SurfaceUtil";
 import * as SC from "./ShellConfig";
@@ -8,28 +12,30 @@ import * as SY from "surfaces_txt2yaml";
 
 export type Directory = { [filepath: string]: ArrayBuffer };
 
-export function load(directory: Directory, shell = new SH.Shell(directory)){
-  return Promise.resolve(shell)
-  .then(()=> loadDescript(directory) )
+export function load(directory: Directory){
+  return loadDescript(directory)
   .then(({descript, descriptJSON, config})=>{
-    shell.descript = descript;
-    shell.descriptJSON = descriptJSON;
-    shell.config = config;
-  })
-  .then(()=> loadSurfacesTxt(directory) )
-  .then(({ surfacesTxt, surfaceDefTree })=>{
-    shell.surfacesTxt = surfacesTxt;
-    shell.surfaceDefTree = surfaceDefTree; 
-  })
-  .then(()=> loadSurfaceTable(directory) )
-  .then(()=> loadSurfacePNG(directory, shell.surfaceDefTree))
-  .then((surfaceDefTree)=>{
-    shell.surfaceDefTree = surfaceDefTree;
-  })
-  .then(()=> shell)
-  .catch((err)=>{
-    console.error("ShellLoader.load > ", err);
-    return Promise.reject(err);
+    loadSurfacesTxt(directory)
+    .then(({ surfacesTxt, surfaceDefTree })=>{
+      loadSurfaceTable(directory)
+      .then(()=>{
+        loadSurfacePNG(directory, surfaceDefTree)
+        .then((surfaceDefTree)=>{
+          const shell = new SH.Shell();
+          shell.descript = descript;
+          shell.descriptJSON = descriptJSON;
+          shell.config = config;
+          shell.surfaceDefTree = surfaceDefTree;
+          shell.surfacesTxt = surfacesTxt;
+          shell.surfaceDefTree = surfaceDefTree;
+          return shell;
+        })
+        .catch((err)=>{
+          console.error("ShellLoader.load > ", err);
+          return Promise.reject(err);
+        });
+      })
+    })
   });
 }
 

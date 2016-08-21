@@ -1,3 +1,7 @@
+/*
+ * 可用性・抽象度の高いコードスニペット集
+ */
+
 import * as ST from "./SurfaceTree";
 import Encoding = require("encoding-japanese");
 import $ = require("jquery");
