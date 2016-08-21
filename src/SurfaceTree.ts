@@ -163,3 +163,13 @@ export class SurfaceAnimationPattern {
     this.animation_ids = animation_ids;
   }
 }
+
+
+export function isBack(anim: SurfaceAnimation): boolean{
+  return anim.options.some(([opt, args])=> opt === "background");
+}
+
+
+export function getExclusives(anim: SurfaceAnimation): number[]{
+  return anim.options.filter(([opt, args])=> opt === "exclusive").reduce<number[]>((l,[opt, args])=> l.concat(args), []);
+}

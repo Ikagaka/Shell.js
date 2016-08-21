@@ -3,10 +3,12 @@
  * ほとんど　windowmanager　というか　angular　とかの階層
  */
 
-import * as SH from './Shell';
+import * as SH from './ShellModel';
 import * as SU from "./SurfaceUtil";
 import * as SF from './SurfaceModel';
 import {EventEmitter} from "events";
+
+
 
 export type AttachedSurfaces = { div: HTMLDivElement, surface: SF.Surface }[]; // 現在このシェルが実DOM上にレンダリングしているcanvasとそのsurface一覧
 
@@ -28,7 +30,7 @@ export function attachSurface(shell: SH.Shell, attachedSurface: AttachedSurfaces
       console.warn("Shell.attachSurface: surfaceId:", _surfaceId, "is not defined in surfaceTree", surfaceDefTree);
       return Promise.reject("not defined");
     }
-    const srf = new SF.Surface(div, scopeId, _surfaceId, surfaceDefTree, config, cache);
+    const srf = new SF.Surface(scopeId, _surfaceId, surfaceDefTree, config);
     if(config.enableRegion){
       // これ必要？
       srf.render();

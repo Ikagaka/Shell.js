@@ -1,5 +1,5 @@
 /*
- * shell/master/descript.txt を表す構造体
+ * shell/master/descript.txt および現在の シェル 状態を表す構造体
  */
 
 import * as SU from "./SurfaceUtil";

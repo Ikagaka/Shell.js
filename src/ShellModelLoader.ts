@@ -2,12 +2,13 @@
  * shell/master/*** ディレクトリから shell モデルを構築する
  */
 
-import * as SH from "./Shell";
+import * as SH from "./ShellModel";
 import * as SU from "./SurfaceUtil";
 import * as SC from "./ShellConfig";
 import * as SCL from "./ShellConfigLoader";
 import * as ST from "./SurfaceTree";
 import * as STL from "./SurfaceTreeLoader";
+import * as CC from "./CanvasCache";
 import * as SY from "surfaces_txt2yaml";
 
 export type Directory = { [filepath: string]: ArrayBuffer };
@@ -28,6 +29,8 @@ export function load(directory: Directory){
           shell.surfaceDefTree = surfaceDefTree;
           shell.surfacesTxt = surfacesTxt;
           shell.surfaceDefTree = surfaceDefTree;
+          shell.directory = directory;
+          shell.cache = new CC.CanvasCache(directory);
           return shell;
         })
         .catch((err)=>{

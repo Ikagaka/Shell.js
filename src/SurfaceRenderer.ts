@@ -321,7 +321,7 @@ export class SurfaceRender extends SurfaceCanvas {
 
 
 
-export function composeBaseSurface(n: number): Promise<SR.SurfaceCanvas> {
+export function composeBaseSurface(n: number): Promise<SurfaceCanvas> {
   // elements を合成するだけ
   const srf = this.surfaceTree[n];
   if(!(srf instanceof ST.SurfaceDefinition) || srf.elements.length === 0){
@@ -342,7 +342,7 @@ export function composeBaseSurface(n: number): Promise<SR.SurfaceCanvas> {
     }
     // ファイルとりにいく
     return this.cache.getCanvas(file, asis)
-    .then((cnv)=>{ return {file, type, x, y, canvas: new SR.SurfaceCanvas(cnv) }; })
+    .then((cnv)=>{ return {file, type, x, y, canvas: new SurfaceCanvas(cnv) }; })
     .catch((err)=>{
       console.warn("Surface#composeBaseSurface: no such a file", file, n, srf);
     });
@@ -390,7 +390,7 @@ export function solveAnimationPattern(n:number): ST.SurfaceAnimationPattern[][]{
   return patses;
 }
 
-export function composeAnimationPart(n: number, log: number[]=[]): Promise<SR.SurfaceCanvas> {
+export function composeAnimationPart(n: number, log: number[]=[]): Promise<SurfaceCanvas> {
   if(log.indexOf(n) != -1){
     // 循環参照
     console.warn("Surface#composeAnimationPart: recursive definition detected", n, log);

@@ -6,9 +6,10 @@
 import "../typings/index.d.ts"
 import * as SU from "./SurfaceUtil";
 
+export type Directory = { [filepath: string]: ArrayBuffer };
 
 export class CanvasCache {
-  directory: {[path: string]: ArrayBuffer };
+  directory: Directory;
   cache: {[path: string]: HTMLCanvasElement }; // 色抜きキャッシュ
   constructor(dir: {[path: string]: ArrayBuffer }){
     this.directory = dir;

@@ -7,20 +7,19 @@ import * as SC from "./ShellConfig";
 import * as CC from "./CanvasCache";
 import * as SY from "surfaces_txt2yaml";
 
+export type Directory = { [filepath: string]: ArrayBuffer };
 
 export class Shell {
 
-  public directory: { [filepath: string]: ArrayBuffer; } // filepathに対応するファイルのArrayBuffer
-  public cache: CC.CanvasCache;
+  directory: Directory; // filepathに対応するファイルのArrayBuffer
+  cache:     CC.CanvasCache;
 
-  public descript: SC.Descript; // descript.txtをcsvと解釈した時の値
-  public descriptJSON: SC.JSONLike; // descript.txtをjsonと解釈した時の値
-  public config: SC.ShellConfig; // 実際に有効なdescript
+  descript:     SC.Descript; // descript.txtをcsvと解釈した時の値
+  descriptJSON: SC.JSONLike; // descript.txtをjsonと解釈した時の値
+  config:       SC.ShellConfig; // 実際に有効なdescript
 
-  public surfacesTxt: SY.SurfacesTxt; // SurfacesTxt2Yamlの内容
-  public surfaceDefTree: ST.SurfaceDefinitionTree; // このshell.jsが解釈しているShellのリソースツリー
-  
-
+  surfacesTxt: SY.SurfacesTxt; // SurfacesTxt2Yamlの内容
+  surfaceDefTree: ST.SurfaceDefinitionTree; // このshell.jsが解釈しているShellのリソースツリー
   
   constructor() {
     this.directory = {};

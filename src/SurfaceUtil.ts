@@ -1,5 +1,7 @@
 /*
  * 可用性・抽象度の高いコードスニペット集
+ * SurfaceUtil という名称は Util のほうがむしろふさわしいが
+ * 歴史的経緯と変更コストを鑑みてこのままにしている
  */
 
 import * as ST from "./SurfaceTree";
