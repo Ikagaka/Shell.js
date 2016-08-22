@@ -1,0 +1,26 @@
+<script src="../bower_components/narloader/dist/NarLoader.js"></script>
+<script src="../dist/Shell.js"></script>
+<script>
+var NarLoader = NarLoader.NarLoader;
+NarLoader.loadFromURL("../nar/mobilemaster.nar")
+.then(function(dir){ return dir.getDirectory("shell/master").asArrayBuffer(); })
+.then(function(dic){ return Shell.SML.load(dic); })
+.then(function(shell){
+  var rndr = new Shell.SPR.SurfacePatternRenderer(shell);
+  var rndr2 = new Shell.SR.SurfaceRenderer();
+  var shellState = new Shell.ShS.ShellState(shell);
+  var ss = new Shell.SS.SurfaceState(0, 0, shellState);
+  console.log(shell, rndr, shellState, ss);
+  Shell.SU.setCanvasStyle();
+  document.body.appendChild(rndr.cnv);
+  document.body.appendChild(rndr2.cnv);
+  ss.on("render", function(){
+    rndr.render(ss.surface);
+    rndr2.base(rndr);
+  });
+  console.log("i")
+})
+.catch(console.error.bind(console));
+</script>
+<body>
+</body>

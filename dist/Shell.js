@@ -483,14 +483,17 @@ function loadSurfacePNG(directory, tree) {
             return;
         }
         // 存在した
-        if (surfaceTree[n] == null) {
+        if (!(surfaceTree[n] instanceof ST.SurfaceDefinition)) {
             // surfaces.txtで未定義なら追加
             surfaceTree[n] = new ST.SurfaceDefinition();
             surfaceTree[n].elements[0] = new ST.SurfaceElement("base", filename);
-        } else if (surfaceTree[n].elements[0] != null) {
+        } else if (!(surfaceTree[n].elements[0] instanceof ST.SurfaceElement)) {
             // surfaces.txtで定義済みだけどelement0ではない
             surfaceTree[n].elements[0] = new ST.SurfaceElement("base", filename);
-        } else {}
+        } else {
+            // surfaces.txtでelement0まで定義済み
+            console.info("SurfaceModelLoader.loadSurfacePNG: file", filename, "is rejected. alternative uses", surfaceTree[n].elements);
+        }
     });
     return Promise.resolve(tree);
 }
@@ -1047,6 +1050,8 @@ var SurfaceRenderer = function (_SurfaceCanvas) {
         key: "base",
         value: function base(part) {
             this.reset();
+            this.cnv.width = part.cnv.width;
+            this.cnv.height = part.cnv.height;
             this.ctx.globalCompositeOperation = "source-over";
             this.ctx.drawImage(part.cnv, 0, 0);
         }
@@ -1361,8 +1366,10 @@ var SurfaceState = function (_events_1$EventEmitte) {
         _this.shellState = shellState;
         _this.surface = new SM.Surface(scopeId, surfaceId, shellState.shell);
         _this.continuations = [];
-        _this.surface.surfaceNode.animations.forEach(function (_, animId) {
-            _this.initLayer(animId);
+        _this.surface.surfaceNode.animations.forEach(function (anim, animId) {
+            if (anim != null) {
+                _this.initLayer(animId);
+            }
         });
         _this.shellState.on("bindgroup_update", function () {
             // ShellConfig の値が変化し bindgroup_update の構成が変化した！
@@ -1465,22 +1472,25 @@ var SurfaceState = function (_events_1$EventEmitte) {
             var options = _surfaceNode$animatio.options;
             var collisions = _surfaceNode$animatio.collisions;
 
-            if (SC.isBind(config, animId)) {
-                intervals.filter(function (_ref6) {
-                    var _ref7 = _slicedToArray(_ref6, 1);
+            if (intervals.some(function (_ref6) {
+                var _ref7 = _slicedToArray(_ref6, 1);
 
-                    var interval = _ref7[0];
-                    return interval !== "bind";
-                }).forEach(function (_ref8) {
-                    var _ref9 = _slicedToArray(_ref8, 2);
-
-                    var interval = _ref9[0];
-                    var args = _ref9[1];
-
-                    // インターバルタイマの登録
-                    _this3.setIntervalTimer(animId, interval, args);
-                });
+                var interval = _ref7[0];
+                return interval === "bind";
+            })) {
+                if (!SC.isBind(config, animId)) {
+                    return;
+                }
             }
+            intervals.forEach(function (_ref8) {
+                var _ref9 = _slicedToArray(_ref8, 2);
+
+                var interval = _ref9[0];
+                var args = _ref9[1];
+
+                // インターバルタイマの登録
+                _this3.setIntervalTimer(animId, interval, args);
+            });
         }
         // アニメーションタイミングループのintervalタイマの停止
 
@@ -1622,7 +1632,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
             var anim = surfaceNode.animations[animId];
             // patternをすすめる
             // exclusive中のやつら探す
-            if (!layers.some(function (layer, id) {
+            if (layers.some(function (layer, id) {
                 return !(layer instanceof SM.SerikoLayer) ? false // layer が mayuna なら 論外
                 : !layer.exclusive ? false // exclusive が存在しない
                 : id === animId;
@@ -1779,7 +1789,8 @@ var SurfaceState = function (_events_1$EventEmitte) {
             var shell = srf.shell;
 
             var surfaces = srf.shell.surfaceDefTree.surfaces;
-            srf.renderingTree = layersToTree(surfaces, surfaceId, layers);
+            var config = shell.config;
+            srf.renderingTree = layersToTree(surfaces, surfaceId, layers, config);
             // レンダリングツリーが更新された！
             this.emit("render");
         }
@@ -1789,7 +1800,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
 }(events_1.EventEmitter);
 
 exports.SurfaceState = SurfaceState;
-function layersToTree(surfaces, n, layers) {
+function layersToTree(surfaces, n, layers, config) {
     // bind の循環参照注意
     var tree = new SM.SurfaceRenderingTree(n);
     var anims = surfaces[n].animations;
@@ -1813,9 +1824,35 @@ function layersToTree(surfaces, n, layers) {
                 // insertをねじ込む
                 recur(patterns, rndLayerSets);
             } else {
-                rndLayerSets.push(new SM.SurfaceRenderingLayer(type, layersToTree(surfaces, surface, layers), x, y));
+                rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
             }
         });
+    };
+    var recur2 = function recur2(surfaces, n, layers, config) {
+        var tree = new SM.SurfaceRenderingTree(n);
+        if (!(surfaces[n] instanceof ST.SurfaceDefinition)) {
+            console.warn("SurfaceState.layer2tree: surface", n, "is not defined");
+            return tree;
+        }
+        var anims = surfaces[n].animations;
+        anims.forEach(function (anim, animId) {
+            var patterns = anim.patterns;
+            var intervals = anim.intervals;
+
+            var rndLayerSets = [];
+            if (SC.isBind(config, animId) && intervals.some(function (_ref15) {
+                var _ref16 = _slicedToArray(_ref15, 2);
+
+                var interval = _ref16[0];
+                var args = _ref16[1];
+                return "bind" === interval;
+            }) && intervals.length === 1) {
+                // insert のための再帰的処理
+                recur(patterns, rndLayerSets);
+            }
+            (ST.isBack(anim) ? tree.backgrounds : tree.foregrounds).push(rndLayerSets);
+        });
+        return tree;
     };
     layers.forEach(function (layer, animId) {
         var anim = anims[animId];
@@ -1830,7 +1867,7 @@ function layersToTree(surfaces, n, layers) {
             var x = _patterns$layer$patte.x;
             var y = _patterns$layer$patte.y;
 
-            rndLayerSets.push(new SM.SurfaceRenderingLayer(type, layersToTree(surfaces, surface, layers), x, y));
+            rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
         } else if (layer instanceof SM.MayunaLayer && layer.visible) {
             // insert のための再帰的処理
             recur(patterns, rndLayerSets);
@@ -2459,7 +2496,7 @@ function loadSurfaceAnimation(animation) {
         }).catch(console.warn.bind(console));
     });
     var that = new ST.SurfaceAnimation(intervals, options, collisions, patterns);
-    return Promise.resolve(this);
+    return Promise.resolve(that);
 }
 exports.loadSurfaceAnimation = loadSurfaceAnimation;
 function loadSurfaceAnimationPattern(pat) {
@@ -2920,7 +2957,7 @@ function craetePictureFrame(description) {
     var add = function add(element) {
         var txt = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
 
-        if (txt === "") {
+        if (element instanceof HTMLElement) {
             var frame = craetePictureFrame(txt, fieldset);
             frame.add(element);
         } else if (typeof element === "string") {
@@ -2935,37 +2972,43 @@ function craetePictureFrame(description) {
     return { add: add };
 }
 exports.craetePictureFrame = craetePictureFrame;
+function setCanvasStyle() {
+    $(function () {
+        $("<style />").html("canvas,img{border:1px solid black;}").appendTo($("body"));
+    });
+}
+exports.setCanvasStyle = setCanvasStyle;
 },{"encoding-japanese":16,"jquery":18}],15:[function(require,module,exports){
 "use strict";
 
-var _CanvasCache = require("./CanvasCache");
-exports.CanvasCache = _CanvasCache;
-var _ShellConfig = require("./ShellConfig");
-exports.ShellConfig = _ShellConfig;
-var _ShellConfigLoader = require("./ShellConfigLoader");
-exports.ShellConfigLoader = _ShellConfigLoader;
-var _ShellModel = require("./ShellModel");
-exports.ShellModel = _ShellModel;
-var _ShellModelLoader = require("./ShellModelLoader");
-exports.ShellModelLoader = _ShellModelLoader;
-var _ShellState = require("./ShellState");
-exports.ShellState = _ShellState;
-var _SurfaceBaseRenderer = require("./SurfaceBaseRenderer");
-exports.SurfaceBaseRenderer = _SurfaceBaseRenderer;
-var _SurfaceModel = require("./SurfaceModel");
-exports.SurfaceModel = _SurfaceModel;
-var _SurfacePatternRenderer = require("./SurfacePatternRenderer");
-exports.SurfacePatternRenderer = _SurfacePatternRenderer;
-var _SurfaceRenderer = require("./SurfaceRenderer");
-exports.SurfaceRenderer = _SurfaceRenderer;
-var _SurfaceState = require("./SurfaceState");
-exports.SurfaceState = _SurfaceState;
-var _SurfaceTree = require("./SurfaceTree");
-exports.SurfaceTree = _SurfaceTree;
-var _SurfaceTreeLoader = require("./SurfaceTreeLoader");
-exports.SurfaceTreeLoader = _SurfaceTreeLoader;
-var _SurfaceUtil = require("./SurfaceUtil");
-exports.SurfaceUtil = _SurfaceUtil;
+var _SU = require("./SurfaceUtil");
+exports.SU = _SU;
+var _STL = require("./SurfaceTreeLoader");
+exports.STL = _STL;
+var _ST = require("./SurfaceTree");
+exports.ST = _ST;
+var _SS = require("./SurfaceState");
+exports.SS = _SS;
+var _SR = require("./SurfaceRenderer");
+exports.SR = _SR;
+var _SPR = require("./SurfacePatternRenderer");
+exports.SPR = _SPR;
+var _SM = require("./SurfaceModel");
+exports.SM = _SM;
+var _SBR = require("./SurfaceBaseRenderer");
+exports.SBR = _SBR;
+var _ShS = require("./ShellState");
+exports.ShS = _ShS;
+var _SML = require("./ShellModelLoader");
+exports.SML = _SML;
+var _ShM = require("./ShellModel");
+exports.ShM = _ShM;
+var _SCL = require("./ShellConfigLoader");
+exports.SCL = _SCL;
+var _SC = require("./ShellConfig");
+exports.SC = _SC;
+var _CC = require("./CanvasCache");
+exports.CC = _CC;
 var _package = require("../package.json");
 exports.version = _package.version;
 var $ = require("jquery");
@@ -24677,8 +24720,8 @@ module.exports={
     "setup": "npm install -g gulp-cli bower typings http-server mversion",
     "init": "npm run update; npm run build",
     "update": "npm update; bower update; typings install",
-    "build": "npm run clean && tsc   && babel lib    -d es5&& gulp build&& browserify es5/index.js --standalone Shell -o dist/Shell.js",
-    "start": "http-server -s & tsc -w & babel lib -w -d es5 & gulp watch &   watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
+    "build": "cake index; npm run clean && tsc   && babel lib    -d es5&& gulp build&& browserify es5/index.js --standalone Shell -o dist/Shell.js; npm run cake",
+    "start": "cake index; http-server -s & tsc -w & babel lib -w -d es5 & gulp watch &   watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
     "stop": "killall -- node",
     "tsc": "tsc",
     "coffee": "coffee -c -b -o lib src/*.coffee",
@@ -24687,8 +24730,8 @@ module.exports={
     "browserify": "browserify es5/index.js --standalone Shell -o dist/Shell.js",
     "check": "tsc -w --noEmit",
     "replace": "npm run perl; npm run add",
-    "perl": "cat tsconfig.json | perl -lne 'print $1 if /^\\s+\"src\\/([A-Za-z]+)\\.ts\",/' | perl -lne 'print if /[^(index)]/' | perl -lpe 's/(.+)/import * as _$1 from \".\\/$1\"; export var $1 = _$1;/ '> src/index.ts",
-    "add": "echo 'var _package = require(\"../package.json\"); export var version = _package.version;\nimport $ = require(\"jquery\"); window[\"$\"] = window[\"$\"] || $;' >> src/index.ts;",
+    "cake": "cake clean; cake test;",
+    "perl": "cat tsconfig.json | perl -lne 'print $1 if /^\\s+\"src\\/([A-Za-z]+)\\.ts\",/' | perl -lne 'print if /[^(index)]/' | perl -lpe 's/(.+)/import * as _$1 from \".\\/$1\"; export var $1 = _$1;/ '> src/index.ts; echo 'var _package = require(\"../package.json\"); export var version = _package.version;\nimport $ = require(\"jquery\"); window[\"$\"] = window[\"$\"] || $;' >> src/index.ts;",
     "tree": "tree -C -L 2 -I node_modules",
     "clean": "rm -rf lib/* es5/* dist/*",
     "reset": "rm -rf bower_components node_modules typings",
@@ -24710,11 +24753,14 @@ module.exports={
     "babel-preset-es2015": "^6.13.2",
     "browserify": "^13.1.0",
     "coffee-script": "^1.10.0",
+    "ejs-cli": "^2.0.0",
     "empower": "^1.2.1",
     "gulp": "^3.9.1",
     "gulp-browserify": "^0.5.1",
     "gulp-coffee": "^2.3.2",
+    "gulp-debug": "^2.1.2",
     "gulp-espower": "^1.0.2",
+    "gulp-replace": "^0.5.4",
     "narloader": "github:ikagaka/NarLoader#jszip3",
     "typescript": "^2.0.0",
     "watchify": "^3.7.0"

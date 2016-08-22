@@ -97,15 +97,16 @@ export function loadSurfacePNG(directory: Directory, tree: ST.SurfaceDefinitionT
     const n = Number((/^surface(\d+)\.png$/i.exec(filename)||["","NaN"])[1]);
     if(!isFinite(n)){ return; }
     // 存在した
-    if(surfaceTree[n] == null){
+    if(!( surfaceTree[n] instanceof ST.SurfaceDefinition) ){
       // surfaces.txtで未定義なら追加
       surfaceTree[n] = new ST.SurfaceDefinition();
       surfaceTree[n].elements[0] = new ST.SurfaceElement("base", filename);
-    }else if(surfaceTree[n].elements[0] != null){
+    }else if( !(surfaceTree[n].elements[0] instanceof ST.SurfaceElement) ){
       // surfaces.txtで定義済みだけどelement0ではない
       surfaceTree[n].elements[0] = new ST.SurfaceElement("base", filename);
     }else{
       // surfaces.txtでelement0まで定義済み
+      console.info("SurfaceModelLoader.loadSurfacePNG: file", filename, "is rejected. alternative uses", surfaceTree[n].elements);
     }
   });
   return Promise.resolve(tree);

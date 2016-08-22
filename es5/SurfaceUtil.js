@@ -424,7 +424,7 @@ function craetePictureFrame(description) {
     var add = function add(element) {
         var txt = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
 
-        if (txt === "") {
+        if (element instanceof HTMLElement) {
             var frame = craetePictureFrame(txt, fieldset);
             frame.add(element);
         } else if (typeof element === "string") {
@@ -439,3 +439,9 @@ function craetePictureFrame(description) {
     return { add: add };
 }
 exports.craetePictureFrame = craetePictureFrame;
+function setCanvasStyle() {
+    $(function () {
+        $("<style />").html("canvas,img{border:1px solid black;}").appendTo($("body"));
+    });
+}
+exports.setCanvasStyle = setCanvasStyle;

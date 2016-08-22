@@ -48,7 +48,7 @@ NL.loadFromURL("/nar/mobilemaster.nar").then((dir)=>{
     const done = assert.async();
     assert.ok(cc.hasCache("surface10") === "");
     return cc.getCanvas("surface10").then((cnv)=>{
-      assert.ok(cc.hasCache("surface10") === "拡張子が間違っていればそれはキャッシュへのキーにはならない");
+      assert.ok(cc.hasCache("surface10") === "", "拡張子が間違っていればそれはキャッシュへのキーにはならない");
       assert.ok(cc.hasCache("surface10.png") !== "", "正しい拡張子でキャッシュされる");
       assert.ok(cnv instanceof HTMLCanvasElement);
       document.body.appendChild(document.createTextNode("色抜き後"));

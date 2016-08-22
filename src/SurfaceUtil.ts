@@ -410,7 +410,7 @@ export function craetePictureFrame(description: string, target=document.body){
   target.appendChild(fieldset);
   fieldset.style.backgroundColor = "#D2E0E6";
   const add = (element: HTMLElement|string, txt="")=>{
-      if(txt === ""){
+      if(element instanceof HTMLElement){
         const frame = craetePictureFrame(txt, fieldset);
         frame.add(element);
       }else if(typeof element === "string"){
@@ -423,4 +423,10 @@ export function craetePictureFrame(description: string, target=document.body){
       }
   };
   return { add };
+}
+
+export function setCanvasStyle(){
+  $(function() {
+    $("<style />").html("canvas,img{border:1px solid black;}").appendTo($("body"));
+  });
 }

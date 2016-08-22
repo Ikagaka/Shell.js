@@ -54,3 +54,4 @@ export declare function setPictureFrame(element: HTMLElement, description: strin
 export declare function craetePictureFrame(description: string, target?: HTMLElement): {
     add: (element: HTMLElement | string, txt?: string) => void;
 };
+export declare function setCanvasStyle(): void;

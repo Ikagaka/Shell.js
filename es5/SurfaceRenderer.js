@@ -153,6 +153,8 @@ var SurfaceRenderer = function (_SurfaceCanvas) {
         key: "base",
         value: function base(part) {
             this.reset();
+            this.cnv.width = part.cnv.width;
+            this.cnv.height = part.cnv.height;
             this.ctx.globalCompositeOperation = "source-over";
             this.ctx.drawImage(part.cnv, 0, 0);
         }

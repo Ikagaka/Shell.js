@@ -24,21 +24,27 @@ NL.loadFromURL('../nar/mobilemaster.nar').then(function (nanikaDir) {
         return STL.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceTree) {
             var aliases = surfaceTree.aliases;
             var surfaces = surfaceTree.surfaces;
+            var descript = surfaceTree.descript;
 
-            assert.ok(surfaces.every(function (srf) {
-                return srf.elements.every(function (b) {
-                    return true;
-                } /* todo */) && srf.collisions.every(function (b) {
-                    return true;
-                } /* todo */) && srf.animations.every(function (anim) {
-                    return anim.patterns.every(function (c) {
-                        return (
-                            // todo
-                            true
-                        );
-                    });
-                });
-            }));
+            assert.ok(Array.isArray(aliases));
+            assert.ok(Array.isArray(surfaces));
+            surfaces.forEach(function (srf) {
+                var elements = srf.elements;
+                var collisions = srf.collisions;
+                var animations = srf.animations;
+                var balloons = srf.balloons;
+                var points = srf.points;
+
+                assert.ok(Array.isArray(elements) && elements.every(function (elm) {
+                    return elm instanceof ST.SurfaceElement;
+                }));
+                assert.ok(Array.isArray(collisions) && collisions.every(function (col) {
+                    return col instanceof ST.SurfaceCollision;
+                }));
+                assert.ok(Array.isArray(animations) && animations.every(function (anm) {
+                    return anm instanceof ST.SurfaceAnimation;
+                }));
+            });
             assert.ok(surfaceTree.descript.collisionSort === "ascend");
             assert.ok(surfaceTree.descript.animationSort === "ascend");
             return done();

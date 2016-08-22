@@ -117,6 +117,8 @@ export class SurfaceRenderer extends SurfaceCanvas {
   //着せ替え・elementでも使用できる。
   base(part: SurfaceCanvas): void {
     this.reset();
+    this.cnv.width  = part.cnv.width;
+    this.cnv.height = part.cnv.height;
     this.ctx.globalCompositeOperation = "source-over";
     this.ctx.drawImage(part.cnv, 0, 0);
   }

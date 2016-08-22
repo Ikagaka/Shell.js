@@ -1,3 +1,6 @@
+
+
+/*
 window.$ = require("jquery")
 window.SurfaceUtil = require("./SurfaceUtil")
 window.ST = require("./SurfaceTree")
@@ -244,3 +247,4 @@ QUnit.test 'surface overlay negative', (assert) ->
 QUnit.test '不定形当たり判定', (assert) ->
 QUnit.test 'start.alternative', (assert) ->
 ###
+*/

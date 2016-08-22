@@ -1,5 +1,6 @@
 import * as SS from "./ShellState";
 import * as ST from "./SurfaceTree";
+import * as SC from "./ShellConfig";
 import * as SM from "./SurfaceModel";
 import { EventEmitter } from "events";
 export declare class SurfaceState extends EventEmitter {
@@ -25,4 +26,4 @@ export declare class SurfaceState extends EventEmitter {
     yenE(): void;
     constructRenderingTree(): void;
 }
-export declare function layersToTree(surfaces: ST.SurfaceDefinition[], n: number, layers: SM.Layer[]): SM.SurfaceRenderingTree;
+export declare function layersToTree(surfaces: ST.SurfaceDefinition[], n: number, layers: SM.Layer[], config: SC.ShellConfig): SM.SurfaceRenderingTree;

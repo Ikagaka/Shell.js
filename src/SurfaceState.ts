@@ -27,8 +27,8 @@ export class SurfaceState extends EventEmitter {
     this.surface = new SM.Surface(scopeId, surfaceId, shellState.shell);
     this.continuations = [];
     
-    this.surface.surfaceNode.animations.forEach((_, animId)=>{
-      this.initLayer(animId);
+    this.surface.surfaceNode.animations.forEach((anim, animId)=>{
+      if(anim != null){ this.initLayer(animId); }
     });
     this.shellState.on("bindgroup_update", ()=>{
       // ShellConfig の値が変化し bindgroup_update の構成が変化した！
@@ -91,13 +91,15 @@ export class SurfaceState extends EventEmitter {
   begin(animId: number): void {
     const {surfaceNode, config} = this.surface;
     const {intervals, patterns, options, collisions} = surfaceNode.animations[animId];
-    if(SC.isBind(config, animId)){
-      intervals.filter(([interval])=> interval !== "bind")
-      .forEach(([interval, args])=>{
-        // インターバルタイマの登録
-        this.setIntervalTimer(animId, interval, args);
-      });
+    if(intervals.some(([interval])=> interval === "bind")){
+      if( ! SC.isBind(config, animId) ){
+        return;
+      }
     }
+    intervals.forEach(([interval, args])=>{
+      // インターバルタイマの登録
+      this.setIntervalTimer(animId, interval, args);
+    });
   }
 
   // アニメーションタイミングループのintervalタイマの停止
@@ -193,7 +195,7 @@ export class SurfaceState extends EventEmitter {
     const anim = surfaceNode.animations[animId];
     // patternをすすめる
     // exclusive中のやつら探す
-    if(!layers.some((layer, id)=>
+    if(layers.some((layer, id)=>
       !(layer instanceof SM.SerikoLayer) ? false // layer が mayuna なら 論外
                       : !layer.exclusive ? false // exclusive が存在しない
                                           : id === animId // exclusiveが存在しなおかつ自分は含まれる
@@ -297,14 +299,15 @@ export class SurfaceState extends EventEmitter {
     const srf = this.surface;
     const {surfaceId, layers, shell} = srf;
     const surfaces = srf.shell.surfaceDefTree.surfaces;
-    srf.renderingTree = layersToTree(surfaces, surfaceId, layers);
+    const config = shell.config;
+    srf.renderingTree = layersToTree(surfaces, surfaceId, layers, config);
     // レンダリングツリーが更新された！
     this.emit("render");
   }
 }
 
 
-export function layersToTree(surfaces: ST.SurfaceDefinition[], n: number, layers: SM.Layer[]): SM.SurfaceRenderingTree {
+export function layersToTree(surfaces: ST.SurfaceDefinition[], n: number, layers: SM.Layer[], config: SC.ShellConfig): SM.SurfaceRenderingTree {
   // bind の循環参照注意
   const tree = new SM.SurfaceRenderingTree(n);
   const anims = surfaces[n].animations
@@ -322,9 +325,27 @@ export function layersToTree(surfaces: ST.SurfaceDefinition[], n: number, layers
         // insertをねじ込む
         recur(patterns, rndLayerSets);
       }else{
-        rndLayerSets.push(new SM.SurfaceRenderingLayer(type, layersToTree(surfaces, surface, layers), x, y));
+        rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
       }
     });
+  };
+  let recur2 = (surfaces: ST.SurfaceDefinition[], n: number, layers: SM.Layer[], config: SC.ShellConfig): SM.SurfaceRenderingTree=>{
+    const tree = new SM.SurfaceRenderingTree(n);
+    if( !(surfaces[n] instanceof ST.SurfaceDefinition)){
+      console.warn("SurfaceState.layer2tree: surface", n, "is not defined");
+      return tree;
+    }
+    const anims = surfaces[n].animations
+    anims.forEach((anim, animId)=>{
+      const {patterns, intervals} = anim;
+      const rndLayerSets:SM.SurfaceRenderingLayerSet = [];
+      if(SC.isBind(config, animId) && intervals.some(([interval, args])=> "bind" === interval) && intervals.length === 1){
+        // insert のための再帰的処理
+        recur(patterns, rndLayerSets);
+      }
+      (ST.isBack(anim) ? tree.backgrounds : tree.foregrounds).push(rndLayerSets);
+    });
+    return tree;
   };
   layers.forEach((layer, animId)=>{
     const anim = anims[animId];
@@ -333,7 +354,7 @@ export function layersToTree(surfaces: ST.SurfaceDefinition[], n: number, layers
     if(layer instanceof SM.SerikoLayer && layer.patternID >= 0 && patterns[layer.patternID] != null){
       // patternID >= 0 で pattern が定義されている seriko layer
       const {type, surface, x, y} = patterns[layer.patternID];
-      rndLayerSets.push(new SM.SurfaceRenderingLayer(type, layersToTree(surfaces, surface, layers), x, y));
+      rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
     }else if(layer instanceof SM.MayunaLayer && layer.visible){
       // insert のための再帰的処理
       recur(patterns, rndLayerSets);
@@ -342,7 +363,3 @@ export function layersToTree(surfaces: ST.SurfaceDefinition[], n: number, layers
   });
   return tree;
 }
-
-
-
-  

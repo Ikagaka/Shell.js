@@ -257,7 +257,7 @@ export function loadSurfaceAnimation(animation: SY.SurfaceAnimation): Promise<ST
     .catch(console.warn.bind(console));
   });
   const that = new ST.SurfaceAnimation(intervals, options, collisions, patterns);
-  return Promise.resolve(this);
+  return Promise.resolve(that);
 }
 
 

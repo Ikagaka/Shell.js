@@ -32,8 +32,10 @@ var SurfaceState = function (_events_1$EventEmitte) {
         _this.shellState = shellState;
         _this.surface = new SM.Surface(scopeId, surfaceId, shellState.shell);
         _this.continuations = [];
-        _this.surface.surfaceNode.animations.forEach(function (_, animId) {
-            _this.initLayer(animId);
+        _this.surface.surfaceNode.animations.forEach(function (anim, animId) {
+            if (anim != null) {
+                _this.initLayer(animId);
+            }
         });
         _this.shellState.on("bindgroup_update", function () {
             // ShellConfig の値が変化し bindgroup_update の構成が変化した！
@@ -136,22 +138,25 @@ var SurfaceState = function (_events_1$EventEmitte) {
             var options = _surfaceNode$animatio.options;
             var collisions = _surfaceNode$animatio.collisions;
 
-            if (SC.isBind(config, animId)) {
-                intervals.filter(function (_ref6) {
-                    var _ref7 = _slicedToArray(_ref6, 1);
+            if (intervals.some(function (_ref6) {
+                var _ref7 = _slicedToArray(_ref6, 1);
 
-                    var interval = _ref7[0];
-                    return interval !== "bind";
-                }).forEach(function (_ref8) {
-                    var _ref9 = _slicedToArray(_ref8, 2);
-
-                    var interval = _ref9[0];
-                    var args = _ref9[1];
-
-                    // インターバルタイマの登録
-                    _this3.setIntervalTimer(animId, interval, args);
-                });
+                var interval = _ref7[0];
+                return interval === "bind";
+            })) {
+                if (!SC.isBind(config, animId)) {
+                    return;
+                }
             }
+            intervals.forEach(function (_ref8) {
+                var _ref9 = _slicedToArray(_ref8, 2);
+
+                var interval = _ref9[0];
+                var args = _ref9[1];
+
+                // インターバルタイマの登録
+                _this3.setIntervalTimer(animId, interval, args);
+            });
         }
         // アニメーションタイミングループのintervalタイマの停止
 
@@ -293,7 +298,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
             var anim = surfaceNode.animations[animId];
             // patternをすすめる
             // exclusive中のやつら探す
-            if (!layers.some(function (layer, id) {
+            if (layers.some(function (layer, id) {
                 return !(layer instanceof SM.SerikoLayer) ? false // layer が mayuna なら 論外
                 : !layer.exclusive ? false // exclusive が存在しない
                 : id === animId;
@@ -450,7 +455,8 @@ var SurfaceState = function (_events_1$EventEmitte) {
             var shell = srf.shell;
 
             var surfaces = srf.shell.surfaceDefTree.surfaces;
-            srf.renderingTree = layersToTree(surfaces, surfaceId, layers);
+            var config = shell.config;
+            srf.renderingTree = layersToTree(surfaces, surfaceId, layers, config);
             // レンダリングツリーが更新された！
             this.emit("render");
         }
@@ -460,7 +466,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
 }(events_1.EventEmitter);
 
 exports.SurfaceState = SurfaceState;
-function layersToTree(surfaces, n, layers) {
+function layersToTree(surfaces, n, layers, config) {
     // bind の循環参照注意
     var tree = new SM.SurfaceRenderingTree(n);
     var anims = surfaces[n].animations;
@@ -484,9 +490,35 @@ function layersToTree(surfaces, n, layers) {
                 // insertをねじ込む
                 recur(patterns, rndLayerSets);
             } else {
-                rndLayerSets.push(new SM.SurfaceRenderingLayer(type, layersToTree(surfaces, surface, layers), x, y));
+                rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
             }
         });
+    };
+    var recur2 = function recur2(surfaces, n, layers, config) {
+        var tree = new SM.SurfaceRenderingTree(n);
+        if (!(surfaces[n] instanceof ST.SurfaceDefinition)) {
+            console.warn("SurfaceState.layer2tree: surface", n, "is not defined");
+            return tree;
+        }
+        var anims = surfaces[n].animations;
+        anims.forEach(function (anim, animId) {
+            var patterns = anim.patterns;
+            var intervals = anim.intervals;
+
+            var rndLayerSets = [];
+            if (SC.isBind(config, animId) && intervals.some(function (_ref15) {
+                var _ref16 = _slicedToArray(_ref15, 2);
+
+                var interval = _ref16[0];
+                var args = _ref16[1];
+                return "bind" === interval;
+            }) && intervals.length === 1) {
+                // insert のための再帰的処理
+                recur(patterns, rndLayerSets);
+            }
+            (ST.isBack(anim) ? tree.backgrounds : tree.foregrounds).push(rndLayerSets);
+        });
+        return tree;
     };
     layers.forEach(function (layer, animId) {
         var anim = anims[animId];
@@ -501,7 +533,7 @@ function layersToTree(surfaces, n, layers) {
             var x = _patterns$layer$patte.x;
             var y = _patterns$layer$patte.y;
 
-            rndLayerSets.push(new SM.SurfaceRenderingLayer(type, layersToTree(surfaces, surface, layers), x, y));
+            rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
         } else if (layer instanceof SM.MayunaLayer && layer.visible) {
             // insert のための再帰的処理
             recur(patterns, rndLayerSets);
