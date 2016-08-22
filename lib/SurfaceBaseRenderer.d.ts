@@ -7,6 +7,7 @@ export declare class SurfaceBaseRenderer extends SR.SurfaceRenderer {
     bases: SR.SurfaceCanvas[];
     shell: SH.Shell;
     constructor(shell: SH.Shell);
+    preload(): Promise<this>;
     getBaseSurface(n: number): Promise<SR.SurfaceCanvas>;
     getBaseSurfaceSize(n: number): Promise<{
         width: number;

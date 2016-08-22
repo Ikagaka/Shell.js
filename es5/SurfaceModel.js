@@ -83,6 +83,7 @@ var SurfaceRenderingTree = function SurfaceRenderingTree(surface) {
     this.base = surface;
     this.foregrounds = [];
     this.backgrounds = [];
+    this.collisions = [];
 };
 
 exports.SurfaceRenderingTree = SurfaceRenderingTree;

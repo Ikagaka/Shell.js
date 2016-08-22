@@ -45,15 +45,20 @@ var SurfacePatternRenderer = function (_SBR$SurfaceBaseRende) {
                 _this2.init(baseSrfCnv);
                 _this2.clear(); // 短形を保ったまま消去
                 // この this な srfCnv がreduceの単位元になる
-                _this2.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+                return _this2.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+            }).then(function () {
                 // 当たり判定を描画
                 if (enableRegion) {
-                    backgrounds.forEach(function (_, animId) {
-                        _this2.drawRegions(animations[animId].collisions, "" + surfaceId);
+                    backgrounds.forEach(function (layerSet) {
+                        layerSet.forEach(function (layer) {
+                            _this2.drawRegions(layer.surface.collisions, "" + surfaceId);
+                        });
                     });
                     _this2.drawRegions(collisions, "" + surfaceId);
-                    foregrounds.forEach(function (_, animId) {
-                        _this2.drawRegions(animations[animId].collisions, "" + surfaceId);
+                    foregrounds.forEach(function (layerSet) {
+                        layerSet.forEach(function (layer) {
+                            _this2.drawRegions(layer.surface.collisions, "" + surfaceId);
+                        });
                     });
                 }
                 // debug用
@@ -93,7 +98,7 @@ var SurfacePatternRenderer = function (_SBR$SurfaceBaseRende) {
                         // いろいろやっていても実際描画するのは それぞれのベースサーフェスだけです
                         _this3.composeElement(baseSrfCnv, type, x, y)
                     );
-                });
+                }).catch(console.warn.bind(console));
             }).then(function () {
                 return process(foregrounds);
             });

@@ -179,7 +179,7 @@ function loadSurfaceCollisionRect(collision) {
     var left = collision.left;
     var bottom = collision.bottom;
     var right = collision.right;
-    var that = new ST.SurfaceCollisionRect(name, type, top, left, bottom, right);
+    var that = new ST.SurfaceCollisionRect(name, type, left, top, right, bottom);
     return Promise.resolve(that);
 }
 exports.loadSurfaceCollisionRect = loadSurfaceCollisionRect;

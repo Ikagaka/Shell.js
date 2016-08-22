@@ -7,20 +7,29 @@ NarLoader.loadFromURL("../nar/mobilemaster.nar")
 .then(function(dic){ return Shell.SML.load(dic); })
 .then(function(shell){
   var rndr = new Shell.SPR.SurfacePatternRenderer(shell);
-  var rndr2 = new Shell.SR.SurfaceRenderer();
-  var shellState = new Shell.ShS.ShellState(shell);
-  var ss = new Shell.SS.SurfaceState(0, 0, shellState);
-  console.log(shell, rndr, shellState, ss);
-  Shell.SU.setCanvasStyle();
-  document.body.appendChild(rndr.cnv);
-  document.body.appendChild(rndr2.cnv);
-  ss.on("render", function(){
-    rndr.render(ss.surface);
-    rndr2.base(rndr);
+  return rndr.preload().then(function(){
+    var shell = rndr.shell;
+    var rndr2 = new Shell.SR.SurfaceRenderer();
+    var shellState = new Shell.ShS.ShellState(shell);  
+    var ss = new Shell.SS.SurfaceState(0, 7, shellState);
+    shell.config.enableRegion = true;
+
+    Shell.SU.setCanvasStyle();
+    document.body.appendChild(rndr2.cnv);
+
+    return rndr.render(ss.surface).then(()=>{
+      // 初期描画
+      rndr2.base(rndr);
+      ss.on("render", function(){
+        console.time("render");
+        rndr.render(ss.surface).then((srfcnv)=>{
+          rndr2.base(srfcnv);
+          console.timeEnd("render");
+        });
+      });
+    });
   });
-  console.log("i")
-})
-.catch(console.error.bind(console));
+}).catch(console.error.bind(console));
 </script>
 <body>
 </body>

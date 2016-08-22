@@ -8,8 +8,11 @@
 import * as ST from "./SurfaceTree";
 import Encoding = require("encoding-japanese");
 import $ = require("jquery");
+import deep = require("deep-diff");
 
+export var diff = deep.diff;
 export var extend = $.extend;
+
 
 export function chromakey(png: HTMLCanvasElement|HTMLImageElement):HTMLCanvasElement{
   const cnvA = copy(png);

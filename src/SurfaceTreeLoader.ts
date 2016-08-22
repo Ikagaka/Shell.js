@@ -177,7 +177,7 @@ export function loadSurfaceCollisionRect(collision: SY.SurfaceRegionRect): Promi
   const left = collision.left;
   const bottom = collision.bottom;
   const right = collision.right;
-  const that = new ST.SurfaceCollisionRect(name, type, top, left, bottom, right);
+  const that = new ST.SurfaceCollisionRect(name, type, left, top, right, bottom);
   return Promise.resolve(that);
 }
 

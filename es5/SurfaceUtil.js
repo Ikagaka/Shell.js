@@ -11,6 +11,8 @@ function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
 
 var Encoding = require("encoding-japanese");
 var $ = require("jquery");
+var deep = require("deep-diff");
+exports.diff = deep.diff;
 exports.extend = $.extend;
 function chromakey(png) {
     var cnvA = copy(png);

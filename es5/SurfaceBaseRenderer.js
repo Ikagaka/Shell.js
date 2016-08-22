@@ -32,9 +32,24 @@ var SurfaceBaseRenderer = function (_SR$SurfaceRenderer) {
     }
 
     _createClass(SurfaceBaseRenderer, [{
+        key: "preload",
+        value: function preload() {
+            var _this2 = this;
+
+            var surfaces = this.shell.surfaceDefTree.surfaces;
+            console.time("preload");
+            return Promise.all(surfaces.map(function (surface, n) {
+                return _this2.getBaseSurface(n);
+            })).then(function () {
+                console.timeEnd("preload");
+                _this2.cache.clear();
+                return _this2;
+            });
+        }
+    }, {
         key: "getBaseSurface",
         value: function getBaseSurface(n) {
-            var _this2 = this;
+            var _this3 = this;
 
             // elements を合成するだけ
             var surfaceTree = this.shell.surfaceDefTree.surfaces;
@@ -43,8 +58,8 @@ var SurfaceBaseRenderer = function (_SR$SurfaceRenderer) {
             var srf = surfaceTree[n];
             if (!(srf instanceof ST.SurfaceDefinition) || srf.elements.length === 0) {
                 // そんな定義なかった || element0も何もなかった
-                console.warn("SurfaceBaseRenderer#getBaseSurface: no such a surface", n, srf);
-                return Promise.reject("no such a surface");
+                console.warn("SurfaceBaseRenderer#getBaseSurface: no such a surface: " + n);
+                return Promise.reject("SurfaceBaseRenderer#getBaseSurface: no such a surface: " + n);
             }
             if (bases[n] instanceof SR.SurfaceCanvas) {
                 // キャッシュがあった
@@ -73,7 +88,7 @@ var SurfaceBaseRenderer = function (_SR$SurfaceRenderer) {
                     console.warn("SurfaceBaseRenderer#getBaseSurface: no such a file", file, n, srf);
                 });
             })).then(function (elms) {
-                return _this2.composeElements(elms);
+                return _this3.composeElements(elms);
             }).then(function (srfCnv) {
                 // basesurfaceの大きさはbasesurfaceそのもの
                 srfCnv.basePosX = 0;

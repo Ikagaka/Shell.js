@@ -26,15 +26,20 @@ export class SurfacePatternRenderer extends SBR.SurfaceBaseRenderer {
       this.init(baseSrfCnv);
       this.clear(); // 短形を保ったまま消去
       // この this な srfCnv がreduceの単位元になる
-      this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+      return this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+    }).then(()=>{
       // 当たり判定を描画
       if (enableRegion) {
-        backgrounds.forEach((_, animId)=>{
-          this.drawRegions((animations[animId].collisions), ""+surfaceId);
+        backgrounds.forEach((layerSet)=>{
+          layerSet.forEach((layer)=>{
+            this.drawRegions(layer.surface.collisions, ""+surfaceId);
+          });
         });
         this.drawRegions((collisions), ""+surfaceId);
-        foregrounds.forEach((_, animId)=>{
-          this.drawRegions((animations[animId].collisions), ""+surfaceId);
+        foregrounds.forEach((layerSet)=>{
+          layerSet.forEach((layer)=>{
+            this.drawRegions(layer.surface.collisions, ""+surfaceId);
+          });
         });
       }
       // debug用
@@ -61,8 +66,8 @@ export class SurfacePatternRenderer extends SBR.SurfaceBaseRenderer {
         // backgrounds の上に base を描画
         // いろいろやっていても実際描画するのは それぞれのベースサーフェスだけです
         this.composeElement(baseSrfCnv, type, x, y)
-    ) )
-    .then(()=> process(foregrounds) );
+      ).catch(console.warn.bind(console))
+    ).then(()=> process(foregrounds) );
   }
 }
 

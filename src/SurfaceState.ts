@@ -10,6 +10,7 @@ import * as SM from "./SurfaceModel";
 
 import {EventEmitter} from "events";
 
+
 export class SurfaceState extends EventEmitter {
   surface: SM.Surface;
   shellState: SS.ShellState;
@@ -122,30 +123,36 @@ export class SurfaceState extends EventEmitter {
     const {layers, seriko} = this.surface;
     const layer = layers[animId];
     if (layer instanceof SM.SerikoLayer){
-      const n = isFinite(args[0]) ? args[0]
-                                  : (console.warn("Surface#setTimer: failback to", 4, interval, animId)
-                                  , 4);
       seriko[animId] = true;
       const fn = (nextTick: Function)=>{
         // nextTick は アニメーション終わってから呼ぶともういっぺん random や always されるもの
-        if (!seriko[animId]) return; // nextTick 呼ばないのでintervalを終了する
+        if (!seriko[animId]) return; // nextTick 呼ばないのでintervalを終了する  
         this.play(animId)
-        .catch((err)=> console.info("SurfaceState#setIntervalTimer: animation canceled", err))
-        .then(()=> nextTick());
+        .catch((err)=> console.info("animation canceled", err))
+        .then(()=>{ nextTick(); });
       };
       // アニメーション描画タイミングの登録
       switch (interval) {
         // nextTickを呼ぶともう一回random
-        case "sometimes": SU.random(fn, 2);   return;
-        case "rarely":    SU.random(fn, 4);   return;
-        case "random":    SU.random(fn, n);   return;
-        case "periodic":  SU.periodic(fn, n); return;
         case "always":    SU.always(fn);      return;
-        case "runonce":   this.play(animId);  return;
+        case "runonce":   setTimeout(()=> this.play(animId));  return;
         case "never":     return;
         case "yen-e":     return;
         case "talk":      return;
+        case "sometimes": SU.random(fn, 2);   return;
+        case "rarely":    SU.random(fn, 4);   return;
         default:
+          const n = isFinite(args[0]) ? args[0]
+                                      : (console.warn("Surface#setTimer: failback to", 4, "from", args[0], interval, animId, layer)
+                                      , 4);
+          if(interval === "random"){
+            SU.random(fn, n);
+            return;
+          }
+          if(interval === "periodic"){
+            SU.periodic(fn, n);
+            return;
+          }
           console.warn("SurfaceState#setTimer > unkown interval:", interval, animId);
           return; 
       }
@@ -181,9 +188,14 @@ export class SurfaceState extends EventEmitter {
         layer.exclusive = true;
       }
     });
+    console.group(""+animId);
+    console.info("start animation", animId, this.surface.surfaceNode.animations[animId]);
     return new Promise<void>((resolve, reject)=>{
       this.continuations[animId] = {resolve, reject};
       this.step(animId, layer);
+    }).then(()=>{
+      console.info("finish animation", animId);
+      console.groupEnd();
     });
   }
 
@@ -211,20 +223,23 @@ export class SurfaceState extends EventEmitter {
       // 次にplayが呼び出されるまで何もしない 
       return;
     }
-    if(layer.patternID !== -1 && anim.patterns[layer.patternID+1] == null){
-      // -1 は一番初めでなくて、 +1 は次のレイヤがない
-      // 正のレイヤIDなのに次のレイヤがない＝このアニメは終了
+    // patternID は現在表示中のパタン
+    // patternID === -1 は +1 され 0 になり wait ミリ秒間待ってから patternID === 0 を表示するとの意思表明
+    // patternID+1 はこれから表示
+    layer.patternID++;
+    if(anim.patterns[layer.patternID] == null){
+      // このステップで次に表示すべきなにかがない＝このアニメは終了
       layer.finished   = true;
     }
     if(layer.finished){
       // 初期化
       layers[animId] = new SM.SerikoLayer(layer.patterns, layer.background);
       delete this.continuations[animId];
+      //this.constructRenderingTree();
       return resolve();
     }
-    // 再生中っぽい
-    layer.patternID++; 
-    const {surface, wait, type, x, y, animation_ids} = anim.patterns[layer.patternID];
+    const {wait, type, x, y, animation_ids} = anim.patterns[layer.patternID];
+    let {surface} = anim.patterns[layer.patternID];
     switch(type){
       // 付随再生であってこのアニメの再生終了は待たない・・・はず？
       case "start":            this.play(animation_ids[0]); return;
@@ -233,11 +248,33 @@ export class SurfaceState extends EventEmitter {
       case "alternativestop":  this.stop(SU.choice<number>(animation_ids)); return;
       case "move":             move.x = x; move.y = y; this.emit("move"); return;
     }
-    // waitだけ待つ
+    const _wait = SU.randomRange(wait[0], wait[1]);
+    // waitだけ待ってからレンダリング
+    console.time("step"+_wait);
     setTimeout(()=>{
+      console.timeEnd("step"+_wait);
+      if(surface < -2){
+        // SERIKO/1.4 ?
+        console.warn("SurfaceState#step: pattern surfaceId", surface, "is not defined in SERIKO/1.4, failback to -2");
+        surface = -2;
+      }
+      if(surface === -1){
+        // SERIKO/1.4 -1 として表示されいたこのアニメーション終了 
+        layer.finished = true;
+        return this.step(animId, layer);
+      }
+      if(surface === -2){
+        // SERIKO/1.4 全アニメーション停止
+        layers.forEach((layer)=>{
+          if (layer instanceof SM.SerikoLayer){
+            layer.finished = true;
+            this.step(animId, layer);
+          } 
+        });
+      }
+      this.constructRenderingTree();
       this.step(animId, layer);
-    }, SU.randomRange(wait[0], wait[1]));
-    this.constructRenderingTree();
+    }, _wait);
   }
 
   // 再生中のアニメーションを停止しろ
@@ -300,7 +337,9 @@ export class SurfaceState extends EventEmitter {
     const {surfaceId, layers, shell} = srf;
     const surfaces = srf.shell.surfaceDefTree.surfaces;
     const config = shell.config;
+    const tmp = SU.extend(true, {}, srf.renderingTree);
     srf.renderingTree = layersToTree(surfaces, surfaceId, layers, config);
+    console.log("diff: ", /*tmp, srf.renderingTree, */SU.diff(tmp, srf.renderingTree));
     // レンダリングツリーが更新された！
     this.emit("render");
   }
@@ -325,40 +364,50 @@ export function layersToTree(surfaces: ST.SurfaceDefinition[], n: number, layers
         // insertをねじ込む
         recur(patterns, rndLayerSets);
       }else{
-        rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
+        if(surface > 0){
+          rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
+        }else{
+          // MAYUNA で -1 はありえん
+          console.warn("SurfaceState.layersToTree: unexpected surface id ", surface);
+        }
       }
     });
   };
   let recur2 = (surfaces: ST.SurfaceDefinition[], n: number, layers: SM.Layer[], config: SC.ShellConfig): SM.SurfaceRenderingTree=>{
     const tree = new SM.SurfaceRenderingTree(n);
-    if( !(surfaces[n] instanceof ST.SurfaceDefinition)){
+    if( !(surfaces[n] instanceof ST.SurfaceDefinition)){      
       console.warn("SurfaceState.layer2tree: surface", n, "is not defined");
       return tree;
     }
     const anims = surfaces[n].animations
     anims.forEach((anim, animId)=>{
-      const {patterns, intervals} = anim;
+      const {patterns, intervals, collisions} = anim;
       const rndLayerSets:SM.SurfaceRenderingLayerSet = [];
       if(SC.isBind(config, animId) && intervals.some(([interval, args])=> "bind" === interval) && intervals.length === 1){
         // insert のための再帰的処理
         recur(patterns, rndLayerSets);
       }
+      tree.collisions = collisions;
       (ST.isBack(anim) ? tree.backgrounds : tree.foregrounds).push(rndLayerSets);
     });
     return tree;
   };
   layers.forEach((layer, animId)=>{
     const anim = anims[animId];
-    const {patterns} = anim;
+    const {patterns, collisions} = anim;
     const rndLayerSets:SM.SurfaceRenderingLayerSet = [];
     if(layer instanceof SM.SerikoLayer && layer.patternID >= 0 && patterns[layer.patternID] != null){
       // patternID >= 0 で pattern が定義されている seriko layer
       const {type, surface, x, y} = patterns[layer.patternID];
-      rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
+      if(surface > 0){
+        // 非表示
+        rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
+      }
     }else if(layer instanceof SM.MayunaLayer && layer.visible){
       // insert のための再帰的処理
       recur(patterns, rndLayerSets);
     }
+    tree.collisions = collisions;
     (ST.isBack(anim) ? tree.backgrounds : tree.foregrounds).push(rndLayerSets);
   });
   return tree;

@@ -101,9 +101,9 @@ var SurfaceRenderer = function (_SurfaceCanvas) {
                 // elms.length > 0なのでundefinedにはならない…はず。
                 // お前がbaseになるんだよ
                 base = elms.shift();
-                console.warn("SurfaceRenderer#composeElements: base surface not found. failback.", base);
+                console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
                 if (base == null) {
-                    console.warn("SurfaceRenderer#composeElements: cannot decide base surface", base);
+                    console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
                     return this;
                 }
             }
@@ -152,7 +152,7 @@ var SurfaceRenderer = function (_SurfaceCanvas) {
     }, {
         key: "base",
         value: function base(part) {
-            this.reset();
+            //this.reset();
             this.cnv.width = part.cnv.width;
             this.cnv.height = part.cnv.height;
             this.ctx.globalCompositeOperation = "source-over";

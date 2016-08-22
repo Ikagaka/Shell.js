@@ -85,10 +85,12 @@ export class SurfaceRenderingTree {
   base:        number;
   foregrounds: SurfaceRenderingLayerSet[];
   backgrounds: SurfaceRenderingLayerSet[];
+  collisions:  ST.SurfaceCollision[];
   constructor(surface: number){
     this.base = surface;
     this.foregrounds = [];
     this.backgrounds = [];
+    this.collisions = [];
   }
 }
 

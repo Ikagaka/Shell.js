@@ -41,6 +41,7 @@ export declare class SurfaceRenderingTree {
     base: number;
     foregrounds: SurfaceRenderingLayerSet[];
     backgrounds: SurfaceRenderingLayerSet[];
+    collisions: ST.SurfaceCollision[];
     constructor(surface: number);
 }
 export declare type SurfaceRenderingLayerSet = SurfaceRenderingLayer[];

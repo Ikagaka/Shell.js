@@ -23,6 +23,18 @@ export class SurfaceBaseRenderer extends SR.SurfaceRenderer{
     this.cache = new CC.CanvasCache(shell.directory);
   }
 
+  preload(): Promise<this>{
+    const surfaces = this.shell.surfaceDefTree.surfaces
+    console.time("preload");
+    return Promise.all(
+      surfaces.map((surface, n)=> this.getBaseSurface(n) )
+    ).then(()=>{
+      console.timeEnd("preload");
+      this.cache.clear();
+      return this;
+    })
+  }
+
   getBaseSurface(n: number): Promise<SR.SurfaceCanvas> {
     // elements を合成するだけ
     const surfaceTree = this.shell.surfaceDefTree.surfaces;
@@ -31,8 +43,8 @@ export class SurfaceBaseRenderer extends SR.SurfaceRenderer{
     const srf = surfaceTree[n];
     if(!(srf instanceof ST.SurfaceDefinition) || srf.elements.length === 0){
       // そんな定義なかった || element0も何もなかった
-      console.warn("SurfaceBaseRenderer#getBaseSurface: no such a surface", n, srf);
-      return Promise.reject("no such a surface");
+      console.warn("SurfaceBaseRenderer#getBaseSurface: no such a surface: "+n);
+      return Promise.reject("SurfaceBaseRenderer#getBaseSurface: no such a surface: "+n);
     }
     if(bases[n] instanceof SR.SurfaceCanvas){
       // キャッシュがあった

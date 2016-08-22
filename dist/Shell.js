@@ -498,7 +498,7 @@ function loadSurfacePNG(directory, tree) {
     return Promise.resolve(tree);
 }
 exports.loadSurfacePNG = loadSurfacePNG;
-},{"./ShellConfigLoader":3,"./ShellModel":4,"./SurfaceTree":12,"./SurfaceTreeLoader":13,"./SurfaceUtil":14,"surfaces_txt2yaml":49}],6:[function(require,module,exports){
+},{"./ShellConfigLoader":3,"./ShellModel":4,"./SurfaceTree":12,"./SurfaceTreeLoader":13,"./SurfaceUtil":14,"surfaces_txt2yaml":50}],6:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -583,7 +583,7 @@ function bind_value(config, a, b, flag) {
     return void config;
 }
 exports.bind_value = bind_value;
-},{"events":17}],7:[function(require,module,exports){
+},{"events":18}],7:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts" />
 /*
  * CacheCanvas は ディレクトリアクセスをフックし
@@ -618,9 +618,24 @@ var SurfaceBaseRenderer = function (_SR$SurfaceRenderer) {
     }
 
     _createClass(SurfaceBaseRenderer, [{
+        key: "preload",
+        value: function preload() {
+            var _this2 = this;
+
+            var surfaces = this.shell.surfaceDefTree.surfaces;
+            console.time("preload");
+            return Promise.all(surfaces.map(function (surface, n) {
+                return _this2.getBaseSurface(n);
+            })).then(function () {
+                console.timeEnd("preload");
+                _this2.cache.clear();
+                return _this2;
+            });
+        }
+    }, {
         key: "getBaseSurface",
         value: function getBaseSurface(n) {
-            var _this2 = this;
+            var _this3 = this;
 
             // elements を合成するだけ
             var surfaceTree = this.shell.surfaceDefTree.surfaces;
@@ -629,8 +644,8 @@ var SurfaceBaseRenderer = function (_SR$SurfaceRenderer) {
             var srf = surfaceTree[n];
             if (!(srf instanceof ST.SurfaceDefinition) || srf.elements.length === 0) {
                 // そんな定義なかった || element0も何もなかった
-                console.warn("SurfaceBaseRenderer#getBaseSurface: no such a surface", n, srf);
-                return Promise.reject("no such a surface");
+                console.warn("SurfaceBaseRenderer#getBaseSurface: no such a surface: " + n);
+                return Promise.reject("SurfaceBaseRenderer#getBaseSurface: no such a surface: " + n);
             }
             if (bases[n] instanceof SR.SurfaceCanvas) {
                 // キャッシュがあった
@@ -659,7 +674,7 @@ var SurfaceBaseRenderer = function (_SR$SurfaceRenderer) {
                     console.warn("SurfaceBaseRenderer#getBaseSurface: no such a file", file, n, srf);
                 });
             })).then(function (elms) {
-                return _this2.composeElements(elms);
+                return _this3.composeElements(elms);
             }).then(function (srfCnv) {
                 // basesurfaceの大きさはbasesurfaceそのもの
                 srfCnv.basePosX = 0;
@@ -773,6 +788,7 @@ var SurfaceRenderingTree = function SurfaceRenderingTree(surface) {
     this.base = surface;
     this.foregrounds = [];
     this.backgrounds = [];
+    this.collisions = [];
 };
 
 exports.SurfaceRenderingTree = SurfaceRenderingTree;
@@ -835,15 +851,20 @@ var SurfacePatternRenderer = function (_SBR$SurfaceBaseRende) {
                 _this2.init(baseSrfCnv);
                 _this2.clear(); // 短形を保ったまま消去
                 // この this な srfCnv がreduceの単位元になる
-                _this2.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+                return _this2.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+            }).then(function () {
                 // 当たり判定を描画
                 if (enableRegion) {
-                    backgrounds.forEach(function (_, animId) {
-                        _this2.drawRegions(animations[animId].collisions, "" + surfaceId);
+                    backgrounds.forEach(function (layerSet) {
+                        layerSet.forEach(function (layer) {
+                            _this2.drawRegions(layer.surface.collisions, "" + surfaceId);
+                        });
                     });
                     _this2.drawRegions(collisions, "" + surfaceId);
-                    foregrounds.forEach(function (_, animId) {
-                        _this2.drawRegions(animations[animId].collisions, "" + surfaceId);
+                    foregrounds.forEach(function (layerSet) {
+                        layerSet.forEach(function (layer) {
+                            _this2.drawRegions(layer.surface.collisions, "" + surfaceId);
+                        });
                     });
                 }
                 // debug用
@@ -883,7 +904,7 @@ var SurfacePatternRenderer = function (_SBR$SurfaceBaseRende) {
                         // いろいろやっていても実際描画するのは それぞれのベースサーフェスだけです
                         _this3.composeElement(baseSrfCnv, type, x, y)
                     );
-                });
+                }).catch(console.warn.bind(console));
             }).then(function () {
                 return process(foregrounds);
             });
@@ -998,9 +1019,9 @@ var SurfaceRenderer = function (_SurfaceCanvas) {
                 // elms.length > 0なのでundefinedにはならない…はず。
                 // お前がbaseになるんだよ
                 base = elms.shift();
-                console.warn("SurfaceRenderer#composeElements: base surface not found. failback.", base);
+                console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
                 if (base == null) {
-                    console.warn("SurfaceRenderer#composeElements: cannot decide base surface", base);
+                    console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
                     return this;
                 }
             }
@@ -1049,7 +1070,7 @@ var SurfaceRenderer = function (_SurfaceCanvas) {
     }, {
         key: "base",
         value: function base(part) {
-            this.reset();
+            //this.reset();
             this.cnv.width = part.cnv.width;
             this.cnv.height = part.cnv.height;
             this.ctx.globalCompositeOperation = "source-over";
@@ -1527,37 +1548,26 @@ var SurfaceState = function (_events_1$EventEmitte) {
 
             var layer = layers[animId];
             if (layer instanceof SM.SerikoLayer) {
-                var n = isFinite(args[0]) ? args[0] : (console.warn("Surface#setTimer: failback to", 4, interval, animId), 4);
                 seriko[animId] = true;
                 var fn = function fn(nextTick) {
                     // nextTick は アニメーション終わってから呼ぶともういっぺん random や always されるもの
-                    if (!seriko[animId]) return; // nextTick 呼ばないのでintervalを終了する
+                    if (!seriko[animId]) return; // nextTick 呼ばないのでintervalを終了する  
                     _this5.play(animId).catch(function (err) {
-                        return console.info("SurfaceState#setIntervalTimer: animation canceled", err);
+                        return console.info("animation canceled", err);
                     }).then(function () {
-                        return nextTick();
+                        nextTick();
                     });
                 };
                 // アニメーション描画タイミングの登録
                 switch (interval) {
                     // nextTickを呼ぶともう一回random
-                    case "sometimes":
-                        SU.random(fn, 2);
-                        return;
-                    case "rarely":
-                        SU.random(fn, 4);
-                        return;
-                    case "random":
-                        SU.random(fn, n);
-                        return;
-                    case "periodic":
-                        SU.periodic(fn, n);
-                        return;
                     case "always":
                         SU.always(fn);
                         return;
                     case "runonce":
-                        this.play(animId);
+                        setTimeout(function () {
+                            return _this5.play(animId);
+                        });
                         return;
                     case "never":
                         return;
@@ -1565,7 +1575,22 @@ var SurfaceState = function (_events_1$EventEmitte) {
                         return;
                     case "talk":
                         return;
+                    case "sometimes":
+                        SU.random(fn, 2);
+                        return;
+                    case "rarely":
+                        SU.random(fn, 4);
+                        return;
                     default:
+                        var n = isFinite(args[0]) ? args[0] : (console.warn("Surface#setTimer: failback to", 4, "from", args[0], interval, animId, layer), 4);
+                        if (interval === "random") {
+                            SU.random(fn, n);
+                            return;
+                        }
+                        if (interval === "periodic") {
+                            SU.periodic(fn, n);
+                            return;
+                        }
                         console.warn("SurfaceState#setTimer > unkown interval:", interval, animId);
                         return;
                 }
@@ -1609,9 +1634,14 @@ var SurfaceState = function (_events_1$EventEmitte) {
                     layer.exclusive = true;
                 }
             });
+            console.group("" + animId);
+            console.info("start animation", animId, this.surface.surfaceNode.animations[animId]);
             return new Promise(function (resolve, reject) {
                 _this6.continuations[animId] = { resolve: resolve, reject: reject };
                 _this6.step(animId, layer);
+            }).then(function () {
+                console.info("finish animation", animId);
+                console.groupEnd();
             });
         }
     }, {
@@ -1649,26 +1679,28 @@ var SurfaceState = function (_events_1$EventEmitte) {
                 // 次にplayが呼び出されるまで何もしない 
                 return;
             }
-            if (layer.patternID !== -1 && anim.patterns[layer.patternID + 1] == null) {
-                // -1 は一番初めでなくて、 +1 は次のレイヤがない
-                // 正のレイヤIDなのに次のレイヤがない＝このアニメは終了
+            // patternID は現在表示中のパタン
+            // patternID === -1 は +1 され 0 になり wait ミリ秒間待ってから patternID === 0 を表示するとの意思表明
+            // patternID+1 はこれから表示
+            layer.patternID++;
+            if (anim.patterns[layer.patternID] == null) {
+                // このステップで次に表示すべきなにかがない＝このアニメは終了
                 layer.finished = true;
             }
             if (layer.finished) {
                 // 初期化
                 layers[animId] = new SM.SerikoLayer(layer.patterns, layer.background);
                 delete this.continuations[animId];
+                //this.constructRenderingTree();
                 return resolve();
             }
-            // 再生中っぽい
-            layer.patternID++;
             var _anim$patterns$layer$ = anim.patterns[layer.patternID];
-            var surface = _anim$patterns$layer$.surface;
             var wait = _anim$patterns$layer$.wait;
             var type = _anim$patterns$layer$.type;
             var x = _anim$patterns$layer$.x;
             var y = _anim$patterns$layer$.y;
             var animation_ids = _anim$patterns$layer$.animation_ids;
+            var surface = anim.patterns[layer.patternID].surface;
 
             switch (type) {
                 // 付随再生であってこのアニメの再生終了は待たない・・・はず？
@@ -1690,11 +1722,33 @@ var SurfaceState = function (_events_1$EventEmitte) {
                     this.emit("move");
                     return;
             }
-            // waitだけ待つ
+            var _wait = SU.randomRange(wait[0], wait[1]);
+            // waitだけ待ってからレンダリング
+            console.time("step" + _wait);
             setTimeout(function () {
+                console.timeEnd("step" + _wait);
+                if (surface < -2) {
+                    // SERIKO/1.4 ?
+                    console.warn("SurfaceState#step: pattern surfaceId", surface, "is not defined in SERIKO/1.4, failback to -2");
+                    surface = -2;
+                }
+                if (surface === -1) {
+                    // SERIKO/1.4 -1 として表示されいたこのアニメーション終了 
+                    layer.finished = true;
+                    return _this7.step(animId, layer);
+                }
+                if (surface === -2) {
+                    // SERIKO/1.4 全アニメーション停止
+                    layers.forEach(function (layer) {
+                        if (layer instanceof SM.SerikoLayer) {
+                            layer.finished = true;
+                            _this7.step(animId, layer);
+                        }
+                    });
+                }
+                _this7.constructRenderingTree();
                 _this7.step(animId, layer);
-            }, SU.randomRange(wait[0], wait[1]));
-            this.constructRenderingTree();
+            }, _wait);
         }
         // 再生中のアニメーションを停止しろ
 
@@ -1790,7 +1844,9 @@ var SurfaceState = function (_events_1$EventEmitte) {
 
             var surfaces = srf.shell.surfaceDefTree.surfaces;
             var config = shell.config;
+            var tmp = SU.extend(true, {}, srf.renderingTree);
             srf.renderingTree = layersToTree(surfaces, surfaceId, layers, config);
+            console.log("diff: ", /*tmp, srf.renderingTree, */SU.diff(tmp, srf.renderingTree));
             // レンダリングツリーが更新された！
             this.emit("render");
         }
@@ -1824,7 +1880,12 @@ function layersToTree(surfaces, n, layers, config) {
                 // insertをねじ込む
                 recur(patterns, rndLayerSets);
             } else {
-                rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
+                if (surface > 0) {
+                    rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
+                } else {
+                    // MAYUNA で -1 はありえん
+                    console.warn("SurfaceState.layersToTree: unexpected surface id ", surface);
+                }
             }
         });
     };
@@ -1838,6 +1899,7 @@ function layersToTree(surfaces, n, layers, config) {
         anims.forEach(function (anim, animId) {
             var patterns = anim.patterns;
             var intervals = anim.intervals;
+            var collisions = anim.collisions;
 
             var rndLayerSets = [];
             if (SC.isBind(config, animId) && intervals.some(function (_ref15) {
@@ -1850,6 +1912,7 @@ function layersToTree(surfaces, n, layers, config) {
                 // insert のための再帰的処理
                 recur(patterns, rndLayerSets);
             }
+            tree.collisions = collisions;
             (ST.isBack(anim) ? tree.backgrounds : tree.foregrounds).push(rndLayerSets);
         });
         return tree;
@@ -1857,6 +1920,7 @@ function layersToTree(surfaces, n, layers, config) {
     layers.forEach(function (layer, animId) {
         var anim = anims[animId];
         var patterns = anim.patterns;
+        var collisions = anim.collisions;
 
         var rndLayerSets = [];
         if (layer instanceof SM.SerikoLayer && layer.patternID >= 0 && patterns[layer.patternID] != null) {
@@ -1867,17 +1931,21 @@ function layersToTree(surfaces, n, layers, config) {
             var x = _patterns$layer$patte.x;
             var y = _patterns$layer$patte.y;
 
-            rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
+            if (surface > 0) {
+                // 非表示
+                rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
+            }
         } else if (layer instanceof SM.MayunaLayer && layer.visible) {
             // insert のための再帰的処理
             recur(patterns, rndLayerSets);
         }
+        tree.collisions = collisions;
         (ST.isBack(anim) ? tree.backgrounds : tree.foregrounds).push(rndLayerSets);
     });
     return tree;
 }
 exports.layersToTree = layersToTree;
-},{"./ShellConfig":2,"./SurfaceModel":8,"./SurfaceTree":12,"./SurfaceUtil":14,"events":17}],12:[function(require,module,exports){
+},{"./ShellConfig":2,"./SurfaceModel":8,"./SurfaceTree":12,"./SurfaceUtil":14,"events":18}],12:[function(require,module,exports){
 /*
  * surfaces.txt の内容を構造化したもの
  */
@@ -2400,7 +2468,7 @@ function loadSurfaceCollisionRect(collision) {
     var left = collision.left;
     var bottom = collision.bottom;
     var right = collision.right;
-    var that = new ST.SurfaceCollisionRect(name, type, top, left, bottom, right);
+    var that = new ST.SurfaceCollisionRect(name, type, left, top, right, bottom);
     return Promise.resolve(that);
 }
 exports.loadSurfaceCollisionRect = loadSurfaceCollisionRect;
@@ -2530,7 +2598,7 @@ function loadSurfaceAnimationPattern(pat) {
     return Promise.resolve(that);
 }
 exports.loadSurfaceAnimationPattern = loadSurfaceAnimationPattern;
-},{"./SurfaceTree":12,"./SurfaceUtil":14,"surfaces_txt2yaml":49}],14:[function(require,module,exports){
+},{"./SurfaceTree":12,"./SurfaceUtil":14,"surfaces_txt2yaml":50}],14:[function(require,module,exports){
 /*
  * 可用性・抽象度の高いコードスニペット集
  * SurfaceUtil という名称は Util のほうがむしろふさわしいが
@@ -2544,6 +2612,8 @@ function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
 
 var Encoding = require("encoding-japanese");
 var $ = require("jquery");
+var deep = require("deep-diff");
+exports.diff = deep.diff;
 exports.extend = $.extend;
 function chromakey(png) {
     var cnvA = copy(png);
@@ -2978,7 +3048,7 @@ function setCanvasStyle() {
     });
 }
 exports.setCanvasStyle = setCanvasStyle;
-},{"encoding-japanese":16,"jquery":18}],15:[function(require,module,exports){
+},{"deep-diff":16,"encoding-japanese":17,"jquery":19}],15:[function(require,module,exports){
 "use strict";
 
 var _SU = require("./SurfaceUtil");
@@ -3013,7 +3083,433 @@ var _package = require("../package.json");
 exports.version = _package.version;
 var $ = require("jquery");
 window["$"] = window["$"] || $;
-},{"../package.json":51,"./CanvasCache":1,"./ShellConfig":2,"./ShellConfigLoader":3,"./ShellModel":4,"./ShellModelLoader":5,"./ShellState":6,"./SurfaceBaseRenderer":7,"./SurfaceModel":8,"./SurfacePatternRenderer":9,"./SurfaceRenderer":10,"./SurfaceState":11,"./SurfaceTree":12,"./SurfaceTreeLoader":13,"./SurfaceUtil":14,"jquery":18}],16:[function(require,module,exports){
+},{"../package.json":52,"./CanvasCache":1,"./ShellConfig":2,"./ShellConfigLoader":3,"./ShellModel":4,"./ShellModelLoader":5,"./ShellState":6,"./SurfaceBaseRenderer":7,"./SurfaceModel":8,"./SurfacePatternRenderer":9,"./SurfaceRenderer":10,"./SurfaceState":11,"./SurfaceTree":12,"./SurfaceTreeLoader":13,"./SurfaceUtil":14,"jquery":19}],16:[function(require,module,exports){
+(function (global){
+/*!
+ * deep-diff.
+ * Licensed under the MIT License.
+ */
+;(function(root, factory) {
+  'use strict';
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define([], function() {
+      return factory();
+    });
+  } else if (typeof exports === 'object') {
+    // Node. Does not work with strict CommonJS, but
+    // only CommonJS-like environments that support module.exports,
+    // like Node.
+    module.exports = factory();
+  } else {
+    // Browser globals (root is window)
+    root.DeepDiff = factory();
+  }
+}(this, function(undefined) {
+  'use strict';
+
+  var $scope, conflict, conflictResolution = [];
+  if (typeof global === 'object' && global) {
+    $scope = global;
+  } else if (typeof window !== 'undefined') {
+    $scope = window;
+  } else {
+    $scope = {};
+  }
+  conflict = $scope.DeepDiff;
+  if (conflict) {
+    conflictResolution.push(
+      function() {
+        if ('undefined' !== typeof conflict && $scope.DeepDiff === accumulateDiff) {
+          $scope.DeepDiff = conflict;
+          conflict = undefined;
+        }
+      });
+  }
+
+  // nodejs compatible on server side and in the browser.
+  function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor;
+    ctor.prototype = Object.create(superCtor.prototype, {
+      constructor: {
+        value: ctor,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+  }
+
+  function Diff(kind, path) {
+    Object.defineProperty(this, 'kind', {
+      value: kind,
+      enumerable: true
+    });
+    if (path && path.length) {
+      Object.defineProperty(this, 'path', {
+        value: path,
+        enumerable: true
+      });
+    }
+  }
+
+  function DiffEdit(path, origin, value) {
+    DiffEdit.super_.call(this, 'E', path);
+    Object.defineProperty(this, 'lhs', {
+      value: origin,
+      enumerable: true
+    });
+    Object.defineProperty(this, 'rhs', {
+      value: value,
+      enumerable: true
+    });
+  }
+  inherits(DiffEdit, Diff);
+
+  function DiffNew(path, value) {
+    DiffNew.super_.call(this, 'N', path);
+    Object.defineProperty(this, 'rhs', {
+      value: value,
+      enumerable: true
+    });
+  }
+  inherits(DiffNew, Diff);
+
+  function DiffDeleted(path, value) {
+    DiffDeleted.super_.call(this, 'D', path);
+    Object.defineProperty(this, 'lhs', {
+      value: value,
+      enumerable: true
+    });
+  }
+  inherits(DiffDeleted, Diff);
+
+  function DiffArray(path, index, item) {
+    DiffArray.super_.call(this, 'A', path);
+    Object.defineProperty(this, 'index', {
+      value: index,
+      enumerable: true
+    });
+    Object.defineProperty(this, 'item', {
+      value: item,
+      enumerable: true
+    });
+  }
+  inherits(DiffArray, Diff);
+
+  function arrayRemove(arr, from, to) {
+    var rest = arr.slice((to || from) + 1 || arr.length);
+    arr.length = from < 0 ? arr.length + from : from;
+    arr.push.apply(arr, rest);
+    return arr;
+  }
+
+  function realTypeOf(subject) {
+    var type = typeof subject;
+    if (type !== 'object') {
+      return type;
+    }
+
+    if (subject === Math) {
+      return 'math';
+    } else if (subject === null) {
+      return 'null';
+    } else if (Array.isArray(subject)) {
+      return 'array';
+    } else if (Object.prototype.toString.call(subject) === '[object Date]') {
+      return 'date';
+    } else if (typeof subject.toString !== 'undefined' && /^\/.*\//.test(subject.toString())) {
+      return 'regexp';
+    }
+    return 'object';
+  }
+
+  function deepDiff(lhs, rhs, changes, prefilter, path, key, stack) {
+    path = path || [];
+    var currentPath = path.slice(0);
+    if (typeof key !== 'undefined') {
+      if (prefilter) {
+        if (typeof(prefilter) === 'function' && prefilter(currentPath, key)) { return; }
+        else if (typeof(prefilter) === 'object') {
+          if (prefilter.prefilter && prefilter.prefilter(currentPath, key)) { return; }
+          if (prefilter.normalize) {
+            var alt = prefilter.normalize(currentPath, key, lhs, rhs);
+            if (alt) {
+              lhs = alt[0];
+              rhs = alt[1];
+            }
+          }
+        }
+      }
+      currentPath.push(key);
+    }
+
+    // Use string comparison for regexes
+    if (realTypeOf(lhs) === 'regexp' && realTypeOf(rhs) === 'regexp') {
+      lhs = lhs.toString();
+      rhs = rhs.toString();
+    }
+
+    var ltype = typeof lhs;
+    var rtype = typeof rhs;
+    if (ltype === 'undefined') {
+      if (rtype !== 'undefined') {
+        changes(new DiffNew(currentPath, rhs));
+      }
+    } else if (rtype === 'undefined') {
+      changes(new DiffDeleted(currentPath, lhs));
+    } else if (realTypeOf(lhs) !== realTypeOf(rhs)) {
+      changes(new DiffEdit(currentPath, lhs, rhs));
+    } else if (Object.prototype.toString.call(lhs) === '[object Date]' && Object.prototype.toString.call(rhs) === '[object Date]' && ((lhs - rhs) !== 0)) {
+      changes(new DiffEdit(currentPath, lhs, rhs));
+    } else if (ltype === 'object' && lhs !== null && rhs !== null) {
+      stack = stack || [];
+      if (stack.indexOf(lhs) < 0) {
+        stack.push(lhs);
+        if (Array.isArray(lhs)) {
+          var i, len = lhs.length;
+          for (i = 0; i < lhs.length; i++) {
+            if (i >= rhs.length) {
+              changes(new DiffArray(currentPath, i, new DiffDeleted(undefined, lhs[i])));
+            } else {
+              deepDiff(lhs[i], rhs[i], changes, prefilter, currentPath, i, stack);
+            }
+          }
+          while (i < rhs.length) {
+            changes(new DiffArray(currentPath, i, new DiffNew(undefined, rhs[i++])));
+          }
+        } else {
+          var akeys = Object.keys(lhs);
+          var pkeys = Object.keys(rhs);
+          akeys.forEach(function(k, i) {
+            var other = pkeys.indexOf(k);
+            if (other >= 0) {
+              deepDiff(lhs[k], rhs[k], changes, prefilter, currentPath, k, stack);
+              pkeys = arrayRemove(pkeys, other);
+            } else {
+              deepDiff(lhs[k], undefined, changes, prefilter, currentPath, k, stack);
+            }
+          });
+          pkeys.forEach(function(k) {
+            deepDiff(undefined, rhs[k], changes, prefilter, currentPath, k, stack);
+          });
+        }
+        stack.length = stack.length - 1;
+      }
+    } else if (lhs !== rhs) {
+      if (!(ltype === 'number' && isNaN(lhs) && isNaN(rhs))) {
+        changes(new DiffEdit(currentPath, lhs, rhs));
+      }
+    }
+  }
+
+  function accumulateDiff(lhs, rhs, prefilter, accum) {
+    accum = accum || [];
+    deepDiff(lhs, rhs,
+      function(diff) {
+        if (diff) {
+          accum.push(diff);
+        }
+      },
+      prefilter);
+    return (accum.length) ? accum : undefined;
+  }
+
+  function applyArrayChange(arr, index, change) {
+    if (change.path && change.path.length) {
+      var it = arr[index],
+          i, u = change.path.length - 1;
+      for (i = 0; i < u; i++) {
+        it = it[change.path[i]];
+      }
+      switch (change.kind) {
+        case 'A':
+          applyArrayChange(it[change.path[i]], change.index, change.item);
+          break;
+        case 'D':
+          delete it[change.path[i]];
+          break;
+        case 'E':
+        case 'N':
+          it[change.path[i]] = change.rhs;
+          break;
+      }
+    } else {
+      switch (change.kind) {
+        case 'A':
+          applyArrayChange(arr[index], change.index, change.item);
+          break;
+        case 'D':
+          arr = arrayRemove(arr, index);
+          break;
+        case 'E':
+        case 'N':
+          arr[index] = change.rhs;
+          break;
+      }
+    }
+    return arr;
+  }
+
+  function applyChange(target, source, change) {
+    if (target && source && change && change.kind) {
+      var it = target,
+          i = -1,
+          last = change.path ? change.path.length - 1 : 0;
+      while (++i < last) {
+        if (typeof it[change.path[i]] === 'undefined') {
+          it[change.path[i]] = (typeof change.path[i] === 'number') ? [] : {};
+        }
+        it = it[change.path[i]];
+      }
+      switch (change.kind) {
+        case 'A':
+          applyArrayChange(change.path ? it[change.path[i]] : it, change.index, change.item);
+          break;
+        case 'D':
+          delete it[change.path[i]];
+          break;
+        case 'E':
+        case 'N':
+          it[change.path[i]] = change.rhs;
+          break;
+      }
+    }
+  }
+
+  function revertArrayChange(arr, index, change) {
+    if (change.path && change.path.length) {
+      // the structure of the object at the index has changed...
+      var it = arr[index],
+          i, u = change.path.length - 1;
+      for (i = 0; i < u; i++) {
+        it = it[change.path[i]];
+      }
+      switch (change.kind) {
+        case 'A':
+          revertArrayChange(it[change.path[i]], change.index, change.item);
+          break;
+        case 'D':
+          it[change.path[i]] = change.lhs;
+          break;
+        case 'E':
+          it[change.path[i]] = change.lhs;
+          break;
+        case 'N':
+          delete it[change.path[i]];
+          break;
+      }
+    } else {
+      // the array item is different...
+      switch (change.kind) {
+        case 'A':
+          revertArrayChange(arr[index], change.index, change.item);
+          break;
+        case 'D':
+          arr[index] = change.lhs;
+          break;
+        case 'E':
+          arr[index] = change.lhs;
+          break;
+        case 'N':
+          arr = arrayRemove(arr, index);
+          break;
+      }
+    }
+    return arr;
+  }
+
+  function revertChange(target, source, change) {
+    if (target && source && change && change.kind) {
+      var it = target,
+          i, u;
+      u = change.path.length - 1;
+      for (i = 0; i < u; i++) {
+        if (typeof it[change.path[i]] === 'undefined') {
+          it[change.path[i]] = {};
+        }
+        it = it[change.path[i]];
+      }
+      switch (change.kind) {
+        case 'A':
+          // Array was modified...
+          // it will be an array...
+          revertArrayChange(it[change.path[i]], change.index, change.item);
+          break;
+        case 'D':
+          // Item was deleted...
+          it[change.path[i]] = change.lhs;
+          break;
+        case 'E':
+          // Item was edited...
+          it[change.path[i]] = change.lhs;
+          break;
+        case 'N':
+          // Item is new...
+          delete it[change.path[i]];
+          break;
+      }
+    }
+  }
+
+  function applyDiff(target, source, filter) {
+    if (target && source) {
+      var onChange = function(change) {
+        if (!filter || filter(target, source, change)) {
+          applyChange(target, source, change);
+        }
+      };
+      deepDiff(target, source, onChange);
+    }
+  }
+
+  Object.defineProperties(accumulateDiff, {
+
+    diff: {
+      value: accumulateDiff,
+      enumerable: true
+    },
+    observableDiff: {
+      value: deepDiff,
+      enumerable: true
+    },
+    applyDiff: {
+      value: applyDiff,
+      enumerable: true
+    },
+    applyChange: {
+      value: applyChange,
+      enumerable: true
+    },
+    revertChange: {
+      value: revertChange,
+      enumerable: true
+    },
+    isConflict: {
+      value: function() {
+        return 'undefined' !== typeof conflict;
+      },
+      enumerable: true
+    },
+    noConflict: {
+      value: function() {
+        if (conflictResolution) {
+          conflictResolution.forEach(function(it) {
+            it();
+          });
+          conflictResolution = null;
+        }
+        return accumulateDiff;
+      },
+      enumerable: true
+    }
+  });
+
+  return accumulateDiff;
+}));
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],17:[function(require,module,exports){
 /**
  * Encoding.js
  *
@@ -9300,7 +9796,7 @@ var zenkanaCase_table = [
 return Encoding;
 });
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -9604,7 +10100,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /*eslint-disable no-unused-vars*/
 /*!
  * jQuery JavaScript Library v3.1.0
@@ -19680,7 +20176,7 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 'use strict';
 
 
@@ -19689,7 +20185,7 @@ var yaml = require('./lib/js-yaml.js');
 
 module.exports = yaml;
 
-},{"./lib/js-yaml.js":20}],20:[function(require,module,exports){
+},{"./lib/js-yaml.js":21}],21:[function(require,module,exports){
 'use strict';
 
 
@@ -19730,7 +20226,7 @@ module.exports.parse          = deprecated('parse');
 module.exports.compose        = deprecated('compose');
 module.exports.addConstructor = deprecated('addConstructor');
 
-},{"./js-yaml/dumper":22,"./js-yaml/exception":23,"./js-yaml/loader":24,"./js-yaml/schema":26,"./js-yaml/schema/core":27,"./js-yaml/schema/default_full":28,"./js-yaml/schema/default_safe":29,"./js-yaml/schema/failsafe":30,"./js-yaml/schema/json":31,"./js-yaml/type":32}],21:[function(require,module,exports){
+},{"./js-yaml/dumper":23,"./js-yaml/exception":24,"./js-yaml/loader":25,"./js-yaml/schema":27,"./js-yaml/schema/core":28,"./js-yaml/schema/default_full":29,"./js-yaml/schema/default_safe":30,"./js-yaml/schema/failsafe":31,"./js-yaml/schema/json":32,"./js-yaml/type":33}],22:[function(require,module,exports){
 'use strict';
 
 
@@ -19791,7 +20287,7 @@ module.exports.repeat         = repeat;
 module.exports.isNegativeZero = isNegativeZero;
 module.exports.extend         = extend;
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-use-before-define*/
@@ -20595,7 +21091,7 @@ function safeDump(input, options) {
 module.exports.dump     = dump;
 module.exports.safeDump = safeDump;
 
-},{"./common":21,"./exception":23,"./schema/default_full":28,"./schema/default_safe":29}],23:[function(require,module,exports){
+},{"./common":22,"./exception":24,"./schema/default_full":29,"./schema/default_safe":30}],24:[function(require,module,exports){
 // YAML error class. http://stackoverflow.com/questions/8458984
 //
 'use strict';
@@ -20640,7 +21136,7 @@ YAMLException.prototype.toString = function toString(compact) {
 
 module.exports = YAMLException;
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len,no-use-before-define*/
@@ -22228,7 +22724,7 @@ module.exports.load        = load;
 module.exports.safeLoadAll = safeLoadAll;
 module.exports.safeLoad    = safeLoad;
 
-},{"./common":21,"./exception":23,"./mark":25,"./schema/default_full":28,"./schema/default_safe":29}],25:[function(require,module,exports){
+},{"./common":22,"./exception":24,"./mark":26,"./schema/default_full":29,"./schema/default_safe":30}],26:[function(require,module,exports){
 'use strict';
 
 
@@ -22306,7 +22802,7 @@ Mark.prototype.toString = function toString(compact) {
 
 module.exports = Mark;
 
-},{"./common":21}],26:[function(require,module,exports){
+},{"./common":22}],27:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len*/
@@ -22412,7 +22908,7 @@ Schema.create = function createSchema() {
 
 module.exports = Schema;
 
-},{"./common":21,"./exception":23,"./type":32}],27:[function(require,module,exports){
+},{"./common":22,"./exception":24,"./type":33}],28:[function(require,module,exports){
 // Standard YAML's Core schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2804923
 //
@@ -22432,7 +22928,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":26,"./json":31}],28:[function(require,module,exports){
+},{"../schema":27,"./json":32}],29:[function(require,module,exports){
 // JS-YAML's default schema for `load` function.
 // It is not described in the YAML specification.
 //
@@ -22459,7 +22955,7 @@ module.exports = Schema.DEFAULT = new Schema({
   ]
 });
 
-},{"../schema":26,"../type/js/function":37,"../type/js/regexp":38,"../type/js/undefined":39,"./default_safe":29}],29:[function(require,module,exports){
+},{"../schema":27,"../type/js/function":38,"../type/js/regexp":39,"../type/js/undefined":40,"./default_safe":30}],30:[function(require,module,exports){
 // JS-YAML's default schema for `safeLoad` function.
 // It is not described in the YAML specification.
 //
@@ -22489,7 +22985,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":26,"../type/binary":33,"../type/merge":41,"../type/omap":43,"../type/pairs":44,"../type/set":46,"../type/timestamp":48,"./core":27}],30:[function(require,module,exports){
+},{"../schema":27,"../type/binary":34,"../type/merge":42,"../type/omap":44,"../type/pairs":45,"../type/set":47,"../type/timestamp":49,"./core":28}],31:[function(require,module,exports){
 // Standard YAML's Failsafe schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2802346
 
@@ -22508,7 +23004,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":26,"../type/map":40,"../type/seq":45,"../type/str":47}],31:[function(require,module,exports){
+},{"../schema":27,"../type/map":41,"../type/seq":46,"../type/str":48}],32:[function(require,module,exports){
 // Standard YAML's JSON schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2803231
 //
@@ -22535,7 +23031,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":26,"../type/bool":34,"../type/float":35,"../type/int":36,"../type/null":42,"./failsafe":30}],32:[function(require,module,exports){
+},{"../schema":27,"../type/bool":35,"../type/float":36,"../type/int":37,"../type/null":43,"./failsafe":31}],33:[function(require,module,exports){
 'use strict';
 
 var YAMLException = require('./exception');
@@ -22598,7 +23094,7 @@ function Type(tag, options) {
 
 module.exports = Type;
 
-},{"./exception":23}],33:[function(require,module,exports){
+},{"./exception":24}],34:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-bitwise*/
@@ -22735,7 +23231,7 @@ module.exports = new Type('tag:yaml.org,2002:binary', {
   represent: representYamlBinary
 });
 
-},{"../type":32}],34:[function(require,module,exports){
+},{"../type":33}],35:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -22772,7 +23268,7 @@ module.exports = new Type('tag:yaml.org,2002:bool', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":32}],35:[function(require,module,exports){
+},{"../type":33}],36:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -22879,7 +23375,7 @@ module.exports = new Type('tag:yaml.org,2002:float', {
   defaultStyle: 'lowercase'
 });
 
-},{"../common":21,"../type":32}],36:[function(require,module,exports){
+},{"../common":22,"../type":33}],37:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -23049,7 +23545,7 @@ module.exports = new Type('tag:yaml.org,2002:int', {
   }
 });
 
-},{"../common":21,"../type":32}],37:[function(require,module,exports){
+},{"../common":22,"../type":33}],38:[function(require,module,exports){
 'use strict';
 
 var esprima;
@@ -23135,7 +23631,7 @@ module.exports = new Type('tag:yaml.org,2002:js/function', {
   represent: representJavascriptFunction
 });
 
-},{"../../type":32}],38:[function(require,module,exports){
+},{"../../type":33}],39:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -23197,7 +23693,7 @@ module.exports = new Type('tag:yaml.org,2002:js/regexp', {
   represent: representJavascriptRegExp
 });
 
-},{"../../type":32}],39:[function(require,module,exports){
+},{"../../type":33}],40:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -23227,7 +23723,7 @@ module.exports = new Type('tag:yaml.org,2002:js/undefined', {
   represent: representJavascriptUndefined
 });
 
-},{"../../type":32}],40:[function(require,module,exports){
+},{"../../type":33}],41:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23237,7 +23733,7 @@ module.exports = new Type('tag:yaml.org,2002:map', {
   construct: function (data) { return data !== null ? data : {}; }
 });
 
-},{"../type":32}],41:[function(require,module,exports){
+},{"../type":33}],42:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23251,7 +23747,7 @@ module.exports = new Type('tag:yaml.org,2002:merge', {
   resolve: resolveYamlMerge
 });
 
-},{"../type":32}],42:[function(require,module,exports){
+},{"../type":33}],43:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23287,7 +23783,7 @@ module.exports = new Type('tag:yaml.org,2002:null', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":32}],43:[function(require,module,exports){
+},{"../type":33}],44:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23333,7 +23829,7 @@ module.exports = new Type('tag:yaml.org,2002:omap', {
   construct: constructYamlOmap
 });
 
-},{"../type":32}],44:[function(require,module,exports){
+},{"../type":33}],45:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23388,7 +23884,7 @@ module.exports = new Type('tag:yaml.org,2002:pairs', {
   construct: constructYamlPairs
 });
 
-},{"../type":32}],45:[function(require,module,exports){
+},{"../type":33}],46:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23398,7 +23894,7 @@ module.exports = new Type('tag:yaml.org,2002:seq', {
   construct: function (data) { return data !== null ? data : []; }
 });
 
-},{"../type":32}],46:[function(require,module,exports){
+},{"../type":33}],47:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23429,7 +23925,7 @@ module.exports = new Type('tag:yaml.org,2002:set', {
   construct: constructYamlSet
 });
 
-},{"../type":32}],47:[function(require,module,exports){
+},{"../type":33}],48:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23439,7 +23935,7 @@ module.exports = new Type('tag:yaml.org,2002:str', {
   construct: function (data) { return data !== null ? data : ''; }
 });
 
-},{"../type":32}],48:[function(require,module,exports){
+},{"../type":33}],49:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23529,10 +24025,10 @@ module.exports = new Type('tag:yaml.org,2002:timestamp', {
   represent: representYamlTimestamp
 });
 
-},{"../type":32}],49:[function(require,module,exports){
+},{"../type":33}],50:[function(require,module,exports){
 module.exports = require('./lib/surfaces_txt2yaml.js')
 
-},{"./lib/surfaces_txt2yaml.js":50}],50:[function(require,module,exports){
+},{"./lib/surfaces_txt2yaml.js":51}],51:[function(require,module,exports){
 // Generated by CoffeeScript 1.10.0
 
 /* (C) 2014 Narazaka : Licensed under The MIT License - http://narazaka.net/license/MIT?2014 */
@@ -24704,7 +25200,7 @@ if (typeof exports !== "undefined" && exports !== null) {
   exports.txt_to_yaml = SurfacesTxt2Yaml.txt_to_yaml;
 }
 
-},{"js-yaml":19}],51:[function(require,module,exports){
+},{"js-yaml":20}],52:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.shell.js",
   "version": "5.0.0",
@@ -24721,7 +25217,7 @@ module.exports={
     "init": "npm run update; npm run build",
     "update": "npm update; bower update; typings install",
     "build": "cake index; npm run clean && tsc   && babel lib    -d es5&& gulp build&& browserify es5/index.js --standalone Shell -o dist/Shell.js; npm run cake",
-    "start": "cake index; http-server -s & tsc -w & babel lib -w -d es5 & gulp watch &   watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
+    "start": "cake index; http-server -s & tsc -w &                       gulp watch &   watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
     "stop": "killall -- node",
     "tsc": "tsc",
     "coffee": "coffee -c -b -o lib src/*.coffee",
@@ -24742,6 +25238,7 @@ module.exports={
     "url": "https://github.com/ikagaka/ikagaka/Shell.js.git"
   },
   "dependencies": {
+    "deep-diff": "^0.3.4",
     "encoding-japanese": "^1.0.24",
     "events": "^1.1.0",
     "jquery": "^3.1.0",
@@ -24753,14 +25250,12 @@ module.exports={
     "babel-preset-es2015": "^6.13.2",
     "browserify": "^13.1.0",
     "coffee-script": "^1.10.0",
-    "ejs-cli": "^2.0.0",
     "empower": "^1.2.1",
     "gulp": "^3.9.1",
     "gulp-browserify": "^0.5.1",
     "gulp-coffee": "^2.3.2",
     "gulp-debug": "^2.1.2",
     "gulp-espower": "^1.0.2",
-    "gulp-replace": "^0.5.4",
     "narloader": "github:ikagaka/NarLoader#jszip3",
     "typescript": "^2.0.0",
     "watchify": "^3.7.0"
