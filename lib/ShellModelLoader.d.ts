@@ -1,10 +1,11 @@
+import * as SH from "./ShellModel";
 import * as SC from "./ShellConfig";
 import * as ST from "./SurfaceTree";
 import * as SY from "surfaces_txt2yaml";
 export declare type Directory = {
     [filepath: string]: ArrayBuffer;
 };
-export declare function load(directory: Directory): Promise<void>;
+export declare function load(directory: Directory): Promise<SH.Shell>;
 export declare function loadDescript(directory: Directory): Promise<{
     descript: SC.Descript;
     descriptJSON: SC.JSONLike;

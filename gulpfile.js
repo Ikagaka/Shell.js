@@ -1,14 +1,17 @@
 const gulp = require('gulp');
 const espower = require('gulp-espower');
 const browserify = require('gulp-browserify');
+const debug = require('gulp-debug');
 
 // test.ts -> dist
 gulp.task('build:es5', ()=>{
     return gulp.src("es5/**/*.test.js")
         .pipe(espower())
         .pipe(browserify())
-        .pipe(gulp.dest('dist'));    
+        .pipe(debug())
+        .pipe(gulp.dest('dist'));
 });
+
 
 gulp.task('watch:es5', ()=>{
     return gulp.watch('es5/**/*.test.js')
@@ -17,6 +20,7 @@ gulp.task('watch:es5', ()=>{
         return gulp.src(file.path)
         .pipe(espower())
         .pipe(browserify())
+        .pipe(debug())
         .pipe(gulp.dest('dist'));
     });
 });

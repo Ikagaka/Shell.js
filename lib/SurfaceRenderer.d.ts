@@ -14,6 +14,7 @@ export declare class SurfaceRenderer extends SurfaceCanvas {
     debug: boolean;
     use_self_alpha: boolean;
     constructor();
+    init(srfCnv: SurfaceCanvas): void;
     reset(): void;
     clear(): void;
     composeElements(elms: {
@@ -22,17 +23,17 @@ export declare class SurfaceRenderer extends SurfaceCanvas {
         y: number;
         canvas: SurfaceCanvas;
     }[]): SurfaceCanvas;
-    private composeElement(canvas, type, x?, y?);
+    composeElement(canvas: SurfaceCanvas, type: string, x?: number, y?: number): void;
     base(part: SurfaceCanvas): void;
-    private overlay(part, x, y);
-    private overlayfast(part, x, y);
-    private interpolate(part, x, y);
-    private replace(part, x, y);
-    private prepareOverlay(part, x, y);
-    private reduce(part, x, y);
+    overlay(part: SurfaceCanvas, x: number, y: number): void;
+    overlayfast(part: SurfaceCanvas, x: number, y: number): void;
+    interpolate(part: SurfaceCanvas, x: number, y: number): void;
+    replace(part: SurfaceCanvas, x: number, y: number): void;
+    prepareOverlay(part: SurfaceCanvas, x: number, y: number): void;
+    reduce(part: SurfaceCanvas, x: number, y: number): void;
     drawRegions(regions: ST.SurfaceCollision[], description?: string): void;
-    private drawRegion(region);
-    private drawEllipseWithBezier(x, y, w, h);
+    drawRegion(region: ST.SurfaceCollision): void;
+    drawEllipseWithBezier(x: number, y: number, w: number, h: number): void;
 }
 export declare function isHit(srfCnv: SurfaceCanvas, cols: ST.SurfaceCollision[], x: number, y: number): {
     transparency: boolean;

@@ -18,6 +18,7 @@ var Surface = function Surface(scopeId, surfaceId, shell) {
     this.surfaceDefTree = shell.surfaceDefTree;
     this.surfaceNode = shell.surfaceDefTree.surfaces[surfaceId];
     this.config = shell.config;
+    this.renderingTree = new SurfaceRenderingTree(surfaceId);
     this.layers = [];
     this.seriko = [];
     this.talkCount = 0;
@@ -27,8 +28,11 @@ var Surface = function Surface(scopeId, surfaceId, shell) {
 
 exports.Surface = Surface;
 
-var Layer = function Layer() {
+var Layer = function Layer(patterns, background) {
     _classCallCheck(this, Layer);
+
+    this.patterns = [];
+    this.background = background;
 };
 
 exports.Layer = Layer;
@@ -36,17 +40,18 @@ exports.Layer = Layer;
 var SerikoLayer = function (_Layer) {
     _inherits(SerikoLayer, _Layer);
 
-    function SerikoLayer(background) {
+    function SerikoLayer(patterns, background) {
+        var patternID = arguments.length <= 2 || arguments[2] === undefined ? -1 : arguments[2];
+
         _classCallCheck(this, SerikoLayer);
 
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SerikoLayer).call(this));
+        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SerikoLayer).call(this, patterns, background));
 
-        _this.patternID = -1;
+        _this.patternID = patternID;
         _this.paused = false;
         _this.exclusive = false;
         _this.canceled = false;
         _this.finished = false;
-        _this.background = background;
         return _this;
     }
 
@@ -58,13 +63,12 @@ exports.SerikoLayer = SerikoLayer;
 var MayunaLayer = function (_Layer2) {
     _inherits(MayunaLayer, _Layer2);
 
-    function MayunaLayer(visible, background) {
+    function MayunaLayer(patterns, background, visible) {
         _classCallCheck(this, MayunaLayer);
 
-        var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(MayunaLayer).call(this));
+        var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(MayunaLayer).call(this, patterns, background));
 
         _this2.visible = true;
-        _this2.background = background;
         return _this2;
     }
 
@@ -72,3 +76,24 @@ var MayunaLayer = function (_Layer2) {
 }(Layer);
 
 exports.MayunaLayer = MayunaLayer;
+
+var SurfaceRenderingTree = function SurfaceRenderingTree(surface) {
+    _classCallCheck(this, SurfaceRenderingTree);
+
+    this.base = surface;
+    this.foregrounds = [];
+    this.backgrounds = [];
+};
+
+exports.SurfaceRenderingTree = SurfaceRenderingTree;
+
+var SurfaceRenderingLayer = function SurfaceRenderingLayer(type, surface, x, y) {
+    _classCallCheck(this, SurfaceRenderingLayer);
+
+    this.type = type;
+    this.surface = surface;
+    this.x = x;
+    this.y = y;
+};
+
+exports.SurfaceRenderingLayer = SurfaceRenderingLayer;

@@ -19,6 +19,7 @@ var events_1 = require("events");
 var SurfaceState = function (_events_1$EventEmitte) {
     _inherits(SurfaceState, _events_1$EventEmitte);
 
+    // アニメーション終了時に呼び出す手はずになっているプロミス値への継続
     // on("move", callback: Function)
     //   move メソッドが発生したことを伝えており暗にウィンドウマネージャへウインドウ位置を変更するよう恫喝している
     // on("render", callback: Function)
@@ -30,14 +31,15 @@ var SurfaceState = function (_events_1$EventEmitte) {
 
         _this.shellState = shellState;
         _this.surface = new SM.Surface(scopeId, surfaceId, shellState.shell);
-        _this.section = [];
+        _this.continuations = [];
         _this.surface.surfaceNode.animations.forEach(function (_, animId) {
             _this.initLayer(animId);
         });
         _this.shellState.on("bindgroup_update", function () {
+            // ShellConfig の値が変化し bindgroup_update の構成が変化した！
             _this.updateBind();
         });
-        _this.emit("render");
+        _this.constructRenderingTree();
         return _this;
     }
 
@@ -52,7 +54,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
             var layers = _surface.layers;
 
             if (surfaceNode.animations[animId] == null) {
-                console.warn("Surface#initAnimation: animationID", animId, "is not defined in ", surfaceId, surfaceNode);
+                console.warn("SurfaceState#initLayer: animationID", animId, "is not defined in ", surfaceId, surfaceNode);
                 return;
             }
             var anim = surfaceNode.animations[animId];
@@ -75,26 +77,26 @@ var SurfaceState = function (_events_1$EventEmitte) {
                         // [[bind, []]].length === 1
                         // bind+hogeは着せ替え付随アニメーション。
                         // 現在のレイヤにSERIKOレイヤを追加
-                        layers[animId] = new SM.SerikoLayer(ST.isBack(anim));
+                        layers[animId] = new SM.SerikoLayer(patterns, ST.isBack(anim));
                         // インターバルタイマの登録
                         this.begin(animId);
                         return;
                     }
                     // interval,bind
                     // 現在のレイヤにMAYUNAレイヤを追加
-                    layers[animId] = new SM.MayunaLayer(true, ST.isBack(anim));
+                    layers[animId] = new SM.MayunaLayer(patterns, ST.isBack(anim), true);
                     return;
                 }
                 // 現在有効な bind でないなら
                 // 現在の合成レイヤの着せ替えレイヤを非表示設定
-                layers[animId] = new SM.MayunaLayer(false, ST.isBack(anim));
+                layers[animId] = new SM.MayunaLayer(patterns, ST.isBack(anim), false);
                 // ついでにbind+sometimsなどを殺す
                 this.end(animId);
                 return;
             }
             // 着せ替え機能なしレイヤ = 全てSERIKOレイヤ
             // 現在のレイヤにSERIKOレイヤを追加
-            layers[animId] = new SM.SerikoLayer(ST.isBack(anim));
+            layers[animId] = new SM.SerikoLayer(patterns, ST.isBack(anim));
             this.begin(animId);
         }
     }, {
@@ -116,6 +118,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
                     _this2.initLayer(animId);
                 }
             });
+            this.constructRenderingTree();
         }
         // アニメーションタイミングループの開始要請
 
@@ -191,7 +194,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
                     // nextTick は アニメーション終わってから呼ぶともういっぺん random や always されるもの
                     if (!seriko[animId]) return; // nextTick 呼ばないのでintervalを終了する
                     _this5.play(animId).catch(function (err) {
-                        return console.info("animation canceled", err);
+                        return console.info("SurfaceState#setIntervalTimer: animation canceled", err);
                     }).then(function () {
                         return nextTick();
                     });
@@ -224,11 +227,11 @@ var SurfaceState = function (_events_1$EventEmitte) {
                     case "talk":
                         return;
                     default:
-                        console.warn("Surface#setTimer > unkown interval:", interval, animId);
+                        console.warn("SurfaceState#setTimer > unkown interval:", interval, animId);
                         return;
                 }
             }
-            console.warn("Surface#setTimer: animId", animId, "is not SerikoLayer");
+            console.warn("SurfaceState#setTimer: animId", animId, "is not SerikoLayer");
             return;
         }
         // アニメーション再生
@@ -250,7 +253,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
             }
             if (!(layers[animId] instanceof SM.SerikoLayer)) {
                 // そんなアニメーションはない
-                console.warn("Surface#play", "animation", animId, "is not defined");
+                console.warn("SurfaceState#play", "animation", animId, "is not defined");
                 return Promise.reject("no such animation");
             }
             var layer = layers[animId];
@@ -258,7 +261,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
             if (layer.patternID >= 0 || layer.paused) {
                 // 既に再生中、ポーズ中ならば再生停止して最初からどうぞ
                 layer.canceled = true; // キャンセル
-                layer = layers[animId] = new SM.SerikoLayer(ST.isBack(anim)); // 値の初期化
+                layer = layers[animId] = new SM.SerikoLayer(layer.patterns, layer.background); // 値の初期化
             }
             ST.getExclusives(anim).map(function (exAnimId) {
                 // exclusive指定を反映
@@ -268,7 +271,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
                 }
             });
             return new Promise(function (resolve, reject) {
-                _this6.section[animId] = { resolve: resolve, reject: reject };
+                _this6.continuations[animId] = { resolve: resolve, reject: reject };
                 _this6.step(animId, layer);
             });
         }
@@ -283,9 +286,9 @@ var SurfaceState = function (_events_1$EventEmitte) {
             var layers = _surface5.layers;
             var destructed = _surface5.destructed;
             var move = _surface5.move;
-            var _section$animId = this.section[animId];
-            var resolve = _section$animId.resolve;
-            var reject = _section$animId.reject;
+            var _continuations$animId = this.continuations[animId];
+            var resolve = _continuations$animId.resolve;
+            var reject = _continuations$animId.reject;
 
             var anim = surfaceNode.animations[animId];
             // patternをすすめる
@@ -313,8 +316,9 @@ var SurfaceState = function (_events_1$EventEmitte) {
                 layer.finished = true;
             }
             if (layer.finished) {
-                layers[animId] = new SM.SerikoLayer(ST.isBack(anim));
-                delete this.section[animId];
+                // 初期化
+                layers[animId] = new SM.SerikoLayer(layer.patterns, layer.background);
+                delete this.continuations[animId];
                 return resolve();
             }
             // 再生中っぽい
@@ -351,7 +355,7 @@ var SurfaceState = function (_events_1$EventEmitte) {
             setTimeout(function () {
                 _this7.step(animId, layer);
             }, SU.randomRange(wait[0], wait[1]));
-            this.emit("render");
+            this.constructRenderingTree();
         }
         // 再生中のアニメーションを停止しろ
 
@@ -436,9 +440,74 @@ var SurfaceState = function (_events_1$EventEmitte) {
                 }
             });
         }
+    }, {
+        key: "constructRenderingTree",
+        value: function constructRenderingTree() {
+            // 再帰的にpatternで読んでいるベースサーフェス先のbindまで考慮してレンダリングツリーを構築し反映
+            var srf = this.surface;
+            var surfaceId = srf.surfaceId;
+            var layers = srf.layers;
+            var shell = srf.shell;
+
+            var surfaces = srf.shell.surfaceDefTree.surfaces;
+            srf.renderingTree = layersToTree(surfaces, surfaceId, layers);
+            // レンダリングツリーが更新された！
+            this.emit("render");
+        }
     }]);
 
     return SurfaceState;
 }(events_1.EventEmitter);
 
 exports.SurfaceState = SurfaceState;
+function layersToTree(surfaces, n, layers) {
+    // bind の循環参照注意
+    var tree = new SM.SurfaceRenderingTree(n);
+    var anims = surfaces[n].animations;
+    var recur = function recur(patterns, rndLayerSets) {
+        // insert の循環参照注意
+        patterns.forEach(function (_ref14, patId) {
+            var type = _ref14.type;
+            var surface = _ref14.surface;
+            var x = _ref14.x;
+            var y = _ref14.y;
+            var animation_ids = _ref14.animation_ids;
+
+            if (type === "insert") {
+                // insertの場合は対象のIDをとってくる
+                var insertId = animation_ids[0];
+                var anim = anims[insertId];
+                if (!(anim instanceof ST.SurfaceAnimation)) {
+                    console.warn("SurfaceState.layersToTree", "insert id", animation_ids, "is wrong target.", n, patId);
+                    return;
+                }
+                // insertをねじ込む
+                recur(patterns, rndLayerSets);
+            } else {
+                rndLayerSets.push(new SM.SurfaceRenderingLayer(type, layersToTree(surfaces, surface, layers), x, y));
+            }
+        });
+    };
+    layers.forEach(function (layer, animId) {
+        var anim = anims[animId];
+        var patterns = anim.patterns;
+
+        var rndLayerSets = [];
+        if (layer instanceof SM.SerikoLayer && layer.patternID >= 0 && patterns[layer.patternID] != null) {
+            // patternID >= 0 で pattern が定義されている seriko layer
+            var _patterns$layer$patte = patterns[layer.patternID];
+            var type = _patterns$layer$patte.type;
+            var surface = _patterns$layer$patte.surface;
+            var x = _patterns$layer$patte.x;
+            var y = _patterns$layer$patte.y;
+
+            rndLayerSets.push(new SM.SurfaceRenderingLayer(type, layersToTree(surfaces, surface, layers), x, y));
+        } else if (layer instanceof SM.MayunaLayer && layer.visible) {
+            // insert のための再帰的処理
+            recur(patterns, rndLayerSets);
+        }
+        (ST.isBack(anim) ? tree.backgrounds : tree.foregrounds).push(rndLayerSets);
+    });
+    return tree;
+}
+exports.layersToTree = layersToTree;

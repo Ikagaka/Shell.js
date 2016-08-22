@@ -55,7 +55,7 @@ function bind_value(config, a, b, flag) {
         var scopeId = a;
         var bindgroupId = b;
         if (bindgroup[scopeId] == null) {
-            console.warn("ShellConfigUpdater.bind: bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
+            console.warn("ShellState#bind_value: bindgroup", "scopeId:", scopeId, "bindgroupId:", bindgroupId, "is not defined");
             return;
         }
         bindgroup[scopeId][bindgroupId] = flag;
@@ -78,7 +78,7 @@ function bind_value(config, a, b, flag) {
             });
         })();
     }
-    console.error("ShellConfigUpdater.bind:", "TypeError:", a, b);
+    console.error("ShellState#bind_value:", "TypeError:", a, b);
     return void config;
 }
 exports.bind_value = bind_value;

@@ -1,10 +1,11 @@
 import * as SS from "./ShellState";
+import * as ST from "./SurfaceTree";
 import * as SM from "./SurfaceModel";
 import { EventEmitter } from "events";
 export declare class SurfaceState extends EventEmitter {
     surface: SM.Surface;
     shellState: SS.ShellState;
-    section: {
+    continuations: {
         resolve: Function;
         reject: Function;
     }[];
@@ -22,4 +23,6 @@ export declare class SurfaceState extends EventEmitter {
     resume(animId: number): void;
     talk(): void;
     yenE(): void;
+    constructRenderingTree(): void;
 }
+export declare function layersToTree(surfaces: ST.SurfaceDefinition[], n: number, layers: SM.Layer[]): SM.SurfaceRenderingTree;

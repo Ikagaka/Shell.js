@@ -323,7 +323,7 @@ function getRegion(collisions, offsetX, offsetY) {
                         v: deg / (2 * Math.PI) >= 1
                     };
                 default:
-                    console.warn("unkown collision type:", _this5.surfaceId, colId, name, collision);
+                    console.warn("SurfaceTree.getRegion: unkown collision type:", _this5.surfaceId, colId, name, collision);
                     return {
                         v: false
                     };

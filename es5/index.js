@@ -1,26 +1,34 @@
 "use strict";
-/*
-import * as _CanvasCache from "./CanvasCache";
-import * as _SurfaceRender from "./SurfaceRenderer";
-import * as _SurfaceUtil from "./SurfaceUtil";
-import * as _SurfaceTree from "./SurfaceTree";
-import * as _Surface from './Surface';
-import * as _ShellConfig from "./ShellConfig";
-import * as _Shell from "./Shell";
 
+var _CanvasCache = require("./CanvasCache");
+exports.CanvasCache = _CanvasCache;
+var _ShellConfig = require("./ShellConfig");
+exports.ShellConfig = _ShellConfig;
+var _ShellConfigLoader = require("./ShellConfigLoader");
+exports.ShellConfigLoader = _ShellConfigLoader;
+var _ShellModel = require("./ShellModel");
+exports.ShellModel = _ShellModel;
+var _ShellModelLoader = require("./ShellModelLoader");
+exports.ShellModelLoader = _ShellModelLoader;
+var _ShellState = require("./ShellState");
+exports.ShellState = _ShellState;
+var _SurfaceBaseRenderer = require("./SurfaceBaseRenderer");
+exports.SurfaceBaseRenderer = _SurfaceBaseRenderer;
+var _SurfaceModel = require("./SurfaceModel");
+exports.SurfaceModel = _SurfaceModel;
+var _SurfacePatternRenderer = require("./SurfacePatternRenderer");
+exports.SurfacePatternRenderer = _SurfacePatternRenderer;
+var _SurfaceRenderer = require("./SurfaceRenderer");
+exports.SurfaceRenderer = _SurfaceRenderer;
+var _SurfaceState = require("./SurfaceState");
+exports.SurfaceState = _SurfaceState;
+var _SurfaceTree = require("./SurfaceTree");
+exports.SurfaceTree = _SurfaceTree;
+var _SurfaceTreeLoader = require("./SurfaceTreeLoader");
+exports.SurfaceTreeLoader = _SurfaceTreeLoader;
+var _SurfaceUtil = require("./SurfaceUtil");
+exports.SurfaceUtil = _SurfaceUtil;
 var _package = require("../package.json");
-
-export var CanvasCache = _CanvasCache;
-export var SurfaceRender = _SurfaceRender;
-export var SurfaceUtil = _SurfaceUtil;
-export var SurfaceTree = _SurfaceTree;
-export var Surface = _Surface;
-export var ShellConfig = _ShellConfig;
-export var Shell = _Shell;
-export var version = _package.version;
-
-*/
-
+exports.version = _package.version;
 var $ = require("jquery");
 window["$"] = window["$"] || $;
-window["jQuery"] = window["jQuery"] || $;

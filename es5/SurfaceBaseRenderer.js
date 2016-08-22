@@ -1,3 +1,4 @@
+/// <reference path="../typings/index.d.ts" />
 /*
  * CacheCanvas は ディレクトリアクセスをフックし
  * 比較的重い処理である surface*.png の色抜き処理をキャッシングする
@@ -8,32 +9,41 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 var SR = require("./SurfaceRenderer");
 var CC = require("./CanvasCache");
 var ST = require("./SurfaceTree");
 
-var SurfaceBaseRenderer = function () {
+var SurfaceBaseRenderer = function (_SR$SurfaceRenderer) {
+    _inherits(SurfaceBaseRenderer, _SR$SurfaceRenderer);
+
     function SurfaceBaseRenderer(shell) {
         _classCallCheck(this, SurfaceBaseRenderer);
 
-        this.bases = [];
-        this.shell = shell;
-        this.cache = new CC.CanvasCache(shell.directory);
-        this.renderer = new SR.SurfaceRenderer();
+        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceBaseRenderer).call(this));
+
+        _this.bases = [];
+        _this.shell = shell;
+        _this.cache = new CC.CanvasCache(shell.directory);
+        return _this;
     }
 
     _createClass(SurfaceBaseRenderer, [{
         key: "getBaseSurface",
         value: function getBaseSurface(n) {
+            var _this2 = this;
+
             // elements を合成するだけ
             var surfaceTree = this.shell.surfaceDefTree.surfaces;
             var cache = this.cache;
             var bases = this.bases;
-            var renderer = this.renderer;
             var srf = surfaceTree[n];
             if (!(srf instanceof ST.SurfaceDefinition) || srf.elements.length === 0) {
                 // そんな定義なかった || element0も何もなかった
-                console.warn("Surface#composeBaseSurface: no such a surface", n, srf);
+                console.warn("SurfaceBaseRenderer#getBaseSurface: no such a surface", n, srf);
                 return Promise.reject("no such a surface");
             }
             if (bases[n] instanceof SR.SurfaceCanvas) {
@@ -60,10 +70,10 @@ var SurfaceBaseRenderer = function () {
                 return cache.getCanvas(file, asis).then(function (cnv) {
                     return { file: file, type: type, x: x, y: y, canvas: new SR.SurfaceCanvas(cnv) };
                 }).catch(function (err) {
-                    console.warn("Surface#composeBaseSurface: no such a file", file, n, srf);
+                    console.warn("SurfaceBaseRenderer#getBaseSurface: no such a file", file, n, srf);
                 });
             })).then(function (elms) {
-                return renderer.composeElements(elms);
+                return _this2.composeElements(elms);
             }).then(function (srfCnv) {
                 // basesurfaceの大きさはbasesurfaceそのもの
                 srfCnv.basePosX = 0;
@@ -88,6 +98,6 @@ var SurfaceBaseRenderer = function () {
     }]);
 
     return SurfaceBaseRenderer;
-}();
+}(SR.SurfaceRenderer);
 
 exports.SurfaceBaseRenderer = SurfaceBaseRenderer;

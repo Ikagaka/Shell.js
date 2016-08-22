@@ -14,25 +14,19 @@ function load(directory) {
         var descript = _ref.descript;
         var descriptJSON = _ref.descriptJSON;
         var config = _ref.config;
-
-        loadSurfacesTxt(directory).then(function (_ref2) {
+        return loadSurfacesTxt(directory).then(function (_ref2) {
             var surfacesTxt = _ref2.surfacesTxt;
             var surfaceDefTree = _ref2.surfaceDefTree;
-
-            loadSurfaceTable(directory).then(function () {
-                loadSurfacePNG(directory, surfaceDefTree).then(function (surfaceDefTree) {
+            return loadSurfaceTable(directory).then(function () {
+                return loadSurfacePNG(directory, surfaceDefTree).then(function (surfaceDefTree) {
                     var shell = new SH.Shell();
+                    shell.directory = directory;
                     shell.descript = descript;
                     shell.descriptJSON = descriptJSON;
                     shell.config = config;
-                    shell.surfaceDefTree = surfaceDefTree;
                     shell.surfacesTxt = surfacesTxt;
                     shell.surfaceDefTree = surfaceDefTree;
-                    shell.directory = directory;
                     return shell;
-                }).catch(function (err) {
-                    console.error("ShellLoader.load > ", err);
-                    return Promise.reject(err);
                 });
             });
         });
@@ -46,7 +40,7 @@ function loadDescript(directory) {
     var descript = {};
     var descriptJSON = {};
     if (name === "") {
-        console.info("ShellLoader.loadDescript: descript.txt is not found");
+        console.info("ShellModelLoader.loadDescript: descript.txt is not found");
     } else {
         (function () {
             var descript = SU.parseDescript(SU.convert(dir[name]));
@@ -68,7 +62,7 @@ exports.loadDescript = loadDescript;
 function loadSurfacesTxt(directory) {
     var filenames = SU.findSurfacesTxt(Object.keys(directory));
     if (filenames.length === 0) {
-        console.info("ShellLoader.loadSurfacesTxt: surfaces.txt is not found");
+        console.info("ShellModelLoader.loadSurfacesTxt: surfaces.txt is not found");
     }
     var cat_text = filenames.reduce(function (text, filename) {
         return text + SU.convert(directory[filename]);
@@ -86,10 +80,10 @@ function loadSurfaceTable(directory) {
         );
     })[0] || "";
     if (surfacetable_name === "") {
-        console.info("ShellLoader.loadSurfaceTable", "surfacetable.txt is not found.");
+        console.info("ShellModelLoader.loadSurfaceTable", "surfacetable.txt is not found.");
     } else {
         var txt = SU.convert(directory[surfacetable_name]);
-        console.info("ShellLoader.loadSurfaceTable", "surfacetable.txt is not supported yet.");
+        console.info("ShellModelLoader.loadSurfaceTable", "surfacetable.txt is not supported yet.");
     }
     return Promise.resolve();
 }

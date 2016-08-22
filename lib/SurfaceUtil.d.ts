@@ -1,3 +1,4 @@
+/// <reference path="../typings/index.d.ts" />
 export declare var extend: {
     (target: any, object1?: any, ...objectN: any[]): any;
     (deep: boolean, target: any, object1?: any, ...objectN: any[]): any;

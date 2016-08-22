@@ -15,7 +15,6 @@ exports.extend = $.extend;
 function chromakey(png) {
     var cnvA = copy(png);
     var ctxA = cnvA.getContext("2d");
-    if (!ctxA) throw new Error("getContext failed");
     var imgdata = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
     chromakey_snipet(imgdata.data);
     ctxA.putImageData(imgdata, 0, 0);
@@ -25,12 +24,10 @@ exports.chromakey = chromakey;
 function png_pna(png, pna) {
     var cnvA = png instanceof HTMLCanvasElement ? png : copy(png);
     var ctxA = cnvA.getContext("2d");
-    if (!ctxA) throw new Error("getContext failed");
     var imgdataA = ctxA.getImageData(0, 0, cnvA.width, cnvA.height);
     var dataA = imgdataA.data;
     var cnvB = pna instanceof HTMLCanvasElement ? pna : copy(pna);
     var ctxB = cnvB.getContext("2d");
-    if (!ctxB) throw new Error("getContext failed");
     var imgdataB = ctxB.getImageData(0, 0, cnvB.width, cnvB.height);
     var dataB = imgdataB.data;
     for (var y = 0; y < cnvB.height; y++) {
@@ -186,6 +183,7 @@ exports.copy = copy;
 function fastcopy(cnv, tmpctx) {
     tmpctx.canvas.width = cnv.width;
     tmpctx.canvas.height = cnv.height;
+    tmpctx.globalCompositeOperation = "source-over";
     tmpctx.drawImage(cnv, 0, 0); // type hack
 }
 exports.fastcopy = fastcopy;

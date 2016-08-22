@@ -45,11 +45,21 @@ var SurfaceRenderer = function (_SurfaceCanvas) {
         _this.debug = false;
         return _this;
     }
-    // バッファを使いまわすためのリセット
-    // clearは短形を保つがリセットは1x1になる
-
 
     _createClass(SurfaceRenderer, [{
+        key: "init",
+        value: function init(srfCnv) {
+            // this を srfCnv の値で置き換え
+            this.base(srfCnv);
+            this.basePosX = srfCnv.basePosX;
+            this.basePosY = srfCnv.basePosY;
+            this.baseWidth = srfCnv.baseWidth;
+            this.baseHeight = srfCnv.baseHeight;
+        }
+        // バッファを使いまわすためのリセット
+        // clearは短形を保つがリセットは1x1になる
+
+    }, {
         key: "reset",
         value: function reset() {
             // reshapeの機会を減らすため大きさはそのままにする
@@ -413,11 +423,12 @@ function isHit(srfCnv, cols, x, y) {
 }
 exports.isHit = isHit;
 function copy(srfCnv) {
-    var ret = new SurfaceCanvas(SU.copy(srfCnv.cnv));
-    ret.basePosX = srfCnv.basePosX;
-    ret.basePosY = srfCnv.basePosY;
-    ret.baseWidth = srfCnv.baseWidth;
-    ret.baseHeight = srfCnv.baseHeight;
-    return ret;
+    // SurfaceCanvas を元に新しい SurfaceCanvas をつくる
+    var srfCnv2 = new SurfaceCanvas(SU.copy(srfCnv.cnv));
+    srfCnv2.basePosX = srfCnv.basePosX;
+    srfCnv2.basePosY = srfCnv.basePosY;
+    srfCnv2.baseWidth = srfCnv.baseWidth;
+    srfCnv2.baseHeight = srfCnv.baseHeight;
+    return srfCnv2;
 }
 exports.copy = copy;
