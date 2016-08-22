@@ -66,7 +66,7 @@ export class SurfaceBaseRenderer extends SR.SurfaceRenderer{
       srfCnv.baseHeight = srfCnv.cnv.height;
       // キャッシング
       bases[n] = SR.copy(srfCnv);
-      return srfCnv;
+      return bases[n];
     });
   }
 

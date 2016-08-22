@@ -75,7 +75,7 @@
         //"src/ShellState.test.ts",
         //"src/SurfaceAttacher.ts",
         "src/SurfaceBaseRenderer.ts",
-        //"src/SurfaceBaseRenderer.ts",
+        "src/SurfaceBaseRenderer.test.ts",
         "src/SurfaceModel.ts",
         //"src/SurfaceModel.test.ts",
         "src/SurfacePatternRenderer.ts",

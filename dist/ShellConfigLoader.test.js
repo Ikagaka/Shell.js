@@ -671,6 +671,7 @@ function setCanvasStyle() {
 exports.setCanvasStyle = setCanvasStyle;
 },{"encoding-japanese":7,"jquery":18}],4:[function(require,module,exports){
 'use strict';
+var SC = require('./ShellConfig');
 var SCL = require('./ShellConfigLoader');
 var SU = require('./SurfaceUtil');
 var narloader = require('narloader');
@@ -683,21 +684,51 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
     QUnit.test('ShellConfigLoader.loadFromJSONLike', function (assert) {
         var done = assert.async();
         return SCL.loadFromJSONLike(descript).then(function (config) {
+            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(config, 'arguments/0/left/object').seriko, 'arguments/0/left') instanceof assert._capt(assert._capt(SC, 'arguments/0/right/object').SerikoConfig, 'arguments/0/right'), 'arguments/0'), {
+                content: 'assert.ok(config.seriko instanceof SC.SerikoConfig)',
+                filepath: 'es5/ShellConfigLoader.test.js',
+                line: 16
+            }));
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(config, 'arguments/0/left/object/object').seriko, 'arguments/0/left/object').use_self_alpha, 'arguments/0/left') === false, 'arguments/0'), {
                 content: 'assert.ok(config.seriko.use_self_alpha === false)',
                 filepath: 'es5/ShellConfigLoader.test.js',
-                line: 15
+                line: 17
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(config, 'arguments/0/left/object/object').seriko, 'arguments/0/left/object').alignmenttodesktop, 'arguments/0/left') === 'bottom', 'arguments/0'), {
                 content: 'assert.ok(config.seriko.alignmenttodesktop === "bottom")',
                 filepath: 'es5/ShellConfigLoader.test.js',
-                line: 16
+                line: 18
+            }));
+            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(config, 'arguments/0/left/object').menu, 'arguments/0/left') instanceof assert._capt(assert._capt(SC, 'arguments/0/right/object').MenuConfig, 'arguments/0/right'), 'arguments/0'), {
+                content: 'assert.ok(config.menu instanceof SC.MenuConfig)',
+                filepath: 'es5/ShellConfigLoader.test.js',
+                line: 19
+            }));
+            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(config, 'arguments/0/left/object').char, 'arguments/0/left') instanceof assert._capt(Array, 'arguments/0/right'), 'arguments/0'), {
+                content: 'assert.ok(config.char instanceof Array)',
+                filepath: 'es5/ShellConfigLoader.test.js',
+                line: 20
+            }));
+            assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(config, 'arguments/0/left/object').bindgroup, 'arguments/0/left') instanceof assert._capt(Array, 'arguments/0/right'), 'arguments/0'), {
+                content: 'assert.ok(config.bindgroup instanceof Array)',
+                filepath: 'es5/ShellConfigLoader.test.js',
+                line: 21
+            }));
+            assert.ok(assert._expr(assert._capt(assert._capt(typeof assert._capt(assert._capt(config, 'arguments/0/left/argument/object').enableRegion, 'arguments/0/left/argument'), 'arguments/0/left') === 'boolean', 'arguments/0'), {
+                content: 'assert.ok(typeof config.enableRegion === "boolean")',
+                filepath: 'es5/ShellConfigLoader.test.js',
+                line: 22
+            }));
+            assert.ok(assert._expr(assert._capt(assert._capt(typeof assert._capt(assert._capt(config, 'arguments/0/left/argument/object').position, 'arguments/0/left/argument'), 'arguments/0/left') === 'string', 'arguments/0'), {
+                content: 'assert.ok(typeof config.position === "string")',
+                filepath: 'es5/ShellConfigLoader.test.js',
+                line: 23
             }));
             done();
         });
     });
 });
-},{"./ShellConfigLoader":2,"./SurfaceUtil":3,"narloader":97}],5:[function(require,module,exports){
+},{"./ShellConfig":1,"./ShellConfigLoader":2,"./SurfaceUtil":3,"narloader":97}],5:[function(require,module,exports){
 (function (process,global){
 /* @preserve
  * The MIT License (MIT)
