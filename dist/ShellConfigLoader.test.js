@@ -135,11 +135,11 @@ var BindGroupConfig = (function () {
     return BindGroupConfig;
 }());
 exports.BindGroupConfig = BindGroupConfig;
-function isBind(config, animId) {
+function isBind(config, scopeId, animId) {
     var bindgroup = config.bindgroup;
-    if (bindgroup[this.scopeId] == null)
+    if (bindgroup[scopeId] == null)
         return false;
-    if (bindgroup[this.scopeId][animId] === false)
+    if (bindgroup[scopeId][animId] === false)
         return false;
     return true;
 }

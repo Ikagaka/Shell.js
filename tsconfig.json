@@ -15,6 +15,7 @@
         "inlineSourceMap": false,
         "inlineSources": false,
         "isolatedModules": false,
+        "jsx": "react",
         "listFiles": true,
         "locale": "en-us",
         //"mapRoot": null,
@@ -64,7 +65,8 @@
     "files": [
         "src/CanvasCache.ts",
         "src/CanvasCache.test.ts",
-        "src/CuttleboneComponent.ts",
+        "src/CuttleboneComponent.tsx",
+        "src/CuttleboneComponent.test.ts",
         "src/DiffLogger.ts",
         "src/index.ts",
         "src/ShellConfig.ts",

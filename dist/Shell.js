@@ -72,7 +72,25 @@ var CanvasCache = (function () {
 }());
 exports.CanvasCache = CanvasCache;
 
-},{"./SurfaceUtil":14}],2:[function(require,module,exports){
+},{"./SurfaceUtil":15}],2:[function(require,module,exports){
+"use strict";
+var SU = require("./SurfaceUtil");
+var DiffLogger = (function () {
+    function DiffLogger(o) {
+        this.o = o;
+        this.changeLog = [];
+    }
+    DiffLogger.prototype.logger = function (manipulation) {
+        var tmp = SU.extend(true, {}, this.o);
+        manipulation();
+        var diff = SU.diff(tmp, this.o);
+        this.changeLog.push([Date.now(), diff]);
+    };
+    return DiffLogger;
+}());
+exports.DiffLogger = DiffLogger;
+
+},{"./SurfaceUtil":15}],3:[function(require,module,exports){
 /*
  * shell/master/descript.txt および現在の シェル 状態を表す構造体
  */
@@ -219,7 +237,7 @@ function isBind(config, scopeId, animId) {
 }
 exports.isBind = isBind;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 /*
  * shell/master/descript.txt から ShellConfig 構造体を作る
  */
@@ -273,7 +291,7 @@ function loadCharConfig(char) {
 }
 exports.loadCharConfig = loadCharConfig;
 
-},{"./ShellConfig":2}],4:[function(require,module,exports){
+},{"./ShellConfig":3}],5:[function(require,module,exports){
 "use strict";
 /*
  * shell/master/*** 以下のリソースを一元管理するための バリアント型
@@ -325,7 +343,7 @@ function getBindGroups(shell, scopeId) {
 }
 exports.getBindGroups = getBindGroups;
 
-},{"./ShellConfig":2,"./SurfaceTree":12,"./SurfaceUtil":14}],5:[function(require,module,exports){
+},{"./ShellConfig":3,"./SurfaceTree":13,"./SurfaceUtil":15}],6:[function(require,module,exports){
 /*
  * shell/master/*** ディレクトリから shell モデルを構築する
  */
@@ -440,7 +458,7 @@ function loadSurfacePNG(directory, tree) {
 }
 exports.loadSurfacePNG = loadSurfacePNG;
 
-},{"./ShellConfigLoader":3,"./ShellModel":4,"./SurfaceTree":12,"./SurfaceTreeLoader":13,"./SurfaceUtil":14,"surfaces_txt2yaml":49}],6:[function(require,module,exports){
+},{"./ShellConfigLoader":4,"./ShellModel":5,"./SurfaceTree":13,"./SurfaceTreeLoader":14,"./SurfaceUtil":15,"surfaces_txt2yaml":50}],7:[function(require,module,exports){
 "use strict";
 var ShellState = (function () {
     // on("update_bindgroup")
@@ -492,7 +510,7 @@ function bind_value(config, a, b, flag) {
 }
 exports.bind_value = bind_value;
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts" />
 /*
  * CacheCanvas は ディレクトリアクセスをフックし
@@ -582,7 +600,7 @@ var SurfaceBaseRenderer = (function (_super) {
 }(SR.SurfaceRenderer));
 exports.SurfaceBaseRenderer = SurfaceBaseRenderer;
 
-},{"./CanvasCache":1,"./SurfaceRenderer":10,"./SurfaceTree":12}],8:[function(require,module,exports){
+},{"./CanvasCache":1,"./SurfaceRenderer":11,"./SurfaceTree":13}],9:[function(require,module,exports){
 /*
  * Surface の状態モデル
  */
@@ -637,7 +655,7 @@ var SurfaceRenderingLayer = (function () {
 }());
 exports.SurfaceRenderingLayer = SurfaceRenderingLayer;
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /*
  * アニメーションパーツを生成する
  * 与えられた surface model から current surface を生成する
@@ -717,7 +735,7 @@ var SurfacePatternRenderer = (function (_super) {
 }(SBR.SurfaceBaseRenderer));
 exports.SurfacePatternRenderer = SurfacePatternRenderer;
 
-},{"./SurfaceBaseRenderer":7,"./SurfaceModel":8}],10:[function(require,module,exports){
+},{"./SurfaceBaseRenderer":8,"./SurfaceModel":9}],11:[function(require,module,exports){
 /*
  * surface -> canvas なレンダラ。
  * HTMLCanvasElement もこの層で抽象化する
@@ -1052,7 +1070,7 @@ function copy(srfCnv) {
 }
 exports.copy = copy;
 
-},{"./SurfaceTree":12,"./SurfaceUtil":14}],11:[function(require,module,exports){
+},{"./SurfaceTree":13,"./SurfaceUtil":15}],12:[function(require,module,exports){
 /*
  * Surface 状態モデルを更新する副作用関数群
  */
@@ -1541,7 +1559,7 @@ function layersToTree(surfaces, scopeId, n, serikos, config) {
 }
 exports.layersToTree = layersToTree;
 
-},{"./ShellConfig":2,"./SurfaceModel":8,"./SurfaceTree":12,"./SurfaceUtil":14}],12:[function(require,module,exports){
+},{"./ShellConfig":3,"./SurfaceModel":9,"./SurfaceTree":13,"./SurfaceUtil":15}],13:[function(require,module,exports){
 /*
  * surfaces.txt の内容を構造化したもの
  */
@@ -1761,7 +1779,7 @@ function getRegion(collisions, offsetX, offsetY) {
 }
 exports.getRegion = getRegion;
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /*
  * surfaces.txt をパースして SurfaceTree 構造体を作る
  */
@@ -2039,7 +2057,7 @@ function loadSurfaceAnimationPattern(pat) {
 }
 exports.loadSurfaceAnimationPattern = loadSurfaceAnimationPattern;
 
-},{"./SurfaceTree":12,"./SurfaceUtil":14,"surfaces_txt2yaml":49}],14:[function(require,module,exports){
+},{"./SurfaceTree":13,"./SurfaceUtil":15,"surfaces_txt2yaml":50}],15:[function(require,module,exports){
 /*
  * 可用性・抽象度の高いコードスニペット集
  * SurfaceUtil という名称は Util のほうがむしろふさわしいが
@@ -2481,7 +2499,7 @@ function setCanvasStyle() {
 }
 exports.setCanvasStyle = setCanvasStyle;
 
-},{"deep-diff":16,"encoding-japanese":17,"jquery":18}],15:[function(require,module,exports){
+},{"deep-diff":17,"encoding-japanese":18,"jquery":19}],16:[function(require,module,exports){
 "use strict";
 var _SU = require("./SurfaceUtil");
 exports.SU = _SU;
@@ -2509,6 +2527,8 @@ var _SCL = require("./ShellConfigLoader");
 exports.SCL = _SCL;
 var _SC = require("./ShellConfig");
 exports.SC = _SC;
+var _DL = require("./DiffLogger");
+exports.DL = _DL;
 var _CC = require("./CanvasCache");
 exports.CC = _CC;
 var _package = require("../package.json");
@@ -2516,7 +2536,7 @@ exports.version = _package.version;
 var $ = require("jquery");
 window["$"] = window["$"] || $;
 
-},{"../package.json":51,"./CanvasCache":1,"./ShellConfig":2,"./ShellConfigLoader":3,"./ShellModel":4,"./ShellModelLoader":5,"./ShellState":6,"./SurfaceBaseRenderer":7,"./SurfaceModel":8,"./SurfacePatternRenderer":9,"./SurfaceRenderer":10,"./SurfaceState":11,"./SurfaceTree":12,"./SurfaceTreeLoader":13,"./SurfaceUtil":14,"jquery":18}],16:[function(require,module,exports){
+},{"../package.json":52,"./CanvasCache":1,"./DiffLogger":2,"./ShellConfig":3,"./ShellConfigLoader":4,"./ShellModel":5,"./ShellModelLoader":6,"./ShellState":7,"./SurfaceBaseRenderer":8,"./SurfaceModel":9,"./SurfacePatternRenderer":10,"./SurfaceRenderer":11,"./SurfaceState":12,"./SurfaceTree":13,"./SurfaceTreeLoader":14,"./SurfaceUtil":15,"jquery":19}],17:[function(require,module,exports){
 (function (global){
 /*!
  * deep-diff.
@@ -2942,7 +2962,7 @@ window["$"] = window["$"] || $;
 }));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /**
  * Encoding.js
  *
@@ -9229,7 +9249,7 @@ var zenkanaCase_table = [
 return Encoding;
 });
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /*eslint-disable no-unused-vars*/
 /*!
  * jQuery JavaScript Library v3.1.0
@@ -19305,7 +19325,7 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 'use strict';
 
 
@@ -19314,7 +19334,7 @@ var yaml = require('./lib/js-yaml.js');
 
 module.exports = yaml;
 
-},{"./lib/js-yaml.js":20}],20:[function(require,module,exports){
+},{"./lib/js-yaml.js":21}],21:[function(require,module,exports){
 'use strict';
 
 
@@ -19355,7 +19375,7 @@ module.exports.parse          = deprecated('parse');
 module.exports.compose        = deprecated('compose');
 module.exports.addConstructor = deprecated('addConstructor');
 
-},{"./js-yaml/dumper":22,"./js-yaml/exception":23,"./js-yaml/loader":24,"./js-yaml/schema":26,"./js-yaml/schema/core":27,"./js-yaml/schema/default_full":28,"./js-yaml/schema/default_safe":29,"./js-yaml/schema/failsafe":30,"./js-yaml/schema/json":31,"./js-yaml/type":32}],21:[function(require,module,exports){
+},{"./js-yaml/dumper":23,"./js-yaml/exception":24,"./js-yaml/loader":25,"./js-yaml/schema":27,"./js-yaml/schema/core":28,"./js-yaml/schema/default_full":29,"./js-yaml/schema/default_safe":30,"./js-yaml/schema/failsafe":31,"./js-yaml/schema/json":32,"./js-yaml/type":33}],22:[function(require,module,exports){
 'use strict';
 
 
@@ -19416,7 +19436,7 @@ module.exports.repeat         = repeat;
 module.exports.isNegativeZero = isNegativeZero;
 module.exports.extend         = extend;
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-use-before-define*/
@@ -20220,7 +20240,7 @@ function safeDump(input, options) {
 module.exports.dump     = dump;
 module.exports.safeDump = safeDump;
 
-},{"./common":21,"./exception":23,"./schema/default_full":28,"./schema/default_safe":29}],23:[function(require,module,exports){
+},{"./common":22,"./exception":24,"./schema/default_full":29,"./schema/default_safe":30}],24:[function(require,module,exports){
 // YAML error class. http://stackoverflow.com/questions/8458984
 //
 'use strict';
@@ -20265,7 +20285,7 @@ YAMLException.prototype.toString = function toString(compact) {
 
 module.exports = YAMLException;
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len,no-use-before-define*/
@@ -21853,7 +21873,7 @@ module.exports.load        = load;
 module.exports.safeLoadAll = safeLoadAll;
 module.exports.safeLoad    = safeLoad;
 
-},{"./common":21,"./exception":23,"./mark":25,"./schema/default_full":28,"./schema/default_safe":29}],25:[function(require,module,exports){
+},{"./common":22,"./exception":24,"./mark":26,"./schema/default_full":29,"./schema/default_safe":30}],26:[function(require,module,exports){
 'use strict';
 
 
@@ -21931,7 +21951,7 @@ Mark.prototype.toString = function toString(compact) {
 
 module.exports = Mark;
 
-},{"./common":21}],26:[function(require,module,exports){
+},{"./common":22}],27:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len*/
@@ -22037,7 +22057,7 @@ Schema.create = function createSchema() {
 
 module.exports = Schema;
 
-},{"./common":21,"./exception":23,"./type":32}],27:[function(require,module,exports){
+},{"./common":22,"./exception":24,"./type":33}],28:[function(require,module,exports){
 // Standard YAML's Core schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2804923
 //
@@ -22057,7 +22077,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":26,"./json":31}],28:[function(require,module,exports){
+},{"../schema":27,"./json":32}],29:[function(require,module,exports){
 // JS-YAML's default schema for `load` function.
 // It is not described in the YAML specification.
 //
@@ -22084,7 +22104,7 @@ module.exports = Schema.DEFAULT = new Schema({
   ]
 });
 
-},{"../schema":26,"../type/js/function":37,"../type/js/regexp":38,"../type/js/undefined":39,"./default_safe":29}],29:[function(require,module,exports){
+},{"../schema":27,"../type/js/function":38,"../type/js/regexp":39,"../type/js/undefined":40,"./default_safe":30}],30:[function(require,module,exports){
 // JS-YAML's default schema for `safeLoad` function.
 // It is not described in the YAML specification.
 //
@@ -22114,7 +22134,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":26,"../type/binary":33,"../type/merge":41,"../type/omap":43,"../type/pairs":44,"../type/set":46,"../type/timestamp":48,"./core":27}],30:[function(require,module,exports){
+},{"../schema":27,"../type/binary":34,"../type/merge":42,"../type/omap":44,"../type/pairs":45,"../type/set":47,"../type/timestamp":49,"./core":28}],31:[function(require,module,exports){
 // Standard YAML's Failsafe schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2802346
 
@@ -22133,7 +22153,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":26,"../type/map":40,"../type/seq":45,"../type/str":47}],31:[function(require,module,exports){
+},{"../schema":27,"../type/map":41,"../type/seq":46,"../type/str":48}],32:[function(require,module,exports){
 // Standard YAML's JSON schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2803231
 //
@@ -22160,7 +22180,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":26,"../type/bool":34,"../type/float":35,"../type/int":36,"../type/null":42,"./failsafe":30}],32:[function(require,module,exports){
+},{"../schema":27,"../type/bool":35,"../type/float":36,"../type/int":37,"../type/null":43,"./failsafe":31}],33:[function(require,module,exports){
 'use strict';
 
 var YAMLException = require('./exception');
@@ -22223,7 +22243,7 @@ function Type(tag, options) {
 
 module.exports = Type;
 
-},{"./exception":23}],33:[function(require,module,exports){
+},{"./exception":24}],34:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-bitwise*/
@@ -22360,7 +22380,7 @@ module.exports = new Type('tag:yaml.org,2002:binary', {
   represent: representYamlBinary
 });
 
-},{"../type":32}],34:[function(require,module,exports){
+},{"../type":33}],35:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -22397,7 +22417,7 @@ module.exports = new Type('tag:yaml.org,2002:bool', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":32}],35:[function(require,module,exports){
+},{"../type":33}],36:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -22504,7 +22524,7 @@ module.exports = new Type('tag:yaml.org,2002:float', {
   defaultStyle: 'lowercase'
 });
 
-},{"../common":21,"../type":32}],36:[function(require,module,exports){
+},{"../common":22,"../type":33}],37:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -22674,7 +22694,7 @@ module.exports = new Type('tag:yaml.org,2002:int', {
   }
 });
 
-},{"../common":21,"../type":32}],37:[function(require,module,exports){
+},{"../common":22,"../type":33}],38:[function(require,module,exports){
 'use strict';
 
 var esprima;
@@ -22760,7 +22780,7 @@ module.exports = new Type('tag:yaml.org,2002:js/function', {
   represent: representJavascriptFunction
 });
 
-},{"../../type":32}],38:[function(require,module,exports){
+},{"../../type":33}],39:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -22822,7 +22842,7 @@ module.exports = new Type('tag:yaml.org,2002:js/regexp', {
   represent: representJavascriptRegExp
 });
 
-},{"../../type":32}],39:[function(require,module,exports){
+},{"../../type":33}],40:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -22852,7 +22872,7 @@ module.exports = new Type('tag:yaml.org,2002:js/undefined', {
   represent: representJavascriptUndefined
 });
 
-},{"../../type":32}],40:[function(require,module,exports){
+},{"../../type":33}],41:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -22862,7 +22882,7 @@ module.exports = new Type('tag:yaml.org,2002:map', {
   construct: function (data) { return data !== null ? data : {}; }
 });
 
-},{"../type":32}],41:[function(require,module,exports){
+},{"../type":33}],42:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -22876,7 +22896,7 @@ module.exports = new Type('tag:yaml.org,2002:merge', {
   resolve: resolveYamlMerge
 });
 
-},{"../type":32}],42:[function(require,module,exports){
+},{"../type":33}],43:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -22912,7 +22932,7 @@ module.exports = new Type('tag:yaml.org,2002:null', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":32}],43:[function(require,module,exports){
+},{"../type":33}],44:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -22958,7 +22978,7 @@ module.exports = new Type('tag:yaml.org,2002:omap', {
   construct: constructYamlOmap
 });
 
-},{"../type":32}],44:[function(require,module,exports){
+},{"../type":33}],45:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23013,7 +23033,7 @@ module.exports = new Type('tag:yaml.org,2002:pairs', {
   construct: constructYamlPairs
 });
 
-},{"../type":32}],45:[function(require,module,exports){
+},{"../type":33}],46:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23023,7 +23043,7 @@ module.exports = new Type('tag:yaml.org,2002:seq', {
   construct: function (data) { return data !== null ? data : []; }
 });
 
-},{"../type":32}],46:[function(require,module,exports){
+},{"../type":33}],47:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23054,7 +23074,7 @@ module.exports = new Type('tag:yaml.org,2002:set', {
   construct: constructYamlSet
 });
 
-},{"../type":32}],47:[function(require,module,exports){
+},{"../type":33}],48:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23064,7 +23084,7 @@ module.exports = new Type('tag:yaml.org,2002:str', {
   construct: function (data) { return data !== null ? data : ''; }
 });
 
-},{"../type":32}],48:[function(require,module,exports){
+},{"../type":33}],49:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23154,10 +23174,10 @@ module.exports = new Type('tag:yaml.org,2002:timestamp', {
   represent: representYamlTimestamp
 });
 
-},{"../type":32}],49:[function(require,module,exports){
+},{"../type":33}],50:[function(require,module,exports){
 module.exports = require('./lib/surfaces_txt2yaml.js')
 
-},{"./lib/surfaces_txt2yaml.js":50}],50:[function(require,module,exports){
+},{"./lib/surfaces_txt2yaml.js":51}],51:[function(require,module,exports){
 // Generated by CoffeeScript 1.10.0
 
 /* (C) 2014 Narazaka : Licensed under The MIT License - http://narazaka.net/license/MIT?2014 */
@@ -24329,7 +24349,7 @@ if (typeof exports !== "undefined" && exports !== null) {
   exports.txt_to_yaml = SurfacesTxt2Yaml.txt_to_yaml;
 }
 
-},{"js-yaml":19}],51:[function(require,module,exports){
+},{"js-yaml":20}],52:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.shell.js",
   "version": "5.0.0",
@@ -24371,6 +24391,8 @@ module.exports={
     "encoding-japanese": "^1.0.24",
     "events": "^1.1.0",
     "jquery": "^3.1.0",
+    "react": "^15.3.1",
+    "react-dom": "^15.3.1",
     "surfaces_txt2yaml": "github:legokichi/surfaces_txt2yaml#master"
   },
   "devDependencies": {
@@ -24405,5 +24427,5 @@ module.exports={
   ]
 }
 
-},{}]},{},[15])(15)
+},{}]},{},[16])(16)
 });

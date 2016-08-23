@@ -529,22 +529,22 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface10.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface10.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 13
+            line: 12
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasFile('surface0.png'), 'arguments/0/left') !== '', 'arguments/0'), {
             content: 'assert.ok(cc.hasFile("surface0.png") !== "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 14
+            line: 13
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface0.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 15
+            line: 14
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasFile('surface10.png'), 'arguments/0/left') !== '', 'arguments/0'), {
             content: 'assert.ok(cc.hasFile("surface10.png") !== "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 16
+            line: 15
         }));
     });
     QUnit.test('CanvasCache.getCanvas', function (assert) {
@@ -552,18 +552,18 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface0.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 20
+            line: 19
         }));
         return cc.getCanvas('surface0.png').then(function (cnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 22
+                line: 21
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0.png'), 'arguments/0/left') !== '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface0.png") !== "")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 23
+                line: 22
             }));
             document.body.appendChild(document.createTextNode('色抜き後'));
             document.body.appendChild(SU.copy(cnv));
@@ -575,18 +575,18 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface11.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface11.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 31
+            line: 30
         }));
         return cc.getCanvas('surface11.png', false).then(function (cnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface11.png'), 'arguments/0/left') !== '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface11.png") !== "")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 33
+                line: 32
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 34
+                line: 33
             }));
             document.body.appendChild(document.createTextNode('色抜き前'));
             document.body.appendChild(SU.copy(cnv));
@@ -598,23 +598,23 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface10'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface10") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 42
+            line: 41
         }));
         return cc.getCanvas('surface10').then(function (cnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface10'), 'arguments/0/left') === '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface10") === "", "拡張子が間違っていればそれはキャッシュへのキーにはならない")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 44
+                line: 43
             }), '拡張子が間違っていればそれはキャッシュへのキーにはならない');
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface10.png'), 'arguments/0/left') !== '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface10.png") !== "", "正しい拡張子でキャッシュされる")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 45
+                line: 44
             }), '正しい拡張子でキャッシュされる');
             assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 46
+                line: 45
             }));
             document.body.appendChild(document.createTextNode('色抜き後'));
             document.body.appendChild(SU.copy(cnv));
@@ -626,18 +626,18 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0730.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface0730.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 54
+            line: 53
         }));
         return cc.getCanvas('surface0730.png').then(function (cnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0730.png'), 'arguments/0/left') !== '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface0730.png") !== "")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 56
+                line: 55
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 57
+                line: 56
             }));
             document.body.appendChild(document.createTextNode('use pna'));
             document.body.appendChild(SU.copy(cnv));
@@ -649,18 +649,18 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0731.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface0731.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 65
+            line: 64
         }));
         return cc.getCanvas('surface0731.png', true).then(function (cnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0731.png'), 'arguments/0/left') === '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface0731.png") === "", "axisするとキャッシュされない")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 67
+                line: 66
             }), 'axisするとキャッシュされない');
             assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 68
+                line: 67
             }));
             document.body.appendChild(document.createTextNode('unuse pna'));
             document.body.appendChild(SU.copy(cnv));

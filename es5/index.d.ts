@@ -24,6 +24,8 @@ import * as _SCL from "./ShellConfigLoader";
 export declare var SCL: typeof _SCL;
 import * as _SC from "./ShellConfig";
 export declare var SC: typeof _SC;
+import * as _DL from "./DiffLogger";
+export declare var DL: typeof _DL;
 import * as _CC from "./CanvasCache";
 export declare var CC: typeof _CC;
 export declare var version: any;

@@ -209,11 +209,11 @@ var BindGroupConfig = (function () {
     return BindGroupConfig;
 }());
 exports.BindGroupConfig = BindGroupConfig;
-function isBind(config, animId) {
+function isBind(config, scopeId, animId) {
     var bindgroup = config.bindgroup;
-    if (bindgroup[this.scopeId] == null)
+    if (bindgroup[scopeId] == null)
         return false;
-    if (bindgroup[this.scopeId][animId] === false)
+    if (bindgroup[scopeId][animId] === false)
         return false;
     return true;
 }
@@ -371,15 +371,13 @@ function loadDescript(directory) {
         console.info("ShellModelLoader.loadDescript: descript.txt is not found");
     }
     else {
-        var descript_1 = SU.parseDescript(SU.convert(dir[name]));
-        var json_1 = {};
-        Object.keys(descript_1).forEach(function (key) {
+        descript = SU.parseDescript(SU.convert(dir[name]));
+        Object.keys(descript).forEach(function (key) {
             var _key = key
                 .replace(/^sakura\./, "char0.")
                 .replace(/^kero\./, "char1.");
-            SU.decolateJSONizeDescript(json_1, _key, descript_1[key]);
+            SU.decolateJSONizeDescript(descriptJSON, _key, descript[key]);
         });
-        var descriptJSON_1 = json_1;
     }
     // key-valueなdescriptをconfigへ変換
     return SCL.loadFromJSONLike(descriptJSON).then(function (config) {

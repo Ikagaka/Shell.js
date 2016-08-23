@@ -1,4 +1,3 @@
-/// <reference path="../typings/index.d.ts"/>
 "use strict";
 var CC = require("./CanvasCache");
 var SU = require("./SurfaceUtil");

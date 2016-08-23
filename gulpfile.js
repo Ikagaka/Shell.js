@@ -6,9 +6,9 @@ const debug = require('gulp-debug');
 // test.ts -> dist
 gulp.task('build:es5', ()=>{
     return gulp.src("es5/**/*.test.js")
-        .pipe(debug())
         .pipe(espower())
         .pipe(browserify())
+        .pipe(debug())
         .pipe(gulp.dest('dist'));
 });
 
@@ -18,9 +18,9 @@ gulp.task('watch:es5', ()=>{
     .on("change", (file)=>{
         console.log("espower", file.path)
         return gulp.src(file.path)
-        .pipe(debug())
         .pipe(espower())
         .pipe(browserify())
+        .pipe(debug())
         .pipe(gulp.dest('dist'));
     });
 });

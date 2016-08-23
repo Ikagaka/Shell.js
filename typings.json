@@ -1,21 +1,21 @@
 {
   "name": "Shell.js",
   "dependencies": {
-    "react": "registry:npm/react#15.0.1+20160601175240",
-    "react-dom": "registry:npm/react-dom#15.0.1+20160705210405"
   },
   "globalDependencies": {
-    "bluebird": "registry:dt/bluebird#3.0.0+20160811111256",
+    "bluebird": "registry:dt/bluebird#2.0.0+20160701023356",
     "deep-diff": "registry:dt/deep-diff#0.0.0+20160317120654",
     "empower": "registry:dt/empower#0.0.0+20160317120654",
     "encoding-japanese": "https://gist.githubusercontent.com/legokichi/c3d5420057bcb554dc11/raw/8267e95a31b0bcee392a100f29b34f1480aeda9e/encoding.d.ts",
     "jquery": "registry:dt/jquery#1.10.0+20160704162008",
     "jszip": "registry:dt/jszip#0.0.0+20160709055933",
     "narloader": "https://gist.githubusercontent.com/legokichi/c3d5420057bcb554dc11/raw/84e7ac6b652331fcba3a5fee5509ec9e264b197d/NarLoader.d.ts",
-    "node": "registry:env/node#6.0.0+20160813135048",
+    "node": "registry:dt/node#6.0.0+20160720070758",
     "power-assert": "registry:dt/power-assert#0.0.0+20160316155526",
     "power-assert-formatter": "registry:dt/power-assert-formatter#0.0.0+20160317120654",
     "qunit": "registry:dt/qunit#1.16.0+20160514172809",
+    "react": "registry:dt/react#0.14.0+20160817201227",
+    "react-dom": "registry:dt/react-dom#0.14.0+20160412154040",
     "surfaces_yaml": "https://gist.githubusercontent.com/legokichi/c3d5420057bcb554dc11/raw/3bcd35e9723274835e3cbc7c673c767fce6adbf8/surfaces_txt2yaml.d.ts"
   }
 }

@@ -11,6 +11,7 @@ import * as _SML from "./ShellModelLoader"; export var SML = _SML;
 import * as _ShM from "./ShellModel"; export var ShM = _ShM;
 import * as _SCL from "./ShellConfigLoader"; export var SCL = _SCL;
 import * as _SC from "./ShellConfig"; export var SC = _SC;
+import * as _DL from "./DiffLogger"; export var DL = _DL;
 import * as _CC from "./CanvasCache"; export var CC = _CC;
 var _package = require("../package.json"); export var version = _package.version;
 import $ = require("jquery"); window["$"] = window["$"] || $;

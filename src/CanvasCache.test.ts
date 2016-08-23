@@ -1,5 +1,3 @@
-/// <reference path="../typings/index.d.ts"/>
-
 import * as CC from "./CanvasCache";
 import * as SU from "./SurfaceUtil";
 import narloader = require("narloader");
