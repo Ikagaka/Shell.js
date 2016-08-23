@@ -64,6 +64,8 @@
     "files": [
         "src/CanvasCache.ts",
         "src/CanvasCache.test.ts",
+        "src/CuttleboneComponent.ts",
+        "src/DiffLogger.ts",
         "src/index.ts",
         "src/ShellConfig.ts",
         "src/ShellConfigLoader.ts",
@@ -79,7 +81,7 @@
         "src/SurfaceModel.ts",
         //"src/SurfaceModel.test.ts",
         "src/SurfacePatternRenderer.ts",
-        //"src/SurfacePatternRenderer.ts",
+        //"src/SurfacePatternRenderer.test.ts",
         "src/SurfaceRenderer.ts",
         "src/SurfaceRenderer.test.ts",
         "src/SurfaceState.ts",
