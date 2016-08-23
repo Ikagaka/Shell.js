@@ -49,7 +49,8 @@ export class SurfaceDefinition {
     collisions:SurfaceCollision[]=[],
     animations:SurfaceAnimation[]=[],
     balloons={char: <{ offsetX: number; offsetY: number }[]>[], offsetX: 0, offsetY: 0},
-    points={basepos: { x: 0, y: 0 }}){
+    points={basepos: { x: 0, y: 0 }
+  }){
     this.elements   = elements;
     this.collisions = collisions;
     this.animations = animations;
@@ -63,7 +64,7 @@ export class SurfaceElement {
   file: string;
   x: number;
   y: number;
-  constructor(type="overlay", file="", x=0, y=0){
+  constructor(type: string, file: string, x=0, y=0){
     this.type = "overlay";
     this.file = file;
     this.x = x;
@@ -74,7 +75,7 @@ export class SurfaceElement {
 export class SurfaceCollision {
   name: string;
   type: string;
-  constructor(name="", type="rect"){
+  constructor(type: string, name: string){
     this.name = name;
     this.type = type;
   }
@@ -87,8 +88,8 @@ export class SurfaceCollisionRect extends SurfaceCollision {
   top: number;
   right: number;
   bottom: number;
-  constructor(name="", type="rect", left=0, top=0, right=0, bottom=0){
-    super(name, type);
+  constructor(name: string, left: number, top: number, right: number, bottom: number){
+    super("rect", name);
     this.left = left;
     this.top = top;
     this.right = right;
@@ -96,9 +97,17 @@ export class SurfaceCollisionRect extends SurfaceCollision {
   }
 }
 
-export class SurfaceCollisionEllipse extends SurfaceCollisionRect {
-  constructor(name="", type="ellipse", top=0, bottom=0, left=0, right=0){
-    super(name, type, bottom, top, left, right);
+export class SurfaceCollisionEllipse extends SurfaceCollision {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  constructor(name: string, left: number, top: number, right: number, bottom: number){
+    super("ellipse", name);
+    this.left = left;
+    this.top = top;
+    this.right = right;
+    this.bottom = bottom;
   }
 }
 
@@ -106,8 +115,8 @@ export class SurfaceCollisionCircle extends SurfaceCollision {
   centerX: number;
   centerY: number;
   radius: number;
-  constructor(name="", type="circle", centerX=0, centerY=0, radius=0){
-    super(name, type);
+  constructor(name: string, centerX: number, centerY: number, radius: number){
+    super("circle", name);
     this.centerX = centerX;
     this.centerY = centerY;
     this.radius = radius;
@@ -116,8 +125,8 @@ export class SurfaceCollisionCircle extends SurfaceCollision {
 
 export class SurfaceCollisionPolygon extends SurfaceCollision {
   coordinates: { x: number; y: number; }[];
-  constructor(name="", type="polygon", coordinates=<{ x: number; y: number; }[]>[]){
-    super(name, type);
+  constructor(name: string, coordinates:{ x: number; y: number; }[] ){
+    super("polygon", name);
     this.coordinates = coordinates;
   }
 }
@@ -133,7 +142,8 @@ export class SurfaceAnimation {
     intervals:[string, number[]][] = [["never", []]],
     options:[string, number[]][]=[],
     collisions:SurfaceCollision[]=[],
-    patterns:SurfaceAnimationPattern[]=[]){
+    patterns:SurfaceAnimationPattern[]=[]  
+  ){
     this.intervals = intervals;
     this.options = options;
     this.collisions = collisions;

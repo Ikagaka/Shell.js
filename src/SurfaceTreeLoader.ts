@@ -177,7 +177,7 @@ export function loadSurfaceCollisionRect(collision: SY.SurfaceRegionRect): Promi
   const left = collision.left;
   const bottom = collision.bottom;
   const right = collision.right;
-  const that = new ST.SurfaceCollisionRect(name, type, left, top, right, bottom);
+  const that = new ST.SurfaceCollisionRect(name, left, top, right, bottom);
   return Promise.resolve(that);
 }
 
@@ -186,7 +186,7 @@ export function loadSurfaceCollisionRect(collision: SY.SurfaceRegionRect): Promi
 
 export function loadSurfaceCollisionEllipse(a: SY.SurfaceRegionEllipse): Promise<ST.SurfaceCollisionEllipse>{
   return loadSurfaceCollisionRect(a)
-  .then((b)=> new ST.SurfaceCollisionEllipse(b.name, b.type, b.top, b.bottom, b.left, b.right));
+  .then((b)=> new ST.SurfaceCollisionEllipse(b.name, b.left, b.top, b.right, b.bottom));
 }
 
 
@@ -203,7 +203,7 @@ export function loadSurfaceCollisionCircle(collision: SY.SurfaceRegionCircle): P
   const centerX = collision.center_x;
   const centerY = collision.center_y;
   const radius = collision.radius;
-  const that = new ST.SurfaceCollisionCircle(name, type, centerX, centerY, radius);
+  const that = new ST.SurfaceCollisionCircle(name, centerX, centerY, radius);
   return Promise.resolve(that);
 }
 
@@ -222,7 +222,7 @@ export function loadSurfaceCollisionPolygon(col: SY.SurfaceRegionPolygon): Promi
     return Promise.reject(col);
   }
   const coordinates = _coordinates
-  const that = new ST.SurfaceCollisionPolygon(name, type, coordinates);
+  const that = new ST.SurfaceCollisionPolygon(name, coordinates);
   return Promise.resolve(that);
 }
 

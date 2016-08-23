@@ -30,7 +30,7 @@
         //"noImplicitUseStrict": false,
         "noLib": false,
         "noResolve": false,
-        "outDir": "lib",
+        "outDir": "es5",
         //"outFile": null,
         "preserveConstEnums": true,
         "pretty": true,
@@ -44,7 +44,7 @@
         "stripInternal": false,
         "suppressExcessPropertyErrors": true,
         "suppressImplicitAnyIndexErrors": true,
-        "target": "es2015"
+        "target": "es5"
         //"traceResolution": false
     },
     "formatCodeOptions": {

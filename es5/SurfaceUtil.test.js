@@ -1,5 +1,4 @@
 "use strict";
-
 var SU = require("./SurfaceUtil");
 var $ = require("jquery");
 QUnit.module('SurfaceUtil');
@@ -20,7 +19,11 @@ QUnit.test("SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer", function (assert
     });
 });
 QUnit.test("SurfaceUtil.find", function (assert) {
-    var paths = ["surface0.png", "surface10.png", "elements/element0.png"];
+    var paths = [
+        "surface0.png",
+        "surface10.png",
+        "elements/element0.png"
+    ];
     var results = SU.find(paths, "./surface0.png");
     assert.ok(results[0] === paths[0]);
     results = SU.find(paths, "SURFACE10.PNG");
@@ -29,22 +32,14 @@ QUnit.test("SurfaceUtil.find", function (assert) {
     assert.ok(results[0] === paths[2]);
 });
 QUnit.test("SurfaceUtil.choice", function (assert) {
-    var results = function () {
-        var arr = [];for (var i = 0; i < 1000; i++) {
-            arr.push(SU.choice([1, 2, 3]));
-        }return arr;
-    }();
-    var a = results.reduce(function (count, val) {
-        return val === 1 ? count + 1 : count;
-    }, 0) / results.length;
+    var results = (function () { var arr = []; for (var i = 0; i < 1000; i++) {
+        arr.push(SU.choice([1, 2, 3]));
+    } return arr; })();
+    var a = results.reduce((function (count, val) { return val === 1 ? count + 1 : count; }), 0) / results.length;
     assert.ok(0.2 < a && a < 0.4);
-    var b = results.reduce(function (count, val) {
-        return val === 2 ? count + 1 : count;
-    }, 0) / results.length;
+    var b = results.reduce((function (count, val) { return val === 2 ? count + 1 : count; }), 0) / results.length;
     assert.ok(0.2 < b && b < 0.4);
-    var c = results.reduce(function (count, val) {
-        return val === 3 ? count + 1 : count;
-    }, 0) / results.length;
+    var c = results.reduce((function (count, val) { return val === 3 ? count + 1 : count; }), 0) / results.length;
     assert.ok(0.2 < c && c < 0.4);
 });
 QUnit.test("SurfaceUtil.copy", function (assert) {
@@ -64,9 +59,9 @@ QUnit.test("SurfaceUtil.copy", function (assert) {
 QUnit.test("SurfaceUtil.fetchImageFromURL, SurfaceUtil.fetchImageFromArrayBuffer", function (assert) {
     var done = assert.async();
     assert.expect(2);
-    return SU.fetchArrayBuffer("src/surface0.png").then(function (buffer) {
-        return SU.fetchImageFromArrayBuffer(buffer);
-    }).then(function (img) {
+    return SU.fetchArrayBuffer("src/surface0.png")
+        .then(function (buffer) { return SU.fetchImageFromArrayBuffer(buffer); })
+        .then(function (img) {
         assert.ok(img.width === 182);
         assert.ok(img.height === 445);
         SU.setPictureFrame(img, "SurfaceUtil.fetchImageFromURL");
@@ -77,40 +72,44 @@ QUnit.test("SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10
     var done = assert.async();
     assert.expect(3);
     var endtime = Date.now() + 1000 * 10;
-    return Promise.all([new Promise(function (resolve, reject) {
-        var count = 0;
-        var func = function func(next) {
-            if (endtime < Date.now()) {
-                assert.ok(4 <= count && count <= 6, "random, 2");
-                return resolve();
-            }
-            count++;
-            next();
-        };
-        SU.random(func, 2);
-    }), new Promise(function (resolve, reject) {
-        var count = 0;
-        var func = function func(next) {
-            if (endtime < Date.now()) {
-                assert.ok(4 <= count && count <= 6, "periodic");
-                return resolve();
-            }
-            count++;
-            next();
-        };
-        SU.periodic(func, 2);
-    }), new Promise(function (resolve, reject) {
-        var count = 0;
-        var func = function func(next) {
-            if (endtime < Date.now()) {
-                assert.ok(9 <= count && count <= 11, "always");
-                return resolve();
-            }
-            count++;
-            setTimeout(next, 1000);
-        };
-        SU.always(func);
-    })]).then(done);
+    return Promise.all([
+        new Promise(function (resolve, reject) {
+            var count = 0;
+            var func = function (next) {
+                if (endtime < Date.now()) {
+                    assert.ok(4 <= count && count <= 6, "random, 2");
+                    return resolve();
+                }
+                count++;
+                next();
+            };
+            SU.random(func, 2);
+        }),
+        new Promise(function (resolve, reject) {
+            var count = 0;
+            var func = function (next) {
+                if (endtime < Date.now()) {
+                    assert.ok(4 <= count && count <= 6, "periodic");
+                    return resolve();
+                }
+                count++;
+                next();
+            };
+            SU.periodic(func, 2);
+        }),
+        new Promise(function (resolve, reject) {
+            var count = 0;
+            var func = function (next) {
+                if (endtime < Date.now()) {
+                    assert.ok(9 <= count && count <= 11, "always");
+                    return resolve();
+                }
+                count++;
+                setTimeout(next, 1000);
+            };
+            SU.always(func);
+        })
+    ]).then(done);
 });
 QUnit.test("SurfaceUtil.isHit", function (assert) {
     var cnv = document.createElement("canvas");
@@ -141,16 +140,8 @@ QUnit.test("SurfaceUtil.unscope", function (assert) {
     assert.ok(2 === SU.unscope("char2"));
 });
 QUnit.test("SurfaceUtil.getEventPosition", function (assert) {
-    var handler = function handler(ev) {
-        var _SU$getEventPosition = SU.getEventPosition(ev);
-
-        var pageX = _SU$getEventPosition.pageX;
-        var pageY = _SU$getEventPosition.pageY;
-        var clientX = _SU$getEventPosition.clientX;
-        var clientY = _SU$getEventPosition.clientY;
-        var screenX = _SU$getEventPosition.screenX;
-        var screenY = _SU$getEventPosition.screenY;
-
+    var handler = function (ev) {
+        var _a = SU.getEventPosition(ev), pageX = _a.pageX, pageY = _a.pageY, clientX = _a.clientX, clientY = _a.clientY, screenX = _a.screenX, screenY = _a.screenY;
         assert.ok(100 === pageX);
         assert.ok(100 === pageY);
         assert.ok(100 === clientX);
@@ -182,34 +173,23 @@ chromakey_snipet
 */
 QUnit.test("SurfaceUtil.randomRange", function (assert) {
     assert.expect(10);
-    var results = function () {
-        var arr = [];for (var i = 0; i < 1000; i++) {
-            arr.push(SU.randomRange(0, 9));
-        }return arr;
-    }();
-    var histgram = function () {
-        var arr = [];
-        var _loop = function _loop(i) {
-            arr.push(results.filter(function (a) {
-                return a === i;
-            }));
-        };
-
-        for (var i = 0; i < 10; i++) {
-            _loop(i);
-        }return arr;
-    }();
+    var results = (function () { var arr = []; for (var i = 0; i < 1000; i++) {
+        arr.push(SU.randomRange(0, 9));
+    } return arr; })();
+    var histgram = (function () { var arr = []; 
+    var _loop_1 = function(i) {
+        arr.push(results.filter(function (a) { return a === i; }));
+    };
+    for (var i = 0; i < 10; i++) {
+        _loop_1(i);
+    } return arr; })();
     histgram.forEach(function (arr, i) {
         var parsent = arr.length / 10;
         assert.ok(5 <= parsent && parsent <= 15, "" + i);
     });
 });
 QUnit.test("SurfaceUtil.getScrollXY", function (assert) {
-    var _SU$getScrollXY = SU.getScrollXY();
-
-    var scrollX = _SU$getScrollXY.scrollX;
-    var scrollY = _SU$getScrollXY.scrollY;
-
+    var _a = SU.getScrollXY(), scrollX = _a.scrollX, scrollY = _a.scrollY;
     assert.ok(scrollX === 0);
     assert.ok(scrollY === 0);
 });

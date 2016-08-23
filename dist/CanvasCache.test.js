@@ -4,99 +4,74 @@
  * 比較的重い処理である surface*.png の色抜き処理をキャッシングする
  */
 "use strict";
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 var SU = require("./SurfaceUtil");
-
-var CanvasCache = function () {
+var CanvasCache = (function () {
     function CanvasCache(dir) {
-        _classCallCheck(this, CanvasCache);
-
         this.directory = dir;
         this.cache = {};
     }
-
-    _createClass(CanvasCache, [{
-        key: "hasFile",
-        value: function hasFile(path) {
-            return SU.has(this.directory, path);
+    CanvasCache.prototype.hasFile = function (path) {
+        return SU.has(this.directory, path);
+    };
+    CanvasCache.prototype.hasCache = function (path) {
+        return SU.has(this.cache, path);
+    };
+    CanvasCache.prototype.getFile = function (path) {
+        return SU.get(this.directory, path);
+    };
+    CanvasCache.prototype.getCache = function (path) {
+        return SU.get(this.cache, path);
+    };
+    CanvasCache.prototype.getCanvas = function (path, asis, retry) {
+        var _this = this;
+        if (asis === void 0) { asis = false; }
+        if (retry === void 0) { retry = true; }
+        if (asis && this.hasCache(path) !== "") {
+            // 色抜き後のキャッシュがあった
+            return Promise.resolve(this.cache[path]);
         }
-    }, {
-        key: "hasCache",
-        value: function hasCache(path) {
-            return SU.has(this.cache, path);
-        }
-    }, {
-        key: "getFile",
-        value: function getFile(path) {
-            return SU.get(this.directory, path);
-        }
-    }, {
-        key: "getCache",
-        value: function getCache(path) {
-            return SU.get(this.cache, path);
-        }
-    }, {
-        key: "getCanvas",
-        value: function getCanvas(path) {
-            var _this = this;
-
-            var asis = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
-            var retry = arguments.length <= 2 || arguments[2] === undefined ? true : arguments[2];
-
-            if (asis && this.hasCache(path) !== "") {
-                // 色抜き後のキャッシュがあった
-                return Promise.resolve(this.cache[path]);
+        return this.getFile(path).then(SU.ABToCav).then(function (png) {
+            if (asis) {
+                // 色抜き前でいい(色抜きが重いので色抜き前で良いならABからBlobしてIMGしてCNVしてしまう)
+                return Promise.resolve(png);
             }
-            return this.getFile(path).then(SU.ABToCav).then(function (png) {
-                if (asis) {
-                    // 色抜き前でいい(色抜きが重いので色抜き前で良いならABからBlobしてIMGしてCNVしてしまう)
-                    return Promise.resolve(png);
-                }
-                var pna_name = SU.changeFileExtension(path, "pna");
-                return _this.getCanvas(pna_name, true /* pna読み出しなのでasis適用しない */, false /* リトライしない */).then(function (pna) {
-                    // pnaあったので色抜き
-                    return SU.png_pna(png, pna);
-                }).catch(function (err) {
-                    // pnaとかなかったのでそのまま色抜き
-                    return SU.chromakey(png);
-                }).then(function (cnv) {
-                    // 色抜き後のキャッシング
-                    _this.cache[path] = cnv;
-                    return cnv;
-                });
+            var pna_name = SU.changeFileExtension(path, "pna");
+            return _this.getCanvas(pna_name, true /* pna読み出しなのでasis適用しない */, false /* リトライしない */).then(function (pna) {
+                // pnaあったので色抜き
+                return SU.png_pna(png, pna);
             }).catch(function (err) {
-                // そもそもpngファイルがなかった
-                if (retry === false) {
-                    // 二度目はない
-                    return Promise.reject(err);
-                }
-                // 我々は心優しいので寛大にも拡張子つけ忘れに対応してあげる
-                if (_this.hasFile(path + ".png") === "") {
-                    // それでもやっぱりpngファイルがなかった
-                    console.warn("CanvasCache#getCanvas: ", err, path, _this.directory);
-                    return Promise.reject(err);
-                }
-                // なんとpngファイルがあった
-                console.warn("CanvasCache#getCanvas: ", "element file " + path + " need '.png' extension");
-                // 拡張子つけてリトライ
-                return _this.getCanvas(path + ".png", asis, false /* 二度目はない */);
+                // pnaとかなかったのでそのまま色抜き
+                return SU.chromakey(png);
+            }).then(function (cnv) {
+                // 色抜き後のキャッシング
+                _this.cache[path] = cnv;
+                return cnv;
             });
-        }
-    }, {
-        key: "clear",
-        value: function clear() {
-            this.cache = {};
-        }
-    }]);
-
+        }).catch(function (err) {
+            // そもそもpngファイルがなかった
+            if (retry === false) {
+                // 二度目はない
+                return Promise.reject(err);
+            }
+            // 我々は心優しいので寛大にも拡張子つけ忘れに対応してあげる
+            if (_this.hasFile(path + ".png") === "") {
+                // それでもやっぱりpngファイルがなかった
+                console.warn("CanvasCache#getCanvas: ", err, path, _this.directory);
+                return Promise.reject(err);
+            }
+            // なんとpngファイルがあった
+            console.warn("CanvasCache#getCanvas: ", "element file " + path + " need '.png' extension");
+            // 拡張子つけてリトライ
+            return _this.getCanvas(path + ".png", asis, false /* 二度目はない */);
+        });
+    };
+    CanvasCache.prototype.clear = function () {
+        this.cache = {};
+    };
     return CanvasCache;
-}();
-
+}());
 exports.CanvasCache = CanvasCache;
+
 },{"./SurfaceUtil":2}],2:[function(require,module,exports){
 /*
  * 可用性・抽象度の高いコードスニペット集
@@ -104,15 +79,14 @@ exports.CanvasCache = CanvasCache;
  * 歴史的経緯と変更コストを鑑みてこのままにしている
  */
 "use strict";
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
-
 var Encoding = require("encoding-japanese");
 var $ = require("jquery");
 var deep = require("deep-diff");
-exports.diff = deep.diff;
+function diff(lhs, rhs, prefilter, acc) {
+    var ret = deep.diff(lhs, rhs, prefilter, acc);
+    return ret != null ? ret : [];
+}
+exports.diff = diff;
 exports.extend = $.extend;
 function chromakey(png) {
     var cnvA = copy(png);
@@ -144,10 +118,7 @@ function png_pna(png, pna) {
 }
 exports.png_pna = png_pna;
 function chromakey_snipet(data) {
-    var r = data[0],
-        g = data[1],
-        b = data[2],
-        a = data[3];
+    var r = data[0], g = data[1], b = data[2], a = data[3];
     var i = 0;
     if (a !== 0) {
         while (i < data.length) {
@@ -159,9 +130,8 @@ function chromakey_snipet(data) {
     }
 }
 exports.chromakey_snipet = chromakey_snipet;
-function log(element) {
-    var description = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-
+function log(element, description) {
+    if (description === void 0) { description = ""; }
     if (element instanceof HTMLCanvasElement || element instanceof HTMLImageElement) {
         description += "(" + element.width + "x" + element.height + ")";
     }
@@ -179,22 +149,14 @@ function parseDescript(text) {
     text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
     while (true) {
         var match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["", ""])[0];
-        if (match.length === 0) break;
+        if (match.length === 0)
+            break;
         text = text.replace(match, "");
     }
     var lines = text.split("\n");
-    var _lines = lines.filter(function (line) {
-        return line.length !== 0;
-    }); // remove no content line
+    var _lines = lines.filter(function (line) { return line.length !== 0; }); // remove no content line
     var dic = _lines.reduce(function (dic, line) {
-        var _line$split = line.split(",");
-
-        var _line$split2 = _toArray(_line$split);
-
-        var key = _line$split2[0];
-
-        var vals = _line$split2.slice(1);
-
+        var _a = line.split(","), key = _a[0], vals = _a.slice(1);
         var _key = key.trim();
         var val = vals.join(",").trim();
         dic[_key] = val;
@@ -207,7 +169,7 @@ exports.parseDescript = parseDescript;
 function fetchArrayBuffer(url) {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
-        var warn = function warn(msg) {
+        var warn = function (msg) {
             console.warn("SurfaceUtil.fetchArrayBuffer: error", msg, xhr);
             reject(msg);
         };
@@ -215,10 +177,12 @@ function fetchArrayBuffer(url) {
             if (200 <= xhr.status && xhr.status < 300) {
                 if (xhr.response.error == null) {
                     resolve(xhr.response);
-                } else {
+                }
+                else {
                     warn(xhr.response.error.message);
                 }
-            } else {
+            }
+            else {
                 warn("" + xhr.status);
             }
         });
@@ -242,18 +206,18 @@ exports.convert = convert;
 // filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
 function find(paths, filename) {
     filename = filename.split("\\").join("/");
-    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    if (filename.slice(0, 2) === "./")
+        filename = filename.slice(2);
     var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
-    var hits = paths.filter(function (key) {
-        return reg.test(key);
-    });
+    var hits = paths.filter(function (key) { return reg.test(key); });
     return hits;
 }
 exports.find = find;
 // 検索打ち切って高速化
 function fastfind(paths, filename) {
     filename = filename.split("\\").join("/");
-    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    if (filename.slice(0, 2) === "./")
+        filename = filename.slice(2);
     var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
     for (var i = 0; i < paths.length; i++) {
         if (reg.test(paths[i])) {
@@ -265,7 +229,7 @@ function fastfind(paths, filename) {
 exports.fastfind = fastfind;
 // [1,2,3] -> 1 or 2 or 3 as 33% probability
 function choice(arr) {
-    return arr[(Math.random() * 100 * arr.length | 0) % arr.length];
+    return arr[(Math.random() * 100 * (arr.length) | 0) % arr.length];
 }
 exports.choice = choice;
 // copy canvas as new object
@@ -315,37 +279,38 @@ function fetchImageFromURL(url) {
 exports.fetchImageFromURL = fetchImageFromURL;
 // random(func, n) means call func 1/n per sec
 function random(callback, probability) {
-    return setTimeout(function () {
-        function nextTick() {
-            random(callback, probability);
-        }
-        if (Math.random() < 1 / probability) callback(nextTick);else nextTick();
-    }, 1000);
+    return setTimeout((function () {
+        function nextTick() { random(callback, probability); }
+        if (Math.random() < 1 / probability)
+            callback(nextTick);
+        else
+            nextTick();
+    }), 1000);
 }
 exports.random = random;
 // cron
 function periodic(callback, sec) {
-    return setTimeout(function () {
+    return setTimeout((function () {
         return callback(function () {
             return periodic(callback, sec);
         });
-    }, sec * 1000);
+    }), sec * 1000);
 }
 exports.periodic = periodic;
 // 非同期ループするだけ
 function always(callback) {
-    return setTimeout(function () {
-        return callback(function () {
-            return always(callback);
-        });
-    }, 0);
+    return setTimeout((function () {
+        return callback(function () { return always(callback); });
+    }), 0);
 }
 exports.always = always;
 // canvasの座標のアルファチャンネルが不透明ならtrue
 function isHit(cnv, x, y) {
-    if (!(x > 0 && y > 0)) return false;
+    if (!(x > 0 && y > 0))
+        return false;
     // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
-    if (!(cnv.width > 0 || cnv.height > 0)) return false;
+    if (!(cnv.width > 0 || cnv.height > 0))
+        return false;
     var ctx = cnv.getContext("2d");
     var imgdata = ctx.getImageData(0, 0, x, y);
     var data = imgdata.data;
@@ -362,25 +327,29 @@ function createCanvas() {
 exports.createCanvas = createCanvas;
 // 0 -> sakura
 function scope(scopeId) {
-    return scopeId === 0 ? "sakura" : scopeId === 1 ? "kero" : "char" + scopeId;
+    return scopeId === 0 ? "sakura"
+        : scopeId === 1 ? "kero"
+            : "char" + scopeId;
 }
 exports.scope = scope;
 // sakura -> 0
 // parse error -> -1
 function unscope(charId) {
-    return charId === "sakura" ? 0 : charId === "kero" ? 1 : Number((/^char(\d+)/.exec(charId) || ["", "-1"])[1]);
+    return charId === "sakura" ? 0
+        : charId === "kero" ? 1
+            : Number((/^char(\d+)/.exec(charId) || ["", "-1"])[1]);
 }
 exports.unscope = unscope;
 // JQueryEventObject からタッチ・マウスを正規化して座標値を抜き出す便利関数
 function getEventPosition(ev) {
     if (/^touch/.test(ev.type) && ev.originalEvent.touches.length > 0) {
-        var _pageX = ev.originalEvent.touches[0].pageX;
-        var _pageY = ev.originalEvent.touches[0].pageY;
-        var _clientX = ev.originalEvent.touches[0].clientX;
-        var _clientY = ev.originalEvent.touches[0].clientY;
-        var _screenX = ev.originalEvent.touches[0].screenX;
-        var _screenY = ev.originalEvent.touches[0].screenY;
-        return { pageX: _pageX, pageY: _pageY, clientX: _clientX, clientY: _clientY, screenX: _screenX, screenY: _screenY };
+        var pageX_1 = ev.originalEvent.touches[0].pageX;
+        var pageY_1 = ev.originalEvent.touches[0].pageY;
+        var clientX_1 = ev.originalEvent.touches[0].clientX;
+        var clientY_1 = ev.originalEvent.touches[0].clientY;
+        var screenX_1 = ev.originalEvent.touches[0].screenX;
+        var screenY_1 = ev.originalEvent.touches[0].screenY;
+        return { pageX: pageX_1, pageY: pageY_1, clientX: clientX_1, clientY: clientY_1, screenX: screenX_1, screenY: screenY_1 };
     }
     var pageX = ev.pageX;
     var pageY = ev.pageY;
@@ -404,10 +373,7 @@ function getScrollXY() {
 }
 exports.getScrollXY = getScrollXY;
 function findSurfacesTxt(filepaths) {
-    return filepaths.filter(function (name) {
-        return (/^surfaces.*\.txt$|^alias\.txt$/i.test(name)
-        );
-    });
+    return filepaths.filter(function (name) { return /^surfaces.*\.txt$|^alias\.txt$/i.test(name); });
 }
 exports.findSurfacesTxt = findSurfacesTxt;
 function fetchArrayBufferFromURL(url) {
@@ -417,10 +383,12 @@ function fetchArrayBufferFromURL(url) {
             if (200 <= xhr.status && xhr.status < 300) {
                 if (xhr.response.error == null) {
                     resolve(xhr.response);
-                } else {
+                }
+                else {
                     reject(new Error("message: " + xhr.response.error.message));
                 }
-            } else {
+            }
+            else {
                 reject(new Error("status: " + xhr.status));
             }
         });
@@ -437,14 +405,7 @@ function decolateJSONizeDescript(o, key, value) {
     var props = key.split(".");
     for (var i = 0; i < props.length; i++) {
         var prop = props[i];
-
-        var _Array$prototype$slic = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1);
-
-        var _Array$prototype$slic2 = _slicedToArray(_Array$prototype$slic, 2);
-
-        var _prop = _Array$prototype$slic2[0];
-        var num = _Array$prototype$slic2[1];
-
+        var _a = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1), _prop = _a[0], num = _a[1];
         var _num = Number(num);
         if (isFinite(_num)) {
             if (!Array.isArray(ptr[_prop])) {
@@ -453,7 +414,8 @@ function decolateJSONizeDescript(o, key, value) {
             ptr[_prop][_num] = ptr[_prop][_num] || {};
             if (i !== props.length - 1) {
                 ptr = ptr[_prop][_num];
-            } else {
+            }
+            else {
                 if (ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0) {
                     // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
                     // menu, 0 -> menu.value
@@ -461,18 +423,22 @@ function decolateJSONizeDescript(o, key, value) {
                     // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
                     // このifはその例外への対処である
                     ptr[_prop][_num].value = Number(value) || value;
-                } else {
+                }
+                else {
                     ptr[_prop][_num] = Number(value) || value;
                 }
             }
-        } else {
+        }
+        else {
             ptr[_prop] = ptr[_prop] || {};
             if (i !== props.length - 1) {
                 ptr = ptr[_prop];
-            } else {
+            }
+            else {
                 if (ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0) {
                     ptr[_prop].value = Number(value) || value;
-                } else {
+                }
+                else {
                     ptr[_prop] = Number(value) || value;
                 }
             }
@@ -513,9 +479,8 @@ function setPictureFrame(element, description) {
     return;
 }
 exports.setPictureFrame = setPictureFrame;
-function craetePictureFrame(description) {
-    var target = arguments.length <= 1 || arguments[1] === undefined ? document.body : arguments[1];
-
+function craetePictureFrame(description, target) {
+    if (target === void 0) { target = document.body; }
     var fieldset = document.createElement('fieldset');
     var legend = document.createElement('legend');
     legend.appendChild(document.createTextNode(description));
@@ -523,18 +488,19 @@ function craetePictureFrame(description) {
     fieldset.style.display = 'inline-block';
     target.appendChild(fieldset);
     fieldset.style.backgroundColor = "#D2E0E6";
-    var add = function add(element) {
-        var txt = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-
+    var add = function (element, txt) {
+        if (txt === void 0) { txt = ""; }
         if (element instanceof HTMLElement) {
             var frame = craetePictureFrame(txt, fieldset);
             frame.add(element);
-        } else if (typeof element === "string") {
+        }
+        else if (typeof element === "string") {
             var txtNode = document.createTextNode(element);
             var p = document.createElement("p");
             p.appendChild(txtNode);
             fieldset.appendChild(p);
-        } else {
+        }
+        else {
             fieldset.appendChild(element);
         }
     };
@@ -547,6 +513,7 @@ function setCanvasStyle() {
     });
 }
 exports.setCanvasStyle = setCanvasStyle;
+
 },{"deep-diff":6,"encoding-japanese":7,"jquery":18}],3:[function(require,module,exports){
 'use strict';
 var CC = require('./CanvasCache');
@@ -562,22 +529,22 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface10.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface10.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 14
+            line: 13
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasFile('surface0.png'), 'arguments/0/left') !== '', 'arguments/0'), {
             content: 'assert.ok(cc.hasFile("surface0.png") !== "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 15
+            line: 14
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface0.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 16
+            line: 15
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasFile('surface10.png'), 'arguments/0/left') !== '', 'arguments/0'), {
             content: 'assert.ok(cc.hasFile("surface10.png") !== "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 17
+            line: 16
         }));
     });
     QUnit.test('CanvasCache.getCanvas', function (assert) {
@@ -585,18 +552,18 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface0.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 21
+            line: 20
         }));
         return cc.getCanvas('surface0.png').then(function (cnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 23
+                line: 22
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0.png'), 'arguments/0/left') !== '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface0.png") !== "")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 24
+                line: 23
             }));
             document.body.appendChild(document.createTextNode('色抜き後'));
             document.body.appendChild(SU.copy(cnv));
@@ -608,18 +575,18 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface11.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface11.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 32
+            line: 31
         }));
         return cc.getCanvas('surface11.png', false).then(function (cnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface11.png'), 'arguments/0/left') !== '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface11.png") !== "")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 34
+                line: 33
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 35
+                line: 34
             }));
             document.body.appendChild(document.createTextNode('色抜き前'));
             document.body.appendChild(SU.copy(cnv));
@@ -631,23 +598,23 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface10'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface10") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 43
+            line: 42
         }));
         return cc.getCanvas('surface10').then(function (cnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface10'), 'arguments/0/left') === '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface10") === "", "拡張子が間違っていればそれはキャッシュへのキーにはならない")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 45
+                line: 44
             }), '拡張子が間違っていればそれはキャッシュへのキーにはならない');
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface10.png'), 'arguments/0/left') !== '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface10.png") !== "", "正しい拡張子でキャッシュされる")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 46
+                line: 45
             }), '正しい拡張子でキャッシュされる');
             assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 47
+                line: 46
             }));
             document.body.appendChild(document.createTextNode('色抜き後'));
             document.body.appendChild(SU.copy(cnv));
@@ -659,18 +626,18 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0730.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface0730.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 55
+            line: 54
         }));
         return cc.getCanvas('surface0730.png').then(function (cnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0730.png'), 'arguments/0/left') !== '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface0730.png") !== "")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 57
+                line: 56
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 58
+                line: 57
             }));
             document.body.appendChild(document.createTextNode('use pna'));
             document.body.appendChild(SU.copy(cnv));
@@ -682,18 +649,18 @@ NL.loadFromURL('/nar/mobilemaster.nar').then(function (dir) {
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0731.png'), 'arguments/0/left') === '', 'arguments/0'), {
             content: 'assert.ok(cc.hasCache("surface0731.png") === "")',
             filepath: 'es5/CanvasCache.test.js',
-            line: 66
+            line: 65
         }));
         return cc.getCanvas('surface0731.png', true).then(function (cnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cc, 'arguments/0/left/callee/object').hasCache('surface0731.png'), 'arguments/0/left') === '', 'arguments/0'), {
                 content: 'assert.ok(cc.hasCache("surface0731.png") === "", "axisするとキャッシュされない")',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 68
+                line: 67
             }), 'axisするとキャッシュされない');
             assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
                 filepath: 'es5/CanvasCache.test.js',
-                line: 69
+                line: 68
             }));
             document.body.appendChild(document.createTextNode('unuse pna'));
             document.body.appendChild(SU.copy(cnv));

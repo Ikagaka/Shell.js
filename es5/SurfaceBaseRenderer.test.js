@@ -1,5 +1,4 @@
 "use strict";
-
 var SBR = require("./SurfaceBaseRenderer");
 var ST = require("./SurfaceTree");
 var SR = require("./SurfaceRenderer");
@@ -18,13 +17,15 @@ NL.loadFromURL("/nar/mobilemaster.nar").then(function (dir) {
         assert.ok(surfaces instanceof Array);
         assert.ok(surfaces[0] instanceof ST.SurfaceDefinition);
         assert.ok(surfaces[0] != null && surfaces[0].elements.length > 0);
-        return rndr.getBaseSurface(0).then(function (srfcnv) {
+        return rndr.getBaseSurface(0)
+            .then(function (srfcnv) {
             assert.ok(srfcnv instanceof SR.SurfaceCanvas);
             assert.ok(!(srfcnv instanceof SR.SurfaceRenderer));
             assert.ok(!(srfcnv instanceof SBR.SurfaceBaseRenderer));
             assert.ok(srfcnv.cnv.width > 0);
             assert.ok(srfcnv.cnv.height > 0);
-            return rndr.getBaseSurface(0).then(function (srfcnv2) {
+            return rndr.getBaseSurface(0)
+                .then(function (srfcnv2) {
                 assert.ok(srfcnv === srfcnv2);
             });
         }).catch(console.error.bind(console)).then(done);

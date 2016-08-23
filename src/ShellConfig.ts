@@ -194,9 +194,9 @@ export class BindGroupConfig {
 }
 
 
-export function isBind(config: ShellConfig, animId: number): boolean {
+export function isBind(config: ShellConfig, scopeId: number, animId: number): boolean {
   const {bindgroup} = config;
-  if (bindgroup[this.scopeId] == null) return false;
-  if (bindgroup[this.scopeId][animId] === false) return false;
+  if (bindgroup[scopeId] == null) return false;
+  if (bindgroup[scopeId][animId] === false) return false;
   return true;
 }

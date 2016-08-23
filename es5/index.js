@@ -1,5 +1,4 @@
 "use strict";
-
 var _SU = require("./SurfaceUtil");
 exports.SU = _SU;
 var _STL = require("./SurfaceTreeLoader");

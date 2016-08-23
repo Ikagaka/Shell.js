@@ -5,15 +5,14 @@
  * 歴史的経緯と変更コストを鑑みてこのままにしている
  */
 "use strict";
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
-
 var Encoding = require("encoding-japanese");
 var $ = require("jquery");
 var deep = require("deep-diff");
-exports.diff = deep.diff;
+function diff(lhs, rhs, prefilter, acc) {
+    var ret = deep.diff(lhs, rhs, prefilter, acc);
+    return ret != null ? ret : [];
+}
+exports.diff = diff;
 exports.extend = $.extend;
 function chromakey(png) {
     var cnvA = copy(png);
@@ -45,10 +44,7 @@ function png_pna(png, pna) {
 }
 exports.png_pna = png_pna;
 function chromakey_snipet(data) {
-    var r = data[0],
-        g = data[1],
-        b = data[2],
-        a = data[3];
+    var r = data[0], g = data[1], b = data[2], a = data[3];
     var i = 0;
     if (a !== 0) {
         while (i < data.length) {
@@ -60,9 +56,8 @@ function chromakey_snipet(data) {
     }
 }
 exports.chromakey_snipet = chromakey_snipet;
-function log(element) {
-    var description = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-
+function log(element, description) {
+    if (description === void 0) { description = ""; }
     if (element instanceof HTMLCanvasElement || element instanceof HTMLImageElement) {
         description += "(" + element.width + "x" + element.height + ")";
     }
@@ -80,22 +75,14 @@ function parseDescript(text) {
     text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
     while (true) {
         var match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["", ""])[0];
-        if (match.length === 0) break;
+        if (match.length === 0)
+            break;
         text = text.replace(match, "");
     }
     var lines = text.split("\n");
-    var _lines = lines.filter(function (line) {
-        return line.length !== 0;
-    }); // remove no content line
+    var _lines = lines.filter(function (line) { return line.length !== 0; }); // remove no content line
     var dic = _lines.reduce(function (dic, line) {
-        var _line$split = line.split(",");
-
-        var _line$split2 = _toArray(_line$split);
-
-        var key = _line$split2[0];
-
-        var vals = _line$split2.slice(1);
-
+        var _a = line.split(","), key = _a[0], vals = _a.slice(1);
         var _key = key.trim();
         var val = vals.join(",").trim();
         dic[_key] = val;
@@ -108,7 +95,7 @@ exports.parseDescript = parseDescript;
 function fetchArrayBuffer(url) {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
-        var warn = function warn(msg) {
+        var warn = function (msg) {
             console.warn("SurfaceUtil.fetchArrayBuffer: error", msg, xhr);
             reject(msg);
         };
@@ -116,10 +103,12 @@ function fetchArrayBuffer(url) {
             if (200 <= xhr.status && xhr.status < 300) {
                 if (xhr.response.error == null) {
                     resolve(xhr.response);
-                } else {
+                }
+                else {
                     warn(xhr.response.error.message);
                 }
-            } else {
+            }
+            else {
                 warn("" + xhr.status);
             }
         });
@@ -143,18 +132,18 @@ exports.convert = convert;
 // filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
 function find(paths, filename) {
     filename = filename.split("\\").join("/");
-    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    if (filename.slice(0, 2) === "./")
+        filename = filename.slice(2);
     var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
-    var hits = paths.filter(function (key) {
-        return reg.test(key);
-    });
+    var hits = paths.filter(function (key) { return reg.test(key); });
     return hits;
 }
 exports.find = find;
 // 検索打ち切って高速化
 function fastfind(paths, filename) {
     filename = filename.split("\\").join("/");
-    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    if (filename.slice(0, 2) === "./")
+        filename = filename.slice(2);
     var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
     for (var i = 0; i < paths.length; i++) {
         if (reg.test(paths[i])) {
@@ -166,7 +155,7 @@ function fastfind(paths, filename) {
 exports.fastfind = fastfind;
 // [1,2,3] -> 1 or 2 or 3 as 33% probability
 function choice(arr) {
-    return arr[(Math.random() * 100 * arr.length | 0) % arr.length];
+    return arr[(Math.random() * 100 * (arr.length) | 0) % arr.length];
 }
 exports.choice = choice;
 // copy canvas as new object
@@ -216,37 +205,38 @@ function fetchImageFromURL(url) {
 exports.fetchImageFromURL = fetchImageFromURL;
 // random(func, n) means call func 1/n per sec
 function random(callback, probability) {
-    return setTimeout(function () {
-        function nextTick() {
-            random(callback, probability);
-        }
-        if (Math.random() < 1 / probability) callback(nextTick);else nextTick();
-    }, 1000);
+    return setTimeout((function () {
+        function nextTick() { random(callback, probability); }
+        if (Math.random() < 1 / probability)
+            callback(nextTick);
+        else
+            nextTick();
+    }), 1000);
 }
 exports.random = random;
 // cron
 function periodic(callback, sec) {
-    return setTimeout(function () {
+    return setTimeout((function () {
         return callback(function () {
             return periodic(callback, sec);
         });
-    }, sec * 1000);
+    }), sec * 1000);
 }
 exports.periodic = periodic;
 // 非同期ループするだけ
 function always(callback) {
-    return setTimeout(function () {
-        return callback(function () {
-            return always(callback);
-        });
-    }, 0);
+    return setTimeout((function () {
+        return callback(function () { return always(callback); });
+    }), 0);
 }
 exports.always = always;
 // canvasの座標のアルファチャンネルが不透明ならtrue
 function isHit(cnv, x, y) {
-    if (!(x > 0 && y > 0)) return false;
+    if (!(x > 0 && y > 0))
+        return false;
     // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
-    if (!(cnv.width > 0 || cnv.height > 0)) return false;
+    if (!(cnv.width > 0 || cnv.height > 0))
+        return false;
     var ctx = cnv.getContext("2d");
     var imgdata = ctx.getImageData(0, 0, x, y);
     var data = imgdata.data;
@@ -263,25 +253,29 @@ function createCanvas() {
 exports.createCanvas = createCanvas;
 // 0 -> sakura
 function scope(scopeId) {
-    return scopeId === 0 ? "sakura" : scopeId === 1 ? "kero" : "char" + scopeId;
+    return scopeId === 0 ? "sakura"
+        : scopeId === 1 ? "kero"
+            : "char" + scopeId;
 }
 exports.scope = scope;
 // sakura -> 0
 // parse error -> -1
 function unscope(charId) {
-    return charId === "sakura" ? 0 : charId === "kero" ? 1 : Number((/^char(\d+)/.exec(charId) || ["", "-1"])[1]);
+    return charId === "sakura" ? 0
+        : charId === "kero" ? 1
+            : Number((/^char(\d+)/.exec(charId) || ["", "-1"])[1]);
 }
 exports.unscope = unscope;
 // JQueryEventObject からタッチ・マウスを正規化して座標値を抜き出す便利関数
 function getEventPosition(ev) {
     if (/^touch/.test(ev.type) && ev.originalEvent.touches.length > 0) {
-        var _pageX = ev.originalEvent.touches[0].pageX;
-        var _pageY = ev.originalEvent.touches[0].pageY;
-        var _clientX = ev.originalEvent.touches[0].clientX;
-        var _clientY = ev.originalEvent.touches[0].clientY;
-        var _screenX = ev.originalEvent.touches[0].screenX;
-        var _screenY = ev.originalEvent.touches[0].screenY;
-        return { pageX: _pageX, pageY: _pageY, clientX: _clientX, clientY: _clientY, screenX: _screenX, screenY: _screenY };
+        var pageX_1 = ev.originalEvent.touches[0].pageX;
+        var pageY_1 = ev.originalEvent.touches[0].pageY;
+        var clientX_1 = ev.originalEvent.touches[0].clientX;
+        var clientY_1 = ev.originalEvent.touches[0].clientY;
+        var screenX_1 = ev.originalEvent.touches[0].screenX;
+        var screenY_1 = ev.originalEvent.touches[0].screenY;
+        return { pageX: pageX_1, pageY: pageY_1, clientX: clientX_1, clientY: clientY_1, screenX: screenX_1, screenY: screenY_1 };
     }
     var pageX = ev.pageX;
     var pageY = ev.pageY;
@@ -305,10 +299,7 @@ function getScrollXY() {
 }
 exports.getScrollXY = getScrollXY;
 function findSurfacesTxt(filepaths) {
-    return filepaths.filter(function (name) {
-        return (/^surfaces.*\.txt$|^alias\.txt$/i.test(name)
-        );
-    });
+    return filepaths.filter(function (name) { return /^surfaces.*\.txt$|^alias\.txt$/i.test(name); });
 }
 exports.findSurfacesTxt = findSurfacesTxt;
 function fetchArrayBufferFromURL(url) {
@@ -318,10 +309,12 @@ function fetchArrayBufferFromURL(url) {
             if (200 <= xhr.status && xhr.status < 300) {
                 if (xhr.response.error == null) {
                     resolve(xhr.response);
-                } else {
+                }
+                else {
                     reject(new Error("message: " + xhr.response.error.message));
                 }
-            } else {
+            }
+            else {
                 reject(new Error("status: " + xhr.status));
             }
         });
@@ -338,14 +331,7 @@ function decolateJSONizeDescript(o, key, value) {
     var props = key.split(".");
     for (var i = 0; i < props.length; i++) {
         var prop = props[i];
-
-        var _Array$prototype$slic = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1);
-
-        var _Array$prototype$slic2 = _slicedToArray(_Array$prototype$slic, 2);
-
-        var _prop = _Array$prototype$slic2[0];
-        var num = _Array$prototype$slic2[1];
-
+        var _a = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1), _prop = _a[0], num = _a[1];
         var _num = Number(num);
         if (isFinite(_num)) {
             if (!Array.isArray(ptr[_prop])) {
@@ -354,7 +340,8 @@ function decolateJSONizeDescript(o, key, value) {
             ptr[_prop][_num] = ptr[_prop][_num] || {};
             if (i !== props.length - 1) {
                 ptr = ptr[_prop][_num];
-            } else {
+            }
+            else {
                 if (ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0) {
                     // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
                     // menu, 0 -> menu.value
@@ -362,18 +349,22 @@ function decolateJSONizeDescript(o, key, value) {
                     // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
                     // このifはその例外への対処である
                     ptr[_prop][_num].value = Number(value) || value;
-                } else {
+                }
+                else {
                     ptr[_prop][_num] = Number(value) || value;
                 }
             }
-        } else {
+        }
+        else {
             ptr[_prop] = ptr[_prop] || {};
             if (i !== props.length - 1) {
                 ptr = ptr[_prop];
-            } else {
+            }
+            else {
                 if (ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0) {
                     ptr[_prop].value = Number(value) || value;
-                } else {
+                }
+                else {
                     ptr[_prop] = Number(value) || value;
                 }
             }
@@ -414,9 +405,8 @@ function setPictureFrame(element, description) {
     return;
 }
 exports.setPictureFrame = setPictureFrame;
-function craetePictureFrame(description) {
-    var target = arguments.length <= 1 || arguments[1] === undefined ? document.body : arguments[1];
-
+function craetePictureFrame(description, target) {
+    if (target === void 0) { target = document.body; }
     var fieldset = document.createElement('fieldset');
     var legend = document.createElement('legend');
     legend.appendChild(document.createTextNode(description));
@@ -424,18 +414,19 @@ function craetePictureFrame(description) {
     fieldset.style.display = 'inline-block';
     target.appendChild(fieldset);
     fieldset.style.backgroundColor = "#D2E0E6";
-    var add = function add(element) {
-        var txt = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-
+    var add = function (element, txt) {
+        if (txt === void 0) { txt = ""; }
         if (element instanceof HTMLElement) {
             var frame = craetePictureFrame(txt, fieldset);
             frame.add(element);
-        } else if (typeof element === "string") {
+        }
+        else if (typeof element === "string") {
             var txtNode = document.createTextNode(element);
             var p = document.createElement("p");
             p.appendChild(txtNode);
             fieldset.appendChild(p);
-        } else {
+        }
+        else {
             fieldset.appendChild(element);
         }
     };
@@ -448,6 +439,7 @@ function setCanvasStyle() {
     });
 }
 exports.setCanvasStyle = setCanvasStyle;
+
 },{"deep-diff":3,"encoding-japanese":4,"jquery":5}],2:[function(require,module,exports){
 'use strict';
 var SU = require('./SurfaceUtil');
@@ -459,17 +451,17 @@ QUnit.test('SurfaceUtil.parseDescript', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(dic, 'arguments/0/left/object')['charset'], 'arguments/0/left') === 'Shift_JIS', 'arguments/0'), {
         content: 'assert.ok(dic["charset"] === "Shift_JIS")',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 9
+        line: 8
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(dic, 'arguments/0/left/object')['sakura.balloon.offsetx'], 'arguments/0/left') === '21', 'arguments/0'), {
         content: 'assert.ok(dic["sakura.balloon.offsetx"] === "21")',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 10
+        line: 9
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(dic, 'arguments/0/left/object')['seriko.paint_transparent_region_black'], 'arguments/0/left') === '0', 'arguments/0'), {
         content: 'assert.ok(dic["seriko.paint_transparent_region_black"] === "0")',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 11
+        line: 10
     }));
 });
 QUnit.test('SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer', function (assert) {
@@ -480,7 +472,7 @@ QUnit.test('SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer', function (assert
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(txt, 'arguments/0/left/callee/object').match(/フリーシェル 「窗子」（MADOKO）を改変の上使用しています。/), 'arguments/0/left') !== null, 'arguments/0'), {
             content: 'assert.ok(txt.match(/フリーシェル \u300C窗子\u300D\uFF08MADOKO\uFF09を改変の上使用しています\u3002/) !== null)',
             filepath: 'es5/SurfaceUtil.test.js',
-            line: 18
+            line: 17
         }));
         done();
     });
@@ -495,19 +487,19 @@ QUnit.test('SurfaceUtil.find', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(results, 'arguments/0/left/object')[0], 'arguments/0/left') === assert._capt(assert._capt(paths, 'arguments/0/right/object')[0], 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(results[0] === paths[0])',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 25
+        line: 28
     }));
     results = SU.find(paths, 'SURFACE10.PNG');
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(results, 'arguments/0/left/object')[0], 'arguments/0/left') === assert._capt(assert._capt(paths, 'arguments/0/right/object')[1], 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(results[0] === paths[1])',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 27
+        line: 30
     }));
     results = SU.find(paths, 'elements\\element0.png');
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(results, 'arguments/0/left/object')[0], 'arguments/0/left') === assert._capt(assert._capt(paths, 'arguments/0/right/object')[2], 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(results[0] === paths[2])',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 29
+        line: 32
     }));
 });
 QUnit.test('SurfaceUtil.choice', function (assert) {
@@ -528,7 +520,7 @@ QUnit.test('SurfaceUtil.choice', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(0.2 < assert._capt(a, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(a, 'arguments/0/right/left') < 0.4, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0.2 < a && a < 0.4)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 40
+        line: 39
     }));
     var b = results.reduce(function (count, val) {
         return val === 2 ? count + 1 : count;
@@ -536,7 +528,7 @@ QUnit.test('SurfaceUtil.choice', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(0.2 < assert._capt(b, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(b, 'arguments/0/right/left') < 0.4, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0.2 < b && b < 0.4)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 44
+        line: 41
     }));
     var c = results.reduce(function (count, val) {
         return val === 3 ? count + 1 : count;
@@ -544,7 +536,7 @@ QUnit.test('SurfaceUtil.choice', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(0.2 < assert._capt(c, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(c, 'arguments/0/right/left') < 0.4, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0.2 < c && c < 0.4)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 48
+        line: 43
     }));
 });
 QUnit.test('SurfaceUtil.copy', function (assert) {
@@ -558,17 +550,17 @@ QUnit.test('SurfaceUtil.copy', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') !== assert._capt(cnv2, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(cnv !== cnv2)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 58
+        line: 53
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').width, 'arguments/0/left') === assert._capt(assert._capt(cnv2, 'arguments/0/right/object').width, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(cnv.width === cnv2.width)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 59
+        line: 54
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').height, 'arguments/0/left') === assert._capt(assert._capt(cnv2, 'arguments/0/right/object').height, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(cnv.height === cnv2.height)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 60
+        line: 55
     }));
     SU.setPictureFrame(cnv, 'SurfaceUtil.copy cnv');
     SU.setPictureFrame(cnv2, 'SurfaceUtil.copy cnv2');
@@ -582,12 +574,12 @@ QUnit.test('SurfaceUtil.fetchImageFromURL, SurfaceUtil.fetchImageFromArrayBuffer
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(img, 'arguments/0/left/object').width, 'arguments/0/left') === 182, 'arguments/0'), {
             content: 'assert.ok(img.width === 182)',
             filepath: 'es5/SurfaceUtil.test.js',
-            line: 70
+            line: 65
         }));
         assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(img, 'arguments/0/left/object').height, 'arguments/0/left') === 445, 'arguments/0'), {
             content: 'assert.ok(img.height === 445)',
             filepath: 'es5/SurfaceUtil.test.js',
-            line: 71
+            line: 66
         }));
         SU.setPictureFrame(img, 'SurfaceUtil.fetchImageFromURL');
         done();
@@ -600,12 +592,12 @@ QUnit.test('SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10
     return Promise.all([
         new Promise(function (resolve, reject) {
             var count = 0;
-            var func = function func(next) {
+            var func = function (next) {
                 if (endtime < Date.now()) {
                     assert.ok(assert._expr(assert._capt(assert._capt(4 <= assert._capt(count, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(count, 'arguments/0/right/left') <= 6, 'arguments/0/right'), 'arguments/0'), {
                         content: 'assert.ok(4 <= count && count <= 6, "random, 2")',
                         filepath: 'es5/SurfaceUtil.test.js',
-                        line: 84
+                        line: 80
                     }), 'random, 2');
                     return resolve();
                 }
@@ -616,12 +608,12 @@ QUnit.test('SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10
         }),
         new Promise(function (resolve, reject) {
             var count = 0;
-            var func = function func(next) {
+            var func = function (next) {
                 if (endtime < Date.now()) {
                     assert.ok(assert._expr(assert._capt(assert._capt(4 <= assert._capt(count, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(count, 'arguments/0/right/left') <= 6, 'arguments/0/right'), 'arguments/0'), {
                         content: 'assert.ok(4 <= count && count <= 6, "periodic")',
                         filepath: 'es5/SurfaceUtil.test.js',
-                        line: 95
+                        line: 92
                     }), 'periodic');
                     return resolve();
                 }
@@ -632,12 +624,12 @@ QUnit.test('SurfaceUtil.random, SurfaceUtil.periodic SurfaceUtil.always (wait 10
         }),
         new Promise(function (resolve, reject) {
             var count = 0;
-            var func = function func(next) {
+            var func = function (next) {
                 if (endtime < Date.now()) {
                     assert.ok(assert._expr(assert._capt(assert._capt(9 <= assert._capt(count, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(count, 'arguments/0/right/left') <= 11, 'arguments/0/right'), 'arguments/0'), {
                         content: 'assert.ok(9 <= count && count <= 11, "always")',
                         filepath: 'es5/SurfaceUtil.test.js',
-                        line: 106
+                        line: 104
                     }), 'always');
                     return resolve();
                 }
@@ -658,12 +650,12 @@ QUnit.test('SurfaceUtil.isHit', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(SU, 'arguments/0/left/callee/object').isHit(assert._capt(cnv, 'arguments/0/left/arguments/0'), 5, 5), 'arguments/0/left') === false, 'arguments/0'), {
         content: 'assert.ok(SU.isHit(cnv, 5, 5) === false)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 122
+        line: 121
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(SU, 'arguments/0/left/callee/object').isHit(assert._capt(cnv, 'arguments/0/left/arguments/0'), 50, 50), 'arguments/0/left') === true, 'arguments/0'), {
         content: 'assert.ok(SU.isHit(cnv, 50, 50) === true)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 123
+        line: 122
     }));
     SU.setPictureFrame(cnv, 'SurfaceUtil.isHit cnv');
 });
@@ -672,17 +664,17 @@ QUnit.test('SurfaceUtil.createCanvas', function (assert) {
     assert.ok(assert._expr(assert._capt(assert._capt(cnv, 'arguments/0/left') instanceof assert._capt(HTMLCanvasElement, 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(cnv instanceof HTMLCanvasElement)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 128
+        line: 127
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').width, 'arguments/0/left') === 1, 'arguments/0'), {
         content: 'assert.ok(cnv.width === 1)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 129
+        line: 128
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(cnv, 'arguments/0/left/object').height, 'arguments/0/left') === 1, 'arguments/0'), {
         content: 'assert.ok(cnv.height === 1)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 130
+        line: 129
     }));
     SU.setPictureFrame(cnv, 'SurfaceUtil.createCanvas');
 });
@@ -690,74 +682,68 @@ QUnit.test('SurfaceUtil.scope', function (assert) {
     assert.ok(assert._expr(assert._capt('sakura' === assert._capt(assert._capt(SU, 'arguments/0/right/callee/object').scope(0), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok("sakura" === SU.scope(0))',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 134
+        line: 133
     }));
     assert.ok(assert._expr(assert._capt('kero' === assert._capt(assert._capt(SU, 'arguments/0/right/callee/object').scope(1), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok("kero" === SU.scope(1))',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 135
+        line: 134
     }));
     assert.ok(assert._expr(assert._capt('char2' === assert._capt(assert._capt(SU, 'arguments/0/right/callee/object').scope(2), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok("char2" === SU.scope(2))',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 136
+        line: 135
     }));
 });
 QUnit.test('SurfaceUtil.unscope', function (assert) {
     assert.ok(assert._expr(assert._capt(0 === assert._capt(assert._capt(SU, 'arguments/0/right/callee/object').unscope('sakura'), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(0 === SU.unscope("sakura"))',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 139
+        line: 138
     }));
     assert.ok(assert._expr(assert._capt(1 === assert._capt(assert._capt(SU, 'arguments/0/right/callee/object').unscope('kero'), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(1 === SU.unscope("kero"))',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 140
+        line: 139
     }));
     assert.ok(assert._expr(assert._capt(2 === assert._capt(assert._capt(SU, 'arguments/0/right/callee/object').unscope('char2'), 'arguments/0/right'), 'arguments/0'), {
         content: 'assert.ok(2 === SU.unscope("char2"))',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 141
+        line: 140
     }));
 });
 QUnit.test('SurfaceUtil.getEventPosition', function (assert) {
-    var handler = function handler(ev) {
-        var _SU$getEventPosition = SU.getEventPosition(ev);
-        var pageX = _SU$getEventPosition.pageX;
-        var pageY = _SU$getEventPosition.pageY;
-        var clientX = _SU$getEventPosition.clientX;
-        var clientY = _SU$getEventPosition.clientY;
-        var screenX = _SU$getEventPosition.screenX;
-        var screenY = _SU$getEventPosition.screenY;
+    var handler = function (ev) {
+        var _a = SU.getEventPosition(ev), pageX = _a.pageX, pageY = _a.pageY, clientX = _a.clientX, clientY = _a.clientY, screenX = _a.screenX, screenY = _a.screenY;
         assert.ok(assert._expr(assert._capt(100 === assert._capt(pageX, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === pageX)',
             filepath: 'es5/SurfaceUtil.test.js',
-            line: 154
+            line: 145
         }));
         assert.ok(assert._expr(assert._capt(100 === assert._capt(pageY, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === pageY)',
             filepath: 'es5/SurfaceUtil.test.js',
-            line: 155
+            line: 146
         }));
         assert.ok(assert._expr(assert._capt(100 === assert._capt(clientX, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === clientX)',
             filepath: 'es5/SurfaceUtil.test.js',
-            line: 156
+            line: 147
         }));
         assert.ok(assert._expr(assert._capt(100 === assert._capt(clientY, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === clientY)',
             filepath: 'es5/SurfaceUtil.test.js',
-            line: 157
+            line: 148
         }));
         assert.ok(assert._expr(assert._capt(100 === assert._capt(screenX, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === screenX)',
             filepath: 'es5/SurfaceUtil.test.js',
-            line: 158
+            line: 149
         }));
         assert.ok(assert._expr(assert._capt(100 === assert._capt(screenY, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(100 === screenY)',
             filepath: 'es5/SurfaceUtil.test.js',
-            line: 159
+            line: 150
         }));
         $(document.body).off('click', handler);
     };
@@ -782,13 +768,13 @@ QUnit.test('SurfaceUtil.randomRange', function (assert) {
     }();
     var histgram = function () {
         var arr = [];
-        var _loop = function _loop(i) {
+        var _loop_1 = function (i) {
             arr.push(results.filter(function (a) {
                 return a === i;
             }));
         };
         for (var i = 0; i < 10; i++) {
-            _loop(i);
+            _loop_1(i);
         }
         return arr;
     }();
@@ -797,23 +783,21 @@ QUnit.test('SurfaceUtil.randomRange', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(5 <= assert._capt(parsent, 'arguments/0/left/right'), 'arguments/0/left') && assert._capt(assert._capt(parsent, 'arguments/0/right/left') <= 15, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(5 <= parsent && parsent <= 15, "" + i)',
             filepath: 'es5/SurfaceUtil.test.js',
-            line: 204
+            line: 188
         }), '' + i);
     });
 });
 QUnit.test('SurfaceUtil.getScrollXY', function (assert) {
-    var _SU$getScrollXY = SU.getScrollXY();
-    var scrollX = _SU$getScrollXY.scrollX;
-    var scrollY = _SU$getScrollXY.scrollY;
+    var _a = SU.getScrollXY(), scrollX = _a.scrollX, scrollY = _a.scrollY;
     assert.ok(assert._expr(assert._capt(assert._capt(scrollX, 'arguments/0/left') === 0, 'arguments/0'), {
         content: 'assert.ok(scrollX === 0)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 213
+        line: 193
     }));
     assert.ok(assert._expr(assert._capt(assert._capt(scrollY, 'arguments/0/left') === 0, 'arguments/0'), {
         content: 'assert.ok(scrollY === 0)',
         filepath: 'es5/SurfaceUtil.test.js',
-        line: 214
+        line: 194
     }));
 });
 },{"./SurfaceUtil":1,"jquery":5}],3:[function(require,module,exports){

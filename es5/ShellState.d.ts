@@ -1,9 +1,9 @@
 import * as SH from "./ShellModel";
 import * as SC from "./ShellConfig";
-import { EventEmitter } from "events";
-export declare class ShellState extends EventEmitter {
+export declare class ShellState {
     shell: SH.Shell;
-    constructor(shell: SH.Shell);
+    listener: (event: string, shell: SH.Shell) => Promise<void>;
+    constructor(shell: SH.Shell, listener: (event: string, shell: SH.Shell) => Promise<void>);
     bind(category: string, parts: string): void;
     bind(scopeId: number, bindgroupId: number): void;
     unbind(category: string, parts: string): void;

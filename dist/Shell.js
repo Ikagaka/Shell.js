@@ -4,271 +4,232 @@
  * 比較的重い処理である surface*.png の色抜き処理をキャッシングする
  */
 "use strict";
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 var SU = require("./SurfaceUtil");
-
-var CanvasCache = function () {
+var CanvasCache = (function () {
     function CanvasCache(dir) {
-        _classCallCheck(this, CanvasCache);
-
         this.directory = dir;
         this.cache = {};
     }
-
-    _createClass(CanvasCache, [{
-        key: "hasFile",
-        value: function hasFile(path) {
-            return SU.has(this.directory, path);
+    CanvasCache.prototype.hasFile = function (path) {
+        return SU.has(this.directory, path);
+    };
+    CanvasCache.prototype.hasCache = function (path) {
+        return SU.has(this.cache, path);
+    };
+    CanvasCache.prototype.getFile = function (path) {
+        return SU.get(this.directory, path);
+    };
+    CanvasCache.prototype.getCache = function (path) {
+        return SU.get(this.cache, path);
+    };
+    CanvasCache.prototype.getCanvas = function (path, asis, retry) {
+        var _this = this;
+        if (asis === void 0) { asis = false; }
+        if (retry === void 0) { retry = true; }
+        if (asis && this.hasCache(path) !== "") {
+            // 色抜き後のキャッシュがあった
+            return Promise.resolve(this.cache[path]);
         }
-    }, {
-        key: "hasCache",
-        value: function hasCache(path) {
-            return SU.has(this.cache, path);
-        }
-    }, {
-        key: "getFile",
-        value: function getFile(path) {
-            return SU.get(this.directory, path);
-        }
-    }, {
-        key: "getCache",
-        value: function getCache(path) {
-            return SU.get(this.cache, path);
-        }
-    }, {
-        key: "getCanvas",
-        value: function getCanvas(path) {
-            var _this = this;
-
-            var asis = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
-            var retry = arguments.length <= 2 || arguments[2] === undefined ? true : arguments[2];
-
-            if (asis && this.hasCache(path) !== "") {
-                // 色抜き後のキャッシュがあった
-                return Promise.resolve(this.cache[path]);
+        return this.getFile(path).then(SU.ABToCav).then(function (png) {
+            if (asis) {
+                // 色抜き前でいい(色抜きが重いので色抜き前で良いならABからBlobしてIMGしてCNVしてしまう)
+                return Promise.resolve(png);
             }
-            return this.getFile(path).then(SU.ABToCav).then(function (png) {
-                if (asis) {
-                    // 色抜き前でいい(色抜きが重いので色抜き前で良いならABからBlobしてIMGしてCNVしてしまう)
-                    return Promise.resolve(png);
-                }
-                var pna_name = SU.changeFileExtension(path, "pna");
-                return _this.getCanvas(pna_name, true /* pna読み出しなのでasis適用しない */, false /* リトライしない */).then(function (pna) {
-                    // pnaあったので色抜き
-                    return SU.png_pna(png, pna);
-                }).catch(function (err) {
-                    // pnaとかなかったのでそのまま色抜き
-                    return SU.chromakey(png);
-                }).then(function (cnv) {
-                    // 色抜き後のキャッシング
-                    _this.cache[path] = cnv;
-                    return cnv;
-                });
+            var pna_name = SU.changeFileExtension(path, "pna");
+            return _this.getCanvas(pna_name, true /* pna読み出しなのでasis適用しない */, false /* リトライしない */).then(function (pna) {
+                // pnaあったので色抜き
+                return SU.png_pna(png, pna);
             }).catch(function (err) {
-                // そもそもpngファイルがなかった
-                if (retry === false) {
-                    // 二度目はない
-                    return Promise.reject(err);
-                }
-                // 我々は心優しいので寛大にも拡張子つけ忘れに対応してあげる
-                if (_this.hasFile(path + ".png") === "") {
-                    // それでもやっぱりpngファイルがなかった
-                    console.warn("CanvasCache#getCanvas: ", err, path, _this.directory);
-                    return Promise.reject(err);
-                }
-                // なんとpngファイルがあった
-                console.warn("CanvasCache#getCanvas: ", "element file " + path + " need '.png' extension");
-                // 拡張子つけてリトライ
-                return _this.getCanvas(path + ".png", asis, false /* 二度目はない */);
+                // pnaとかなかったのでそのまま色抜き
+                return SU.chromakey(png);
+            }).then(function (cnv) {
+                // 色抜き後のキャッシング
+                _this.cache[path] = cnv;
+                return cnv;
             });
-        }
-    }, {
-        key: "clear",
-        value: function clear() {
-            this.cache = {};
-        }
-    }]);
-
+        }).catch(function (err) {
+            // そもそもpngファイルがなかった
+            if (retry === false) {
+                // 二度目はない
+                return Promise.reject(err);
+            }
+            // 我々は心優しいので寛大にも拡張子つけ忘れに対応してあげる
+            if (_this.hasFile(path + ".png") === "") {
+                // それでもやっぱりpngファイルがなかった
+                console.warn("CanvasCache#getCanvas: ", err, path, _this.directory);
+                return Promise.reject(err);
+            }
+            // なんとpngファイルがあった
+            console.warn("CanvasCache#getCanvas: ", "element file " + path + " need '.png' extension");
+            // 拡張子つけてリトライ
+            return _this.getCanvas(path + ".png", asis, false /* 二度目はない */);
+        });
+    };
+    CanvasCache.prototype.clear = function () {
+        this.cache = {};
+    };
     return CanvasCache;
-}();
-
+}());
 exports.CanvasCache = CanvasCache;
+
 },{"./SurfaceUtil":14}],2:[function(require,module,exports){
 /*
  * shell/master/descript.txt および現在の シェル 状態を表す構造体
  */
 "use strict";
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var ShellConfig = function ShellConfig() {
-  _classCallCheck(this, ShellConfig);
-
-  this.seriko = new SerikoConfig();
-  this.menu = new MenuConfig();
-  this.char = [];
-  // states
-  this.bindgroup = [];
-  this.enableRegion = false;
-  this.position = "fixed";
-};
-
+var ShellConfig = (function () {
+    function ShellConfig() {
+        this.seriko = new SerikoConfig();
+        this.menu = new MenuConfig();
+        this.char = [];
+        // states
+        this.bindgroup = [];
+        this.enableRegion = false;
+        this.position = "fixed";
+    }
+    return ShellConfig;
+}());
 exports.ShellConfig = ShellConfig;
-
-var SerikoConfig =
-// \![set,sticky-window,スコープID,スコープID,...]のdescript版。タグを実行しなくてもあらかじめ設定できる。
-function SerikoConfig() {
-  _classCallCheck(this, SerikoConfig);
-
-  this.use_self_alpha = false;
-  this.paint_transparent_region_black = true;
-  this.alignmenttodesktop = "bottom";
-  this.zorder = [];
-  this.stickyWindow = [];
-};
-
+var SerikoConfig = (function () {
+    // \![set,sticky-window,スコープID,スコープID,...]のdescript版。タグを実行しなくてもあらかじめ設定できる。
+    function SerikoConfig() {
+        this.use_self_alpha = false;
+        this.paint_transparent_region_black = true;
+        this.alignmenttodesktop = "bottom";
+        this.zorder = [];
+        this.stickyWindow = [];
+    }
+    return SerikoConfig;
+}());
 exports.SerikoConfig = SerikoConfig;
-
-var MenuConfig =
-/*font: {
-  name: string; // オーナードローメニューに使用するフォント
-  height: number; // オーナードローメニューに使用する文字の大きさ。
-};*/
-/*background: {
-  bitmap: {
-    filename: string; // バックグラウンド表示画像ファイル名。
-  };
-  font: {
-    color: {
-      r: number; // バックグラウンド文字色赤(0～255)
-      b: number; // バックグラウンド文字色緑(0～255)
-      g: number; // バックグラウンド文字色青(0～255)
+var MenuConfig = (function () {
+    /*font: {
+      name: string; // オーナードローメニューに使用するフォント
+      height: number; // オーナードローメニューに使用する文字の大きさ。
+    };*/
+    /*background: {
+      bitmap: {
+        filename: string; // バックグラウンド表示画像ファイル名。
+      };
+      font: {
+        color: {
+          r: number; // バックグラウンド文字色赤(0～255)
+          b: number; // バックグラウンド文字色緑(0～255)
+          g: number; // バックグラウンド文字色青(0～255)
+        };
+      };
+      alignment: string; // バックグラウンド画像をrighttopで右寄せ、lefttopで左寄せ、centertopで中央寄せ。SSPのみrightbottom、leftbottom、centerbottomのような下方向固定も可。lefttop
+    };*/
+    /*
+    foreground: {
+      bitmap: {
+        filename: string; // フォアグラウンド表示画像ファイル名。
+      };
+      font: {
+        color: {
+          r: number; // フォアグラウンド文字色赤(0～255)
+          b: number; // フォアグラウンド文字色緑(0～255)
+          g: number; // フォアグラウンド文字色青(0～255)
+        };
+      };
+      alignment: string; // フォアグラウンド画像をrighttopで右寄せ、lefttopで左寄せ、centertopで中央寄せ。SSPのみrightbottom、leftbottom、centerbottomのような下方向固定も可。lefttop
+    };*/
+    /*
+    sidebar?: {
+      bitmap: {
+        filename: string; // サイドバー表示画像ファイル名。
+      };
+      alignment: string; // サイドバー画像をtopで上寄せ、bottomで下寄せ。bottom
     };
-  };
-  alignment: string; // バックグラウンド画像をrighttopで右寄せ、lefttopで左寄せ、centertopで中央寄せ。SSPのみrightbottom、leftbottom、centerbottomのような下方向固定も可。lefttop
-};*/
-/*
-foreground: {
-  bitmap: {
-    filename: string; // フォアグラウンド表示画像ファイル名。
-  };
-  font: {
-    color: {
-      r: number; // フォアグラウンド文字色赤(0～255)
-      b: number; // フォアグラウンド文字色緑(0～255)
-      g: number; // フォアグラウンド文字色青(0～255)
-    };
-  };
-  alignment: string; // フォアグラウンド画像をrighttopで右寄せ、lefttopで左寄せ、centertopで中央寄せ。SSPのみrightbottom、leftbottom、centerbottomのような下方向固定も可。lefttop
-};*/
-/*
-sidebar?: {
-  bitmap: {
-    filename: string; // サイドバー表示画像ファイル名。
-  };
-  alignment: string; // サイドバー画像をtopで上寄せ、bottomで下寄せ。bottom
-};
-separator?: {
-  color: {
-    r: number; // セパレータ色赤(0～255)
-    b: number; // セパレータ色緑(0～255)
-    g: number; // セパレータ色青(0～255)
-  };
-};*/
-/*disable: {// 選択不可文字
-  font: {
-    color: {
-      r: number; // フォアグラウンド文字色赤(0～255)
-      b: number; // フォアグラウンド文字色緑(0～255)
-      g: number; // フォアグラウンド文字色青(0～255)
-    };
-  };
-}*/
-function MenuConfig() {
-  _classCallCheck(this, MenuConfig);
-
-  this.value = false;
-};
-
+    separator?: {
+      color: {
+        r: number; // セパレータ色赤(0～255)
+        b: number; // セパレータ色緑(0～255)
+        g: number; // セパレータ色青(0～255)
+      };
+    };*/
+    /*disable: {// 選択不可文字
+      font: {
+        color: {
+          r: number; // フォアグラウンド文字色赤(0～255)
+          b: number; // フォアグラウンド文字色緑(0～255)
+          g: number; // フォアグラウンド文字色青(0～255)
+        };
+      };
+    }*/
+    function MenuConfig() {
+        this.value = false;
+    }
+    return MenuConfig;
+}());
 exports.MenuConfig = MenuConfig;
-
-var CharConfig =
-/*
-bindoption: {
-  // char*.bindoption*.group,カテゴリ名,オプション
-  // その着せ替えカテゴリにオプションを設定。*は単に0から始まる通し番号(3人目以降)。
-  // mustselectでパーツを必ず1つ選択、multipleで複数のパーツを選択可能。
-  // オプションは+区切りで複数可。
-  group: {
-    category: string;
-    options: string[]; //multiple | mustselect
-  }
-}[];*/
-function CharConfig() {
-  _classCallCheck(this, CharConfig);
-
-  this.menu = "auto";
-  this.menuitem = [];
-  this.defaultX = 0;
-  this.defaultY = 0;
-  this.defaultLeft = 0;
-  this.defaultTop = 0;
-  this.balloon = {
-    offsetX: 0,
-    offsetY: 0,
-    alignment: "none"
-  };
-  this.bindgroup = [];
-};
-
+var CharConfig = (function () {
+    /*
+    bindoption: {
+      // char*.bindoption*.group,カテゴリ名,オプション
+      // その着せ替えカテゴリにオプションを設定。*は単に0から始まる通し番号(3人目以降)。
+      // mustselectでパーツを必ず1つ選択、multipleで複数のパーツを選択可能。
+      // オプションは+区切りで複数可。
+      group: {
+        category: string;
+        options: string[]; //multiple | mustselect
+      }
+    }[];*/
+    function CharConfig() {
+        this.menu = "auto";
+        this.menuitem = [];
+        this.defaultX = 0;
+        this.defaultY = 0;
+        this.defaultLeft = 0;
+        this.defaultTop = 0;
+        this.balloon = {
+            offsetX: 0,
+            offsetY: 0,
+            alignment: "none"
+        };
+        this.bindgroup = [];
+    }
+    return CharConfig;
+}());
 exports.CharConfig = CharConfig;
-
-var BindGroupConfig =
-// 着せ替えの同時実行設定。アニメーションID*番の着せ替えが有効になった（表示された）時に、addidとして指定した着せ替えも同時に有効にする。カンマ区切りで複数指定可。
-// 同時実行中の着せ替えは、元となった着せ替えが無効になった時点で無効になる。複数の着せ替えのaddidとして同一の着せ替えが同時実行指定されている場合、元となったすべての着せ替えが無効になるまで同時実行指定の着せ替えも無効にならない。
-function BindGroupConfig(category, parts) {
-  var thumbnail = arguments.length <= 2 || arguments[2] === undefined ? "" : arguments[2];
-
-  var _default = arguments.length <= 3 || arguments[3] === undefined ? false : arguments[3];
-
-  _classCallCheck(this, BindGroupConfig);
-
-  this.name = {
-    category: category,
-    parts: parts,
-    thumbnail: thumbnail
-  };
-  this.default = _default;
-  this.addid = [];
-};
-
+var BindGroupConfig = (function () {
+    // 着せ替えの同時実行設定。アニメーションID*番の着せ替えが有効になった（表示された）時に、addidとして指定した着せ替えも同時に有効にする。カンマ区切りで複数指定可。
+    // 同時実行中の着せ替えは、元となった着せ替えが無効になった時点で無効になる。複数の着せ替えのaddidとして同一の着せ替えが同時実行指定されている場合、元となったすべての着せ替えが無効になるまで同時実行指定の着せ替えも無効にならない。
+    function BindGroupConfig(category, parts, thumbnail, _default) {
+        if (thumbnail === void 0) { thumbnail = ""; }
+        if (_default === void 0) { _default = false; }
+        this.name = {
+            category: category,
+            parts: parts,
+            thumbnail: thumbnail
+        };
+        this.default = _default;
+        this.addid = [];
+    }
+    return BindGroupConfig;
+}());
 exports.BindGroupConfig = BindGroupConfig;
-function isBind(config, animId) {
-  var bindgroup = config.bindgroup;
-
-  if (bindgroup[this.scopeId] == null) return false;
-  if (bindgroup[this.scopeId][animId] === false) return false;
-  return true;
+function isBind(config, scopeId, animId) {
+    var bindgroup = config.bindgroup;
+    if (bindgroup[scopeId] == null)
+        return false;
+    if (bindgroup[scopeId][animId] === false)
+        return false;
+    return true;
 }
 exports.isBind = isBind;
+
 },{}],3:[function(require,module,exports){
 /*
  * shell/master/descript.txt から ShellConfig 構造体を作る
  */
 "use strict";
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
 var SC = require("./ShellConfig");
 function loadFromJSONLike(json) {
     var that = new SC.ShellConfig();
     var seriko = json["seriko"] != null ? json["seriko"] : {};
     var menu = json["menu"] != null ? json["menu"] : {};
-    var char = Array.isArray(json["char"]) ? json["char"] : [];
+    var char = (Array.isArray(json["char"]) ? json["char"] : []);
     // char*
     return Promise.all(char.map(function (_char, id) {
         return loadCharConfig(_char).then(function (conf) {
@@ -292,16 +253,7 @@ function loadCharConfig(char) {
     if (Array.isArray(char["bindgroup"])) {
         char["bindgroup"].forEach(function (bindgroup, id) {
             if (bindgroup != null && typeof bindgroup["name"] === "string") {
-                var _bindgroup$name$split = bindgroup["name"].split(",").map(function (a) {
-                    return a.trim();
-                });
-
-                var _bindgroup$name$split2 = _slicedToArray(_bindgroup$name$split, 3);
-
-                var category = _bindgroup$name$split2[0];
-                var parts = _bindgroup$name$split2[1];
-                var thumbnail = _bindgroup$name$split2[2];
-
+                var _a = bindgroup["name"].split(",").map(function (a) { return a.trim(); }), category = _a[0], parts = _a[1], thumbnail = _a[2];
                 that.bindgroup[id] = new SC.BindGroupConfig(category, parts, thumbnail, !!Number(bindgroup["default"]));
             }
         });
@@ -320,35 +272,29 @@ function loadCharConfig(char) {
     return Promise.resolve(that);
 }
 exports.loadCharConfig = loadCharConfig;
+
 },{"./ShellConfig":2}],4:[function(require,module,exports){
 "use strict";
 /*
  * shell/master/*** 以下のリソースを一元管理するための バリアント型
  */
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 var ST = require("./SurfaceTree");
 var SU = require("./SurfaceUtil");
 var SC = require("./ShellConfig");
-
-var Shell = function Shell() {
-    _classCallCheck(this, Shell);
-
-    this.directory = {};
-    this.descript = {};
-    this.descriptJSON = {};
-    this.config = new SC.ShellConfig();
-    this.surfacesTxt = {};
-    this.surfaceDefTree = new ST.SurfaceDefinitionTree();
-};
-
+var Shell = (function () {
+    function Shell() {
+        this.directory = {};
+        this.descript = {};
+        this.descriptJSON = {};
+        this.config = new SC.ShellConfig();
+        this.surfacesTxt = {};
+        this.surfaceDefTree = new ST.SurfaceDefinitionTree();
+    }
+    return Shell;
+}());
 exports.Shell = Shell;
 function getSurfaceAlias(shell, scopeId, surfaceId) {
-    var _shell$surfaceDefTree = shell.surfaceDefTree;
-    var aliases = _shell$surfaceDefTree.aliases;
-    var surfaces = _shell$surfaceDefTree.surfaces;
-
+    var _a = shell.surfaceDefTree, aliases = _a.aliases, surfaces = _a.surfaces;
     var type = SU.scope(scopeId);
     if (typeof surfaceId === "string" || typeof surfaceId === "number") {
         if (aliases[type] != null && aliases[type][surfaceId] != null) {
@@ -358,8 +304,8 @@ function getSurfaceAlias(shell, scopeId, surfaceId) {
         }
         if (typeof surfaceId === "number") {
             // 通常の処理
-            var _surfaceId2 = surfaceId;
-            return Promise.resolve(_surfaceId2);
+            var _surfaceId = surfaceId;
+            return Promise.resolve(_surfaceId);
         }
     }
     // そんなサーフェスはない
@@ -370,7 +316,6 @@ exports.getSurfaceAlias = getSurfaceAlias;
 // 着せ替えメニュー用情報ていきょう
 function getBindGroups(shell, scopeId) {
     var char = shell.config.char;
-
     if (char[scopeId] == null) {
         return Promise.reject("not defined");
     }
@@ -379,12 +324,12 @@ function getBindGroups(shell, scopeId) {
     }));
 }
 exports.getBindGroups = getBindGroups;
+
 },{"./ShellConfig":2,"./SurfaceTree":12,"./SurfaceUtil":14}],5:[function(require,module,exports){
 /*
  * shell/master/*** ディレクトリから shell モデルを構築する
  */
 "use strict";
-
 var SH = require("./ShellModel");
 var SU = require("./SurfaceUtil");
 var SCL = require("./ShellConfigLoader");
@@ -392,15 +337,16 @@ var ST = require("./SurfaceTree");
 var STL = require("./SurfaceTreeLoader");
 var SY = require("surfaces_txt2yaml");
 function load(directory) {
-    return loadDescript(directory).then(function (_ref) {
-        var descript = _ref.descript;
-        var descriptJSON = _ref.descriptJSON;
-        var config = _ref.config;
-        return loadSurfacesTxt(directory).then(function (_ref2) {
-            var surfacesTxt = _ref2.surfacesTxt;
-            var surfaceDefTree = _ref2.surfaceDefTree;
-            return loadSurfaceTable(directory).then(function () {
-                return loadSurfacePNG(directory, surfaceDefTree).then(function (surfaceDefTree) {
+    return loadDescript(directory)
+        .then(function (_a) {
+        var descript = _a.descript, descriptJSON = _a.descriptJSON, config = _a.config;
+        return loadSurfacesTxt(directory)
+            .then(function (_a) {
+            var surfacesTxt = _a.surfacesTxt, surfaceDefTree = _a.surfaceDefTree;
+            return loadSurfaceTable(directory)
+                .then(function () {
+                return loadSurfacePNG(directory, surfaceDefTree)
+                    .then(function (surfaceDefTree) {
                     var shell = new SH.Shell();
                     shell.directory = directory;
                     shell.descript = descript;
@@ -423,16 +369,15 @@ function loadDescript(directory) {
     var descriptJSON = {};
     if (name === "") {
         console.info("ShellModelLoader.loadDescript: descript.txt is not found");
-    } else {
-        (function () {
-            var descript = SU.parseDescript(SU.convert(dir[name]));
-            var json = {};
-            Object.keys(descript).forEach(function (key) {
-                var _key = key.replace(/^sakura\./, "char0.").replace(/^kero\./, "char1.");
-                SU.decolateJSONizeDescript(json, _key, descript[key]);
-            });
-            var descriptJSON = json;
-        })();
+    }
+    else {
+        descript = SU.parseDescript(SU.convert(dir[name]));
+        Object.keys(descript).forEach(function (key) {
+            var _key = key
+                .replace(/^sakura\./, "char0.")
+                .replace(/^kero\./, "char1.");
+            SU.decolateJSONizeDescript(descriptJSON, _key, descript[key]);
+        });
     }
     // key-valueなdescriptをconfigへ変換
     return SCL.loadFromJSONLike(descriptJSON).then(function (config) {
@@ -446,24 +391,21 @@ function loadSurfacesTxt(directory) {
     if (filenames.length === 0) {
         console.info("ShellModelLoader.loadSurfacesTxt: surfaces.txt is not found");
     }
-    var cat_text = filenames.reduce(function (text, filename) {
-        return text + SU.convert(directory[filename]);
-    }, "");
+    var cat_text = filenames.reduce(function (text, filename) { return text + SU.convert(directory[filename]); }, "");
     var surfacesTxt = SY.txt_to_data(cat_text, { compatible: 'ssp-lazy' });
-    return STL.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceDefTree) {
+    return STL.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt)
+        .then(function (surfaceDefTree) {
         return { surfacesTxt: surfacesTxt, surfaceDefTree: surfaceDefTree };
     });
 }
 exports.loadSurfacesTxt = loadSurfacesTxt;
 // surfacetable.txtを読む予定
 function loadSurfaceTable(directory) {
-    var surfacetable_name = Object.keys(directory).filter(function (name) {
-        return (/^surfacetable.*\.txt$/i.test(name)
-        );
-    })[0] || "";
+    var surfacetable_name = Object.keys(directory).filter(function (name) { return /^surfacetable.*\.txt$/i.test(name); })[0] || "";
     if (surfacetable_name === "") {
         console.info("ShellModelLoader.loadSurfaceTable", "surfacetable.txt is not found.");
-    } else {
+    }
+    else {
         var txt = SU.convert(directory[surfacetable_name]);
         console.info("ShellModelLoader.loadSurfaceTable", "surfacetable.txt is not supported yet.");
     }
@@ -473,10 +415,7 @@ exports.loadSurfaceTable = loadSurfaceTable;
 // directory から surface*.png をelement0として読み込んで surfaceTree に反映
 function loadSurfacePNG(directory, tree) {
     var surfaceTree = tree.surfaces;
-    var surface_names = Object.keys(directory).filter(function (filename) {
-        return (/^surface(\d+)\.png$/i.test(filename)
-        );
-    });
+    var surface_names = Object.keys(directory).filter(function (filename) { return /^surface(\d+)\.png$/i.test(filename); });
     surface_names.forEach(function (filename) {
         var n = Number((/^surface(\d+)\.png$/i.exec(filename) || ["", "NaN"])[1]);
         if (!isFinite(n)) {
@@ -487,10 +426,12 @@ function loadSurfacePNG(directory, tree) {
             // surfaces.txtで未定義なら追加
             surfaceTree[n] = new ST.SurfaceDefinition();
             surfaceTree[n].elements[0] = new ST.SurfaceElement("base", filename);
-        } else if (!(surfaceTree[n].elements[0] instanceof ST.SurfaceElement)) {
+        }
+        else if (!(surfaceTree[n].elements[0] instanceof ST.SurfaceElement)) {
             // surfaces.txtで定義済みだけどelement0ではない
             surfaceTree[n].elements[0] = new ST.SurfaceElement("base", filename);
-        } else {
+        }
+        else {
             // surfaces.txtでelement0まで定義済み
             console.info("SurfaceModelLoader.loadSurfacePNG: file", filename, "is rejected. alternative uses", surfaceTree[n].elements);
         }
@@ -498,60 +439,32 @@ function loadSurfacePNG(directory, tree) {
     return Promise.resolve(tree);
 }
 exports.loadSurfacePNG = loadSurfacePNG;
-},{"./ShellConfigLoader":3,"./ShellModel":4,"./SurfaceTree":12,"./SurfaceTreeLoader":13,"./SurfaceUtil":14,"surfaces_txt2yaml":50}],6:[function(require,module,exports){
+
+},{"./ShellConfigLoader":3,"./ShellModel":4,"./SurfaceTree":12,"./SurfaceTreeLoader":13,"./SurfaceUtil":14,"surfaces_txt2yaml":49}],6:[function(require,module,exports){
 "use strict";
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var events_1 = require("events");
-
-var ShellState = function (_events_1$EventEmitte) {
-    _inherits(ShellState, _events_1$EventEmitte);
-
-    // on("bindgroup_update")
+var ShellState = (function () {
+    // on("update_bindgroup")
     //   config の bindgroup が書き換わったので 全ての surface の状態を変更するように上位存在へお伺いを立てている
-    function ShellState(shell) {
-        _classCallCheck(this, ShellState);
-
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(ShellState).call(this));
-
-        _this.shell = shell;
-        return _this;
+    function ShellState(shell, listener) {
+        this.shell = shell;
+        this.listener = listener;
     }
-
-    _createClass(ShellState, [{
-        key: "bind",
-        value: function bind(a, b) {
-            var config = this.shell.config;
-
-            bind_value(config, a, b, true);
-            this.emit("bindgroup_update");
-        }
-    }, {
-        key: "unbind",
-        value: function unbind(a, b) {
-            var config = this.shell.config;
-
-            bind_value(config, a, b, false);
-            this.emit("bindgroup_update");
-        }
-    }]);
-
+    ShellState.prototype.bind = function (a, b) {
+        var config = this.shell.config;
+        bind_value(config, a, b, true);
+        this.listener("update_bindgroup", this.shell);
+    };
+    ShellState.prototype.unbind = function (a, b) {
+        var config = this.shell.config;
+        bind_value(config, a, b, false);
+        this.listener("update_bindgroup", this.shell);
+    };
     return ShellState;
-}(events_1.EventEmitter);
-
+}());
 exports.ShellState = ShellState;
 // 着せ替えオンオフ
 function bind_value(config, a, b, flag) {
-    var bindgroup = config.bindgroup;
-    var char = config.char;
-
+    var bindgroup = config.bindgroup, char = config.char;
     if (typeof a === "number" && typeof b === "number") {
         var scopeId = a;
         var bindgroupId = b;
@@ -563,778 +476,564 @@ function bind_value(config, a, b, flag) {
         return;
     }
     if (typeof a === "string" && typeof b === "string") {
-        (function () {
-            var _category = a;
-            var _parts = b;
-            char.forEach(function (char, scopeId) {
-                char.bindgroup.forEach(function (bindgroup, bindgroupId) {
-                    var _bindgroup$name = bindgroup.name;
-                    var category = _bindgroup$name.category;
-                    var parts = _bindgroup$name.parts;
-
-                    if (_category === category && _parts === parts) {
-                        bind_value(config, scopeId, bindgroupId, flag);
-                    }
-                });
+        var _category_1 = a;
+        var _parts_1 = b;
+        char.forEach(function (char, scopeId) {
+            char.bindgroup.forEach(function (bindgroup, bindgroupId) {
+                var _a = bindgroup.name, category = _a.category, parts = _a.parts;
+                if (_category_1 === category && _parts_1 === parts) {
+                    bind_value(config, scopeId, bindgroupId, flag);
+                }
             });
-        })();
+        });
     }
     console.error("ShellState#bind_value:", "TypeError:", a, b);
     return void config;
 }
 exports.bind_value = bind_value;
-},{"events":18}],7:[function(require,module,exports){
+
+},{}],7:[function(require,module,exports){
 /// <reference path="../typings/index.d.ts" />
 /*
  * CacheCanvas は ディレクトリアクセスをフックし
  * 比較的重い処理である surface*.png の色抜き処理をキャッシングする
  */
 "use strict";
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 var SR = require("./SurfaceRenderer");
 var CC = require("./CanvasCache");
 var ST = require("./SurfaceTree");
-
-var SurfaceBaseRenderer = function (_SR$SurfaceRenderer) {
-    _inherits(SurfaceBaseRenderer, _SR$SurfaceRenderer);
-
+var SurfaceBaseRenderer = (function (_super) {
+    __extends(SurfaceBaseRenderer, _super);
     function SurfaceBaseRenderer(shell) {
-        _classCallCheck(this, SurfaceBaseRenderer);
-
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceBaseRenderer).call(this));
-
-        _this.bases = [];
-        _this.shell = shell;
-        _this.cache = new CC.CanvasCache(shell.directory);
-        return _this;
+        _super.call(this);
+        this.bases = [];
+        this.shell = shell;
+        this.cache = new CC.CanvasCache(shell.directory);
     }
-
-    _createClass(SurfaceBaseRenderer, [{
-        key: "preload",
-        value: function preload() {
-            var _this2 = this;
-
-            var surfaces = this.shell.surfaceDefTree.surfaces;
-            console.time("preload");
-            return Promise.all(surfaces.map(function (surface, n) {
-                return _this2.getBaseSurface(n);
-            })).then(function () {
-                console.timeEnd("preload");
-                _this2.cache.clear();
-                return _this2;
-            });
+    SurfaceBaseRenderer.prototype.preload = function () {
+        var _this = this;
+        var surfaces = this.shell.surfaceDefTree.surfaces;
+        console.time("preload");
+        return Promise.all(surfaces.map(function (surface, n) { return _this.getBaseSurface(n); })).then(function () {
+            console.timeEnd("preload");
+            _this.cache.clear();
+            return _this;
+        });
+    };
+    SurfaceBaseRenderer.prototype.getBaseSurface = function (n) {
+        var _this = this;
+        // elements を合成するだけ
+        var surfaceTree = this.shell.surfaceDefTree.surfaces;
+        var cache = this.cache;
+        var bases = this.bases;
+        var srf = surfaceTree[n];
+        if (!(srf instanceof ST.SurfaceDefinition) || srf.elements.length === 0) {
+            // そんな定義なかった || element0も何もなかった
+            console.warn("SurfaceBaseRenderer#getBaseSurface: no such a surface: " + n);
+            return Promise.reject("SurfaceBaseRenderer#getBaseSurface: no such a surface: " + n);
         }
-    }, {
-        key: "getBaseSurface",
-        value: function getBaseSurface(n) {
-            var _this3 = this;
-
-            // elements を合成するだけ
-            var surfaceTree = this.shell.surfaceDefTree.surfaces;
-            var cache = this.cache;
-            var bases = this.bases;
-            var srf = surfaceTree[n];
-            if (!(srf instanceof ST.SurfaceDefinition) || srf.elements.length === 0) {
-                // そんな定義なかった || element0も何もなかった
-                console.warn("SurfaceBaseRenderer#getBaseSurface: no such a surface: " + n);
-                return Promise.reject("SurfaceBaseRenderer#getBaseSurface: no such a surface: " + n);
+        if (bases[n] instanceof SR.SurfaceCanvas) {
+            // キャッシュがあった
+            return Promise.resolve(bases[n]);
+        }
+        var elms = srf.elements;
+        return Promise.all(elms.map(function (_a) {
+            var file = _a.file, type = _a.type, x = _a.x, y = _a.y;
+            // asisはここで処理しちゃう
+            var asis = false;
+            if (type === "asis") {
+                type = "overlay"; // overlayにしとく
+                asis = true;
             }
-            if (bases[n] instanceof SR.SurfaceCanvas) {
-                // キャッシュがあった
-                return Promise.resolve(bases[n]);
+            if (type === "bind" || type === "add") {
+                type = "overlay"; // overlayにしとく
             }
-            var elms = srf.elements;
-            return Promise.all(elms.map(function (_ref) {
-                var file = _ref.file;
-                var type = _ref.type;
-                var x = _ref.x;
-                var y = _ref.y;
-
-                // asisはここで処理しちゃう
-                var asis = false;
-                if (type === "asis") {
-                    type = "overlay"; // overlayにしとく
-                    asis = true;
-                }
-                if (type === "bind" || type === "add") {
-                    type = "overlay"; // overlayにしとく
-                }
-                // ファイルとりにいく
-                return cache.getCanvas(file, asis).then(function (cnv) {
-                    return { file: file, type: type, x: x, y: y, canvas: new SR.SurfaceCanvas(cnv) };
-                }).catch(function (err) {
-                    console.warn("SurfaceBaseRenderer#getBaseSurface: no such a file", file, n, srf);
-                });
-            })).then(function (elms) {
-                return _this3.composeElements(elms);
-            }).then(function (srfCnv) {
-                // basesurfaceの大きさはbasesurfaceそのもの
-                srfCnv.basePosX = 0;
-                srfCnv.basePosY = 0;
-                srfCnv.baseWidth = srfCnv.cnv.width;
-                srfCnv.baseHeight = srfCnv.cnv.height;
-                // キャッシング
-                bases[n] = SR.copy(srfCnv);
-                return bases[n];
+            // ファイルとりにいく
+            return cache.getCanvas(file, asis)
+                .then(function (cnv) { return { file: file, type: type, x: x, y: y, canvas: new SR.SurfaceCanvas(cnv) }; })
+                .catch(function (err) {
+                console.warn("SurfaceBaseRenderer#getBaseSurface: no such a file", file, n, srf);
             });
-        }
-    }, {
-        key: "getBaseSurfaceSize",
-        value: function getBaseSurfaceSize(n) {
-            return this.getBaseSurface(n).then(function (srfCnv) {
-                return {
-                    width: srfCnv.baseWidth,
-                    height: srfCnv.baseHeight
-                };
-            });
-        }
-    }]);
-
+        })).then(function (elms) { return _this.composeElements(elms); }).then(function (srfCnv) {
+            // basesurfaceの大きさはbasesurfaceそのもの
+            srfCnv.basePosX = 0;
+            srfCnv.basePosY = 0;
+            srfCnv.baseWidth = srfCnv.cnv.width;
+            srfCnv.baseHeight = srfCnv.cnv.height;
+            // キャッシング
+            bases[n] = SR.copy(srfCnv);
+            return bases[n];
+        });
+    };
+    SurfaceBaseRenderer.prototype.getBaseSurfaceSize = function (n) {
+        return this.getBaseSurface(n).then(function (srfCnv) {
+            return {
+                width: srfCnv.baseWidth,
+                height: srfCnv.baseHeight
+            };
+        });
+    };
     return SurfaceBaseRenderer;
-}(SR.SurfaceRenderer);
-
+}(SR.SurfaceRenderer));
 exports.SurfaceBaseRenderer = SurfaceBaseRenderer;
+
 },{"./CanvasCache":1,"./SurfaceRenderer":10,"./SurfaceTree":12}],8:[function(require,module,exports){
 /*
  * Surface の状態モデル
  */
 "use strict";
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Surface = function Surface(scopeId, surfaceId, shell) {
-    _classCallCheck(this, Surface);
-
-    this.scopeId = scopeId;
-    this.surfaceId = surfaceId;
-    this.shell = shell;
-    this.surfaceDefTree = shell.surfaceDefTree;
-    this.surfaceNode = shell.surfaceDefTree.surfaces[surfaceId];
-    this.config = shell.config;
-    this.renderingTree = new SurfaceRenderingTree(surfaceId);
-    this.layers = [];
-    this.seriko = [];
-    this.talkCount = 0;
-    this.move = { x: 0, y: 0 };
-    this.destructed = false;
-};
-
+var Surface = (function () {
+    function Surface(scopeId, surfaceId, shell) {
+        this.scopeId = scopeId;
+        this.surfaceId = surfaceId;
+        this.shell = shell;
+        this.surfaceDefTree = shell.surfaceDefTree;
+        this.surfaceNode = shell.surfaceDefTree.surfaces[surfaceId];
+        this.config = shell.config;
+        this.renderingTree = new SurfaceRenderingTree(surfaceId);
+        this.serikos = {};
+        this.talkCount = 0;
+        this.move = { x: 0, y: 0 };
+        this.destructed = false;
+    }
+    return Surface;
+}());
 exports.Surface = Surface;
-
-var Layer = function Layer(patterns, background) {
-    _classCallCheck(this, Layer);
-
-    this.patterns = [];
-    this.background = background;
-};
-
-exports.Layer = Layer;
-
-var SerikoLayer = function (_Layer) {
-    _inherits(SerikoLayer, _Layer);
-
-    function SerikoLayer(patterns, background) {
-        var patternID = arguments.length <= 2 || arguments[2] === undefined ? -1 : arguments[2];
-
-        _classCallCheck(this, SerikoLayer);
-
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SerikoLayer).call(this, patterns, background));
-
-        _this.patternID = patternID;
-        _this.paused = false;
-        _this.exclusive = false;
-        _this.canceled = false;
-        _this.finished = false;
-        return _this;
+var Seriko = (function () {
+    function Seriko(patternID) {
+        if (patternID === void 0) { patternID = -1; }
+        this.patternID = patternID;
+        this.paused = false;
+        this.exclusive = false;
+        this.canceled = false;
+        this.finished = false;
     }
-
-    return SerikoLayer;
-}(Layer);
-
-exports.SerikoLayer = SerikoLayer;
-
-var MayunaLayer = function (_Layer2) {
-    _inherits(MayunaLayer, _Layer2);
-
-    function MayunaLayer(patterns, background, visible) {
-        _classCallCheck(this, MayunaLayer);
-
-        var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(MayunaLayer).call(this, patterns, background));
-
-        _this2.visible = true;
-        return _this2;
+    return Seriko;
+}());
+exports.Seriko = Seriko;
+var SurfaceRenderingTree = (function () {
+    function SurfaceRenderingTree(surface) {
+        this.base = surface;
+        this.foregrounds = [];
+        this.backgrounds = [];
+        this.collisions = [];
     }
-
-    return MayunaLayer;
-}(Layer);
-
-exports.MayunaLayer = MayunaLayer;
-
-var SurfaceRenderingTree = function SurfaceRenderingTree(surface) {
-    _classCallCheck(this, SurfaceRenderingTree);
-
-    this.base = surface;
-    this.foregrounds = [];
-    this.backgrounds = [];
-    this.collisions = [];
-};
-
+    return SurfaceRenderingTree;
+}());
 exports.SurfaceRenderingTree = SurfaceRenderingTree;
-
-var SurfaceRenderingLayer = function SurfaceRenderingLayer(type, surface, x, y) {
-    _classCallCheck(this, SurfaceRenderingLayer);
-
-    this.type = type;
-    this.surface = surface;
-    this.x = x;
-    this.y = y;
-};
-
+var SurfaceRenderingLayer = (function () {
+    function SurfaceRenderingLayer(type, surface, x, y) {
+        this.type = type;
+        this.surface = surface;
+        this.x = x;
+        this.y = y;
+    }
+    return SurfaceRenderingLayer;
+}());
 exports.SurfaceRenderingLayer = SurfaceRenderingLayer;
+
 },{}],9:[function(require,module,exports){
 /*
  * アニメーションパーツを生成する
  * 与えられた surface model から current surface を生成する
  */
 "use strict";
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 var SBR = require("./SurfaceBaseRenderer");
 var SM = require("./SurfaceModel");
-
-var SurfacePatternRenderer = function (_SBR$SurfaceBaseRende) {
-    _inherits(SurfacePatternRenderer, _SBR$SurfaceBaseRende);
-
+var SurfacePatternRenderer = (function (_super) {
+    __extends(SurfacePatternRenderer, _super);
     function SurfacePatternRenderer(shell) {
-        _classCallCheck(this, SurfacePatternRenderer);
-
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(SurfacePatternRenderer).call(this, shell));
+        _super.call(this, shell);
     }
-
-    _createClass(SurfacePatternRenderer, [{
-        key: "render",
-        value: function render(surface) {
-            var _this2 = this;
-
-            // この this へ現在のサーフェス画像を書き込む
-            var surfaceId = surface.surfaceId;
-            var renderingTree = surface.renderingTree;
-            var surfaceNode = surface.surfaceNode;
-            var base = renderingTree.base;
-            var foregrounds = renderingTree.foregrounds;
-            var backgrounds = renderingTree.backgrounds;
-            var enableRegion = this.shell.config.enableRegion;
-            var collisions = surfaceNode.collisions;
-            var animations = surfaceNode.animations;
-
-            return this.getBaseSurface(base).then(function (baseSrfCnv) {
-                // この baseSrfCnv は cache そのものなのでいじるわけにはいかないのでコピーする
-                _this2.init(baseSrfCnv);
-                _this2.clear(); // 短形を保ったまま消去
-                // この this な srfCnv がreduceの単位元になる
-                return _this2.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
-            }).then(function () {
-                // 当たり判定を描画
-                if (enableRegion) {
-                    backgrounds.forEach(function (layerSet) {
-                        layerSet.forEach(function (layer) {
-                            _this2.drawRegions(layer.surface.collisions, "" + surfaceId);
-                        });
+    SurfacePatternRenderer.prototype.render = function (surface) {
+        var _this = this;
+        // この this へ現在のサーフェス画像を書き込む
+        var surfaceId = surface.surfaceId, renderingTree = surface.renderingTree, surfaceNode = surface.surfaceNode;
+        var base = renderingTree.base, foregrounds = renderingTree.foregrounds, backgrounds = renderingTree.backgrounds;
+        var enableRegion = this.shell.config.enableRegion;
+        var collisions = surfaceNode.collisions, animations = surfaceNode.animations;
+        return this.getBaseSurface(base).then(function (baseSrfCnv) {
+            // この baseSrfCnv は cache そのものなのでいじるわけにはいかないのでコピーする
+            _this.init(baseSrfCnv);
+            _this.clear(); // 短形を保ったまま消去
+            // この this な srfCnv がreduceの単位元になる
+            return _this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+        }).then(function () {
+            // 当たり判定を描画
+            if (enableRegion) {
+                backgrounds.forEach(function (layerSet) {
+                    layerSet.forEach(function (layer) {
+                        _this.drawRegions(layer.surface.collisions, "" + surfaceId);
                     });
-                    _this2.drawRegions(collisions, "" + surfaceId);
-                    foregrounds.forEach(function (layerSet) {
-                        layerSet.forEach(function (layer) {
-                            _this2.drawRegions(layer.surface.collisions, "" + surfaceId);
-                        });
+                });
+                _this.drawRegions((collisions), "" + surfaceId);
+                foregrounds.forEach(function (layerSet) {
+                    layerSet.forEach(function (layer) {
+                        _this.drawRegions(layer.surface.collisions, "" + surfaceId);
                     });
-                }
-                // debug用
-                //console.log(this.bufferRender.log);
-                //SurfaceUtil.log(SurfaceUtil.copy(this.bufferRender.cnv));
-                //document.body.scrollTop = 99999;
-                //this.endAll();
-                return _this2;
-            });
-        }
-    }, {
-        key: "convoluteTree",
-        value: function convoluteTree(layer) {
-            var _this3 = this;
-
-            var type = layer.type;
-            var surface = layer.surface;
-            var x = layer.x;
-            var y = layer.y;
-            var base = surface.base;
-            var backgrounds = surface.backgrounds;
-            var foregrounds = surface.foregrounds;
-
-            var process = function process(layerSets) {
-                return layerSets.reduce(function (prm, layerSet) {
-                    return layerSet.reduce(function (prm, layer) {
-                        return prm.then(function () {
-                            return _this3.convoluteTree(layer);
-                        });
-                    }, prm);
-                }, Promise.resolve());
-            };
-            return process(backgrounds).then(function () {
-                return _this3.getBaseSurface(base).then(function (baseSrfCnv) {
-                    return (
-                        // backgrounds の上に base を描画
-                        // いろいろやっていても実際描画するのは それぞれのベースサーフェスだけです
-                        _this3.composeElement(baseSrfCnv, type, x, y)
-                    );
-                }).catch(console.warn.bind(console));
-            }).then(function () {
-                return process(foregrounds);
-            });
-        }
-    }]);
-
+                });
+            }
+            // debug用
+            //console.log(this.bufferRender.log);
+            //SurfaceUtil.log(SurfaceUtil.copy(this.bufferRender.cnv));
+            //document.body.scrollTop = 99999;
+            //this.endAll();
+            return _this;
+        });
+    };
+    SurfacePatternRenderer.prototype.convoluteTree = function (layer) {
+        var _this = this;
+        var type = layer.type, surface = layer.surface, x = layer.x, y = layer.y;
+        var base = surface.base, backgrounds = surface.backgrounds, foregrounds = surface.foregrounds;
+        var process = function (layerSets) {
+            return layerSets.reduce(function (prm, layerSet) {
+                return layerSet.reduce(function (prm, layer) {
+                    return prm.then(function () {
+                        return _this.convoluteTree(layer);
+                    });
+                }, prm);
+            }, Promise.resolve());
+        };
+        return process(backgrounds)
+            .then(function () {
+            return _this.getBaseSurface(base).then(function (baseSrfCnv) {
+                // backgrounds の上に base を描画
+                // いろいろやっていても実際描画するのは それぞれのベースサーフェスだけです
+                return _this.composeElement(baseSrfCnv, type, x, y);
+            }).catch(console.warn.bind(console));
+        }).then(function () { return process(foregrounds); });
+    };
     return SurfacePatternRenderer;
-}(SBR.SurfaceBaseRenderer);
-
+}(SBR.SurfaceBaseRenderer));
 exports.SurfacePatternRenderer = SurfacePatternRenderer;
+
 },{"./SurfaceBaseRenderer":7,"./SurfaceModel":8}],10:[function(require,module,exports){
 /*
  * surface -> canvas なレンダラ。
  * HTMLCanvasElement もこの層で抽象化する
  */
 "use strict";
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 var ST = require("./SurfaceTree");
 var SU = require("./SurfaceUtil");
-
-var SurfaceCanvas = function SurfaceCanvas(cnv) {
-    _classCallCheck(this, SurfaceCanvas);
-
-    this.cnv = cnv;
-    this.basePosX = 0;
-    this.basePosY = 0;
-    this.baseWidth = cnv.width;
-    this.baseHeight = cnv.height;
-};
-
+var SurfaceCanvas = (function () {
+    function SurfaceCanvas(cnv) {
+        this.cnv = cnv;
+        this.basePosX = 0;
+        this.basePosY = 0;
+        this.baseWidth = cnv.width;
+        this.baseHeight = cnv.height;
+    }
+    return SurfaceCanvas;
+}());
 exports.SurfaceCanvas = SurfaceCanvas;
-
-var SurfaceRenderer = function (_SurfaceCanvas) {
-    _inherits(SurfaceRenderer, _SurfaceCanvas);
-
+var SurfaceRenderer = (function (_super) {
+    __extends(SurfaceRenderer, _super);
     // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
     // nullならば1x1のCanvasをベースサーフェスとする。
     // 渡されたSurfaceCanvasは変更しない。
     function SurfaceRenderer() {
-        _classCallCheck(this, SurfaceRenderer);
-
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceRenderer).call(this, SU.createCanvas()));
-
-        _this.ctx = _this.cnv.getContext("2d");
-        _this.tmpcnv = SU.createCanvas();
-        _this.tmpctx = _this.tmpcnv.getContext("2d");
-        _this.use_self_alpha = false;
-        _this.debug = false;
-        return _this;
+        _super.call(this, SU.createCanvas());
+        this.ctx = this.cnv.getContext("2d");
+        this.tmpcnv = SU.createCanvas();
+        this.tmpctx = this.tmpcnv.getContext("2d");
+        this.use_self_alpha = false;
+        this.debug = false;
     }
-
-    _createClass(SurfaceRenderer, [{
-        key: "init",
-        value: function init(srfCnv) {
-            // this を srfCnv の値で置き換え
-            this.base(srfCnv);
-            this.basePosX = srfCnv.basePosX;
-            this.basePosY = srfCnv.basePosY;
-            this.baseWidth = srfCnv.baseWidth;
-            this.baseHeight = srfCnv.baseHeight;
-        }
-        // バッファを使いまわすためのリセット
-        // clearは短形を保つがリセットは1x1になる
-
-    }, {
-        key: "reset",
-        value: function reset() {
-            // reshapeの機会を減らすため大きさはそのままにする
-            this.ctx.canvas.width = this.ctx.canvas.width;
-            this.tmpctx.canvas.width = this.tmpctx.canvas.width;
-            this.basePosX = 0;
-            this.basePosY = 0;
-            this.baseWidth = 0;
-            this.baseHeight = 0;
-        }
-    }, {
-        key: "clear",
-        value: function clear() {
-            this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-        }
-        // [
-        //  {canvas: srfCnv1, type: "base",    x: 0,  y: 0}
-        //  {canvas: srfCnv2, type: "overlay", x: 50, y: 50}
-        // ]
-
-    }, {
-        key: "composeElements",
-        value: function composeElements(elms) {
-            var _this2 = this;
-
-            // baseを決定
-            var bases = elms.filter(function (_ref) {
-                var type = _ref.type;
-                return type === "base";
-            });
-            var others = elms.filter(function (_ref2) {
-                var type = _ref2.type;
-                return type !== "base";
-            });
-            // element[MAX].base > element0 > element[MIN]
-            var base = bases.slice(-1)[0]; /* last */
-            if (!(base instanceof ST.SurfaceElement)) {
-                // element[MIN]
-                // elms.length > 0なのでundefinedにはならない…はず。
-                // お前がbaseになるんだよ
-                base = elms.shift();
-                console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
-                if (base == null) {
-                    console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
-                    return this;
-                }
-            }
-            this.base(base.canvas);
-            others.forEach(function (_ref3) {
-                var canvas = _ref3.canvas;
-                var type = _ref3.type;
-                var x = _ref3.x;
-                var y = _ref3.y;
-
-                _this2.composeElement(canvas, type, x, y);
-            });
-            return this;
-        }
-    }, {
-        key: "composeElement",
-        value: function composeElement(canvas, type) {
-            var x = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-            var y = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-
-            switch (type) {
-                case "overlay":
-                    this.overlay(canvas, x, y);
-                    break;
-                case "overlayfast":
-                    this.overlayfast(canvas, x, y);
-                    break;
-                case "replace":
-                    this.replace(canvas, x, y);
-                    break;
-                case "interpolate":
-                    this.interpolate(canvas, x, y);
-                    break;
-                case "reduce":
-                    this.reduce(canvas, x, y);
-                    break;
-                default:
-                    console.warn("SurfaceRenderer#composeElement:", "unkown compose method", canvas, type, x, y);
+    SurfaceRenderer.prototype.init = function (srfCnv) {
+        // this を srfCnv の値で置き換え
+        this.base(srfCnv);
+        this.basePosX = srfCnv.basePosX;
+        this.basePosY = srfCnv.basePosY;
+        this.baseWidth = srfCnv.baseWidth;
+        this.baseHeight = srfCnv.baseHeight;
+    };
+    // バッファを使いまわすためのリセット
+    // clearは短形を保つがリセットは1x1になる
+    SurfaceRenderer.prototype.reset = function () {
+        // reshapeの機会を減らすため大きさはそのままにする
+        this.ctx.canvas.width = this.ctx.canvas.width;
+        this.tmpctx.canvas.width = this.tmpctx.canvas.width;
+        this.basePosX = 0;
+        this.basePosY = 0;
+        this.baseWidth = 0;
+        this.baseHeight = 0;
+    };
+    SurfaceRenderer.prototype.clear = function () {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    };
+    // [
+    //  {canvas: srfCnv1, type: "base",    x: 0,  y: 0}
+    //  {canvas: srfCnv2, type: "overlay", x: 50, y: 50}
+    // ]
+    SurfaceRenderer.prototype.composeElements = function (elms) {
+        var _this = this;
+        // baseを決定
+        var bases = elms.filter(function (_a) {
+            var type = _a.type;
+            return type === "base";
+        });
+        var others = elms.filter(function (_a) {
+            var type = _a.type;
+            return type !== "base";
+        });
+        // element[MAX].base > element0 > element[MIN]
+        var base = bases.slice(-1)[0]; /* last */
+        if (!(base instanceof ST.SurfaceElement)) {
+            // element[MIN]
+            // elms.length > 0なのでundefinedにはならない…はず。
+            // お前がbaseになるんだよ
+            base = elms.shift();
+            console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
+            if (base == null) {
+                console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
+                return this;
             }
         }
-        //下位レイヤをコマで完全に置き換える。collisionもコマのサーフェスに定義されたものに更新される。
-        //このメソッドのパターンを重ねると、サーフェス全面を描画し直すことによるアニメーション（いわばパラパラ漫画）が実現される。
-        //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
-        //着せ替え・elementでも使用できる。
-
-    }, {
-        key: "base",
-        value: function base(part) {
-            //this.reset();
-            this.cnv.width = part.cnv.width;
-            this.cnv.height = part.cnv.height;
-            this.ctx.globalCompositeOperation = "source-over";
-            this.ctx.drawImage(part.cnv, 0, 0);
+        this.base(base.canvas);
+        others.forEach(function (_a) {
+            var canvas = _a.canvas, type = _a.type, x = _a.x, y = _a.y;
+            _this.composeElement(canvas, type, x, y);
+        });
+        return this;
+    };
+    SurfaceRenderer.prototype.composeElement = function (canvas, type, x, y) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        switch (type) {
+            case "overlay":
+                this.overlay(canvas, x, y);
+                break;
+            case "overlayfast":
+                this.overlayfast(canvas, x, y);
+                break;
+            case "replace":
+                this.replace(canvas, x, y);
+                break;
+            case "interpolate":
+                this.interpolate(canvas, x, y);
+                break;
+            case "reduce":
+                this.reduce(canvas, x, y);
+                break;
+            default:
+                console.warn("SurfaceRenderer#composeElement:", "unkown compose method", canvas, type, x, y);
         }
-        //下位レイヤにコマを重ねる。
-        //着せ替え・elementでも使用できる。
-
-    }, {
-        key: "overlay",
-        value: function overlay(part, x, y) {
-            this.prepareOverlay(part, x, y);
-            this.ctx.globalCompositeOperation = "source-over";
-            this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
+    };
+    //下位レイヤをコマで完全に置き換える。collisionもコマのサーフェスに定義されたものに更新される。
+    //このメソッドのパターンを重ねると、サーフェス全面を描画し直すことによるアニメーション（いわばパラパラ漫画）が実現される。
+    //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
+    //着せ替え・elementでも使用できる。
+    SurfaceRenderer.prototype.base = function (part) {
+        //this.reset();
+        this.cnv.width = part.cnv.width;
+        this.cnv.height = part.cnv.height;
+        this.ctx.globalCompositeOperation = "source-over";
+        this.ctx.drawImage(part.cnv, 0, 0);
+    };
+    //下位レイヤにコマを重ねる。
+    //着せ替え・elementでも使用できる。
+    SurfaceRenderer.prototype.overlay = function (part, x, y) {
+        this.prepareOverlay(part, x, y);
+        this.ctx.globalCompositeOperation = "source-over";
+        this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
+    };
+    //下位レイヤの非透過部分（半透明含む）にのみコマを重ねる。
+    //着せ替え・elementでも使用できる。
+    SurfaceRenderer.prototype.overlayfast = function (part, x, y) {
+        this.prepareOverlay(part, x, y);
+        this.ctx.globalCompositeOperation = "source-atop";
+        this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
+    };
+    //下位レイヤの透明なところにのみコマを重ねる。
+    //下位レイヤの半透明部分に対しても、透明度が高い部分ほど強くコマを合成する。
+    //interpolateで重なる部分はベースより上位（手前）側になければならない
+    //（interpolateのコマが描画している部分に、上位のレイヤで不透明な部分が重なると反映されなくなる）。
+    //着せ替え・elementでも使用できる。
+    SurfaceRenderer.prototype.interpolate = function (part, x, y) {
+        this.prepareOverlay(part, x, y);
+        this.ctx.globalCompositeOperation = "destination-over";
+        this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
+    };
+    //下位レイヤにコマを重ねるが、コマの透過部分について下位レイヤにも反映する（reduce + overlayに近い）。
+    //着せ替え・elementでも使用できる。
+    SurfaceRenderer.prototype.replace = function (part, x, y) {
+        this.prepareOverlay(part, x, y);
+        this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv.width, part.cnv.height);
+        this.overlay(part, x, y);
+    };
+    SurfaceRenderer.prototype.prepareOverlay = function (part, x, y) {
+        // パーツがはみだす量
+        // もし負なら左へはみ出した量
+        var left = this.basePosX + x;
+        // もし負なら右へはみ出した量
+        var right = this.cnv.width - ((this.basePosX + x) + part.cnv.width);
+        // もし負なら上へはみ出した量
+        var top = this.basePosY + y;
+        // もし負なら↓へはみ出した量
+        var bottom = this.cnv.height - ((this.basePosY + y) + part.cnv.height);
+        if (left < 0 || right < 0 || top < 0 || bottom < 0) {
+            // はみ出し発生
+            var offsetX = 0; // ずれた量
+            var offsetY = 0;
+            console.info("SurfaceRenderer#prepareOverlay: reshape occured");
+            // 現状をtmpcnvへコピー
+            SU.fastcopy(this.cnv, this.tmpctx);
+            if (left < 0) {
+                offsetX = (-left);
+                this.cnv.width += (-left); // reshape
+                this.basePosX += (-left);
+            }
+            if (right < 0) {
+                this.cnv.width += (-right); // reshape
+            }
+            if (top < 0) {
+                offsetY = (-top);
+                this.cnv.height += (-top); // reshape
+                this.basePosY += (-top);
+            }
+            if (bottom < 0) {
+                this.cnv.height += (-bottom); // reshape
+            }
+            if (this.debug) {
+                // 基準点描画
+                this.ctx.fillStyle = "lime";
+                this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
+            }
+            this.ctx.drawImage(this.tmpctx.canvas, offsetX, offsetY); //下位レイヤ再描画
         }
-        //下位レイヤの非透過部分（半透明含む）にのみコマを重ねる。
-        //着せ替え・elementでも使用できる。
-
-    }, {
-        key: "overlayfast",
-        value: function overlayfast(part, x, y) {
-            this.prepareOverlay(part, x, y);
-            this.ctx.globalCompositeOperation = "source-atop";
-            this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
-        }
-        //下位レイヤの透明なところにのみコマを重ねる。
-        //下位レイヤの半透明部分に対しても、透明度が高い部分ほど強くコマを合成する。
-        //interpolateで重なる部分はベースより上位（手前）側になければならない
-        //（interpolateのコマが描画している部分に、上位のレイヤで不透明な部分が重なると反映されなくなる）。
-        //着せ替え・elementでも使用できる。
-
-    }, {
-        key: "interpolate",
-        value: function interpolate(part, x, y) {
-            this.prepareOverlay(part, x, y);
-            this.ctx.globalCompositeOperation = "destination-over";
-            this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
-        }
-        //下位レイヤにコマを重ねるが、コマの透過部分について下位レイヤにも反映する（reduce + overlayに近い）。
-        //着せ替え・elementでも使用できる。
-
-    }, {
-        key: "replace",
-        value: function replace(part, x, y) {
-            this.prepareOverlay(part, x, y);
-            this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv.width, part.cnv.height);
-            this.overlay(part, x, y);
-        }
-    }, {
-        key: "prepareOverlay",
-        value: function prepareOverlay(part, x, y) {
-            // パーツがはみだす量
-            // もし負なら左へはみ出した量
-            var left = this.basePosX + x;
-            // もし負なら右へはみ出した量
-            var right = this.cnv.width - (this.basePosX + x + part.cnv.width);
-            // もし負なら上へはみ出した量
-            var top = this.basePosY + y;
-            // もし負なら↓へはみ出した量
-            var bottom = this.cnv.height - (this.basePosY + y + part.cnv.height);
-            if (left < 0 || right < 0 || top < 0 || bottom < 0) {
-                // はみ出し発生
-                var offsetX = 0; // ずれた量
-                var offsetY = 0;
-                console.info("SurfaceRenderer#prepareOverlay: reshape occured");
-                // 現状をtmpcnvへコピー
-                SU.fastcopy(this.cnv, this.tmpctx);
-                if (left < 0) {
-                    offsetX = -left;
-                    this.cnv.width += -left; // reshape
-                    this.basePosX += -left;
-                }
-                if (right < 0) {
-                    this.cnv.width += -right; // reshape
-                }
-                if (top < 0) {
-                    offsetY = -top;
-                    this.cnv.height += -top; // reshape
-                    this.basePosY += -top;
-                }
-                if (bottom < 0) {
-                    this.cnv.height += -bottom; // reshape
-                }
-                if (this.debug) {
-                    // 基準点描画
-                    this.ctx.fillStyle = "lime";
-                    this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
-                }
-                this.ctx.drawImage(this.tmpctx.canvas, offsetX, offsetY); //下位レイヤ再描画
+    };
+    //下位レイヤの抜き色による透過領域に、そのコマの抜き色による透過領域を追加する。コマの抜き色で無い部分は無視される。
+    //着せ替え用に用意されたメソッドだが、着せ替えでないアニメーション・elementでも使用可能。
+    //http://usada.sakura.vg/contents/seriko.html
+    SurfaceRenderer.prototype.reduce = function (part, x, y) {
+        // はみ出しちぇっく prepareOverlay はしない
+        var width = x + part.cnv.width < this.cnv.width ? part.cnv.width : this.cnv.width - x;
+        var height = y + part.cnv.height < this.cnv.height ? part.cnv.height : this.cnv.height - y;
+        var imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
+        var dataA = imgdataA.data;
+        // partの透明領域までアクセスする必要がある
+        var ctxB = part.cnv.getContext("2d");
+        var imgdataB = ctxB.getImageData(0, 0, part.cnv.width, part.cnv.height);
+        var dataB = imgdataB.data;
+        for (var _y = 0; _y < height; _y++) {
+            for (var _x = 0; _x < width; _x++) {
+                var iA = (x + _x) * 4 + (y + _y) * this.cnv.width * 4; // baseのxy座標とインデックス
+                var iB = (_x) * 4 + (_y) * part.cnv.width * 4; // partのxy座標とインデックス
+                // もしコマが透過ならpartのalphaチャネルでbaseのを上書き
+                if (dataB[iB + 3] === 0)
+                    dataA[iA + 3] = dataB[iB + 3];
             }
         }
-        //下位レイヤの抜き色による透過領域に、そのコマの抜き色による透過領域を追加する。コマの抜き色で無い部分は無視される。
-        //着せ替え用に用意されたメソッドだが、着せ替えでないアニメーション・elementでも使用可能。
-        //http://usada.sakura.vg/contents/seriko.html
-
-    }, {
-        key: "reduce",
-        value: function reduce(part, x, y) {
-            // はみ出しちぇっく prepareOverlay はしない
-            var width = x + part.cnv.width < this.cnv.width ? part.cnv.width : this.cnv.width - x;
-            var height = y + part.cnv.height < this.cnv.height ? part.cnv.height : this.cnv.height - y;
-            var imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
-            var dataA = imgdataA.data;
-            // partの透明領域までアクセスする必要がある
-            var ctxB = part.cnv.getContext("2d");
-            var imgdataB = ctxB.getImageData(0, 0, part.cnv.width, part.cnv.height);
-            var dataB = imgdataB.data;
-            for (var _y = 0; _y < height; _y++) {
-                for (var _x = 0; _x < width; _x++) {
-                    var iA = (x + _x) * 4 + (y + _y) * this.cnv.width * 4; // baseのxy座標とインデックス
-                    var iB = _x * 4 + _y * part.cnv.width * 4; // partのxy座標とインデックス
-                    // もしコマが透過ならpartのalphaチャネルでbaseのを上書き
-                    if (dataB[iB + 3] === 0) dataA[iA + 3] = dataB[iB + 3];
+        this.ctx.putImageData(imgdataA, 0, 0);
+    };
+    SurfaceRenderer.prototype.drawRegions = function (regions, description) {
+        var _this = this;
+        if (description === void 0) { description = "notitle"; }
+        this.ctx.font = "35px";
+        this.ctx.lineWidth = 4;
+        this.ctx.strokeStyle = "white";
+        this.ctx.strokeText(description, 5, 10);
+        this.ctx.fillStyle = "black";
+        this.ctx.fillText(description, 5, 10); // surfaceIdを描画
+        regions.forEach(function (col) {
+            _this.drawRegion(col);
+        });
+    };
+    SurfaceRenderer.prototype.drawRegion = function (region) {
+        var _a = region.type, type = _a === void 0 ? "" : _a, _b = region.name, name = _b === void 0 ? "" : _b;
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = "#00FF00";
+        var left = 0, top = 0, right = 0, bottom = 0;
+        switch (type) {
+            case "rect":
+                var _c = region, _d = _c.left, left = _d === void 0 ? 0 : _d, _e = _c.top, top = _e === void 0 ? 0 : _e, _f = _c.right, right = _f === void 0 ? 0 : _f, _g = _c.bottom, bottom = _g === void 0 ? 0 : _g;
+                left += this.basePosX;
+                top += this.basePosY;
+                right += this.basePosX;
+                bottom += this.basePosY;
+                this.ctx.beginPath();
+                this.ctx.rect(left, top, right - left, bottom - top);
+                this.ctx.stroke();
+                break;
+            case "ellipse":
+                var _h = region, _j = _h.left, left = _j === void 0 ? 0 : _j, _k = _h.top, top = _k === void 0 ? 0 : _k, _l = _h.right, right = _l === void 0 ? 0 : _l, _m = _h.bottom, bottom = _m === void 0 ? 0 : _m;
+                left += this.basePosX;
+                top += this.basePosY;
+                right += this.basePosX;
+                bottom += this.basePosY;
+                // 実はctx.ellipseはfirefox対応してない
+                this.drawEllipseWithBezier(left, top, right - left, bottom - top);
+                break;
+            case "circle":
+                var _o = region, _p = _o.radius, radius = _p === void 0 ? 0 : _p, _q = _o.centerX, centerX = _q === void 0 ? 0 : _q, _r = _o.centerY, centerY = _r === void 0 ? 0 : _r;
+                centerX += this.basePosX;
+                centerY += this.basePosY;
+                left = centerX;
+                top = centerY;
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, true);
+                this.ctx.stroke();
+                break;
+            case "polygon":
+                var _s = region.coordinates, coordinates = _s === void 0 ? [] : _s;
+                if (coordinates.length <= 0)
+                    break;
+                this.ctx.beginPath();
+                var _t = coordinates[0], startX = _t.x, startY = _t.y;
+                left = startX;
+                top = startY;
+                this.ctx.moveTo(startX, startY);
+                for (var i = 1; i < coordinates.length; i++) {
+                    var _u = coordinates[i], x = _u.x, y = _u.y;
+                    this.ctx.lineTo(x, y);
                 }
-            }
-            this.ctx.putImageData(imgdataA, 0, 0);
+                this.ctx.lineTo(startX, startY);
+                this.ctx.stroke();
+                break;
+            default:
+                console.warn("SurfaceRenderer#drawRegion", "unkown collision shape:", region);
+                break;
         }
-    }, {
-        key: "drawRegions",
-        value: function drawRegions(regions) {
-            var _this3 = this;
-
-            var description = arguments.length <= 1 || arguments[1] === undefined ? "notitle" : arguments[1];
-
-            this.ctx.font = "35px";
-            this.ctx.lineWidth = 4;
-            this.ctx.strokeStyle = "white";
-            this.ctx.strokeText(description, 5, 10);
-            this.ctx.fillStyle = "black";
-            this.ctx.fillText(description, 5, 10); // surfaceIdを描画
-            regions.forEach(function (col) {
-                _this3.drawRegion(col);
-            });
-        }
-    }, {
-        key: "drawRegion",
-        value: function drawRegion(region) {
-            var _region$type = region.type;
-            var type = _region$type === undefined ? "" : _region$type;
-            var _region$name = region.name;
-            var name = _region$name === undefined ? "" : _region$name;
-
-            this.ctx.lineWidth = 1;
-            this.ctx.strokeStyle = "#00FF00";
-            var left = 0,
-                top = 0,
-                right = 0,
-                bottom = 0;
-            switch (type) {
-                case "rect":
-                    var _region$left = region.left;
-                    var left = _region$left === undefined ? 0 : _region$left;
-                    var _region$top = region.top;
-                    var top = _region$top === undefined ? 0 : _region$top;
-                    var _region$right = region.right;
-                    var right = _region$right === undefined ? 0 : _region$right;
-                    var _region$bottom = region.bottom;
-                    var bottom = _region$bottom === undefined ? 0 : _region$bottom;
-
-                    left += this.basePosX;
-                    top += this.basePosY;
-                    right += this.basePosX;
-                    bottom += this.basePosY;
-                    this.ctx.beginPath();
-                    this.ctx.rect(left, top, right - left, bottom - top);
-                    this.ctx.stroke();
-                    break;
-                case "ellipse":
-                    var _region$left2 = region.left;
-                    var left = _region$left2 === undefined ? 0 : _region$left2;
-                    var _region$top2 = region.top;
-                    var top = _region$top2 === undefined ? 0 : _region$top2;
-                    var _region$right2 = region.right;
-                    var right = _region$right2 === undefined ? 0 : _region$right2;
-                    var _region$bottom2 = region.bottom;
-                    var bottom = _region$bottom2 === undefined ? 0 : _region$bottom2;
-
-                    left += this.basePosX;
-                    top += this.basePosY;
-                    right += this.basePosX;
-                    bottom += this.basePosY;
-                    // 実はctx.ellipseはfirefox対応してない
-                    this.drawEllipseWithBezier(left, top, right - left, bottom - top);
-                    break;
-                case "circle":
-                    var _region$radius = region.radius;
-                    var radius = _region$radius === undefined ? 0 : _region$radius;
-                    var _region$centerX = region.centerX;
-                    var centerX = _region$centerX === undefined ? 0 : _region$centerX;
-                    var _region$centerY = region.centerY;
-                    var centerY = _region$centerY === undefined ? 0 : _region$centerY;
-
-                    centerX += this.basePosX;
-                    centerY += this.basePosY;
-                    left = centerX;
-                    top = centerY;
-                    this.ctx.beginPath();
-                    this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, true);
-                    this.ctx.stroke();
-                    break;
-                case "polygon":
-                    var _region$coordinates = region.coordinates;
-                    var coordinates = _region$coordinates === undefined ? [] : _region$coordinates;
-
-                    if (coordinates.length <= 0) break;
-                    this.ctx.beginPath();
-                    var _coordinates$ = coordinates[0];
-                    var startX = _coordinates$.x;
-                    var startY = _coordinates$.y;
-
-                    left = startX;
-                    top = startY;
-                    this.ctx.moveTo(startX, startY);
-                    for (var i = 1; i < coordinates.length; i++) {
-                        var _coordinates$i = coordinates[i];
-                        var x = _coordinates$i.x;
-                        var y = _coordinates$i.y;
-
-                        this.ctx.lineTo(x, y);
-                    }
-                    this.ctx.lineTo(startX, startY);
-                    this.ctx.stroke();
-                    break;
-                default:
-                    console.warn("SurfaceRenderer#drawRegion", "unkown collision shape:", region);
-                    break;
-            }
-            this.ctx.font = "35px";
-            this.ctx.lineWidth = 4;
-            this.ctx.strokeStyle = "white";
-            this.ctx.strokeText(type + ":" + name, left + 5, top + 10);
-            this.ctx.fillStyle = "black";
-            this.ctx.fillText(type + ":" + name, left + 5, top + 10);
-        }
-        // ctx.ellipseは非標準
-
-    }, {
-        key: "drawEllipseWithBezier",
-        value: function drawEllipseWithBezier(x, y, w, h) {
-            var kappa = .5522848,
-                ox = w / 2 * kappa,
-                // control point offset horizontal
-            oy = h / 2 * kappa,
-                // control point offset vertical
-            xe = x + w,
-                // x-end
-            ye = y + h,
-                // y-end
-            xm = x + w / 2,
-                // x-middle
-            ym = y + h / 2; // y-middle
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, ym);
-            this.ctx.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
-            this.ctx.bezierCurveTo(xm + ox, y, xe, ym - oy, xe, ym);
-            this.ctx.bezierCurveTo(xe, ym + oy, xm + ox, ye, xm, ye);
-            this.ctx.bezierCurveTo(xm - ox, ye, x, ym + oy, x, ym);
-            this.ctx.stroke();
-        }
-    }]);
-
+        this.ctx.font = "35px";
+        this.ctx.lineWidth = 4;
+        this.ctx.strokeStyle = "white";
+        this.ctx.strokeText(type + ":" + name, left + 5, top + 10);
+        this.ctx.fillStyle = "black";
+        this.ctx.fillText(type + ":" + name, left + 5, top + 10);
+    };
+    // ctx.ellipseは非標準
+    SurfaceRenderer.prototype.drawEllipseWithBezier = function (x, y, w, h) {
+        var kappa = .5522848, ox = (w / 2) * kappa, // control point offset horizontal
+        oy = (h / 2) * kappa, // control point offset vertical
+        xe = x + w, // x-end
+        ye = y + h, // y-end
+        xm = x + w / 2, // x-middle
+        ym = y + h / 2; // y-middle
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, ym);
+        this.ctx.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
+        this.ctx.bezierCurveTo(xm + ox, y, xe, ym - oy, xe, ym);
+        this.ctx.bezierCurveTo(xe, ym + oy, xm + ox, ye, xm, ye);
+        this.ctx.bezierCurveTo(xm - ox, ye, x, ym + oy, x, ym);
+        this.ctx.stroke();
+    };
     return SurfaceRenderer;
-}(SurfaceCanvas);
-
+}(SurfaceCanvas));
 exports.SurfaceRenderer = SurfaceRenderer;
 function isHit(srfCnv, cols, x, y) {
     var transparency = SU.isHit(this.cnv, x, y);
@@ -1352,933 +1051,708 @@ function copy(srfCnv) {
     return srfCnv2;
 }
 exports.copy = copy;
+
 },{"./SurfaceTree":12,"./SurfaceUtil":14}],11:[function(require,module,exports){
+/*
+ * Surface 状態モデルを更新する副作用関数群
+ */
 "use strict";
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
 var SU = require("./SurfaceUtil");
 var ST = require("./SurfaceTree");
 var SC = require("./ShellConfig");
 var SM = require("./SurfaceModel");
-var events_1 = require("events");
-
-var SurfaceState = function (_events_1$EventEmitte) {
-    _inherits(SurfaceState, _events_1$EventEmitte);
-
-    // アニメーション終了時に呼び出す手はずになっているプロミス値への継続
-    // on("move", callback: Function)
-    //   move メソッドが発生したことを伝えており暗にウィンドウマネージャへウインドウ位置を変更するよう恫喝している
-    // on("render", callback: Function)
-    //   描画すべきタイミングなので canvas に描画してくれ 
-    function SurfaceState(scopeId, surfaceId, shellState) {
-        _classCallCheck(this, SurfaceState);
-
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceState).call(this));
-
-        _this.shellState = shellState;
-        _this.surface = new SM.Surface(scopeId, surfaceId, shellState.shell);
-        _this.continuations = [];
-        _this.surface.surfaceNode.animations.forEach(function (anim, animId) {
+var SurfaceState = (function () {
+    function SurfaceState(surface, renderer) {
+        var _this = this;
+        this.surface = surface;
+        this.renderer = renderer;
+        this.continuations = {};
+        this.debug = false;
+        this.surface.surfaceNode.animations.forEach(function (anim, animId) {
             if (anim != null) {
-                _this.initLayer(animId);
+                _this.initSeriko(animId);
             }
         });
-        _this.shellState.on("bindgroup_update", function () {
-            // ShellConfig の値が変化し bindgroup_update の構成が変化した！
-            _this.updateBind();
-        });
-        _this.constructRenderingTree();
-        return _this;
+        // 初回更新
+        this.constructRenderingTree();
     }
-
-    _createClass(SurfaceState, [{
-        key: "initLayer",
-        value: function initLayer(animId) {
-            // レイヤの初期化、コンストラクタからのみ呼ばれるべき
-            var _surface = this.surface;
-            var surfaceId = _surface.surfaceId;
-            var surfaceNode = _surface.surfaceNode;
-            var config = _surface.config;
-            var layers = _surface.layers;
-
-            if (surfaceNode.animations[animId] == null) {
-                console.warn("SurfaceState#initLayer: animationID", animId, "is not defined in ", surfaceId, surfaceNode);
+    SurfaceState.prototype.render = function () {
+        var _this = this;
+        this.debug && console.time("render");
+        this.constructRenderingTree();
+        return this.renderer("render", this.surface).then(function () {
+            _this.debug && console.timeEnd("render");
+        });
+    };
+    SurfaceState.prototype.initSeriko = function (animId) {
+        // レイヤの初期化、コンストラクタからのみ呼ばれるべき
+        var _a = this.surface, surfaceId = _a.surfaceId, surfaceNode = _a.surfaceNode, config = _a.config, scopeId = _a.scopeId;
+        if (surfaceNode.animations[animId] == null) {
+            console.warn("SurfaceState#initLayer: animationID", animId, "is not defined in ", surfaceId, surfaceNode);
+            return;
+        }
+        var anim = surfaceNode.animations[animId];
+        var intervals = anim.intervals, patterns = anim.patterns, options = anim.options, collisions = anim.collisions;
+        if (intervals.some(function (_a) {
+            var interval = _a[0], args = _a[1];
+            return "bind" === interval;
+        })) {
+            // このanimIDは着せ替え機能付きレイヤ
+            if (SC.isBind(config, scopeId, animId)) {
+                // 現在有効な bind なら
+                if (intervals.length > 1) {
+                    // [[bind, []]].length === 1
+                    // bind+hogeは着せ替え付随アニメーション。
+                    // 現在のレイヤにSERIKOレイヤを追加
+                    // インターバルタイマの登録
+                    this.begin(animId);
+                    return;
+                }
+                // interval,bind
                 return;
             }
-            var anim = surfaceNode.animations[animId];
-            var intervals = anim.intervals;
-            var patterns = anim.patterns;
-            var options = anim.options;
-            var collisions = anim.collisions;
-
-            if (intervals.some(function (_ref) {
-                var _ref2 = _slicedToArray(_ref, 2);
-
-                var interval = _ref2[0];
-                var args = _ref2[1];
+            // 現在有効な bind でないなら
+            // 現在の合成レイヤの着せ替えレイヤを非表示設定
+            // bind+sometimsなどを殺す
+            this.end(animId);
+            return;
+        }
+        // 着せ替え機能なしレイヤ = 全てSERIKOレイヤ
+        // 現在のレイヤにSERIKOレイヤを追加
+        this.begin(animId);
+    };
+    SurfaceState.prototype.updateBind = function () {
+        var _this = this;
+        var surface = this.surface;
+        var animations = surface.surfaceNode.animations;
+        animations.forEach(function (_a, animId) {
+            var intervals = _a.intervals;
+            if (intervals.some(function (_a) {
+                var interval = _a[0], args = _a[1];
                 return "bind" === interval;
             })) {
-                // このanimIDは着せ替え機能付きレイヤ
-                if (SC.isBind(config, animId)) {
-                    // 現在有効な bind なら
-                    if (intervals.length > 1) {
-                        // [[bind, []]].length === 1
-                        // bind+hogeは着せ替え付随アニメーション。
-                        // 現在のレイヤにSERIKOレイヤを追加
-                        layers[animId] = new SM.SerikoLayer(patterns, ST.isBack(anim));
-                        // インターバルタイマの登録
-                        this.begin(animId);
-                        return;
-                    }
-                    // interval,bind
-                    // 現在のレイヤにMAYUNAレイヤを追加
-                    layers[animId] = new SM.MayunaLayer(patterns, ST.isBack(anim), true);
-                    return;
-                }
-                // 現在有効な bind でないなら
-                // 現在の合成レイヤの着せ替えレイヤを非表示設定
-                layers[animId] = new SM.MayunaLayer(patterns, ST.isBack(anim), false);
-                // ついでにbind+sometimsなどを殺す
-                this.end(animId);
+                // bind+ を発動
+                _this.initSeriko(animId);
+            }
+        });
+        this.constructRenderingTree();
+        return this.render();
+    };
+    // アニメーションタイミングループの開始要請
+    SurfaceState.prototype.begin = function (animId) {
+        var _this = this;
+        var _a = this.surface, serikos = _a.serikos, surfaceNode = _a.surfaceNode, config = _a.config, scopeId = _a.scopeId;
+        var _b = surfaceNode.animations[animId], intervals = _b.intervals, patterns = _b.patterns, options = _b.options, collisions = _b.collisions;
+        if (intervals.some(function (_a) {
+            var interval = _a[0];
+            return interval === "bind";
+        })) {
+            if (!SC.isBind(config, scopeId, animId)) {
                 return;
             }
-            // 着せ替え機能なしレイヤ = 全てSERIKOレイヤ
-            // 現在のレイヤにSERIKOレイヤを追加
-            layers[animId] = new SM.SerikoLayer(patterns, ST.isBack(anim));
-            this.begin(animId);
         }
-    }, {
-        key: "updateBind",
-        value: function updateBind() {
-            var _this2 = this;
-
-            var animations = this.surface.surfaceNode.animations;
-            animations.forEach(function (_ref3, animId) {
-                var intervals = _ref3.intervals;
-
-                if (intervals.some(function (_ref4) {
-                    var _ref5 = _slicedToArray(_ref4, 2);
-
-                    var interval = _ref5[0];
-                    var args = _ref5[1];
-                    return "bind" === interval;
-                })) {
-                    _this2.initLayer(animId);
-                }
-            });
-            this.constructRenderingTree();
-        }
-        // アニメーションタイミングループの開始要請
-
-    }, {
-        key: "begin",
-        value: function begin(animId) {
-            var _this3 = this;
-
-            var _surface2 = this.surface;
-            var surfaceNode = _surface2.surfaceNode;
-            var config = _surface2.config;
-            var _surfaceNode$animatio = surfaceNode.animations[animId];
-            var intervals = _surfaceNode$animatio.intervals;
-            var patterns = _surfaceNode$animatio.patterns;
-            var options = _surfaceNode$animatio.options;
-            var collisions = _surfaceNode$animatio.collisions;
-
-            if (intervals.some(function (_ref6) {
-                var _ref7 = _slicedToArray(_ref6, 1);
-
-                var interval = _ref7[0];
-                return interval === "bind";
-            })) {
-                if (!SC.isBind(config, animId)) {
-                    return;
-                }
-            }
-            intervals.forEach(function (_ref8) {
-                var _ref9 = _slicedToArray(_ref8, 2);
-
-                var interval = _ref9[0];
-                var args = _ref9[1];
-
-                // インターバルタイマの登録
-                _this3.setIntervalTimer(animId, interval, args);
-            });
-        }
-        // アニメーションタイミングループのintervalタイマの停止
-
-    }, {
-        key: "end",
-        value: function end(animId) {
-            var seriko = this.surface.seriko;
-            // SERIKO Layer の状態を変更
-
-            seriko[animId] = false;
-        }
-        // すべての自発的アニメーション再生の停止
-
-    }, {
-        key: "endAll",
-        value: function endAll() {
-            var _this4 = this;
-
-            var layers = this.surface.layers;
-
-            layers.forEach(function (layer, animId) {
-                _this4.end(animId);
-            });
-        }
-    }, {
-        key: "setIntervalTimer",
-        value: function setIntervalTimer(animId, interval, args) {
-            var _this5 = this;
-
-            // setTimeoutする、beginからのみ呼ばれてほしい
-            var _surface3 = this.surface;
-            var layers = _surface3.layers;
-            var seriko = _surface3.seriko;
-
-            var layer = layers[animId];
-            if (layer instanceof SM.SerikoLayer) {
-                seriko[animId] = true;
-                var fn = function fn(nextTick) {
-                    // nextTick は アニメーション終わってから呼ぶともういっぺん random や always されるもの
-                    if (!seriko[animId]) return; // nextTick 呼ばないのでintervalを終了する  
-                    _this5.play(animId).catch(function (err) {
-                        return console.info("animation canceled", err);
-                    }).then(function () {
-                        nextTick();
-                    });
-                };
-                // アニメーション描画タイミングの登録
-                switch (interval) {
-                    // nextTickを呼ぶともう一回random
-                    case "always":
-                        SU.always(fn);
-                        return;
-                    case "runonce":
-                        setTimeout(function () {
-                            return _this5.play(animId);
-                        });
-                        return;
-                    case "never":
-                        return;
-                    case "yen-e":
-                        return;
-                    case "talk":
-                        return;
-                    case "sometimes":
-                        SU.random(fn, 2);
-                        return;
-                    case "rarely":
-                        SU.random(fn, 4);
-                        return;
-                    default:
-                        var n = isFinite(args[0]) ? args[0] : (console.warn("Surface#setTimer: failback to", 4, "from", args[0], interval, animId, layer), 4);
-                        if (interval === "random") {
-                            SU.random(fn, n);
-                            return;
-                        }
-                        if (interval === "periodic") {
-                            SU.periodic(fn, n);
-                            return;
-                        }
-                        console.warn("SurfaceState#setTimer > unkown interval:", interval, animId);
-                        return;
-                }
-            }
+        // SERIKO Layer の状態を変更
+        serikos[animId] = new SM.Seriko();
+        intervals.forEach(function (_a) {
+            var interval = _a[0], args = _a[1];
+            // インターバルタイマの登録
+            _this.setIntervalTimer(animId, interval, args);
+        });
+    };
+    // アニメーションタイミングループのintervalタイマの停止
+    SurfaceState.prototype.end = function (animId) {
+        var serikos = this.surface.serikos;
+        // SERIKO Layer の状態を変更
+        delete serikos[animId];
+    };
+    // すべての自発的アニメーション再生の停止
+    SurfaceState.prototype.endAll = function () {
+        var _this = this;
+        var serikos = this.surface.serikos;
+        Object.keys(serikos).forEach(function (animId) {
+            _this.end(Number(animId));
+        });
+    };
+    SurfaceState.prototype.setIntervalTimer = function (animId, interval, args) {
+        var _this = this;
+        // setTimeoutする、beginからのみ呼ばれてほしい
+        var serikos = this.surface.serikos;
+        if (!(serikos[animId] instanceof SM.Seriko)) {
             console.warn("SurfaceState#setTimer: animId", animId, "is not SerikoLayer");
             return;
         }
-        // アニメーション再生
-
-    }, {
-        key: "play",
-        value: function play(animId) {
-            var _this6 = this;
-
-            var srf = this.surface;
-            var _surface4 = this.surface;
-            var surfaceNode = _surface4.surfaceNode;
-            var layers = _surface4.layers;
-            var destructed = _surface4.destructed;
-
-            if (destructed) {
-                // 既に破棄されたサーフェスなのでアニメーション再生とかありえん
-                return Promise.reject("destructed");
-            }
-            if (!(layers[animId] instanceof SM.SerikoLayer)) {
-                // そんなアニメーションはない
-                console.warn("SurfaceState#play", "animation", animId, "is not defined");
-                return Promise.reject("no such animation");
-            }
-            var layer = layers[animId];
-            var anim = surfaceNode.animations[animId];
-            if (layer.patternID >= 0 || layer.paused) {
-                // 既に再生中、ポーズ中ならば再生停止して最初からどうぞ
-                layer.canceled = true; // キャンセル
-                layer = layers[animId] = new SM.SerikoLayer(layer.patterns, layer.background); // 値の初期化
-            }
-            ST.getExclusives(anim).map(function (exAnimId) {
-                // exclusive指定を反映
-                var layer = layers[exAnimId];
-                if (layer instanceof SM.SerikoLayer) {
-                    layer.exclusive = true;
-                }
-            });
-            console.group("" + animId);
-            console.info("start animation", animId, this.surface.surfaceNode.animations[animId]);
-            return new Promise(function (resolve, reject) {
-                _this6.continuations[animId] = { resolve: resolve, reject: reject };
-                _this6.step(animId, layer);
-            }).then(function () {
-                console.info("finish animation", animId);
-                console.groupEnd();
-            });
-        }
-    }, {
-        key: "step",
-        value: function step(animId, layer) {
-            var _this7 = this;
-
-            var srf = this.surface;
-            var _surface5 = this.surface;
-            var surfaceNode = _surface5.surfaceNode;
-            var layers = _surface5.layers;
-            var destructed = _surface5.destructed;
-            var move = _surface5.move;
-            var _continuations$animId = this.continuations[animId];
-            var resolve = _continuations$animId.resolve;
-            var reject = _continuations$animId.reject;
-
-            var anim = surfaceNode.animations[animId];
-            // patternをすすめる
-            // exclusive中のやつら探す
-            if (layers.some(function (layer, id) {
-                return !(layer instanceof SM.SerikoLayer) ? false // layer が mayuna なら 論外
-                : !layer.exclusive ? false // exclusive が存在しない
-                : id === animId;
-            } // exclusiveが存在しなおかつ自分は含まれる
-            )) {
-                // exclusiveが存在しなおかつ自分は含まれないので
-                layer.canceled = true;
-            }
-            if (layer.canceled) {
-                // キャンセルされたので reject
-                return reject("canceled");
-            }
-            if (layer.paused) {
-                // 次にplayが呼び出されるまで何もしない 
+        var fn = function (nextTick) {
+            // nextTick は アニメーション終わってから呼ぶともういっぺん random や always されるもの
+            if (!(serikos[animId] instanceof SM.Seriko)) {
+                // nextTick 呼ばないのでintervalを終了する
                 return;
             }
-            // patternID は現在表示中のパタン
-            // patternID === -1 は +1 され 0 になり wait ミリ秒間待ってから patternID === 0 を表示するとの意思表明
-            // patternID+1 はこれから表示
-            layer.patternID++;
-            if (anim.patterns[layer.patternID] == null) {
-                // このステップで次に表示すべきなにかがない＝このアニメは終了
-                layer.finished = true;
-            }
-            if (layer.finished) {
-                // 初期化
-                layers[animId] = new SM.SerikoLayer(layer.patterns, layer.background);
-                delete this.continuations[animId];
-                //this.constructRenderingTree();
-                return resolve();
-            }
-            var _anim$patterns$layer$ = anim.patterns[layer.patternID];
-            var wait = _anim$patterns$layer$.wait;
-            var type = _anim$patterns$layer$.type;
-            var x = _anim$patterns$layer$.x;
-            var y = _anim$patterns$layer$.y;
-            var animation_ids = _anim$patterns$layer$.animation_ids;
-            var surface = anim.patterns[layer.patternID].surface;
-
-            switch (type) {
-                // 付随再生であってこのアニメの再生終了は待たない・・・はず？
-                case "start":
-                    this.play(animation_ids[0]);
+            _this.play(animId)
+                .catch(function (err) { return console.info("animation canceled", err); })
+                .then(function () { nextTick(); });
+        };
+        // アニメーション描画タイミングの登録
+        switch (interval) {
+            // nextTickを呼ぶともう一回random
+            case "always":
+                SU.always(fn);
+                return;
+            case "runonce":
+                setTimeout(function () { return _this.play(animId); });
+                return;
+            case "never": return;
+            case "yen-e": return;
+            case "talk": return;
+            case "sometimes":
+                SU.random(fn, 2);
+                return;
+            case "rarely":
+                SU.random(fn, 4);
+                return;
+            default:
+                var n = isFinite(args[0]) ? args[0]
+                    : (console.warn("Surface#setIntervalTimer: failback to", 4, "from", args[0], interval, animId)
+                        , 4);
+                if (interval === "random") {
+                    SU.random(fn, n);
                     return;
-                case "stop":
-                    this.stop(animation_ids[0]);
-                    return;
-                case "alternativestart":
-                    this.play(SU.choice(animation_ids));
-                    return;
-                case "alternativestop":
-                    this.stop(SU.choice(animation_ids));
-                    return;
-                case "move":
-                    move.x = x;
-                    move.y = y;
-                    this.emit("move");
-                    return;
-            }
-            var _wait = SU.randomRange(wait[0], wait[1]);
-            // waitだけ待ってからレンダリング
-            console.time("step" + _wait);
-            setTimeout(function () {
-                console.timeEnd("step" + _wait);
-                if (surface < -2) {
-                    // SERIKO/1.4 ?
-                    console.warn("SurfaceState#step: pattern surfaceId", surface, "is not defined in SERIKO/1.4, failback to -2");
-                    surface = -2;
                 }
-                if (surface === -1) {
-                    // SERIKO/1.4 -1 として表示されいたこのアニメーション終了 
-                    layer.finished = true;
-                    return _this7.step(animId, layer);
+                if (interval === "periodic") {
+                    SU.periodic(fn, n);
+                    return;
                 }
-                if (surface === -2) {
-                    // SERIKO/1.4 全アニメーション停止
-                    layers.forEach(function (layer) {
-                        if (layer instanceof SM.SerikoLayer) {
-                            layer.finished = true;
-                            _this7.step(animId, layer);
-                        }
-                    });
-                }
-                _this7.constructRenderingTree();
-                _this7.step(animId, layer);
-            }, _wait);
         }
-        // 再生中のアニメーションを停止しろ
-
-    }, {
-        key: "stop",
-        value: function stop(animId) {
-            var layer = this.surface.layers[animId];
-            if (layer instanceof SM.SerikoLayer) {
-                // 何らかの理由で停止要請がでたのでつまりキャンセル
-                layer.canceled = true;
+        console.warn("SurfaceState#setIntervalTimer: unkown interval:", interval, animId);
+        return;
+    };
+    // アニメーション再生
+    SurfaceState.prototype.play = function (animId) {
+        var _this = this;
+        var _a = this, debug = _a.debug, surface = _a.surface;
+        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, config = surface.config, scopeId = surface.scopeId;
+        var animations = surfaceNode.animations;
+        if (!(animations[animId] instanceof ST.SurfaceAnimation)) {
+            // そんなアニメーションはない
+            console.warn("SurfaceState#play: animation " + animId + " is not defined");
+            return Promise.reject("SurfaceState#play: animation " + animId + " is not defined");
+        }
+        var anim = animations[animId];
+        var intervals = anim.intervals, patterns = anim.patterns, options = anim.options, collisions = anim.collisions;
+        if (intervals.some(function (_a) {
+            var interval = _a[0];
+            return interval === "bind";
+        })) {
+            if (!SC.isBind(config, scopeId, animId)) {
+                // その bind+ は現在の着せ替え設定では無効だ
+                console.warn("SurfaceState#play: this animation is turned off in current bindgroup state");
+                return Promise.reject("SurfaceState#play: this animation is turned off in current bindgroup state");
             }
         }
-    }, {
-        key: "pause",
-        value: function pause(animId) {
-            var layer = this.surface.layers[animId];
-            if (layer instanceof SM.SerikoLayer) {
-                layer.paused = true;
-            }
+        if (destructed) {
+            // 既に破棄されたサーフェスなのでアニメーション再生とかありえん
+            return Promise.reject("SurfaceState#play: destructed");
         }
-    }, {
-        key: "resume",
-        value: function resume(animId) {
-            var layer = this.surface.layers[animId];
-            if (layer instanceof SM.SerikoLayer) {
-                layer.paused = false;
-                this.step(animId, layer);
-            }
+        if (!(serikos[animId] instanceof SM.Seriko)) {
+            // SERIKO Layer の状態を初期化
+            serikos[animId] = new SM.Seriko();
         }
-    }, {
-        key: "talk",
-        value: function talk() {
-            var _this8 = this;
-
-            var srf = this.surface;
-            var _surface6 = this.surface;
-            var surfaceNode = _surface6.surfaceNode;
-            var layers = _surface6.layers;
-
-            var animations = surfaceNode.animations;
-            srf.talkCount++;
-            // talkなものでかつtalkCountとtalk,nのmodが0なもの
-            var hits = animations.filter(function (anim, animId) {
-                return anim.intervals.some(function (_ref10) {
-                    var _ref11 = _slicedToArray(_ref10, 2);
-
-                    var interval = _ref11[0];
-                    var args = _ref11[1];
-                    return "talk" === interval && srf.talkCount % args[0] === 0;
+        var seriko = serikos[animId];
+        if (seriko.patternID >= 0 || seriko.paused) {
+            // 既に再生中、ポーズ中ならば再生停止して最初からどうぞ
+            seriko.canceled = true; // this.step に渡している Seriko への参照はキャンセル
+            seriko = serikos[animId] = new SM.Seriko(); // 新しい値を設定
+        }
+        ST.getExclusives(anim).map(function (exAnimId) {
+            // exclusive指定を反映
+            if (serikos[exAnimId] instanceof SM.Seriko) {
+                serikos[exAnimId].exclusive = true;
+            }
+        });
+        debug && console.group("" + animId);
+        debug && console.info("animation start", animId, anim);
+        return new Promise(function (resolve, reject) {
+            // pause から resume した後に帰るべき場所への継続を取り出す
+            _this.continuations[animId] = { resolve: resolve, reject: reject };
+            _this.step(animId, seriko);
+        }).catch(console.info.bind(console, "animation")).then(function () {
+            debug && console.info("animation finish", animId);
+            debug && console.groupEnd();
+        });
+    };
+    SurfaceState.prototype.step = function (animId, seriko) {
+        var _this = this;
+        var _a = this, surface = _a.surface, debug = _a.debug;
+        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, move = surface.move;
+        var _b = this.continuations[animId], resolve = _b.resolve, reject = _b.reject;
+        var anim = surfaceNode.animations[animId];
+        // patternをすすめる
+        // exclusive中のやつら探す
+        /*if(!Object.keys(serikos).some((id)=>{
+          if(!(serikos[id] instanceof SM.Seriko)){
+            return false;
+          }
+          const seriko = serikos[id];
+          if(seriko.exclusive && Number(id) === animId){ // exclusiveが存在しなおかつ自分は含まれる
+            return true;
+          }
+          return false; // exclusive が存在しない
+        })){
+          // exclusiveが存在しなおかつ自分は含まれないので
+          seriko.canceled = true;
+        }*/
+        if (seriko.canceled) {
+            // キャンセルされたので reject
+            return reject("SurfaceState#step: canceled.");
+        }
+        if (seriko.paused) {
+            // 次にplayが呼び出されるまで何もしない 
+            return;
+        }
+        // patternID は現在表示中のパタン
+        // patternID === -1 は +1 され 0 になり wait ミリ秒間待ってから patternID === 0 を表示するとの意思表明
+        // patternID+1 はこれから表示
+        seriko.patternID++;
+        if (anim.patterns[seriko.patternID] == null) {
+            // このステップで次に表示すべきなにかがない＝このアニメは終了
+            seriko.finished = true;
+        }
+        if (seriko.finished) {
+            // 初期化
+            serikos[animId] = new SM.Seriko();
+            delete this.continuations[animId];
+            return resolve();
+        }
+        var _c = anim.patterns[seriko.patternID], wait = _c.wait, type = _c.type, x = _c.x, y = _c.y, animation_ids = _c.animation_ids;
+        var _surface = anim.patterns[seriko.patternID].surface;
+        switch (type) {
+            // 付随再生であってこのアニメの再生終了は待たない・・・はず？
+            case "start":
+                this.play(animation_ids[0]);
+                return;
+            case "stop":
+                this.stop(animation_ids[0]);
+                return;
+            case "alternativestart":
+                this.play(SU.choice(animation_ids));
+                return;
+            case "alternativestop":
+                this.stop(SU.choice(animation_ids));
+                return;
+            case "move":
+                move.x = x;
+                move.y = y;
+                this.renderer("move", surface);
+                return;
+        }
+        var _wait = SU.randomRange(wait[0], wait[1]);
+        // waitだけ待ってからレンダリング
+        debug && console.time("waiting: " + _wait + "ms");
+        setTimeout(function () {
+            debug && console.timeEnd("waiting: " + _wait + "ms");
+            if (_surface < -2) {
+                // SERIKO/1.4 ?
+                console.warn("SurfaceState#step: pattern surfaceId", surface, "is not defined in SERIKO/1.4, failback to -2");
+                _surface = -2;
+            }
+            if (_surface === -1) {
+                // SERIKO/1.4 -1 として表示されいたこのアニメーション終了 
+                seriko.finished = true;
+                return _this.step(animId, seriko);
+            }
+            if (_surface === -2) {
+                // SERIKO/1.4 全アニメーション停止
+                Object.keys(serikos).forEach(function (id) {
+                    if (serikos[id] instanceof SM.Seriko) {
+                        serikos[id].finished = true;
+                        _this.step(animId, serikos[id]);
+                    }
                 });
+            }
+            // 描画
+            _this.render().then(function () {
+                // 次のパターン処理へ
+                _this.step(animId, seriko);
             });
-            hits.forEach(function (anim, animId) {
-                // そのtalkアニメーションは再生が終了しているか？
-                if (layers[animId] instanceof SM.SerikoLayer) {
-                    var layer = layers[animId];
-                    if (layer.patternID < 0) {
-                        _this8.play(animId);
+        }, _wait);
+    };
+    // 再生中のアニメーションを停止しろ
+    SurfaceState.prototype.stop = function (animId) {
+        var serikos = this.surface.serikos;
+        if (serikos[animId] instanceof SM.Seriko) {
+            // 何らかの理由で停止要請がでたのでつまりキャンセル
+            serikos[animId].canceled = true;
+        }
+    };
+    SurfaceState.prototype.pause = function (animId) {
+        var serikos = this.surface.serikos;
+        if (serikos[animId] instanceof SM.Seriko) {
+            serikos[animId].paused = true;
+        }
+    };
+    SurfaceState.prototype.resume = function (animId) {
+        var serikos = this.surface.serikos;
+        if (serikos[animId] instanceof SM.Seriko) {
+            serikos[animId].paused = false;
+            this.step(animId, serikos[animId]);
+        }
+    };
+    SurfaceState.prototype.talk = function () {
+        var _this = this;
+        var srf = this.surface;
+        var _a = this.surface, surfaceNode = _a.surfaceNode, serikos = _a.serikos;
+        var animations = surfaceNode.animations;
+        srf.talkCount++;
+        // talkなものでかつtalkCountとtalk,nのmodが0なもの
+        var hits = animations.filter(function (anim, animId) {
+            return anim.intervals.some(function (_a) {
+                var interval = _a[0], args = _a[1];
+                return "talk" === interval && srf.talkCount % args[0] === 0;
+            });
+        });
+        hits.forEach(function (anim, animId) {
+            // そのtalkアニメーションは再生が終了しているか？
+            if (serikos[animId] instanceof SM.Seriko) {
+                if (serikos[animId].patternID < 0) {
+                    _this.play(animId);
+                }
+            }
+        });
+    };
+    SurfaceState.prototype.yenE = function () {
+        var _this = this;
+        var anims = this.surface.surfaceNode.animations;
+        anims.forEach(function (anim, animId) {
+            if (anim.intervals.some(function (_a) {
+                var interval = _a[0], args = _a[1];
+                return interval === "yen-e";
+            })) {
+                _this.play(animId);
+            }
+        });
+    };
+    SurfaceState.prototype.constructRenderingTree = function () {
+        // 再帰的にpatternで読んでいるベースサーフェス先のbindまで考慮してレンダリングツリーを構築し反映
+        var _a = this, surface = _a.surface, debug = _a.debug;
+        var surfaceId = surface.surfaceId, serikos = surface.serikos, renderingTree = surface.renderingTree, shell = surface.shell, scopeId = surface.scopeId;
+        var config = shell.config, surfaceDefTree = shell.surfaceDefTree;
+        var surfaces = surfaceDefTree.surfaces;
+        surface.renderingTree = layersToTree(surfaces, scopeId, surfaceId, serikos, config);
+        debug && console.log("diff: ", SU.diff(renderingTree, surface.renderingTree));
+        // レンダリングツリーが更新された！
+    };
+    return SurfaceState;
+}());
+exports.SurfaceState = SurfaceState;
+function layersToTree(surfaces, scopeId, n, serikos, config) {
+    var _a = surfaces[n], animations = _a.animations, collisions = _a.collisions;
+    var tree = new SM.SurfaceRenderingTree(n);
+    tree.collisions = collisions;
+    animations.forEach(function (anim, animId) {
+        var patterns = anim.patterns, collisions = anim.collisions, intervals = anim.intervals;
+        var rndLayerSets = [];
+        // seriko で表示されているものをレンダリングツリーに追加
+        if (serikos[animId] instanceof SM.Seriko) {
+            var patternID = serikos[animId].patternID;
+            if (patterns[patternID] instanceof ST.SurfaceAnimationPattern) {
+                // pattern が定義されている seriko layer
+                var _a = patterns[patternID], type = _a.type, surface = _a.surface, x = _a.x, y = _a.y;
+                if (surface > 0) {
+                    // 非表示でない
+                    if (surfaces[surface] instanceof ST.SurfaceDefinition) {
+                        var _tree = recursiveBind(surfaces, surface, serikos, config, collisions);
+                        rndLayerSets.push(new SM.SurfaceRenderingLayer(type, _tree, x, y));
+                    }
+                    else {
+                        // 存在しないサーフェスを参照した
+                        console.warn("SurfaceState.layersToTree: surface", n, "is not defined");
                     }
                 }
-            });
+            }
         }
-    }, {
-        key: "yenE",
-        value: function yenE() {
-            var _this9 = this;
-
-            var srf = this.surface;
-            var _surface7 = this.surface;
-            var surfaceNode = _surface7.surfaceNode;
-            var layers = _surface7.layers;
-
-            var anims = surfaceNode.animations;
-            anims.forEach(function (anim, animId) {
-                if (anim.intervals.some(function (_ref12) {
-                    var _ref13 = _slicedToArray(_ref12, 2);
-
-                    var interval = _ref13[0];
-                    var args = _ref13[1];
-                    return interval === "yen-e";
-                })) {
-                    _this9.play(animId);
-                }
-            });
+        else if (SC.isBind(config, scopeId, animId) && intervals.some(function (_a) {
+            var interval = _a[0], args = _a[1];
+            return "bind" === interval;
+        }) && intervals.length === 1) {
+            // interval,bind である、 insert のための再帰的処理
+            processInsert(patterns, collisions, rndLayerSets);
         }
-    }, {
-        key: "constructRenderingTree",
-        value: function constructRenderingTree() {
-            // 再帰的にpatternで読んでいるベースサーフェス先のbindまで考慮してレンダリングツリーを構築し反映
-            var srf = this.surface;
-            var surfaceId = srf.surfaceId;
-            var layers = srf.layers;
-            var shell = srf.shell;
-
-            var surfaces = srf.shell.surfaceDefTree.surfaces;
-            var config = shell.config;
-            var tmp = SU.extend(true, {}, srf.renderingTree);
-            srf.renderingTree = layersToTree(surfaces, surfaceId, layers, config);
-            console.log("diff: ", /*tmp, srf.renderingTree, */SU.diff(tmp, srf.renderingTree));
-            // レンダリングツリーが更新された！
-            this.emit("render");
+        if (ST.isBack(anim)) {
+            tree.backgrounds.push(rndLayerSets);
         }
-    }]);
-
-    return SurfaceState;
-}(events_1.EventEmitter);
-
-exports.SurfaceState = SurfaceState;
-function layersToTree(surfaces, n, layers, config) {
-    // bind の循環参照注意
-    var tree = new SM.SurfaceRenderingTree(n);
-    var anims = surfaces[n].animations;
-    var recur = function recur(patterns, rndLayerSets) {
-        // insert の循環参照注意
-        patterns.forEach(function (_ref14, patId) {
-            var type = _ref14.type;
-            var surface = _ref14.surface;
-            var x = _ref14.x;
-            var y = _ref14.y;
-            var animation_ids = _ref14.animation_ids;
-
+        else {
+            tree.foregrounds.push(rndLayerSets);
+        }
+    });
+    return tree;
+    function processInsert(patterns, collisions, rndLayerSets) {
+        // SC.isBind(config, animId) && intervals.some(([interval, args])=> "bind" === interval) && intervals.length === 1
+        // なときだけ呼ばれたい
+        // TODO: insert の循環参照を防ぐ
+        patterns.forEach(function (_a, patId) {
+            var type = _a.type, surface = _a.surface, x = _a.x, y = _a.y, animation_ids = _a.animation_ids;
             if (type === "insert") {
                 // insertの場合は対象のIDをとってくる
                 var insertId = animation_ids[0];
-                var anim = anims[insertId];
-                if (!(anim instanceof ST.SurfaceAnimation)) {
+                if (!(animations[insertId] instanceof ST.SurfaceAnimation)) {
                     console.warn("SurfaceState.layersToTree", "insert id", animation_ids, "is wrong target.", n, patId);
                     return;
                 }
+                var _b = animations[insertId], patterns_1 = _b.patterns, collisions_1 = _b.collisions;
                 // insertをねじ込む
-                recur(patterns, rndLayerSets);
-            } else {
-                if (surface > 0) {
-                    rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
-                } else {
-                    // MAYUNA で -1 はありえん
-                    console.warn("SurfaceState.layersToTree: unexpected surface id ", surface);
-                }
+                processInsert(patterns_1, collisions_1, rndLayerSets);
+                return;
+            }
+            if (surface > 0 && surfaces[surface] instanceof ST.SurfaceDefinition) {
+                var tree_1 = recursiveBind(surfaces, surface, serikos, config, collisions);
+                rndLayerSets.push(new SM.SurfaceRenderingLayer(type, tree_1, x, y));
+            }
+            else {
+                // MAYUNA で -1 はありえん
+                console.warn("SurfaceState.layersToTree: unexpected surface id ", surface);
             }
         });
-    };
-    var recur2 = function recur2(surfaces, n, layers, config) {
+    }
+    function recursiveBind(surfaces, n, serikos, config, collisions) {
+        // この関数は n が surfaces[n] に存在することを必ず確認してから呼ぶこと
+        // TODO: bind の循環参照発生するので防ぐこと
+        var animations = surfaces[n].animations;
         var tree = new SM.SurfaceRenderingTree(n);
-        if (!(surfaces[n] instanceof ST.SurfaceDefinition)) {
-            console.warn("SurfaceState.layer2tree: surface", n, "is not defined");
-            return tree;
-        }
-        var anims = surfaces[n].animations;
-        anims.forEach(function (anim, animId) {
-            var patterns = anim.patterns;
-            var intervals = anim.intervals;
-            var collisions = anim.collisions;
-
+        // animation0.collision0
+        tree.collisions = collisions;
+        animations.forEach(function (anim, animId) {
+            var patterns = anim.patterns, intervals = anim.intervals, collisions = anim.collisions;
             var rndLayerSets = [];
-            if (SC.isBind(config, animId) && intervals.some(function (_ref15) {
-                var _ref16 = _slicedToArray(_ref15, 2);
-
-                var interval = _ref16[0];
-                var args = _ref16[1];
+            if (SC.isBind(config, scopeId, animId) && intervals.some(function (_a) {
+                var interval = _a[0], args = _a[1];
                 return "bind" === interval;
             }) && intervals.length === 1) {
-                // insert のための再帰的処理
-                recur(patterns, rndLayerSets);
+                // interval,bind である、 insert のための再帰的処理
+                processInsert(patterns, collisions, rndLayerSets);
             }
-            tree.collisions = collisions;
-            (ST.isBack(anim) ? tree.backgrounds : tree.foregrounds).push(rndLayerSets);
+            if (ST.isBack(anim)) {
+                tree.backgrounds.push(rndLayerSets);
+            }
+            else {
+                tree.foregrounds.push(rndLayerSets);
+            }
         });
         return tree;
-    };
-    layers.forEach(function (layer, animId) {
-        var anim = anims[animId];
-        var patterns = anim.patterns;
-        var collisions = anim.collisions;
-
-        var rndLayerSets = [];
-        if (layer instanceof SM.SerikoLayer && layer.patternID >= 0 && patterns[layer.patternID] != null) {
-            // patternID >= 0 で pattern が定義されている seriko layer
-            var _patterns$layer$patte = patterns[layer.patternID];
-            var type = _patterns$layer$patte.type;
-            var surface = _patterns$layer$patte.surface;
-            var x = _patterns$layer$patte.x;
-            var y = _patterns$layer$patte.y;
-
-            if (surface > 0) {
-                // 非表示
-                rndLayerSets.push(new SM.SurfaceRenderingLayer(type, recur2(surfaces, surface, layers, config), x, y));
-            }
-        } else if (layer instanceof SM.MayunaLayer && layer.visible) {
-            // insert のための再帰的処理
-            recur(patterns, rndLayerSets);
-        }
-        tree.collisions = collisions;
-        (ST.isBack(anim) ? tree.backgrounds : tree.foregrounds).push(rndLayerSets);
-    });
-    return tree;
+    }
 }
 exports.layersToTree = layersToTree;
-},{"./ShellConfig":2,"./SurfaceModel":8,"./SurfaceTree":12,"./SurfaceUtil":14,"events":18}],12:[function(require,module,exports){
+
+},{"./ShellConfig":2,"./SurfaceModel":8,"./SurfaceTree":12,"./SurfaceUtil":14}],12:[function(require,module,exports){
 /*
  * surfaces.txt の内容を構造化したもの
  */
 "use strict";
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var SurfaceDefinitionTree =
-//regions: { [scopeID: number]: {[regionName: string]: ToolTipElement}; }; // 謎
-function SurfaceDefinitionTree() {
-    var descript = arguments.length <= 0 || arguments[0] === undefined ? new SurfaceDescript() : arguments[0];
-    var surfaces = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-    var aliases = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-
-    _classCallCheck(this, SurfaceDefinitionTree);
-
-    this.descript = descript;
-    this.surfaces = surfaces;
-    this.aliases = aliases;
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-
+var SurfaceDefinitionTree = (function () {
+    //regions: { [scopeID: number]: {[regionName: string]: ToolTipElement}; }; // 謎
+    function SurfaceDefinitionTree(descript, surfaces, aliases) {
+        if (descript === void 0) { descript = new SurfaceDescript(); }
+        if (surfaces === void 0) { surfaces = []; }
+        if (aliases === void 0) { aliases = []; }
+        this.descript = descript;
+        this.surfaces = surfaces;
+        this.aliases = aliases;
+    }
+    return SurfaceDefinitionTree;
+}());
 exports.SurfaceDefinitionTree = SurfaceDefinitionTree;
-
-var SurfaceDescript = function SurfaceDescript() {
-    var collisionSort = arguments.length <= 0 || arguments[0] === undefined ? "ascend" : arguments[0];
-    var animationSort = arguments.length <= 1 || arguments[1] === undefined ? "ascend" : arguments[1];
-
-    _classCallCheck(this, SurfaceDescript);
-
-    this.collisionSort = collisionSort;
-    this.animationSort = animationSort;
-};
-
+var SurfaceDescript = (function () {
+    function SurfaceDescript(collisionSort, animationSort) {
+        if (collisionSort === void 0) { collisionSort = "ascend"; }
+        if (animationSort === void 0) { animationSort = "ascend"; }
+        this.collisionSort = collisionSort;
+        this.animationSort = animationSort;
+    }
+    return SurfaceDescript;
+}());
 exports.SurfaceDescript = SurfaceDescript;
-
-var SurfaceDefinition = function SurfaceDefinition() {
-    var elements = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
-    var collisions = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-    var animations = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-    var balloons = arguments.length <= 3 || arguments[3] === undefined ? { char: [], offsetX: 0, offsetY: 0 } : arguments[3];
-    var points = arguments.length <= 4 || arguments[4] === undefined ? { basepos: { x: 0, y: 0 } } : arguments[4];
-
-    _classCallCheck(this, SurfaceDefinition);
-
-    this.elements = elements;
-    this.collisions = collisions;
-    this.animations = animations;
-    this.points = points;
-    this.balloons = balloons;
-};
-
+var SurfaceDefinition = (function () {
+    function SurfaceDefinition(elements, collisions, animations, balloons, points) {
+        if (elements === void 0) { elements = []; }
+        if (collisions === void 0) { collisions = []; }
+        if (animations === void 0) { animations = []; }
+        if (balloons === void 0) { balloons = { char: [], offsetX: 0, offsetY: 0 }; }
+        if (points === void 0) { points = { basepos: { x: 0, y: 0 }
+        }; }
+        this.elements = elements;
+        this.collisions = collisions;
+        this.animations = animations;
+        this.points = points;
+        this.balloons = balloons;
+    }
+    return SurfaceDefinition;
+}());
 exports.SurfaceDefinition = SurfaceDefinition;
-
-var SurfaceElement = function SurfaceElement() {
-    var type = arguments.length <= 0 || arguments[0] === undefined ? "overlay" : arguments[0];
-    var file = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-    var x = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-    var y = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-
-    _classCallCheck(this, SurfaceElement);
-
-    this.type = "overlay";
-    this.file = file;
-    this.x = x;
-    this.y = y;
-};
-
+var SurfaceElement = (function () {
+    function SurfaceElement(type, file, x, y) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        this.type = "overlay";
+        this.file = file;
+        this.x = x;
+        this.y = y;
+    }
+    return SurfaceElement;
+}());
 exports.SurfaceElement = SurfaceElement;
-
-var SurfaceCollision = function SurfaceCollision() {
-    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-    var type = arguments.length <= 1 || arguments[1] === undefined ? "rect" : arguments[1];
-
-    _classCallCheck(this, SurfaceCollision);
-
-    this.name = name;
-    this.type = type;
-};
-
+var SurfaceCollision = (function () {
+    function SurfaceCollision(type, name) {
+        this.name = name;
+        this.type = type;
+    }
+    return SurfaceCollision;
+}());
 exports.SurfaceCollision = SurfaceCollision;
-
-var SurfaceCollisionRect = function (_SurfaceCollision) {
-    _inherits(SurfaceCollisionRect, _SurfaceCollision);
-
-    function SurfaceCollisionRect() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "rect" : arguments[1];
-        var left = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-        var top = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-        var right = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-        var bottom = arguments.length <= 5 || arguments[5] === undefined ? 0 : arguments[5];
-
-        _classCallCheck(this, SurfaceCollisionRect);
-
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionRect).call(this, name, type));
-
-        _this.left = left;
-        _this.top = top;
-        _this.right = right;
-        _this.bottom = bottom;
-        return _this;
+var SurfaceCollisionRect = (function (_super) {
+    __extends(SurfaceCollisionRect, _super);
+    function SurfaceCollisionRect(name, left, top, right, bottom) {
+        _super.call(this, "rect", name);
+        this.left = left;
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
     }
-
     return SurfaceCollisionRect;
-}(SurfaceCollision);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionRect = SurfaceCollisionRect;
-
-var SurfaceCollisionEllipse = function (_SurfaceCollisionRect) {
-    _inherits(SurfaceCollisionEllipse, _SurfaceCollisionRect);
-
-    function SurfaceCollisionEllipse() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "ellipse" : arguments[1];
-        var top = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-        var bottom = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-        var left = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-        var right = arguments.length <= 5 || arguments[5] === undefined ? 0 : arguments[5];
-
-        _classCallCheck(this, SurfaceCollisionEllipse);
-
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionEllipse).call(this, name, type, bottom, top, left, right));
+var SurfaceCollisionEllipse = (function (_super) {
+    __extends(SurfaceCollisionEllipse, _super);
+    function SurfaceCollisionEllipse(name, left, top, right, bottom) {
+        _super.call(this, "ellipse", name);
+        this.left = left;
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
     }
-
     return SurfaceCollisionEllipse;
-}(SurfaceCollisionRect);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionEllipse = SurfaceCollisionEllipse;
-
-var SurfaceCollisionCircle = function (_SurfaceCollision2) {
-    _inherits(SurfaceCollisionCircle, _SurfaceCollision2);
-
-    function SurfaceCollisionCircle() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "circle" : arguments[1];
-        var centerX = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-        var centerY = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-        var radius = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-
-        _classCallCheck(this, SurfaceCollisionCircle);
-
-        var _this3 = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionCircle).call(this, name, type));
-
-        _this3.centerX = centerX;
-        _this3.centerY = centerY;
-        _this3.radius = radius;
-        return _this3;
+var SurfaceCollisionCircle = (function (_super) {
+    __extends(SurfaceCollisionCircle, _super);
+    function SurfaceCollisionCircle(name, centerX, centerY, radius) {
+        _super.call(this, "circle", name);
+        this.centerX = centerX;
+        this.centerY = centerY;
+        this.radius = radius;
     }
-
     return SurfaceCollisionCircle;
-}(SurfaceCollision);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionCircle = SurfaceCollisionCircle;
-
-var SurfaceCollisionPolygon = function (_SurfaceCollision3) {
-    _inherits(SurfaceCollisionPolygon, _SurfaceCollision3);
-
-    function SurfaceCollisionPolygon() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "polygon" : arguments[1];
-        var coordinates = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-
-        _classCallCheck(this, SurfaceCollisionPolygon);
-
-        var _this4 = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionPolygon).call(this, name, type));
-
-        _this4.coordinates = coordinates;
-        return _this4;
+var SurfaceCollisionPolygon = (function (_super) {
+    __extends(SurfaceCollisionPolygon, _super);
+    function SurfaceCollisionPolygon(name, coordinates) {
+        _super.call(this, "polygon", name);
+        this.coordinates = coordinates;
     }
-
     return SurfaceCollisionPolygon;
-}(SurfaceCollision);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionPolygon = SurfaceCollisionPolygon;
-
-var SurfaceAnimation = function SurfaceAnimation() {
-    var intervals = arguments.length <= 0 || arguments[0] === undefined ? [["never", []]] : arguments[0];
-    var options = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-    var collisions = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-    var patterns = arguments.length <= 3 || arguments[3] === undefined ? [] : arguments[3];
-
-    _classCallCheck(this, SurfaceAnimation);
-
-    this.intervals = intervals;
-    this.options = options;
-    this.collisions = collisions;
-    this.patterns = patterns;
-};
-
+var SurfaceAnimation = (function () {
+    function SurfaceAnimation(intervals, options, collisions, patterns) {
+        if (intervals === void 0) { intervals = [["never", []]]; }
+        if (options === void 0) { options = []; }
+        if (collisions === void 0) { collisions = []; }
+        if (patterns === void 0) { patterns = []; }
+        this.intervals = intervals;
+        this.options = options;
+        this.collisions = collisions;
+        this.patterns = patterns;
+    }
+    return SurfaceAnimation;
+}());
 exports.SurfaceAnimation = SurfaceAnimation;
-
-var SurfaceAnimationPattern = function SurfaceAnimationPattern() {
-    var type = arguments.length <= 0 || arguments[0] === undefined ? "ovelay" : arguments[0];
-    var surface = arguments.length <= 1 || arguments[1] === undefined ? -1 : arguments[1];
-    var wait = arguments.length <= 2 || arguments[2] === undefined ? [0, 0] : arguments[2];
-    var x = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-    var y = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-    var animation_ids = arguments.length <= 5 || arguments[5] === undefined ? [] : arguments[5];
-
-    _classCallCheck(this, SurfaceAnimationPattern);
-
-    this.type = type;
-    this.surface = surface;
-    this.wait = wait;
-    this.x = x;
-    this.y = y;
-    this.animation_ids = animation_ids;
-};
-
+var SurfaceAnimationPattern = (function () {
+    function SurfaceAnimationPattern(type, surface, wait, x, y, animation_ids) {
+        if (type === void 0) { type = "ovelay"; }
+        if (surface === void 0) { surface = -1; }
+        if (wait === void 0) { wait = [0, 0]; }
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        if (animation_ids === void 0) { animation_ids = []; }
+        this.type = type;
+        this.surface = surface;
+        this.wait = wait;
+        this.x = x;
+        this.y = y;
+        this.animation_ids = animation_ids;
+    }
+    return SurfaceAnimationPattern;
+}());
 exports.SurfaceAnimationPattern = SurfaceAnimationPattern;
 function isBack(anim) {
-    return anim.options.some(function (_ref) {
-        var _ref2 = _slicedToArray(_ref, 2);
-
-        var opt = _ref2[0];
-        var args = _ref2[1];
+    return anim.options.some(function (_a) {
+        var opt = _a[0], args = _a[1];
         return opt === "background";
     });
 }
 exports.isBack = isBack;
 function getExclusives(anim) {
-    return anim.options.filter(function (_ref3) {
-        var _ref4 = _slicedToArray(_ref3, 2);
-
-        var opt = _ref4[0];
-        var args = _ref4[1];
+    return anim.options.filter(function (_a) {
+        var opt = _a[0], args = _a[1];
         return opt === "exclusive";
-    }).reduce(function (l, _ref5) {
-        var _ref6 = _slicedToArray(_ref5, 2);
-
-        var opt = _ref6[0];
-        var args = _ref6[1];
+    }).reduce(function (l, _a) {
+        var opt = _a[0], args = _a[1];
         return l.concat(args);
     }, []);
 }
 exports.getExclusives = getExclusives;
 function getRegion(collisions, offsetX, offsetY) {
-    var _this5 = this;
-
     // このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
     // collision設定されていれば name"hoge"
     // basepos 左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べる
     // offsetX: number, offsetY: number は basepos からの相対座標である必要がある、間違ってもcanvas左上からにしてはいけない 
+    var _this = this;
     var hitCols = collisions.filter(function (collision, colId) {
-        var type = collision.type;
-        var name = collision.name;
-        var left, top, right, bottom;
-        var left, top, right, bottom;
-
-        var _ret = function () {
-            switch (collision.type) {
-                case "rect":
-                    left = collision.left;
-                    top = collision.top;
-                    right = collision.right;
-                    bottom = collision.bottom;
-
-                    return {
-                        v: left < offsetX && offsetX < right && top < offsetY && offsetY < bottom || right < offsetX && offsetX < left && bottom < offsetX && offsetX < top
-                    };
-                case "ellipse":
-                    left = collision.left;
-                    top = collision.top;
-                    right = collision.right;
-                    bottom = collision.bottom;
-
-                    var width = Math.abs(right - left);
-                    var height = Math.abs(bottom - top);
-                    return {
-                        v: Math.pow((offsetX - (left + width / 2)) / (width / 2), 2) + Math.pow((offsetY - (top + height / 2)) / (height / 2), 2) < 1
-                    };
-                case "circle":
-                    var radius = collision.radius;
-                    var centerX = collision.centerX;
-                    var centerY = collision.centerY;
-
-                    return {
-                        v: Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1
-                    };
-                case "polygon":
-                    var coordinates = collision.coordinates;
-
-                    var ptC = { x: offsetX, y: offsetY };
-                    var tuples = coordinates.reduce(function (arr, _ref7, i) {
-                        var x = _ref7.x;
-                        var y = _ref7.y;
-
-                        arr.push([coordinates[i], !!coordinates[i + 1] ? coordinates[i + 1] : coordinates[0]]);
-                        return arr;
-                    }, []);
-                    // TODO: acos使わない奴に変える
-                    var deg = tuples.reduce(function (sum, _ref8) {
-                        var _ref9 = _slicedToArray(_ref8, 2);
-
-                        var ptA = _ref9[0];
-                        var ptB = _ref9[1];
-
-                        var vctA = [ptA.x - ptC.x, ptA.y - ptC.y];
-                        var vctB = [ptB.x - ptC.x, ptB.y - ptC.y];
-                        var dotP = vctA[0] * vctB[0] + vctA[1] * vctB[1];
-                        var absA = Math.sqrt(vctA.map(function (a) {
-                            return Math.pow(a, 2);
-                        }).reduce(function (a, b) {
-                            return a + b;
-                        }));
-                        var absB = Math.sqrt(vctB.map(function (a) {
-                            return Math.pow(a, 2);
-                        }).reduce(function (a, b) {
-                            return a + b;
-                        }));
-                        var rad = Math.acos(dotP / (absA * absB));
-                        return sum + rad;
-                    }, 0);
-                    return {
-                        v: deg / (2 * Math.PI) >= 1
-                    };
-                default:
-                    console.warn("SurfaceTree.getRegion: unkown collision type:", _this5.surfaceId, colId, name, collision);
-                    return {
-                        v: false
-                    };
-            }
-        }();
-
-        if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;
+        var type = collision.type, name = collision.name;
+        switch (collision.type) {
+            case "rect":
+                var _a = collision, left = _a.left, top = _a.top, right = _a.right, bottom = _a.bottom;
+                return (left < offsetX && offsetX < right && top < offsetY && offsetY < bottom) ||
+                    (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
+            case "ellipse":
+                var _b = collision, left = _b.left, top = _b.top, right = _b.right, bottom = _b.bottom;
+                var width = Math.abs(right - left);
+                var height = Math.abs(bottom - top);
+                return Math.pow((offsetX - (left + width / 2)) / (width / 2), 2) +
+                    Math.pow((offsetY - (top + height / 2)) / (height / 2), 2) < 1;
+            case "circle":
+                var _c = collision, radius = _c.radius, centerX = _c.centerX, centerY = _c.centerY;
+                return Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1;
+            case "polygon":
+                var coordinates_1 = collision.coordinates;
+                var ptC_1 = { x: offsetX, y: offsetY };
+                var tuples = coordinates_1.reduce((function (arr, _a, i) {
+                    var x = _a.x, y = _a.y;
+                    arr.push([
+                        coordinates_1[i],
+                        (!!coordinates_1[i + 1] ? coordinates_1[i + 1] : coordinates_1[0])
+                    ]);
+                    return arr;
+                }), []);
+                // TODO: acos使わない奴に変える
+                var deg = tuples.reduce((function (sum, _a) {
+                    var ptA = _a[0], ptB = _a[1];
+                    var vctA = [ptA.x - ptC_1.x, ptA.y - ptC_1.y];
+                    var vctB = [ptB.x - ptC_1.x, ptB.y - ptC_1.y];
+                    var dotP = vctA[0] * vctB[0] + vctA[1] * vctB[1];
+                    var absA = Math.sqrt(vctA.map(function (a) { return Math.pow(a, 2); }).reduce(function (a, b) { return a + b; }));
+                    var absB = Math.sqrt(vctB.map(function (a) { return Math.pow(a, 2); }).reduce(function (a, b) { return a + b; }));
+                    var rad = Math.acos(dotP / (absA * absB));
+                    return sum + rad;
+                }), 0);
+                return deg / (2 * Math.PI) >= 1;
+            default:
+                console.warn("SurfaceTree.getRegion: unkown collision type:", _this.surfaceId, colId, name, collision);
+                return false;
+        }
     });
     if (hitCols.length > 0) {
         return hitCols[hitCols.length - 1].name;
@@ -2286,16 +1760,12 @@ function getRegion(collisions, offsetX, offsetY) {
     return "";
 }
 exports.getRegion = getRegion;
+
 },{}],13:[function(require,module,exports){
 /*
  * surfaces.txt をパースして SurfaceTree 構造体を作る
  */
 "use strict";
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
-
 var SU = require("./SurfaceUtil");
 var ST = require("./SurfaceTree");
 var SY = require("surfaces_txt2yaml");
@@ -2303,7 +1773,8 @@ function loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(srfsTxt) {
     var _descript = srfsTxt.descript != null ? srfsTxt.descript : {};
     var _surfaces = srfsTxt.surfaces != null ? srfsTxt.surfaces : {};
     var _aliases = srfsTxt.aliases != null ? srfsTxt.aliases : {};
-    return loadSurfaceDescript(_descript).then(function (descript) {
+    return loadSurfaceDescript(_descript)
+        .then(function (descript) {
         var surfaces = [];
         Object.keys(_surfaces).forEach(function (surfaceName) {
             // typoef is === number なら実体のあるサーフェス定義
@@ -2311,22 +1782,18 @@ function loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(srfsTxt) {
                 var parents = [];
                 if (Array.isArray(_surfaces[surfaceName].base)) {
                     // .append持ってるので継承
-                    parents = _surfaces[surfaceName].base.map(function (parentName) {
-                        return _surfaces[parentName];
-                    });
+                    parents = _surfaces[surfaceName].base.map(function (parentName) { return _surfaces[parentName]; });
                 }
                 var srf = {};
                 SU.extend.apply(SY, [true, srf, _surfaces[surfaceName]].concat(parents));
-                loadSurfaceDefinition(srf).then(function (srfDef) {
-                    surfaces[_surfaces[surfaceName].is] = srfDef;
-                }).catch(console.warn.bind(console));
+                loadSurfaceDefinition(srf)
+                    .then(function (srfDef) { surfaces[_surfaces[surfaceName].is] = srfDef; })
+                    .catch(console.warn.bind(console));
             }
         });
         return { descript: descript, surfaces: surfaces };
-    }).then(function (_ref) {
-        var descript = _ref.descript;
-        var surfaces = _ref.surfaces;
-
+    }).then(function (_a) {
+        var descript = _a.descript, surfaces = _a.surfaces;
         var aliases = [];
         Object.keys(_aliases).forEach(function (scope) {
             // scope: sakura, kero, char2... => 0, 1, 2
@@ -2334,11 +1801,8 @@ function loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(srfsTxt) {
             aliases[scopeID] = _aliases[scope];
         });
         return { descript: descript, surfaces: surfaces, aliases: aliases };
-    }).then(function (_ref2) {
-        var descript = _ref2.descript;
-        var surfaces = _ref2.surfaces;
-        var aliases = _ref2.aliases;
-
+    }).then(function (_a) {
+        var descript = _a.descript, surfaces = _a.surfaces, aliases = _a.aliases;
         var that = new ST.SurfaceDefinitionTree(descript, surfaces, aliases);
         return Promise.resolve(that);
     });
@@ -2346,8 +1810,12 @@ function loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(srfsTxt) {
 exports.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml = loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml;
 function loadSurfaceDescript(descript) {
     // collision-sort: string => collisionSort: boolean
-    var collisionSort = descript["collision-sort"] === "ascend" ? "ascend" : descript["collision-sort"] === "descend" ? "descend" : "ascend";
-    var animationSort = descript["animation-sort"] === "ascend" ? "ascend" : descript["animation-sort"] === "descend" ? "descend" : "ascend";
+    var collisionSort = descript["collision-sort"] === "ascend" ? "ascend"
+        : descript["collision-sort"] === "descend" ? "descend"
+            : "ascend";
+    var animationSort = descript["animation-sort"] === "ascend" ? "ascend"
+        : descript["animation-sort"] === "descend" ? "descend"
+            : "ascend";
     var that = new ST.SurfaceDescript(collisionSort, animationSort);
     return Promise.resolve(that);
 }
@@ -2375,10 +1843,7 @@ function loadSurfaceDefinition(srf) {
         if (typeof _balloons.offsety === "number") {
             balloons.offsetY = _balloons.offsety;
         }
-        Object.keys(_balloons).filter(function (key) {
-            return (/sakura$|kero$|char\d+/.test(key)
-            );
-        }).forEach(function (charName) {
+        Object.keys(_balloons).filter(function (key) { return /sakura$|kero$|char\d+/.test(key); }).forEach(function (charName) {
             var charID = SU.unscope(charName);
             if (typeof _balloons[charName].offsetx === "number") {
                 balloons.char[charID] = balloons.char[charID] != null ? balloons.char[charID] : { offsetX: 0, offsetY: 0 };
@@ -2393,32 +1858,33 @@ function loadSurfaceDefinition(srf) {
     var elements = [];
     if (_elements != null) {
         Object.keys(_elements).forEach(function (id) {
-            return loadSurfaceElement(_elements[id]).then(function (def) {
-                elements[_elements[id].is] = def;
-            }).catch(console.warn.bind(console));
+            return loadSurfaceElement(_elements[id])
+                .then(function (def) { elements[_elements[id].is] = def; })
+                .catch(console.warn.bind(console));
         });
     }
     var collisions = [];
     if (_collisions != null) {
         Object.keys(_collisions).forEach(function (id) {
-            return loadSurfaceCollision(_collisions[id]).then(function (def) {
-                collisions[_collisions[id].is] = def;
-            }).catch(console.warn.bind(console));
+            return loadSurfaceCollision(_collisions[id])
+                .then(function (def) { collisions[_collisions[id].is] = def; })
+                .catch(console.warn.bind(console));
         });
     }
     var animations = [];
     if (_animations != null) {
         Object.keys(_animations).forEach(function (id) {
-            return loadSurfaceAnimation(_animations[id]).then(function (def) {
-                animations[_animations[id].is] = def;
-            }).catch(console.warn.bind(console));
+            return loadSurfaceAnimation(_animations[id])
+                .then(function (def) { animations[_animations[id].is] = def; })
+                .catch(console.warn.bind(console));
         });
     }
     var that = new ST.SurfaceDefinition(elements, collisions, animations, balloons, points);
     return Promise.resolve(that);
 }
 function loadSurfaceElement(elm) {
-    if (!(typeof elm.file === "string" && typeof elm.type === "string")) {
+    if (!(typeof elm.file === "string" &&
+        typeof elm.type === "string")) {
         console.warn("SurfaceTreeLoader.loadFromsurfacesTxt2Yaml: wrong parameters", elm);
         return Promise.reject(elm);
     }
@@ -2426,13 +1892,15 @@ function loadSurfaceElement(elm) {
     var type = elm.type;
     if (typeof elm.x === "number") {
         var x = elm.x;
-    } else {
+    }
+    else {
         var x = 0;
         console.warn("SurfaceTreeLoader.loadSurfaceElement: faileback to", x);
     }
     if (typeof elm.y === "number") {
         var y = elm.y;
-    } else {
+    }
+    else {
         var y = 0;
         console.warn("SurfaceTreeLoader.loadSurfaceElement: faileback to", y);
     }
@@ -2442,14 +1910,10 @@ function loadSurfaceElement(elm) {
 exports.loadSurfaceElement = loadSurfaceElement;
 function loadSurfaceCollision(collision) {
     switch (collision.type) {
-        case "rect":
-            return loadSurfaceCollisionRect(collision);
-        case "circle":
-            return loadSurfaceCollisionCircle(collision);
-        case "ellipse":
-            return loadSurfaceCollisionEllipse(collision);
-        case "polygon":
-            return loadSurfaceCollisionPolygon(collision);
+        case "rect": return loadSurfaceCollisionRect(collision);
+        case "circle": return loadSurfaceCollisionCircle(collision);
+        case "ellipse": return loadSurfaceCollisionEllipse(collision);
+        case "polygon": return loadSurfaceCollisionPolygon(collision);
         default:
             console.warn("SurfaceTreeLoader.loadSurfaceCollision: unknow collision type", collision.type, ", failback to rect");
             collision.type = "rect";
@@ -2458,7 +1922,10 @@ function loadSurfaceCollision(collision) {
 }
 exports.loadSurfaceCollision = loadSurfaceCollision;
 function loadSurfaceCollisionRect(collision) {
-    if (!(typeof collision.left === "number" && typeof collision.top === "number" && typeof collision.bottom === "number" && typeof collision.right === "number")) {
+    if (!(typeof collision.left === "number" &&
+        typeof collision.top === "number" &&
+        typeof collision.bottom === "number" &&
+        typeof collision.right === "number")) {
         console.warn("SurfaceTreeLoader.loadSurfaceCollisionRect: unkown parameter", collision);
         return Promise.reject(collision);
     }
@@ -2468,18 +1935,19 @@ function loadSurfaceCollisionRect(collision) {
     var left = collision.left;
     var bottom = collision.bottom;
     var right = collision.right;
-    var that = new ST.SurfaceCollisionRect(name, type, left, top, right, bottom);
+    var that = new ST.SurfaceCollisionRect(name, left, top, right, bottom);
     return Promise.resolve(that);
 }
 exports.loadSurfaceCollisionRect = loadSurfaceCollisionRect;
 function loadSurfaceCollisionEllipse(a) {
-    return loadSurfaceCollisionRect(a).then(function (b) {
-        return new ST.SurfaceCollisionEllipse(b.name, b.type, b.top, b.bottom, b.left, b.right);
-    });
+    return loadSurfaceCollisionRect(a)
+        .then(function (b) { return new ST.SurfaceCollisionEllipse(b.name, b.left, b.top, b.right, b.bottom); });
 }
 exports.loadSurfaceCollisionEllipse = loadSurfaceCollisionEllipse;
 function loadSurfaceCollisionCircle(collision) {
-    if (!(typeof collision.center_y === "number" && typeof collision.center_y === "number" && typeof collision.radius === "number")) {
+    if (!(typeof collision.center_y === "number" &&
+        typeof collision.center_y === "number" &&
+        typeof collision.radius === "number")) {
         console.warn("SurfaceTreeLoader.loadSurfaceCollisionCircle: unkown parameter", collision);
         return Promise.reject(collision);
     }
@@ -2488,7 +1956,7 @@ function loadSurfaceCollisionCircle(collision) {
     var centerX = collision.center_x;
     var centerY = collision.center_y;
     var radius = collision.radius;
-    var that = new ST.SurfaceCollisionCircle(name, type, centerX, centerY, radius);
+    var that = new ST.SurfaceCollisionCircle(name, centerX, centerY, radius);
     return Promise.resolve(that);
 }
 exports.loadSurfaceCollisionCircle = loadSurfaceCollisionCircle;
@@ -2500,14 +1968,12 @@ function loadSurfaceCollisionPolygon(col) {
         console.warn("SurfaceTreeLoader.loadSurfaceCollisionPolygon: coordinates need more than 3", col);
         return Promise.reject(col);
     }
-    if (_coordinates.every(function (o) {
-        return typeof o.x !== "number" || typeof o.y !== "number";
-    })) {
+    if (_coordinates.every(function (o) { return typeof o.x !== "number" || typeof o.y !== "number"; })) {
         console.warn("SurfaceTreeLoader.loadSurfaceCollisionPolygon: coordinates has erro value", col);
         return Promise.reject(col);
     }
     var coordinates = _coordinates;
-    var that = new ST.SurfaceCollisionPolygon(name, type, coordinates);
+    var that = new ST.SurfaceCollisionPolygon(name, coordinates);
     return Promise.resolve(that);
 }
 exports.loadSurfaceCollisionPolygon = loadSurfaceCollisionPolygon;
@@ -2518,50 +1984,26 @@ function loadSurfaceAnimation(animation) {
     var _patterns = animation.patterns != null ? animation.patterns : [];
     // animation*.option,* の展開
     // animation*.option,exclusive+background,(1,3,5)
-
-    var _option$split = _option.split(",");
-
-    var _option$split2 = _toArray(_option$split);
-
-    var __option = _option$split2[0];
-
-    var opt_args = _option$split2.slice(1);
-
-    var _opt_args = opt_args.map(function (str) {
-        return Number(str.replace("(", "").replace(")", ""));
-    });
+    var _a = _option.split(","), __option = _a[0], opt_args = _a.slice(1);
+    var _opt_args = opt_args.map(function (str) { return Number(str.replace("(", "").replace(")", "")); });
     var _options = _option.split("+");
-    var options = _options.map(function (option) {
-        return [option.trim(), _opt_args];
-    });
+    var options = _options.map(function (option) { return [option.trim(), _opt_args]; });
     // bind+sometimes+talk,3
-
-    var _interval$split = _interval.split(",");
-
-    var _interval$split2 = _toArray(_interval$split);
-
-    var __interval = _interval$split2[0];
-
-    var int_args = _interval$split2.slice(1);
-
-    var _int_args = int_args.map(function (str) {
-        return Number(str);
-    });
+    var _b = _interval.split(","), __interval = _b[0], int_args = _b.slice(1);
+    var _int_args = int_args.map(function (str) { return Number(str); });
     var _intervals = __interval.split("+");
-    var intervals = _intervals.map(function (interval) {
-        return [interval.trim(), _int_args];
-    });
+    var intervals = _intervals.map(function (interval) { return [interval.trim(), _int_args]; });
     var collisions = [];
     Object.keys(_regions).forEach(function (key) {
-        loadSurfaceCollision(_regions[key]).then(function (col) {
-            collisions[_regions[key].is] = col;
-        }).catch(console.warn.bind(console));
+        loadSurfaceCollision(_regions[key])
+            .then(function (col) { collisions[_regions[key].is] = col; })
+            .catch(console.warn.bind(console));
     });
     var patterns = [];
     _patterns.forEach(function (pat, patId) {
-        loadSurfaceAnimationPattern(pat).then(function (pat) {
-            patterns[patId] = pat;
-        }).catch(console.warn.bind(console));
+        loadSurfaceAnimationPattern(pat)
+            .then(function (pat) { patterns[patId] = pat; })
+            .catch(console.warn.bind(console));
     });
     var that = new ST.SurfaceAnimation(intervals, options, collisions, patterns);
     return Promise.resolve(that);
@@ -2570,50 +2012,48 @@ exports.loadSurfaceAnimation = loadSurfaceAnimation;
 function loadSurfaceAnimationPattern(pat) {
     var type = pat.type;
     var surface = pat.surface;
-
-    var _slice$map = (/(\d+)(?:\-(\d+))?/.exec(pat.wait) || ["", "0", ""]).slice(1).map(Number);
-
-    var _slice$map2 = _slicedToArray(_slice$map, 2);
-
-    var a = _slice$map2[0];
-    var b = _slice$map2[1];
-
+    var _a = (/(\d+)(?:\-(\d+))?/.exec(pat.wait) || ["", "0", ""]).slice(1).map(Number), a = _a[0], b = _a[1];
     if (!isFinite(a)) {
         if (!isFinite(b)) {
             console.warn("SurfaceTreeLoader.loadSurfaceAnimationPattern: cannot parse wait", pat, ", failback to", 0);
             a = b = 0;
-        } else {
+        }
+        else {
             console.warn("SurfaceTreeLoader.loadSurfaceAnimationPattern: cannot parse wait", a, ", failback to", b);
             a = b;
         }
     }
-    var wait = isFinite(b) ? [a, b] : [a, a];
+    var wait = isFinite(b)
+        ? [a, b]
+        : [a, a];
     var x = pat.x;
     var y = pat.y;
     if (pat["animation_ids"] != null && pat["animation_id"] != null) {
         console.warn("SurfaceTreeLoader.loadSurfaceAnimationPattern: something wrong", pat);
     }
-    var animation_ids = Array.isArray(pat["animation_ids"]) ? [Number(pat["animation_id"])] : pat["animation_ids"];
+    var animation_ids = Array.isArray(pat["animation_ids"])
+        ? [Number(pat["animation_id"])]
+        : pat["animation_ids"];
     var that = new ST.SurfaceAnimationPattern(type, surface, wait, x, y, animation_ids);
     return Promise.resolve(that);
 }
 exports.loadSurfaceAnimationPattern = loadSurfaceAnimationPattern;
-},{"./SurfaceTree":12,"./SurfaceUtil":14,"surfaces_txt2yaml":50}],14:[function(require,module,exports){
+
+},{"./SurfaceTree":12,"./SurfaceUtil":14,"surfaces_txt2yaml":49}],14:[function(require,module,exports){
 /*
  * 可用性・抽象度の高いコードスニペット集
  * SurfaceUtil という名称は Util のほうがむしろふさわしいが
  * 歴史的経緯と変更コストを鑑みてこのままにしている
  */
 "use strict";
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
-
 var Encoding = require("encoding-japanese");
 var $ = require("jquery");
 var deep = require("deep-diff");
-exports.diff = deep.diff;
+function diff(lhs, rhs, prefilter, acc) {
+    var ret = deep.diff(lhs, rhs, prefilter, acc);
+    return ret != null ? ret : [];
+}
+exports.diff = diff;
 exports.extend = $.extend;
 function chromakey(png) {
     var cnvA = copy(png);
@@ -2645,10 +2085,7 @@ function png_pna(png, pna) {
 }
 exports.png_pna = png_pna;
 function chromakey_snipet(data) {
-    var r = data[0],
-        g = data[1],
-        b = data[2],
-        a = data[3];
+    var r = data[0], g = data[1], b = data[2], a = data[3];
     var i = 0;
     if (a !== 0) {
         while (i < data.length) {
@@ -2660,9 +2097,8 @@ function chromakey_snipet(data) {
     }
 }
 exports.chromakey_snipet = chromakey_snipet;
-function log(element) {
-    var description = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-
+function log(element, description) {
+    if (description === void 0) { description = ""; }
     if (element instanceof HTMLCanvasElement || element instanceof HTMLImageElement) {
         description += "(" + element.width + "x" + element.height + ")";
     }
@@ -2680,22 +2116,14 @@ function parseDescript(text) {
     text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
     while (true) {
         var match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["", ""])[0];
-        if (match.length === 0) break;
+        if (match.length === 0)
+            break;
         text = text.replace(match, "");
     }
     var lines = text.split("\n");
-    var _lines = lines.filter(function (line) {
-        return line.length !== 0;
-    }); // remove no content line
+    var _lines = lines.filter(function (line) { return line.length !== 0; }); // remove no content line
     var dic = _lines.reduce(function (dic, line) {
-        var _line$split = line.split(",");
-
-        var _line$split2 = _toArray(_line$split);
-
-        var key = _line$split2[0];
-
-        var vals = _line$split2.slice(1);
-
+        var _a = line.split(","), key = _a[0], vals = _a.slice(1);
         var _key = key.trim();
         var val = vals.join(",").trim();
         dic[_key] = val;
@@ -2708,7 +2136,7 @@ exports.parseDescript = parseDescript;
 function fetchArrayBuffer(url) {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
-        var warn = function warn(msg) {
+        var warn = function (msg) {
             console.warn("SurfaceUtil.fetchArrayBuffer: error", msg, xhr);
             reject(msg);
         };
@@ -2716,10 +2144,12 @@ function fetchArrayBuffer(url) {
             if (200 <= xhr.status && xhr.status < 300) {
                 if (xhr.response.error == null) {
                     resolve(xhr.response);
-                } else {
+                }
+                else {
                     warn(xhr.response.error.message);
                 }
-            } else {
+            }
+            else {
                 warn("" + xhr.status);
             }
         });
@@ -2743,18 +2173,18 @@ exports.convert = convert;
 // filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
 function find(paths, filename) {
     filename = filename.split("\\").join("/");
-    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    if (filename.slice(0, 2) === "./")
+        filename = filename.slice(2);
     var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
-    var hits = paths.filter(function (key) {
-        return reg.test(key);
-    });
+    var hits = paths.filter(function (key) { return reg.test(key); });
     return hits;
 }
 exports.find = find;
 // 検索打ち切って高速化
 function fastfind(paths, filename) {
     filename = filename.split("\\").join("/");
-    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    if (filename.slice(0, 2) === "./")
+        filename = filename.slice(2);
     var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
     for (var i = 0; i < paths.length; i++) {
         if (reg.test(paths[i])) {
@@ -2766,7 +2196,7 @@ function fastfind(paths, filename) {
 exports.fastfind = fastfind;
 // [1,2,3] -> 1 or 2 or 3 as 33% probability
 function choice(arr) {
-    return arr[(Math.random() * 100 * arr.length | 0) % arr.length];
+    return arr[(Math.random() * 100 * (arr.length) | 0) % arr.length];
 }
 exports.choice = choice;
 // copy canvas as new object
@@ -2816,37 +2246,38 @@ function fetchImageFromURL(url) {
 exports.fetchImageFromURL = fetchImageFromURL;
 // random(func, n) means call func 1/n per sec
 function random(callback, probability) {
-    return setTimeout(function () {
-        function nextTick() {
-            random(callback, probability);
-        }
-        if (Math.random() < 1 / probability) callback(nextTick);else nextTick();
-    }, 1000);
+    return setTimeout((function () {
+        function nextTick() { random(callback, probability); }
+        if (Math.random() < 1 / probability)
+            callback(nextTick);
+        else
+            nextTick();
+    }), 1000);
 }
 exports.random = random;
 // cron
 function periodic(callback, sec) {
-    return setTimeout(function () {
+    return setTimeout((function () {
         return callback(function () {
             return periodic(callback, sec);
         });
-    }, sec * 1000);
+    }), sec * 1000);
 }
 exports.periodic = periodic;
 // 非同期ループするだけ
 function always(callback) {
-    return setTimeout(function () {
-        return callback(function () {
-            return always(callback);
-        });
-    }, 0);
+    return setTimeout((function () {
+        return callback(function () { return always(callback); });
+    }), 0);
 }
 exports.always = always;
 // canvasの座標のアルファチャンネルが不透明ならtrue
 function isHit(cnv, x, y) {
-    if (!(x > 0 && y > 0)) return false;
+    if (!(x > 0 && y > 0))
+        return false;
     // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
-    if (!(cnv.width > 0 || cnv.height > 0)) return false;
+    if (!(cnv.width > 0 || cnv.height > 0))
+        return false;
     var ctx = cnv.getContext("2d");
     var imgdata = ctx.getImageData(0, 0, x, y);
     var data = imgdata.data;
@@ -2863,25 +2294,29 @@ function createCanvas() {
 exports.createCanvas = createCanvas;
 // 0 -> sakura
 function scope(scopeId) {
-    return scopeId === 0 ? "sakura" : scopeId === 1 ? "kero" : "char" + scopeId;
+    return scopeId === 0 ? "sakura"
+        : scopeId === 1 ? "kero"
+            : "char" + scopeId;
 }
 exports.scope = scope;
 // sakura -> 0
 // parse error -> -1
 function unscope(charId) {
-    return charId === "sakura" ? 0 : charId === "kero" ? 1 : Number((/^char(\d+)/.exec(charId) || ["", "-1"])[1]);
+    return charId === "sakura" ? 0
+        : charId === "kero" ? 1
+            : Number((/^char(\d+)/.exec(charId) || ["", "-1"])[1]);
 }
 exports.unscope = unscope;
 // JQueryEventObject からタッチ・マウスを正規化して座標値を抜き出す便利関数
 function getEventPosition(ev) {
     if (/^touch/.test(ev.type) && ev.originalEvent.touches.length > 0) {
-        var _pageX = ev.originalEvent.touches[0].pageX;
-        var _pageY = ev.originalEvent.touches[0].pageY;
-        var _clientX = ev.originalEvent.touches[0].clientX;
-        var _clientY = ev.originalEvent.touches[0].clientY;
-        var _screenX = ev.originalEvent.touches[0].screenX;
-        var _screenY = ev.originalEvent.touches[0].screenY;
-        return { pageX: _pageX, pageY: _pageY, clientX: _clientX, clientY: _clientY, screenX: _screenX, screenY: _screenY };
+        var pageX_1 = ev.originalEvent.touches[0].pageX;
+        var pageY_1 = ev.originalEvent.touches[0].pageY;
+        var clientX_1 = ev.originalEvent.touches[0].clientX;
+        var clientY_1 = ev.originalEvent.touches[0].clientY;
+        var screenX_1 = ev.originalEvent.touches[0].screenX;
+        var screenY_1 = ev.originalEvent.touches[0].screenY;
+        return { pageX: pageX_1, pageY: pageY_1, clientX: clientX_1, clientY: clientY_1, screenX: screenX_1, screenY: screenY_1 };
     }
     var pageX = ev.pageX;
     var pageY = ev.pageY;
@@ -2905,10 +2340,7 @@ function getScrollXY() {
 }
 exports.getScrollXY = getScrollXY;
 function findSurfacesTxt(filepaths) {
-    return filepaths.filter(function (name) {
-        return (/^surfaces.*\.txt$|^alias\.txt$/i.test(name)
-        );
-    });
+    return filepaths.filter(function (name) { return /^surfaces.*\.txt$|^alias\.txt$/i.test(name); });
 }
 exports.findSurfacesTxt = findSurfacesTxt;
 function fetchArrayBufferFromURL(url) {
@@ -2918,10 +2350,12 @@ function fetchArrayBufferFromURL(url) {
             if (200 <= xhr.status && xhr.status < 300) {
                 if (xhr.response.error == null) {
                     resolve(xhr.response);
-                } else {
+                }
+                else {
                     reject(new Error("message: " + xhr.response.error.message));
                 }
-            } else {
+            }
+            else {
                 reject(new Error("status: " + xhr.status));
             }
         });
@@ -2938,14 +2372,7 @@ function decolateJSONizeDescript(o, key, value) {
     var props = key.split(".");
     for (var i = 0; i < props.length; i++) {
         var prop = props[i];
-
-        var _Array$prototype$slic = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1);
-
-        var _Array$prototype$slic2 = _slicedToArray(_Array$prototype$slic, 2);
-
-        var _prop = _Array$prototype$slic2[0];
-        var num = _Array$prototype$slic2[1];
-
+        var _a = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1), _prop = _a[0], num = _a[1];
         var _num = Number(num);
         if (isFinite(_num)) {
             if (!Array.isArray(ptr[_prop])) {
@@ -2954,7 +2381,8 @@ function decolateJSONizeDescript(o, key, value) {
             ptr[_prop][_num] = ptr[_prop][_num] || {};
             if (i !== props.length - 1) {
                 ptr = ptr[_prop][_num];
-            } else {
+            }
+            else {
                 if (ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0) {
                     // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
                     // menu, 0 -> menu.value
@@ -2962,18 +2390,22 @@ function decolateJSONizeDescript(o, key, value) {
                     // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
                     // このifはその例外への対処である
                     ptr[_prop][_num].value = Number(value) || value;
-                } else {
+                }
+                else {
                     ptr[_prop][_num] = Number(value) || value;
                 }
             }
-        } else {
+        }
+        else {
             ptr[_prop] = ptr[_prop] || {};
             if (i !== props.length - 1) {
                 ptr = ptr[_prop];
-            } else {
+            }
+            else {
                 if (ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0) {
                     ptr[_prop].value = Number(value) || value;
-                } else {
+                }
+                else {
                     ptr[_prop] = Number(value) || value;
                 }
             }
@@ -3014,9 +2446,8 @@ function setPictureFrame(element, description) {
     return;
 }
 exports.setPictureFrame = setPictureFrame;
-function craetePictureFrame(description) {
-    var target = arguments.length <= 1 || arguments[1] === undefined ? document.body : arguments[1];
-
+function craetePictureFrame(description, target) {
+    if (target === void 0) { target = document.body; }
     var fieldset = document.createElement('fieldset');
     var legend = document.createElement('legend');
     legend.appendChild(document.createTextNode(description));
@@ -3024,18 +2455,19 @@ function craetePictureFrame(description) {
     fieldset.style.display = 'inline-block';
     target.appendChild(fieldset);
     fieldset.style.backgroundColor = "#D2E0E6";
-    var add = function add(element) {
-        var txt = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-
+    var add = function (element, txt) {
+        if (txt === void 0) { txt = ""; }
         if (element instanceof HTMLElement) {
             var frame = craetePictureFrame(txt, fieldset);
             frame.add(element);
-        } else if (typeof element === "string") {
+        }
+        else if (typeof element === "string") {
             var txtNode = document.createTextNode(element);
             var p = document.createElement("p");
             p.appendChild(txtNode);
             fieldset.appendChild(p);
-        } else {
+        }
+        else {
             fieldset.appendChild(element);
         }
     };
@@ -3048,9 +2480,9 @@ function setCanvasStyle() {
     });
 }
 exports.setCanvasStyle = setCanvasStyle;
-},{"deep-diff":16,"encoding-japanese":17,"jquery":19}],15:[function(require,module,exports){
-"use strict";
 
+},{"deep-diff":16,"encoding-japanese":17,"jquery":18}],15:[function(require,module,exports){
+"use strict";
 var _SU = require("./SurfaceUtil");
 exports.SU = _SU;
 var _STL = require("./SurfaceTreeLoader");
@@ -3083,7 +2515,8 @@ var _package = require("../package.json");
 exports.version = _package.version;
 var $ = require("jquery");
 window["$"] = window["$"] || $;
-},{"../package.json":52,"./CanvasCache":1,"./ShellConfig":2,"./ShellConfigLoader":3,"./ShellModel":4,"./ShellModelLoader":5,"./ShellState":6,"./SurfaceBaseRenderer":7,"./SurfaceModel":8,"./SurfacePatternRenderer":9,"./SurfaceRenderer":10,"./SurfaceState":11,"./SurfaceTree":12,"./SurfaceTreeLoader":13,"./SurfaceUtil":14,"jquery":19}],16:[function(require,module,exports){
+
+},{"../package.json":51,"./CanvasCache":1,"./ShellConfig":2,"./ShellConfigLoader":3,"./ShellModel":4,"./ShellModelLoader":5,"./ShellState":6,"./SurfaceBaseRenderer":7,"./SurfaceModel":8,"./SurfacePatternRenderer":9,"./SurfaceRenderer":10,"./SurfaceState":11,"./SurfaceTree":12,"./SurfaceTreeLoader":13,"./SurfaceUtil":14,"jquery":18}],16:[function(require,module,exports){
 (function (global){
 /*!
  * deep-diff.
@@ -9797,310 +9230,6 @@ return Encoding;
 });
 
 },{}],18:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-function EventEmitter() {
-  this._events = this._events || {};
-  this._maxListeners = this._maxListeners || undefined;
-}
-module.exports = EventEmitter;
-
-// Backwards-compat with node 0.10.x
-EventEmitter.EventEmitter = EventEmitter;
-
-EventEmitter.prototype._events = undefined;
-EventEmitter.prototype._maxListeners = undefined;
-
-// By default EventEmitters will print a warning if more than 10 listeners are
-// added to it. This is a useful default which helps finding memory leaks.
-EventEmitter.defaultMaxListeners = 10;
-
-// Obviously not all Emitters should be limited to 10. This function allows
-// that to be increased. Set to zero for unlimited.
-EventEmitter.prototype.setMaxListeners = function(n) {
-  if (!isNumber(n) || n < 0 || isNaN(n))
-    throw TypeError('n must be a positive number');
-  this._maxListeners = n;
-  return this;
-};
-
-EventEmitter.prototype.emit = function(type) {
-  var er, handler, len, args, i, listeners;
-
-  if (!this._events)
-    this._events = {};
-
-  // If there is no 'error' event listener then throw.
-  if (type === 'error') {
-    if (!this._events.error ||
-        (isObject(this._events.error) && !this._events.error.length)) {
-      er = arguments[1];
-      if (er instanceof Error) {
-        throw er; // Unhandled 'error' event
-      } else {
-        // At least give some kind of context to the user
-        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
-        err.context = er;
-        throw err;
-      }
-    }
-  }
-
-  handler = this._events[type];
-
-  if (isUndefined(handler))
-    return false;
-
-  if (isFunction(handler)) {
-    switch (arguments.length) {
-      // fast cases
-      case 1:
-        handler.call(this);
-        break;
-      case 2:
-        handler.call(this, arguments[1]);
-        break;
-      case 3:
-        handler.call(this, arguments[1], arguments[2]);
-        break;
-      // slower
-      default:
-        args = Array.prototype.slice.call(arguments, 1);
-        handler.apply(this, args);
-    }
-  } else if (isObject(handler)) {
-    args = Array.prototype.slice.call(arguments, 1);
-    listeners = handler.slice();
-    len = listeners.length;
-    for (i = 0; i < len; i++)
-      listeners[i].apply(this, args);
-  }
-
-  return true;
-};
-
-EventEmitter.prototype.addListener = function(type, listener) {
-  var m;
-
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  if (!this._events)
-    this._events = {};
-
-  // To avoid recursion in the case that type === "newListener"! Before
-  // adding it to the listeners, first emit "newListener".
-  if (this._events.newListener)
-    this.emit('newListener', type,
-              isFunction(listener.listener) ?
-              listener.listener : listener);
-
-  if (!this._events[type])
-    // Optimize the case of one listener. Don't need the extra array object.
-    this._events[type] = listener;
-  else if (isObject(this._events[type]))
-    // If we've already got an array, just append.
-    this._events[type].push(listener);
-  else
-    // Adding the second element, need to change to array.
-    this._events[type] = [this._events[type], listener];
-
-  // Check for listener leak
-  if (isObject(this._events[type]) && !this._events[type].warned) {
-    if (!isUndefined(this._maxListeners)) {
-      m = this._maxListeners;
-    } else {
-      m = EventEmitter.defaultMaxListeners;
-    }
-
-    if (m && m > 0 && this._events[type].length > m) {
-      this._events[type].warned = true;
-      console.error('(node) warning: possible EventEmitter memory ' +
-                    'leak detected. %d listeners added. ' +
-                    'Use emitter.setMaxListeners() to increase limit.',
-                    this._events[type].length);
-      if (typeof console.trace === 'function') {
-        // not supported in IE 10
-        console.trace();
-      }
-    }
-  }
-
-  return this;
-};
-
-EventEmitter.prototype.on = EventEmitter.prototype.addListener;
-
-EventEmitter.prototype.once = function(type, listener) {
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  var fired = false;
-
-  function g() {
-    this.removeListener(type, g);
-
-    if (!fired) {
-      fired = true;
-      listener.apply(this, arguments);
-    }
-  }
-
-  g.listener = listener;
-  this.on(type, g);
-
-  return this;
-};
-
-// emits a 'removeListener' event iff the listener was removed
-EventEmitter.prototype.removeListener = function(type, listener) {
-  var list, position, length, i;
-
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  if (!this._events || !this._events[type])
-    return this;
-
-  list = this._events[type];
-  length = list.length;
-  position = -1;
-
-  if (list === listener ||
-      (isFunction(list.listener) && list.listener === listener)) {
-    delete this._events[type];
-    if (this._events.removeListener)
-      this.emit('removeListener', type, listener);
-
-  } else if (isObject(list)) {
-    for (i = length; i-- > 0;) {
-      if (list[i] === listener ||
-          (list[i].listener && list[i].listener === listener)) {
-        position = i;
-        break;
-      }
-    }
-
-    if (position < 0)
-      return this;
-
-    if (list.length === 1) {
-      list.length = 0;
-      delete this._events[type];
-    } else {
-      list.splice(position, 1);
-    }
-
-    if (this._events.removeListener)
-      this.emit('removeListener', type, listener);
-  }
-
-  return this;
-};
-
-EventEmitter.prototype.removeAllListeners = function(type) {
-  var key, listeners;
-
-  if (!this._events)
-    return this;
-
-  // not listening for removeListener, no need to emit
-  if (!this._events.removeListener) {
-    if (arguments.length === 0)
-      this._events = {};
-    else if (this._events[type])
-      delete this._events[type];
-    return this;
-  }
-
-  // emit removeListener for all listeners on all events
-  if (arguments.length === 0) {
-    for (key in this._events) {
-      if (key === 'removeListener') continue;
-      this.removeAllListeners(key);
-    }
-    this.removeAllListeners('removeListener');
-    this._events = {};
-    return this;
-  }
-
-  listeners = this._events[type];
-
-  if (isFunction(listeners)) {
-    this.removeListener(type, listeners);
-  } else if (listeners) {
-    // LIFO order
-    while (listeners.length)
-      this.removeListener(type, listeners[listeners.length - 1]);
-  }
-  delete this._events[type];
-
-  return this;
-};
-
-EventEmitter.prototype.listeners = function(type) {
-  var ret;
-  if (!this._events || !this._events[type])
-    ret = [];
-  else if (isFunction(this._events[type]))
-    ret = [this._events[type]];
-  else
-    ret = this._events[type].slice();
-  return ret;
-};
-
-EventEmitter.prototype.listenerCount = function(type) {
-  if (this._events) {
-    var evlistener = this._events[type];
-
-    if (isFunction(evlistener))
-      return 1;
-    else if (evlistener)
-      return evlistener.length;
-  }
-  return 0;
-};
-
-EventEmitter.listenerCount = function(emitter, type) {
-  return emitter.listenerCount(type);
-};
-
-function isFunction(arg) {
-  return typeof arg === 'function';
-}
-
-function isNumber(arg) {
-  return typeof arg === 'number';
-}
-
-function isObject(arg) {
-  return typeof arg === 'object' && arg !== null;
-}
-
-function isUndefined(arg) {
-  return arg === void 0;
-}
-
-},{}],19:[function(require,module,exports){
 /*eslint-disable no-unused-vars*/
 /*!
  * jQuery JavaScript Library v3.1.0
@@ -20176,7 +19305,7 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],20:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 'use strict';
 
 
@@ -20185,7 +19314,7 @@ var yaml = require('./lib/js-yaml.js');
 
 module.exports = yaml;
 
-},{"./lib/js-yaml.js":21}],21:[function(require,module,exports){
+},{"./lib/js-yaml.js":20}],20:[function(require,module,exports){
 'use strict';
 
 
@@ -20226,7 +19355,7 @@ module.exports.parse          = deprecated('parse');
 module.exports.compose        = deprecated('compose');
 module.exports.addConstructor = deprecated('addConstructor');
 
-},{"./js-yaml/dumper":23,"./js-yaml/exception":24,"./js-yaml/loader":25,"./js-yaml/schema":27,"./js-yaml/schema/core":28,"./js-yaml/schema/default_full":29,"./js-yaml/schema/default_safe":30,"./js-yaml/schema/failsafe":31,"./js-yaml/schema/json":32,"./js-yaml/type":33}],22:[function(require,module,exports){
+},{"./js-yaml/dumper":22,"./js-yaml/exception":23,"./js-yaml/loader":24,"./js-yaml/schema":26,"./js-yaml/schema/core":27,"./js-yaml/schema/default_full":28,"./js-yaml/schema/default_safe":29,"./js-yaml/schema/failsafe":30,"./js-yaml/schema/json":31,"./js-yaml/type":32}],21:[function(require,module,exports){
 'use strict';
 
 
@@ -20287,7 +19416,7 @@ module.exports.repeat         = repeat;
 module.exports.isNegativeZero = isNegativeZero;
 module.exports.extend         = extend;
 
-},{}],23:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-use-before-define*/
@@ -21091,7 +20220,7 @@ function safeDump(input, options) {
 module.exports.dump     = dump;
 module.exports.safeDump = safeDump;
 
-},{"./common":22,"./exception":24,"./schema/default_full":29,"./schema/default_safe":30}],24:[function(require,module,exports){
+},{"./common":21,"./exception":23,"./schema/default_full":28,"./schema/default_safe":29}],23:[function(require,module,exports){
 // YAML error class. http://stackoverflow.com/questions/8458984
 //
 'use strict';
@@ -21136,7 +20265,7 @@ YAMLException.prototype.toString = function toString(compact) {
 
 module.exports = YAMLException;
 
-},{}],25:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len,no-use-before-define*/
@@ -22724,7 +21853,7 @@ module.exports.load        = load;
 module.exports.safeLoadAll = safeLoadAll;
 module.exports.safeLoad    = safeLoad;
 
-},{"./common":22,"./exception":24,"./mark":26,"./schema/default_full":29,"./schema/default_safe":30}],26:[function(require,module,exports){
+},{"./common":21,"./exception":23,"./mark":25,"./schema/default_full":28,"./schema/default_safe":29}],25:[function(require,module,exports){
 'use strict';
 
 
@@ -22802,7 +21931,7 @@ Mark.prototype.toString = function toString(compact) {
 
 module.exports = Mark;
 
-},{"./common":22}],27:[function(require,module,exports){
+},{"./common":21}],26:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable max-len*/
@@ -22908,7 +22037,7 @@ Schema.create = function createSchema() {
 
 module.exports = Schema;
 
-},{"./common":22,"./exception":24,"./type":33}],28:[function(require,module,exports){
+},{"./common":21,"./exception":23,"./type":32}],27:[function(require,module,exports){
 // Standard YAML's Core schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2804923
 //
@@ -22928,7 +22057,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":27,"./json":32}],29:[function(require,module,exports){
+},{"../schema":26,"./json":31}],28:[function(require,module,exports){
 // JS-YAML's default schema for `load` function.
 // It is not described in the YAML specification.
 //
@@ -22955,7 +22084,7 @@ module.exports = Schema.DEFAULT = new Schema({
   ]
 });
 
-},{"../schema":27,"../type/js/function":38,"../type/js/regexp":39,"../type/js/undefined":40,"./default_safe":30}],30:[function(require,module,exports){
+},{"../schema":26,"../type/js/function":37,"../type/js/regexp":38,"../type/js/undefined":39,"./default_safe":29}],29:[function(require,module,exports){
 // JS-YAML's default schema for `safeLoad` function.
 // It is not described in the YAML specification.
 //
@@ -22985,7 +22114,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":27,"../type/binary":34,"../type/merge":42,"../type/omap":44,"../type/pairs":45,"../type/set":47,"../type/timestamp":49,"./core":28}],31:[function(require,module,exports){
+},{"../schema":26,"../type/binary":33,"../type/merge":41,"../type/omap":43,"../type/pairs":44,"../type/set":46,"../type/timestamp":48,"./core":27}],30:[function(require,module,exports){
 // Standard YAML's Failsafe schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2802346
 
@@ -23004,7 +22133,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":27,"../type/map":41,"../type/seq":46,"../type/str":48}],32:[function(require,module,exports){
+},{"../schema":26,"../type/map":40,"../type/seq":45,"../type/str":47}],31:[function(require,module,exports){
 // Standard YAML's JSON schema.
 // http://www.yaml.org/spec/1.2/spec.html#id2803231
 //
@@ -23031,7 +22160,7 @@ module.exports = new Schema({
   ]
 });
 
-},{"../schema":27,"../type/bool":35,"../type/float":36,"../type/int":37,"../type/null":43,"./failsafe":31}],33:[function(require,module,exports){
+},{"../schema":26,"../type/bool":34,"../type/float":35,"../type/int":36,"../type/null":42,"./failsafe":30}],32:[function(require,module,exports){
 'use strict';
 
 var YAMLException = require('./exception');
@@ -23094,7 +22223,7 @@ function Type(tag, options) {
 
 module.exports = Type;
 
-},{"./exception":24}],34:[function(require,module,exports){
+},{"./exception":23}],33:[function(require,module,exports){
 'use strict';
 
 /*eslint-disable no-bitwise*/
@@ -23231,7 +22360,7 @@ module.exports = new Type('tag:yaml.org,2002:binary', {
   represent: representYamlBinary
 });
 
-},{"../type":33}],35:[function(require,module,exports){
+},{"../type":32}],34:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23268,7 +22397,7 @@ module.exports = new Type('tag:yaml.org,2002:bool', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":33}],36:[function(require,module,exports){
+},{"../type":32}],35:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -23375,7 +22504,7 @@ module.exports = new Type('tag:yaml.org,2002:float', {
   defaultStyle: 'lowercase'
 });
 
-},{"../common":22,"../type":33}],37:[function(require,module,exports){
+},{"../common":21,"../type":32}],36:[function(require,module,exports){
 'use strict';
 
 var common = require('../common');
@@ -23545,7 +22674,7 @@ module.exports = new Type('tag:yaml.org,2002:int', {
   }
 });
 
-},{"../common":22,"../type":33}],38:[function(require,module,exports){
+},{"../common":21,"../type":32}],37:[function(require,module,exports){
 'use strict';
 
 var esprima;
@@ -23631,7 +22760,7 @@ module.exports = new Type('tag:yaml.org,2002:js/function', {
   represent: representJavascriptFunction
 });
 
-},{"../../type":33}],39:[function(require,module,exports){
+},{"../../type":32}],38:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -23693,7 +22822,7 @@ module.exports = new Type('tag:yaml.org,2002:js/regexp', {
   represent: representJavascriptRegExp
 });
 
-},{"../../type":33}],40:[function(require,module,exports){
+},{"../../type":32}],39:[function(require,module,exports){
 'use strict';
 
 var Type = require('../../type');
@@ -23723,7 +22852,7 @@ module.exports = new Type('tag:yaml.org,2002:js/undefined', {
   represent: representJavascriptUndefined
 });
 
-},{"../../type":33}],41:[function(require,module,exports){
+},{"../../type":32}],40:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23733,7 +22862,7 @@ module.exports = new Type('tag:yaml.org,2002:map', {
   construct: function (data) { return data !== null ? data : {}; }
 });
 
-},{"../type":33}],42:[function(require,module,exports){
+},{"../type":32}],41:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23747,7 +22876,7 @@ module.exports = new Type('tag:yaml.org,2002:merge', {
   resolve: resolveYamlMerge
 });
 
-},{"../type":33}],43:[function(require,module,exports){
+},{"../type":32}],42:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23783,7 +22912,7 @@ module.exports = new Type('tag:yaml.org,2002:null', {
   defaultStyle: 'lowercase'
 });
 
-},{"../type":33}],44:[function(require,module,exports){
+},{"../type":32}],43:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23829,7 +22958,7 @@ module.exports = new Type('tag:yaml.org,2002:omap', {
   construct: constructYamlOmap
 });
 
-},{"../type":33}],45:[function(require,module,exports){
+},{"../type":32}],44:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23884,7 +23013,7 @@ module.exports = new Type('tag:yaml.org,2002:pairs', {
   construct: constructYamlPairs
 });
 
-},{"../type":33}],46:[function(require,module,exports){
+},{"../type":32}],45:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23894,7 +23023,7 @@ module.exports = new Type('tag:yaml.org,2002:seq', {
   construct: function (data) { return data !== null ? data : []; }
 });
 
-},{"../type":33}],47:[function(require,module,exports){
+},{"../type":32}],46:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23925,7 +23054,7 @@ module.exports = new Type('tag:yaml.org,2002:set', {
   construct: constructYamlSet
 });
 
-},{"../type":33}],48:[function(require,module,exports){
+},{"../type":32}],47:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -23935,7 +23064,7 @@ module.exports = new Type('tag:yaml.org,2002:str', {
   construct: function (data) { return data !== null ? data : ''; }
 });
 
-},{"../type":33}],49:[function(require,module,exports){
+},{"../type":32}],48:[function(require,module,exports){
 'use strict';
 
 var Type = require('../type');
@@ -24025,10 +23154,10 @@ module.exports = new Type('tag:yaml.org,2002:timestamp', {
   represent: representYamlTimestamp
 });
 
-},{"../type":33}],50:[function(require,module,exports){
+},{"../type":32}],49:[function(require,module,exports){
 module.exports = require('./lib/surfaces_txt2yaml.js')
 
-},{"./lib/surfaces_txt2yaml.js":51}],51:[function(require,module,exports){
+},{"./lib/surfaces_txt2yaml.js":50}],50:[function(require,module,exports){
 // Generated by CoffeeScript 1.10.0
 
 /* (C) 2014 Narazaka : Licensed under The MIT License - http://narazaka.net/license/MIT?2014 */
@@ -25200,7 +24329,7 @@ if (typeof exports !== "undefined" && exports !== null) {
   exports.txt_to_yaml = SurfacesTxt2Yaml.txt_to_yaml;
 }
 
-},{"js-yaml":20}],52:[function(require,module,exports){
+},{"js-yaml":19}],51:[function(require,module,exports){
 module.exports={
   "name": "ikagaka.shell.js",
   "version": "5.0.0",
@@ -25216,8 +24345,8 @@ module.exports={
     "setup": "npm install -g gulp-cli bower typings http-server mversion",
     "init": "npm run update; npm run build",
     "update": "npm update; bower update; typings install",
-    "build": "cake index; npm run clean && tsc   && babel lib    -d es5&& gulp build&& browserify es5/index.js --standalone Shell -o dist/Shell.js; npm run cake",
-    "start": "cake index; http-server -s & tsc -w &                       gulp watch &   watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
+    "build": "cake index; npm run clean && tsc   && gulp build&& browserify es5/index.js --standalone Shell -o dist/Shell.js; npm run cake",
+    "start": "cake index; http-server -s & tsc -w & gulp watch &   watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
     "stop": "killall -- node",
     "tsc": "tsc",
     "coffee": "coffee -c -b -o lib src/*.coffee",

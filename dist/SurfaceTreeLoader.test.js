@@ -3,335 +3,213 @@
  * surfaces.txt の内容を構造化したもの
  */
 "use strict";
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var SurfaceDefinitionTree =
-//regions: { [scopeID: number]: {[regionName: string]: ToolTipElement}; }; // 謎
-function SurfaceDefinitionTree() {
-    var descript = arguments.length <= 0 || arguments[0] === undefined ? new SurfaceDescript() : arguments[0];
-    var surfaces = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-    var aliases = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-
-    _classCallCheck(this, SurfaceDefinitionTree);
-
-    this.descript = descript;
-    this.surfaces = surfaces;
-    this.aliases = aliases;
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-
+var SurfaceDefinitionTree = (function () {
+    //regions: { [scopeID: number]: {[regionName: string]: ToolTipElement}; }; // 謎
+    function SurfaceDefinitionTree(descript, surfaces, aliases) {
+        if (descript === void 0) { descript = new SurfaceDescript(); }
+        if (surfaces === void 0) { surfaces = []; }
+        if (aliases === void 0) { aliases = []; }
+        this.descript = descript;
+        this.surfaces = surfaces;
+        this.aliases = aliases;
+    }
+    return SurfaceDefinitionTree;
+}());
 exports.SurfaceDefinitionTree = SurfaceDefinitionTree;
-
-var SurfaceDescript = function SurfaceDescript() {
-    var collisionSort = arguments.length <= 0 || arguments[0] === undefined ? "ascend" : arguments[0];
-    var animationSort = arguments.length <= 1 || arguments[1] === undefined ? "ascend" : arguments[1];
-
-    _classCallCheck(this, SurfaceDescript);
-
-    this.collisionSort = collisionSort;
-    this.animationSort = animationSort;
-};
-
+var SurfaceDescript = (function () {
+    function SurfaceDescript(collisionSort, animationSort) {
+        if (collisionSort === void 0) { collisionSort = "ascend"; }
+        if (animationSort === void 0) { animationSort = "ascend"; }
+        this.collisionSort = collisionSort;
+        this.animationSort = animationSort;
+    }
+    return SurfaceDescript;
+}());
 exports.SurfaceDescript = SurfaceDescript;
-
-var SurfaceDefinition = function SurfaceDefinition() {
-    var elements = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
-    var collisions = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-    var animations = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-    var balloons = arguments.length <= 3 || arguments[3] === undefined ? { char: [], offsetX: 0, offsetY: 0 } : arguments[3];
-    var points = arguments.length <= 4 || arguments[4] === undefined ? { basepos: { x: 0, y: 0 } } : arguments[4];
-
-    _classCallCheck(this, SurfaceDefinition);
-
-    this.elements = elements;
-    this.collisions = collisions;
-    this.animations = animations;
-    this.points = points;
-    this.balloons = balloons;
-};
-
+var SurfaceDefinition = (function () {
+    function SurfaceDefinition(elements, collisions, animations, balloons, points) {
+        if (elements === void 0) { elements = []; }
+        if (collisions === void 0) { collisions = []; }
+        if (animations === void 0) { animations = []; }
+        if (balloons === void 0) { balloons = { char: [], offsetX: 0, offsetY: 0 }; }
+        if (points === void 0) { points = { basepos: { x: 0, y: 0 }
+        }; }
+        this.elements = elements;
+        this.collisions = collisions;
+        this.animations = animations;
+        this.points = points;
+        this.balloons = balloons;
+    }
+    return SurfaceDefinition;
+}());
 exports.SurfaceDefinition = SurfaceDefinition;
-
-var SurfaceElement = function SurfaceElement() {
-    var type = arguments.length <= 0 || arguments[0] === undefined ? "overlay" : arguments[0];
-    var file = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-    var x = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-    var y = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-
-    _classCallCheck(this, SurfaceElement);
-
-    this.type = "overlay";
-    this.file = file;
-    this.x = x;
-    this.y = y;
-};
-
+var SurfaceElement = (function () {
+    function SurfaceElement(type, file, x, y) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        this.type = "overlay";
+        this.file = file;
+        this.x = x;
+        this.y = y;
+    }
+    return SurfaceElement;
+}());
 exports.SurfaceElement = SurfaceElement;
-
-var SurfaceCollision = function SurfaceCollision() {
-    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-    var type = arguments.length <= 1 || arguments[1] === undefined ? "rect" : arguments[1];
-
-    _classCallCheck(this, SurfaceCollision);
-
-    this.name = name;
-    this.type = type;
-};
-
+var SurfaceCollision = (function () {
+    function SurfaceCollision(type, name) {
+        this.name = name;
+        this.type = type;
+    }
+    return SurfaceCollision;
+}());
 exports.SurfaceCollision = SurfaceCollision;
-
-var SurfaceCollisionRect = function (_SurfaceCollision) {
-    _inherits(SurfaceCollisionRect, _SurfaceCollision);
-
-    function SurfaceCollisionRect() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "rect" : arguments[1];
-        var left = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-        var top = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-        var right = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-        var bottom = arguments.length <= 5 || arguments[5] === undefined ? 0 : arguments[5];
-
-        _classCallCheck(this, SurfaceCollisionRect);
-
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionRect).call(this, name, type));
-
-        _this.left = left;
-        _this.top = top;
-        _this.right = right;
-        _this.bottom = bottom;
-        return _this;
+var SurfaceCollisionRect = (function (_super) {
+    __extends(SurfaceCollisionRect, _super);
+    function SurfaceCollisionRect(name, left, top, right, bottom) {
+        _super.call(this, "rect", name);
+        this.left = left;
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
     }
-
     return SurfaceCollisionRect;
-}(SurfaceCollision);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionRect = SurfaceCollisionRect;
-
-var SurfaceCollisionEllipse = function (_SurfaceCollisionRect) {
-    _inherits(SurfaceCollisionEllipse, _SurfaceCollisionRect);
-
-    function SurfaceCollisionEllipse() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "ellipse" : arguments[1];
-        var top = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-        var bottom = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-        var left = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-        var right = arguments.length <= 5 || arguments[5] === undefined ? 0 : arguments[5];
-
-        _classCallCheck(this, SurfaceCollisionEllipse);
-
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionEllipse).call(this, name, type, bottom, top, left, right));
+var SurfaceCollisionEllipse = (function (_super) {
+    __extends(SurfaceCollisionEllipse, _super);
+    function SurfaceCollisionEllipse(name, left, top, right, bottom) {
+        _super.call(this, "ellipse", name);
+        this.left = left;
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
     }
-
     return SurfaceCollisionEllipse;
-}(SurfaceCollisionRect);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionEllipse = SurfaceCollisionEllipse;
-
-var SurfaceCollisionCircle = function (_SurfaceCollision2) {
-    _inherits(SurfaceCollisionCircle, _SurfaceCollision2);
-
-    function SurfaceCollisionCircle() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "circle" : arguments[1];
-        var centerX = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-        var centerY = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-        var radius = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-
-        _classCallCheck(this, SurfaceCollisionCircle);
-
-        var _this3 = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionCircle).call(this, name, type));
-
-        _this3.centerX = centerX;
-        _this3.centerY = centerY;
-        _this3.radius = radius;
-        return _this3;
+var SurfaceCollisionCircle = (function (_super) {
+    __extends(SurfaceCollisionCircle, _super);
+    function SurfaceCollisionCircle(name, centerX, centerY, radius) {
+        _super.call(this, "circle", name);
+        this.centerX = centerX;
+        this.centerY = centerY;
+        this.radius = radius;
     }
-
     return SurfaceCollisionCircle;
-}(SurfaceCollision);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionCircle = SurfaceCollisionCircle;
-
-var SurfaceCollisionPolygon = function (_SurfaceCollision3) {
-    _inherits(SurfaceCollisionPolygon, _SurfaceCollision3);
-
-    function SurfaceCollisionPolygon() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "polygon" : arguments[1];
-        var coordinates = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-
-        _classCallCheck(this, SurfaceCollisionPolygon);
-
-        var _this4 = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionPolygon).call(this, name, type));
-
-        _this4.coordinates = coordinates;
-        return _this4;
+var SurfaceCollisionPolygon = (function (_super) {
+    __extends(SurfaceCollisionPolygon, _super);
+    function SurfaceCollisionPolygon(name, coordinates) {
+        _super.call(this, "polygon", name);
+        this.coordinates = coordinates;
     }
-
     return SurfaceCollisionPolygon;
-}(SurfaceCollision);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionPolygon = SurfaceCollisionPolygon;
-
-var SurfaceAnimation = function SurfaceAnimation() {
-    var intervals = arguments.length <= 0 || arguments[0] === undefined ? [["never", []]] : arguments[0];
-    var options = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-    var collisions = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-    var patterns = arguments.length <= 3 || arguments[3] === undefined ? [] : arguments[3];
-
-    _classCallCheck(this, SurfaceAnimation);
-
-    this.intervals = intervals;
-    this.options = options;
-    this.collisions = collisions;
-    this.patterns = patterns;
-};
-
+var SurfaceAnimation = (function () {
+    function SurfaceAnimation(intervals, options, collisions, patterns) {
+        if (intervals === void 0) { intervals = [["never", []]]; }
+        if (options === void 0) { options = []; }
+        if (collisions === void 0) { collisions = []; }
+        if (patterns === void 0) { patterns = []; }
+        this.intervals = intervals;
+        this.options = options;
+        this.collisions = collisions;
+        this.patterns = patterns;
+    }
+    return SurfaceAnimation;
+}());
 exports.SurfaceAnimation = SurfaceAnimation;
-
-var SurfaceAnimationPattern = function SurfaceAnimationPattern() {
-    var type = arguments.length <= 0 || arguments[0] === undefined ? "ovelay" : arguments[0];
-    var surface = arguments.length <= 1 || arguments[1] === undefined ? -1 : arguments[1];
-    var wait = arguments.length <= 2 || arguments[2] === undefined ? [0, 0] : arguments[2];
-    var x = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-    var y = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-    var animation_ids = arguments.length <= 5 || arguments[5] === undefined ? [] : arguments[5];
-
-    _classCallCheck(this, SurfaceAnimationPattern);
-
-    this.type = type;
-    this.surface = surface;
-    this.wait = wait;
-    this.x = x;
-    this.y = y;
-    this.animation_ids = animation_ids;
-};
-
+var SurfaceAnimationPattern = (function () {
+    function SurfaceAnimationPattern(type, surface, wait, x, y, animation_ids) {
+        if (type === void 0) { type = "ovelay"; }
+        if (surface === void 0) { surface = -1; }
+        if (wait === void 0) { wait = [0, 0]; }
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        if (animation_ids === void 0) { animation_ids = []; }
+        this.type = type;
+        this.surface = surface;
+        this.wait = wait;
+        this.x = x;
+        this.y = y;
+        this.animation_ids = animation_ids;
+    }
+    return SurfaceAnimationPattern;
+}());
 exports.SurfaceAnimationPattern = SurfaceAnimationPattern;
 function isBack(anim) {
-    return anim.options.some(function (_ref) {
-        var _ref2 = _slicedToArray(_ref, 2);
-
-        var opt = _ref2[0];
-        var args = _ref2[1];
+    return anim.options.some(function (_a) {
+        var opt = _a[0], args = _a[1];
         return opt === "background";
     });
 }
 exports.isBack = isBack;
 function getExclusives(anim) {
-    return anim.options.filter(function (_ref3) {
-        var _ref4 = _slicedToArray(_ref3, 2);
-
-        var opt = _ref4[0];
-        var args = _ref4[1];
+    return anim.options.filter(function (_a) {
+        var opt = _a[0], args = _a[1];
         return opt === "exclusive";
-    }).reduce(function (l, _ref5) {
-        var _ref6 = _slicedToArray(_ref5, 2);
-
-        var opt = _ref6[0];
-        var args = _ref6[1];
+    }).reduce(function (l, _a) {
+        var opt = _a[0], args = _a[1];
         return l.concat(args);
     }, []);
 }
 exports.getExclusives = getExclusives;
 function getRegion(collisions, offsetX, offsetY) {
-    var _this5 = this;
-
     // このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
     // collision設定されていれば name"hoge"
     // basepos 左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べる
     // offsetX: number, offsetY: number は basepos からの相対座標である必要がある、間違ってもcanvas左上からにしてはいけない 
+    var _this = this;
     var hitCols = collisions.filter(function (collision, colId) {
-        var type = collision.type;
-        var name = collision.name;
-        var left, top, right, bottom;
-        var left, top, right, bottom;
-
-        var _ret = function () {
-            switch (collision.type) {
-                case "rect":
-                    left = collision.left;
-                    top = collision.top;
-                    right = collision.right;
-                    bottom = collision.bottom;
-
-                    return {
-                        v: left < offsetX && offsetX < right && top < offsetY && offsetY < bottom || right < offsetX && offsetX < left && bottom < offsetX && offsetX < top
-                    };
-                case "ellipse":
-                    left = collision.left;
-                    top = collision.top;
-                    right = collision.right;
-                    bottom = collision.bottom;
-
-                    var width = Math.abs(right - left);
-                    var height = Math.abs(bottom - top);
-                    return {
-                        v: Math.pow((offsetX - (left + width / 2)) / (width / 2), 2) + Math.pow((offsetY - (top + height / 2)) / (height / 2), 2) < 1
-                    };
-                case "circle":
-                    var radius = collision.radius;
-                    var centerX = collision.centerX;
-                    var centerY = collision.centerY;
-
-                    return {
-                        v: Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1
-                    };
-                case "polygon":
-                    var coordinates = collision.coordinates;
-
-                    var ptC = { x: offsetX, y: offsetY };
-                    var tuples = coordinates.reduce(function (arr, _ref7, i) {
-                        var x = _ref7.x;
-                        var y = _ref7.y;
-
-                        arr.push([coordinates[i], !!coordinates[i + 1] ? coordinates[i + 1] : coordinates[0]]);
-                        return arr;
-                    }, []);
-                    // TODO: acos使わない奴に変える
-                    var deg = tuples.reduce(function (sum, _ref8) {
-                        var _ref9 = _slicedToArray(_ref8, 2);
-
-                        var ptA = _ref9[0];
-                        var ptB = _ref9[1];
-
-                        var vctA = [ptA.x - ptC.x, ptA.y - ptC.y];
-                        var vctB = [ptB.x - ptC.x, ptB.y - ptC.y];
-                        var dotP = vctA[0] * vctB[0] + vctA[1] * vctB[1];
-                        var absA = Math.sqrt(vctA.map(function (a) {
-                            return Math.pow(a, 2);
-                        }).reduce(function (a, b) {
-                            return a + b;
-                        }));
-                        var absB = Math.sqrt(vctB.map(function (a) {
-                            return Math.pow(a, 2);
-                        }).reduce(function (a, b) {
-                            return a + b;
-                        }));
-                        var rad = Math.acos(dotP / (absA * absB));
-                        return sum + rad;
-                    }, 0);
-                    return {
-                        v: deg / (2 * Math.PI) >= 1
-                    };
-                default:
-                    console.warn("SurfaceTree.getRegion: unkown collision type:", _this5.surfaceId, colId, name, collision);
-                    return {
-                        v: false
-                    };
-            }
-        }();
-
-        if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;
+        var type = collision.type, name = collision.name;
+        switch (collision.type) {
+            case "rect":
+                var _a = collision, left = _a.left, top = _a.top, right = _a.right, bottom = _a.bottom;
+                return (left < offsetX && offsetX < right && top < offsetY && offsetY < bottom) ||
+                    (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
+            case "ellipse":
+                var _b = collision, left = _b.left, top = _b.top, right = _b.right, bottom = _b.bottom;
+                var width = Math.abs(right - left);
+                var height = Math.abs(bottom - top);
+                return Math.pow((offsetX - (left + width / 2)) / (width / 2), 2) +
+                    Math.pow((offsetY - (top + height / 2)) / (height / 2), 2) < 1;
+            case "circle":
+                var _c = collision, radius = _c.radius, centerX = _c.centerX, centerY = _c.centerY;
+                return Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1;
+            case "polygon":
+                var coordinates_1 = collision.coordinates;
+                var ptC_1 = { x: offsetX, y: offsetY };
+                var tuples = coordinates_1.reduce((function (arr, _a, i) {
+                    var x = _a.x, y = _a.y;
+                    arr.push([
+                        coordinates_1[i],
+                        (!!coordinates_1[i + 1] ? coordinates_1[i + 1] : coordinates_1[0])
+                    ]);
+                    return arr;
+                }), []);
+                // TODO: acos使わない奴に変える
+                var deg = tuples.reduce((function (sum, _a) {
+                    var ptA = _a[0], ptB = _a[1];
+                    var vctA = [ptA.x - ptC_1.x, ptA.y - ptC_1.y];
+                    var vctB = [ptB.x - ptC_1.x, ptB.y - ptC_1.y];
+                    var dotP = vctA[0] * vctB[0] + vctA[1] * vctB[1];
+                    var absA = Math.sqrt(vctA.map(function (a) { return Math.pow(a, 2); }).reduce(function (a, b) { return a + b; }));
+                    var absB = Math.sqrt(vctB.map(function (a) { return Math.pow(a, 2); }).reduce(function (a, b) { return a + b; }));
+                    var rad = Math.acos(dotP / (absA * absB));
+                    return sum + rad;
+                }), 0);
+                return deg / (2 * Math.PI) >= 1;
+            default:
+                console.warn("SurfaceTree.getRegion: unkown collision type:", _this.surfaceId, colId, name, collision);
+                return false;
+        }
     });
     if (hitCols.length > 0) {
         return hitCols[hitCols.length - 1].name;
@@ -339,16 +217,12 @@ function getRegion(collisions, offsetX, offsetY) {
     return "";
 }
 exports.getRegion = getRegion;
+
 },{}],2:[function(require,module,exports){
 /*
  * surfaces.txt をパースして SurfaceTree 構造体を作る
  */
 "use strict";
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
-
 var SU = require("./SurfaceUtil");
 var ST = require("./SurfaceTree");
 var SY = require("surfaces_txt2yaml");
@@ -356,7 +230,8 @@ function loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(srfsTxt) {
     var _descript = srfsTxt.descript != null ? srfsTxt.descript : {};
     var _surfaces = srfsTxt.surfaces != null ? srfsTxt.surfaces : {};
     var _aliases = srfsTxt.aliases != null ? srfsTxt.aliases : {};
-    return loadSurfaceDescript(_descript).then(function (descript) {
+    return loadSurfaceDescript(_descript)
+        .then(function (descript) {
         var surfaces = [];
         Object.keys(_surfaces).forEach(function (surfaceName) {
             // typoef is === number なら実体のあるサーフェス定義
@@ -364,22 +239,18 @@ function loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(srfsTxt) {
                 var parents = [];
                 if (Array.isArray(_surfaces[surfaceName].base)) {
                     // .append持ってるので継承
-                    parents = _surfaces[surfaceName].base.map(function (parentName) {
-                        return _surfaces[parentName];
-                    });
+                    parents = _surfaces[surfaceName].base.map(function (parentName) { return _surfaces[parentName]; });
                 }
                 var srf = {};
                 SU.extend.apply(SY, [true, srf, _surfaces[surfaceName]].concat(parents));
-                loadSurfaceDefinition(srf).then(function (srfDef) {
-                    surfaces[_surfaces[surfaceName].is] = srfDef;
-                }).catch(console.warn.bind(console));
+                loadSurfaceDefinition(srf)
+                    .then(function (srfDef) { surfaces[_surfaces[surfaceName].is] = srfDef; })
+                    .catch(console.warn.bind(console));
             }
         });
         return { descript: descript, surfaces: surfaces };
-    }).then(function (_ref) {
-        var descript = _ref.descript;
-        var surfaces = _ref.surfaces;
-
+    }).then(function (_a) {
+        var descript = _a.descript, surfaces = _a.surfaces;
         var aliases = [];
         Object.keys(_aliases).forEach(function (scope) {
             // scope: sakura, kero, char2... => 0, 1, 2
@@ -387,11 +258,8 @@ function loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(srfsTxt) {
             aliases[scopeID] = _aliases[scope];
         });
         return { descript: descript, surfaces: surfaces, aliases: aliases };
-    }).then(function (_ref2) {
-        var descript = _ref2.descript;
-        var surfaces = _ref2.surfaces;
-        var aliases = _ref2.aliases;
-
+    }).then(function (_a) {
+        var descript = _a.descript, surfaces = _a.surfaces, aliases = _a.aliases;
         var that = new ST.SurfaceDefinitionTree(descript, surfaces, aliases);
         return Promise.resolve(that);
     });
@@ -399,8 +267,12 @@ function loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(srfsTxt) {
 exports.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml = loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml;
 function loadSurfaceDescript(descript) {
     // collision-sort: string => collisionSort: boolean
-    var collisionSort = descript["collision-sort"] === "ascend" ? "ascend" : descript["collision-sort"] === "descend" ? "descend" : "ascend";
-    var animationSort = descript["animation-sort"] === "ascend" ? "ascend" : descript["animation-sort"] === "descend" ? "descend" : "ascend";
+    var collisionSort = descript["collision-sort"] === "ascend" ? "ascend"
+        : descript["collision-sort"] === "descend" ? "descend"
+            : "ascend";
+    var animationSort = descript["animation-sort"] === "ascend" ? "ascend"
+        : descript["animation-sort"] === "descend" ? "descend"
+            : "ascend";
     var that = new ST.SurfaceDescript(collisionSort, animationSort);
     return Promise.resolve(that);
 }
@@ -428,10 +300,7 @@ function loadSurfaceDefinition(srf) {
         if (typeof _balloons.offsety === "number") {
             balloons.offsetY = _balloons.offsety;
         }
-        Object.keys(_balloons).filter(function (key) {
-            return (/sakura$|kero$|char\d+/.test(key)
-            );
-        }).forEach(function (charName) {
+        Object.keys(_balloons).filter(function (key) { return /sakura$|kero$|char\d+/.test(key); }).forEach(function (charName) {
             var charID = SU.unscope(charName);
             if (typeof _balloons[charName].offsetx === "number") {
                 balloons.char[charID] = balloons.char[charID] != null ? balloons.char[charID] : { offsetX: 0, offsetY: 0 };
@@ -446,32 +315,33 @@ function loadSurfaceDefinition(srf) {
     var elements = [];
     if (_elements != null) {
         Object.keys(_elements).forEach(function (id) {
-            return loadSurfaceElement(_elements[id]).then(function (def) {
-                elements[_elements[id].is] = def;
-            }).catch(console.warn.bind(console));
+            return loadSurfaceElement(_elements[id])
+                .then(function (def) { elements[_elements[id].is] = def; })
+                .catch(console.warn.bind(console));
         });
     }
     var collisions = [];
     if (_collisions != null) {
         Object.keys(_collisions).forEach(function (id) {
-            return loadSurfaceCollision(_collisions[id]).then(function (def) {
-                collisions[_collisions[id].is] = def;
-            }).catch(console.warn.bind(console));
+            return loadSurfaceCollision(_collisions[id])
+                .then(function (def) { collisions[_collisions[id].is] = def; })
+                .catch(console.warn.bind(console));
         });
     }
     var animations = [];
     if (_animations != null) {
         Object.keys(_animations).forEach(function (id) {
-            return loadSurfaceAnimation(_animations[id]).then(function (def) {
-                animations[_animations[id].is] = def;
-            }).catch(console.warn.bind(console));
+            return loadSurfaceAnimation(_animations[id])
+                .then(function (def) { animations[_animations[id].is] = def; })
+                .catch(console.warn.bind(console));
         });
     }
     var that = new ST.SurfaceDefinition(elements, collisions, animations, balloons, points);
     return Promise.resolve(that);
 }
 function loadSurfaceElement(elm) {
-    if (!(typeof elm.file === "string" && typeof elm.type === "string")) {
+    if (!(typeof elm.file === "string" &&
+        typeof elm.type === "string")) {
         console.warn("SurfaceTreeLoader.loadFromsurfacesTxt2Yaml: wrong parameters", elm);
         return Promise.reject(elm);
     }
@@ -479,13 +349,15 @@ function loadSurfaceElement(elm) {
     var type = elm.type;
     if (typeof elm.x === "number") {
         var x = elm.x;
-    } else {
+    }
+    else {
         var x = 0;
         console.warn("SurfaceTreeLoader.loadSurfaceElement: faileback to", x);
     }
     if (typeof elm.y === "number") {
         var y = elm.y;
-    } else {
+    }
+    else {
         var y = 0;
         console.warn("SurfaceTreeLoader.loadSurfaceElement: faileback to", y);
     }
@@ -495,14 +367,10 @@ function loadSurfaceElement(elm) {
 exports.loadSurfaceElement = loadSurfaceElement;
 function loadSurfaceCollision(collision) {
     switch (collision.type) {
-        case "rect":
-            return loadSurfaceCollisionRect(collision);
-        case "circle":
-            return loadSurfaceCollisionCircle(collision);
-        case "ellipse":
-            return loadSurfaceCollisionEllipse(collision);
-        case "polygon":
-            return loadSurfaceCollisionPolygon(collision);
+        case "rect": return loadSurfaceCollisionRect(collision);
+        case "circle": return loadSurfaceCollisionCircle(collision);
+        case "ellipse": return loadSurfaceCollisionEllipse(collision);
+        case "polygon": return loadSurfaceCollisionPolygon(collision);
         default:
             console.warn("SurfaceTreeLoader.loadSurfaceCollision: unknow collision type", collision.type, ", failback to rect");
             collision.type = "rect";
@@ -511,7 +379,10 @@ function loadSurfaceCollision(collision) {
 }
 exports.loadSurfaceCollision = loadSurfaceCollision;
 function loadSurfaceCollisionRect(collision) {
-    if (!(typeof collision.left === "number" && typeof collision.top === "number" && typeof collision.bottom === "number" && typeof collision.right === "number")) {
+    if (!(typeof collision.left === "number" &&
+        typeof collision.top === "number" &&
+        typeof collision.bottom === "number" &&
+        typeof collision.right === "number")) {
         console.warn("SurfaceTreeLoader.loadSurfaceCollisionRect: unkown parameter", collision);
         return Promise.reject(collision);
     }
@@ -521,18 +392,19 @@ function loadSurfaceCollisionRect(collision) {
     var left = collision.left;
     var bottom = collision.bottom;
     var right = collision.right;
-    var that = new ST.SurfaceCollisionRect(name, type, left, top, right, bottom);
+    var that = new ST.SurfaceCollisionRect(name, left, top, right, bottom);
     return Promise.resolve(that);
 }
 exports.loadSurfaceCollisionRect = loadSurfaceCollisionRect;
 function loadSurfaceCollisionEllipse(a) {
-    return loadSurfaceCollisionRect(a).then(function (b) {
-        return new ST.SurfaceCollisionEllipse(b.name, b.type, b.top, b.bottom, b.left, b.right);
-    });
+    return loadSurfaceCollisionRect(a)
+        .then(function (b) { return new ST.SurfaceCollisionEllipse(b.name, b.left, b.top, b.right, b.bottom); });
 }
 exports.loadSurfaceCollisionEllipse = loadSurfaceCollisionEllipse;
 function loadSurfaceCollisionCircle(collision) {
-    if (!(typeof collision.center_y === "number" && typeof collision.center_y === "number" && typeof collision.radius === "number")) {
+    if (!(typeof collision.center_y === "number" &&
+        typeof collision.center_y === "number" &&
+        typeof collision.radius === "number")) {
         console.warn("SurfaceTreeLoader.loadSurfaceCollisionCircle: unkown parameter", collision);
         return Promise.reject(collision);
     }
@@ -541,7 +413,7 @@ function loadSurfaceCollisionCircle(collision) {
     var centerX = collision.center_x;
     var centerY = collision.center_y;
     var radius = collision.radius;
-    var that = new ST.SurfaceCollisionCircle(name, type, centerX, centerY, radius);
+    var that = new ST.SurfaceCollisionCircle(name, centerX, centerY, radius);
     return Promise.resolve(that);
 }
 exports.loadSurfaceCollisionCircle = loadSurfaceCollisionCircle;
@@ -553,14 +425,12 @@ function loadSurfaceCollisionPolygon(col) {
         console.warn("SurfaceTreeLoader.loadSurfaceCollisionPolygon: coordinates need more than 3", col);
         return Promise.reject(col);
     }
-    if (_coordinates.every(function (o) {
-        return typeof o.x !== "number" || typeof o.y !== "number";
-    })) {
+    if (_coordinates.every(function (o) { return typeof o.x !== "number" || typeof o.y !== "number"; })) {
         console.warn("SurfaceTreeLoader.loadSurfaceCollisionPolygon: coordinates has erro value", col);
         return Promise.reject(col);
     }
     var coordinates = _coordinates;
-    var that = new ST.SurfaceCollisionPolygon(name, type, coordinates);
+    var that = new ST.SurfaceCollisionPolygon(name, coordinates);
     return Promise.resolve(that);
 }
 exports.loadSurfaceCollisionPolygon = loadSurfaceCollisionPolygon;
@@ -571,50 +441,26 @@ function loadSurfaceAnimation(animation) {
     var _patterns = animation.patterns != null ? animation.patterns : [];
     // animation*.option,* の展開
     // animation*.option,exclusive+background,(1,3,5)
-
-    var _option$split = _option.split(",");
-
-    var _option$split2 = _toArray(_option$split);
-
-    var __option = _option$split2[0];
-
-    var opt_args = _option$split2.slice(1);
-
-    var _opt_args = opt_args.map(function (str) {
-        return Number(str.replace("(", "").replace(")", ""));
-    });
+    var _a = _option.split(","), __option = _a[0], opt_args = _a.slice(1);
+    var _opt_args = opt_args.map(function (str) { return Number(str.replace("(", "").replace(")", "")); });
     var _options = _option.split("+");
-    var options = _options.map(function (option) {
-        return [option.trim(), _opt_args];
-    });
+    var options = _options.map(function (option) { return [option.trim(), _opt_args]; });
     // bind+sometimes+talk,3
-
-    var _interval$split = _interval.split(",");
-
-    var _interval$split2 = _toArray(_interval$split);
-
-    var __interval = _interval$split2[0];
-
-    var int_args = _interval$split2.slice(1);
-
-    var _int_args = int_args.map(function (str) {
-        return Number(str);
-    });
+    var _b = _interval.split(","), __interval = _b[0], int_args = _b.slice(1);
+    var _int_args = int_args.map(function (str) { return Number(str); });
     var _intervals = __interval.split("+");
-    var intervals = _intervals.map(function (interval) {
-        return [interval.trim(), _int_args];
-    });
+    var intervals = _intervals.map(function (interval) { return [interval.trim(), _int_args]; });
     var collisions = [];
     Object.keys(_regions).forEach(function (key) {
-        loadSurfaceCollision(_regions[key]).then(function (col) {
-            collisions[_regions[key].is] = col;
-        }).catch(console.warn.bind(console));
+        loadSurfaceCollision(_regions[key])
+            .then(function (col) { collisions[_regions[key].is] = col; })
+            .catch(console.warn.bind(console));
     });
     var patterns = [];
     _patterns.forEach(function (pat, patId) {
-        loadSurfaceAnimationPattern(pat).then(function (pat) {
-            patterns[patId] = pat;
-        }).catch(console.warn.bind(console));
+        loadSurfaceAnimationPattern(pat)
+            .then(function (pat) { patterns[patId] = pat; })
+            .catch(console.warn.bind(console));
     });
     var that = new ST.SurfaceAnimation(intervals, options, collisions, patterns);
     return Promise.resolve(that);
@@ -623,34 +469,33 @@ exports.loadSurfaceAnimation = loadSurfaceAnimation;
 function loadSurfaceAnimationPattern(pat) {
     var type = pat.type;
     var surface = pat.surface;
-
-    var _slice$map = (/(\d+)(?:\-(\d+))?/.exec(pat.wait) || ["", "0", ""]).slice(1).map(Number);
-
-    var _slice$map2 = _slicedToArray(_slice$map, 2);
-
-    var a = _slice$map2[0];
-    var b = _slice$map2[1];
-
+    var _a = (/(\d+)(?:\-(\d+))?/.exec(pat.wait) || ["", "0", ""]).slice(1).map(Number), a = _a[0], b = _a[1];
     if (!isFinite(a)) {
         if (!isFinite(b)) {
             console.warn("SurfaceTreeLoader.loadSurfaceAnimationPattern: cannot parse wait", pat, ", failback to", 0);
             a = b = 0;
-        } else {
+        }
+        else {
             console.warn("SurfaceTreeLoader.loadSurfaceAnimationPattern: cannot parse wait", a, ", failback to", b);
             a = b;
         }
     }
-    var wait = isFinite(b) ? [a, b] : [a, a];
+    var wait = isFinite(b)
+        ? [a, b]
+        : [a, a];
     var x = pat.x;
     var y = pat.y;
     if (pat["animation_ids"] != null && pat["animation_id"] != null) {
         console.warn("SurfaceTreeLoader.loadSurfaceAnimationPattern: something wrong", pat);
     }
-    var animation_ids = Array.isArray(pat["animation_ids"]) ? [Number(pat["animation_id"])] : pat["animation_ids"];
+    var animation_ids = Array.isArray(pat["animation_ids"])
+        ? [Number(pat["animation_id"])]
+        : pat["animation_ids"];
     var that = new ST.SurfaceAnimationPattern(type, surface, wait, x, y, animation_ids);
     return Promise.resolve(that);
 }
 exports.loadSurfaceAnimationPattern = loadSurfaceAnimationPattern;
+
 },{"./SurfaceTree":1,"./SurfaceUtil":3,"surfaces_txt2yaml":131}],3:[function(require,module,exports){
 /*
  * 可用性・抽象度の高いコードスニペット集
@@ -658,15 +503,14 @@ exports.loadSurfaceAnimationPattern = loadSurfaceAnimationPattern;
  * 歴史的経緯と変更コストを鑑みてこのままにしている
  */
 "use strict";
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
-
 var Encoding = require("encoding-japanese");
 var $ = require("jquery");
 var deep = require("deep-diff");
-exports.diff = deep.diff;
+function diff(lhs, rhs, prefilter, acc) {
+    var ret = deep.diff(lhs, rhs, prefilter, acc);
+    return ret != null ? ret : [];
+}
+exports.diff = diff;
 exports.extend = $.extend;
 function chromakey(png) {
     var cnvA = copy(png);
@@ -698,10 +542,7 @@ function png_pna(png, pna) {
 }
 exports.png_pna = png_pna;
 function chromakey_snipet(data) {
-    var r = data[0],
-        g = data[1],
-        b = data[2],
-        a = data[3];
+    var r = data[0], g = data[1], b = data[2], a = data[3];
     var i = 0;
     if (a !== 0) {
         while (i < data.length) {
@@ -713,9 +554,8 @@ function chromakey_snipet(data) {
     }
 }
 exports.chromakey_snipet = chromakey_snipet;
-function log(element) {
-    var description = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-
+function log(element, description) {
+    if (description === void 0) { description = ""; }
     if (element instanceof HTMLCanvasElement || element instanceof HTMLImageElement) {
         description += "(" + element.width + "x" + element.height + ")";
     }
@@ -733,22 +573,14 @@ function parseDescript(text) {
     text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
     while (true) {
         var match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["", ""])[0];
-        if (match.length === 0) break;
+        if (match.length === 0)
+            break;
         text = text.replace(match, "");
     }
     var lines = text.split("\n");
-    var _lines = lines.filter(function (line) {
-        return line.length !== 0;
-    }); // remove no content line
+    var _lines = lines.filter(function (line) { return line.length !== 0; }); // remove no content line
     var dic = _lines.reduce(function (dic, line) {
-        var _line$split = line.split(",");
-
-        var _line$split2 = _toArray(_line$split);
-
-        var key = _line$split2[0];
-
-        var vals = _line$split2.slice(1);
-
+        var _a = line.split(","), key = _a[0], vals = _a.slice(1);
         var _key = key.trim();
         var val = vals.join(",").trim();
         dic[_key] = val;
@@ -761,7 +593,7 @@ exports.parseDescript = parseDescript;
 function fetchArrayBuffer(url) {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
-        var warn = function warn(msg) {
+        var warn = function (msg) {
             console.warn("SurfaceUtil.fetchArrayBuffer: error", msg, xhr);
             reject(msg);
         };
@@ -769,10 +601,12 @@ function fetchArrayBuffer(url) {
             if (200 <= xhr.status && xhr.status < 300) {
                 if (xhr.response.error == null) {
                     resolve(xhr.response);
-                } else {
+                }
+                else {
                     warn(xhr.response.error.message);
                 }
-            } else {
+            }
+            else {
                 warn("" + xhr.status);
             }
         });
@@ -796,18 +630,18 @@ exports.convert = convert;
 // filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
 function find(paths, filename) {
     filename = filename.split("\\").join("/");
-    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    if (filename.slice(0, 2) === "./")
+        filename = filename.slice(2);
     var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
-    var hits = paths.filter(function (key) {
-        return reg.test(key);
-    });
+    var hits = paths.filter(function (key) { return reg.test(key); });
     return hits;
 }
 exports.find = find;
 // 検索打ち切って高速化
 function fastfind(paths, filename) {
     filename = filename.split("\\").join("/");
-    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    if (filename.slice(0, 2) === "./")
+        filename = filename.slice(2);
     var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
     for (var i = 0; i < paths.length; i++) {
         if (reg.test(paths[i])) {
@@ -819,7 +653,7 @@ function fastfind(paths, filename) {
 exports.fastfind = fastfind;
 // [1,2,3] -> 1 or 2 or 3 as 33% probability
 function choice(arr) {
-    return arr[(Math.random() * 100 * arr.length | 0) % arr.length];
+    return arr[(Math.random() * 100 * (arr.length) | 0) % arr.length];
 }
 exports.choice = choice;
 // copy canvas as new object
@@ -869,37 +703,38 @@ function fetchImageFromURL(url) {
 exports.fetchImageFromURL = fetchImageFromURL;
 // random(func, n) means call func 1/n per sec
 function random(callback, probability) {
-    return setTimeout(function () {
-        function nextTick() {
-            random(callback, probability);
-        }
-        if (Math.random() < 1 / probability) callback(nextTick);else nextTick();
-    }, 1000);
+    return setTimeout((function () {
+        function nextTick() { random(callback, probability); }
+        if (Math.random() < 1 / probability)
+            callback(nextTick);
+        else
+            nextTick();
+    }), 1000);
 }
 exports.random = random;
 // cron
 function periodic(callback, sec) {
-    return setTimeout(function () {
+    return setTimeout((function () {
         return callback(function () {
             return periodic(callback, sec);
         });
-    }, sec * 1000);
+    }), sec * 1000);
 }
 exports.periodic = periodic;
 // 非同期ループするだけ
 function always(callback) {
-    return setTimeout(function () {
-        return callback(function () {
-            return always(callback);
-        });
-    }, 0);
+    return setTimeout((function () {
+        return callback(function () { return always(callback); });
+    }), 0);
 }
 exports.always = always;
 // canvasの座標のアルファチャンネルが不透明ならtrue
 function isHit(cnv, x, y) {
-    if (!(x > 0 && y > 0)) return false;
+    if (!(x > 0 && y > 0))
+        return false;
     // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
-    if (!(cnv.width > 0 || cnv.height > 0)) return false;
+    if (!(cnv.width > 0 || cnv.height > 0))
+        return false;
     var ctx = cnv.getContext("2d");
     var imgdata = ctx.getImageData(0, 0, x, y);
     var data = imgdata.data;
@@ -916,25 +751,29 @@ function createCanvas() {
 exports.createCanvas = createCanvas;
 // 0 -> sakura
 function scope(scopeId) {
-    return scopeId === 0 ? "sakura" : scopeId === 1 ? "kero" : "char" + scopeId;
+    return scopeId === 0 ? "sakura"
+        : scopeId === 1 ? "kero"
+            : "char" + scopeId;
 }
 exports.scope = scope;
 // sakura -> 0
 // parse error -> -1
 function unscope(charId) {
-    return charId === "sakura" ? 0 : charId === "kero" ? 1 : Number((/^char(\d+)/.exec(charId) || ["", "-1"])[1]);
+    return charId === "sakura" ? 0
+        : charId === "kero" ? 1
+            : Number((/^char(\d+)/.exec(charId) || ["", "-1"])[1]);
 }
 exports.unscope = unscope;
 // JQueryEventObject からタッチ・マウスを正規化して座標値を抜き出す便利関数
 function getEventPosition(ev) {
     if (/^touch/.test(ev.type) && ev.originalEvent.touches.length > 0) {
-        var _pageX = ev.originalEvent.touches[0].pageX;
-        var _pageY = ev.originalEvent.touches[0].pageY;
-        var _clientX = ev.originalEvent.touches[0].clientX;
-        var _clientY = ev.originalEvent.touches[0].clientY;
-        var _screenX = ev.originalEvent.touches[0].screenX;
-        var _screenY = ev.originalEvent.touches[0].screenY;
-        return { pageX: _pageX, pageY: _pageY, clientX: _clientX, clientY: _clientY, screenX: _screenX, screenY: _screenY };
+        var pageX_1 = ev.originalEvent.touches[0].pageX;
+        var pageY_1 = ev.originalEvent.touches[0].pageY;
+        var clientX_1 = ev.originalEvent.touches[0].clientX;
+        var clientY_1 = ev.originalEvent.touches[0].clientY;
+        var screenX_1 = ev.originalEvent.touches[0].screenX;
+        var screenY_1 = ev.originalEvent.touches[0].screenY;
+        return { pageX: pageX_1, pageY: pageY_1, clientX: clientX_1, clientY: clientY_1, screenX: screenX_1, screenY: screenY_1 };
     }
     var pageX = ev.pageX;
     var pageY = ev.pageY;
@@ -958,10 +797,7 @@ function getScrollXY() {
 }
 exports.getScrollXY = getScrollXY;
 function findSurfacesTxt(filepaths) {
-    return filepaths.filter(function (name) {
-        return (/^surfaces.*\.txt$|^alias\.txt$/i.test(name)
-        );
-    });
+    return filepaths.filter(function (name) { return /^surfaces.*\.txt$|^alias\.txt$/i.test(name); });
 }
 exports.findSurfacesTxt = findSurfacesTxt;
 function fetchArrayBufferFromURL(url) {
@@ -971,10 +807,12 @@ function fetchArrayBufferFromURL(url) {
             if (200 <= xhr.status && xhr.status < 300) {
                 if (xhr.response.error == null) {
                     resolve(xhr.response);
-                } else {
+                }
+                else {
                     reject(new Error("message: " + xhr.response.error.message));
                 }
-            } else {
+            }
+            else {
                 reject(new Error("status: " + xhr.status));
             }
         });
@@ -991,14 +829,7 @@ function decolateJSONizeDescript(o, key, value) {
     var props = key.split(".");
     for (var i = 0; i < props.length; i++) {
         var prop = props[i];
-
-        var _Array$prototype$slic = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1);
-
-        var _Array$prototype$slic2 = _slicedToArray(_Array$prototype$slic, 2);
-
-        var _prop = _Array$prototype$slic2[0];
-        var num = _Array$prototype$slic2[1];
-
+        var _a = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1), _prop = _a[0], num = _a[1];
         var _num = Number(num);
         if (isFinite(_num)) {
             if (!Array.isArray(ptr[_prop])) {
@@ -1007,7 +838,8 @@ function decolateJSONizeDescript(o, key, value) {
             ptr[_prop][_num] = ptr[_prop][_num] || {};
             if (i !== props.length - 1) {
                 ptr = ptr[_prop][_num];
-            } else {
+            }
+            else {
                 if (ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0) {
                     // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
                     // menu, 0 -> menu.value
@@ -1015,18 +847,22 @@ function decolateJSONizeDescript(o, key, value) {
                     // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
                     // このifはその例外への対処である
                     ptr[_prop][_num].value = Number(value) || value;
-                } else {
+                }
+                else {
                     ptr[_prop][_num] = Number(value) || value;
                 }
             }
-        } else {
+        }
+        else {
             ptr[_prop] = ptr[_prop] || {};
             if (i !== props.length - 1) {
                 ptr = ptr[_prop];
-            } else {
+            }
+            else {
                 if (ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0) {
                     ptr[_prop].value = Number(value) || value;
-                } else {
+                }
+                else {
                     ptr[_prop] = Number(value) || value;
                 }
             }
@@ -1067,9 +903,8 @@ function setPictureFrame(element, description) {
     return;
 }
 exports.setPictureFrame = setPictureFrame;
-function craetePictureFrame(description) {
-    var target = arguments.length <= 1 || arguments[1] === undefined ? document.body : arguments[1];
-
+function craetePictureFrame(description, target) {
+    if (target === void 0) { target = document.body; }
     var fieldset = document.createElement('fieldset');
     var legend = document.createElement('legend');
     legend.appendChild(document.createTextNode(description));
@@ -1077,18 +912,19 @@ function craetePictureFrame(description) {
     fieldset.style.display = 'inline-block';
     target.appendChild(fieldset);
     fieldset.style.backgroundColor = "#D2E0E6";
-    var add = function add(element) {
-        var txt = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-
+    var add = function (element, txt) {
+        if (txt === void 0) { txt = ""; }
         if (element instanceof HTMLElement) {
             var frame = craetePictureFrame(txt, fieldset);
             frame.add(element);
-        } else if (typeof element === "string") {
+        }
+        else if (typeof element === "string") {
             var txtNode = document.createTextNode(element);
             var p = document.createElement("p");
             p.appendChild(txtNode);
             fieldset.appendChild(p);
-        } else {
+        }
+        else {
             fieldset.appendChild(element);
         }
     };
@@ -1101,6 +937,7 @@ function setCanvasStyle() {
     });
 }
 exports.setCanvasStyle = setCanvasStyle;
+
 },{"deep-diff":7,"encoding-japanese":8,"jquery":19}],4:[function(require,module,exports){
 'use strict';
 var ST = require('./SurfaceTree');
@@ -1124,56 +961,50 @@ NL.loadFromURL('../nar/mobilemaster.nar').then(function (nanikaDir) {
         var done = assert.async();
         console.log(surfacesTxt);
         return STL.loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(surfacesTxt).then(function (surfaceTree) {
-            var aliases = surfaceTree.aliases;
-            var surfaces = surfaceTree.surfaces;
-            var descript = surfaceTree.descript;
+            var aliases = surfaceTree.aliases, surfaces = surfaceTree.surfaces, descript = surfaceTree.descript;
             assert.ok(assert._expr(assert._capt(assert._capt(Array, 'arguments/0/callee/object').isArray(assert._capt(aliases, 'arguments/0/arguments/0')), 'arguments/0'), {
                 content: 'assert.ok(Array.isArray(aliases))',
                 filepath: 'es5/SurfaceTreeLoader.test.js',
-                line: 29
+                line: 25
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(Array, 'arguments/0/callee/object').isArray(assert._capt(surfaces, 'arguments/0/arguments/0')), 'arguments/0'), {
                 content: 'assert.ok(Array.isArray(surfaces))',
                 filepath: 'es5/SurfaceTreeLoader.test.js',
-                line: 30
+                line: 26
             }));
             surfaces.forEach(function (srf) {
-                var elements = srf.elements;
-                var collisions = srf.collisions;
-                var animations = srf.animations;
-                var balloons = srf.balloons;
-                var points = srf.points;
+                var elements = srf.elements, collisions = srf.collisions, animations = srf.animations, balloons = srf.balloons, points = srf.points;
                 assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(Array, 'arguments/0/left/callee/object').isArray(assert._capt(elements, 'arguments/0/left/arguments/0')), 'arguments/0/left') && assert._capt(assert._capt(elements, 'arguments/0/right/callee/object').every(function (elm) {
                     return elm instanceof ST.SurfaceElement;
                 }), 'arguments/0/right'), 'arguments/0'), {
                     content: 'assert.ok(Array.isArray(elements) && elements.every(function (elm) {return elm instanceof ST.SurfaceElement;}))',
                     filepath: 'es5/SurfaceTreeLoader.test.js',
-                    line: 38
+                    line: 29
                 }));
                 assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(Array, 'arguments/0/left/callee/object').isArray(assert._capt(collisions, 'arguments/0/left/arguments/0')), 'arguments/0/left') && assert._capt(assert._capt(collisions, 'arguments/0/right/callee/object').every(function (col) {
                     return col instanceof ST.SurfaceCollision;
                 }), 'arguments/0/right'), 'arguments/0'), {
                     content: 'assert.ok(Array.isArray(collisions) && collisions.every(function (col) {return col instanceof ST.SurfaceCollision;}))',
                     filepath: 'es5/SurfaceTreeLoader.test.js',
-                    line: 41
+                    line: 30
                 }));
                 assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(Array, 'arguments/0/left/callee/object').isArray(assert._capt(animations, 'arguments/0/left/arguments/0')), 'arguments/0/left') && assert._capt(assert._capt(animations, 'arguments/0/right/callee/object').every(function (anm) {
                     return anm instanceof ST.SurfaceAnimation;
                 }), 'arguments/0/right'), 'arguments/0'), {
                     content: 'assert.ok(Array.isArray(animations) && animations.every(function (anm) {return anm instanceof ST.SurfaceAnimation;}))',
                     filepath: 'es5/SurfaceTreeLoader.test.js',
-                    line: 44
+                    line: 31
                 }));
             });
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(surfaceTree, 'arguments/0/left/object/object').descript, 'arguments/0/left/object').collisionSort, 'arguments/0/left') === 'ascend', 'arguments/0'), {
                 content: 'assert.ok(surfaceTree.descript.collisionSort === "ascend")',
                 filepath: 'es5/SurfaceTreeLoader.test.js',
-                line: 48
+                line: 33
             }));
             assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(assert._capt(surfaceTree, 'arguments/0/left/object/object').descript, 'arguments/0/left/object').animationSort, 'arguments/0/left') === 'ascend', 'arguments/0'), {
                 content: 'assert.ok(surfaceTree.descript.animationSort === "ascend")',
                 filepath: 'es5/SurfaceTreeLoader.test.js',
-                line: 49
+                line: 34
             }));
             return done();
         });

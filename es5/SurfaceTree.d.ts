@@ -50,35 +50,39 @@ export declare class SurfaceElement {
     file: string;
     x: number;
     y: number;
-    constructor(type?: string, file?: string, x?: number, y?: number);
+    constructor(type: string, file: string, x?: number, y?: number);
 }
 export declare class SurfaceCollision {
     name: string;
     type: string;
-    constructor(name?: string, type?: string);
+    constructor(type: string, name: string);
 }
 export declare class SurfaceCollisionRect extends SurfaceCollision {
     left: number;
     top: number;
     right: number;
     bottom: number;
-    constructor(name?: string, type?: string, left?: number, top?: number, right?: number, bottom?: number);
+    constructor(name: string, left: number, top: number, right: number, bottom: number);
 }
-export declare class SurfaceCollisionEllipse extends SurfaceCollisionRect {
-    constructor(name?: string, type?: string, top?: number, bottom?: number, left?: number, right?: number);
+export declare class SurfaceCollisionEllipse extends SurfaceCollision {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+    constructor(name: string, left: number, top: number, right: number, bottom: number);
 }
 export declare class SurfaceCollisionCircle extends SurfaceCollision {
     centerX: number;
     centerY: number;
     radius: number;
-    constructor(name?: string, type?: string, centerX?: number, centerY?: number, radius?: number);
+    constructor(name: string, centerX: number, centerY: number, radius: number);
 }
 export declare class SurfaceCollisionPolygon extends SurfaceCollision {
     coordinates: {
         x: number;
         y: number;
     }[];
-    constructor(name?: string, type?: string, coordinates?: {
+    constructor(name: string, coordinates: {
         x: number;
         y: number;
     }[]);

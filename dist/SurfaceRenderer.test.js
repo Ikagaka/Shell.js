@@ -4,420 +4,317 @@
  * HTMLCanvasElement もこの層で抽象化する
  */
 "use strict";
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 var ST = require("./SurfaceTree");
 var SU = require("./SurfaceUtil");
-
-var SurfaceCanvas = function SurfaceCanvas(cnv) {
-    _classCallCheck(this, SurfaceCanvas);
-
-    this.cnv = cnv;
-    this.basePosX = 0;
-    this.basePosY = 0;
-    this.baseWidth = cnv.width;
-    this.baseHeight = cnv.height;
-};
-
+var SurfaceCanvas = (function () {
+    function SurfaceCanvas(cnv) {
+        this.cnv = cnv;
+        this.basePosX = 0;
+        this.basePosY = 0;
+        this.baseWidth = cnv.width;
+        this.baseHeight = cnv.height;
+    }
+    return SurfaceCanvas;
+}());
 exports.SurfaceCanvas = SurfaceCanvas;
-
-var SurfaceRenderer = function (_SurfaceCanvas) {
-    _inherits(SurfaceRenderer, _SurfaceCanvas);
-
+var SurfaceRenderer = (function (_super) {
+    __extends(SurfaceRenderer, _super);
     // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
     // nullならば1x1のCanvasをベースサーフェスとする。
     // 渡されたSurfaceCanvasは変更しない。
     function SurfaceRenderer() {
-        _classCallCheck(this, SurfaceRenderer);
-
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceRenderer).call(this, SU.createCanvas()));
-
-        _this.ctx = _this.cnv.getContext("2d");
-        _this.tmpcnv = SU.createCanvas();
-        _this.tmpctx = _this.tmpcnv.getContext("2d");
-        _this.use_self_alpha = false;
-        _this.debug = false;
-        return _this;
+        _super.call(this, SU.createCanvas());
+        this.ctx = this.cnv.getContext("2d");
+        this.tmpcnv = SU.createCanvas();
+        this.tmpctx = this.tmpcnv.getContext("2d");
+        this.use_self_alpha = false;
+        this.debug = false;
     }
-
-    _createClass(SurfaceRenderer, [{
-        key: "init",
-        value: function init(srfCnv) {
-            // this を srfCnv の値で置き換え
-            this.base(srfCnv);
-            this.basePosX = srfCnv.basePosX;
-            this.basePosY = srfCnv.basePosY;
-            this.baseWidth = srfCnv.baseWidth;
-            this.baseHeight = srfCnv.baseHeight;
-        }
-        // バッファを使いまわすためのリセット
-        // clearは短形を保つがリセットは1x1になる
-
-    }, {
-        key: "reset",
-        value: function reset() {
-            // reshapeの機会を減らすため大きさはそのままにする
-            this.ctx.canvas.width = this.ctx.canvas.width;
-            this.tmpctx.canvas.width = this.tmpctx.canvas.width;
-            this.basePosX = 0;
-            this.basePosY = 0;
-            this.baseWidth = 0;
-            this.baseHeight = 0;
-        }
-    }, {
-        key: "clear",
-        value: function clear() {
-            this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-        }
-        // [
-        //  {canvas: srfCnv1, type: "base",    x: 0,  y: 0}
-        //  {canvas: srfCnv2, type: "overlay", x: 50, y: 50}
-        // ]
-
-    }, {
-        key: "composeElements",
-        value: function composeElements(elms) {
-            var _this2 = this;
-
-            // baseを決定
-            var bases = elms.filter(function (_ref) {
-                var type = _ref.type;
-                return type === "base";
-            });
-            var others = elms.filter(function (_ref2) {
-                var type = _ref2.type;
-                return type !== "base";
-            });
-            // element[MAX].base > element0 > element[MIN]
-            var base = bases.slice(-1)[0]; /* last */
-            if (!(base instanceof ST.SurfaceElement)) {
-                // element[MIN]
-                // elms.length > 0なのでundefinedにはならない…はず。
-                // お前がbaseになるんだよ
-                base = elms.shift();
-                console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
-                if (base == null) {
-                    console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
-                    return this;
-                }
-            }
-            this.base(base.canvas);
-            others.forEach(function (_ref3) {
-                var canvas = _ref3.canvas;
-                var type = _ref3.type;
-                var x = _ref3.x;
-                var y = _ref3.y;
-
-                _this2.composeElement(canvas, type, x, y);
-            });
-            return this;
-        }
-    }, {
-        key: "composeElement",
-        value: function composeElement(canvas, type) {
-            var x = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-            var y = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-
-            switch (type) {
-                case "overlay":
-                    this.overlay(canvas, x, y);
-                    break;
-                case "overlayfast":
-                    this.overlayfast(canvas, x, y);
-                    break;
-                case "replace":
-                    this.replace(canvas, x, y);
-                    break;
-                case "interpolate":
-                    this.interpolate(canvas, x, y);
-                    break;
-                case "reduce":
-                    this.reduce(canvas, x, y);
-                    break;
-                default:
-                    console.warn("SurfaceRenderer#composeElement:", "unkown compose method", canvas, type, x, y);
+    SurfaceRenderer.prototype.init = function (srfCnv) {
+        // this を srfCnv の値で置き換え
+        this.base(srfCnv);
+        this.basePosX = srfCnv.basePosX;
+        this.basePosY = srfCnv.basePosY;
+        this.baseWidth = srfCnv.baseWidth;
+        this.baseHeight = srfCnv.baseHeight;
+    };
+    // バッファを使いまわすためのリセット
+    // clearは短形を保つがリセットは1x1になる
+    SurfaceRenderer.prototype.reset = function () {
+        // reshapeの機会を減らすため大きさはそのままにする
+        this.ctx.canvas.width = this.ctx.canvas.width;
+        this.tmpctx.canvas.width = this.tmpctx.canvas.width;
+        this.basePosX = 0;
+        this.basePosY = 0;
+        this.baseWidth = 0;
+        this.baseHeight = 0;
+    };
+    SurfaceRenderer.prototype.clear = function () {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    };
+    // [
+    //  {canvas: srfCnv1, type: "base",    x: 0,  y: 0}
+    //  {canvas: srfCnv2, type: "overlay", x: 50, y: 50}
+    // ]
+    SurfaceRenderer.prototype.composeElements = function (elms) {
+        var _this = this;
+        // baseを決定
+        var bases = elms.filter(function (_a) {
+            var type = _a.type;
+            return type === "base";
+        });
+        var others = elms.filter(function (_a) {
+            var type = _a.type;
+            return type !== "base";
+        });
+        // element[MAX].base > element0 > element[MIN]
+        var base = bases.slice(-1)[0]; /* last */
+        if (!(base instanceof ST.SurfaceElement)) {
+            // element[MIN]
+            // elms.length > 0なのでundefinedにはならない…はず。
+            // お前がbaseになるんだよ
+            base = elms.shift();
+            console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
+            if (base == null) {
+                console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
+                return this;
             }
         }
-        //下位レイヤをコマで完全に置き換える。collisionもコマのサーフェスに定義されたものに更新される。
-        //このメソッドのパターンを重ねると、サーフェス全面を描画し直すことによるアニメーション（いわばパラパラ漫画）が実現される。
-        //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
-        //着せ替え・elementでも使用できる。
-
-    }, {
-        key: "base",
-        value: function base(part) {
-            //this.reset();
-            this.cnv.width = part.cnv.width;
-            this.cnv.height = part.cnv.height;
-            this.ctx.globalCompositeOperation = "source-over";
-            this.ctx.drawImage(part.cnv, 0, 0);
+        this.base(base.canvas);
+        others.forEach(function (_a) {
+            var canvas = _a.canvas, type = _a.type, x = _a.x, y = _a.y;
+            _this.composeElement(canvas, type, x, y);
+        });
+        return this;
+    };
+    SurfaceRenderer.prototype.composeElement = function (canvas, type, x, y) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        switch (type) {
+            case "overlay":
+                this.overlay(canvas, x, y);
+                break;
+            case "overlayfast":
+                this.overlayfast(canvas, x, y);
+                break;
+            case "replace":
+                this.replace(canvas, x, y);
+                break;
+            case "interpolate":
+                this.interpolate(canvas, x, y);
+                break;
+            case "reduce":
+                this.reduce(canvas, x, y);
+                break;
+            default:
+                console.warn("SurfaceRenderer#composeElement:", "unkown compose method", canvas, type, x, y);
         }
-        //下位レイヤにコマを重ねる。
-        //着せ替え・elementでも使用できる。
-
-    }, {
-        key: "overlay",
-        value: function overlay(part, x, y) {
-            this.prepareOverlay(part, x, y);
-            this.ctx.globalCompositeOperation = "source-over";
-            this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
+    };
+    //下位レイヤをコマで完全に置き換える。collisionもコマのサーフェスに定義されたものに更新される。
+    //このメソッドのパターンを重ねると、サーフェス全面を描画し直すことによるアニメーション（いわばパラパラ漫画）が実現される。
+    //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
+    //着せ替え・elementでも使用できる。
+    SurfaceRenderer.prototype.base = function (part) {
+        //this.reset();
+        this.cnv.width = part.cnv.width;
+        this.cnv.height = part.cnv.height;
+        this.ctx.globalCompositeOperation = "source-over";
+        this.ctx.drawImage(part.cnv, 0, 0);
+    };
+    //下位レイヤにコマを重ねる。
+    //着せ替え・elementでも使用できる。
+    SurfaceRenderer.prototype.overlay = function (part, x, y) {
+        this.prepareOverlay(part, x, y);
+        this.ctx.globalCompositeOperation = "source-over";
+        this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
+    };
+    //下位レイヤの非透過部分（半透明含む）にのみコマを重ねる。
+    //着せ替え・elementでも使用できる。
+    SurfaceRenderer.prototype.overlayfast = function (part, x, y) {
+        this.prepareOverlay(part, x, y);
+        this.ctx.globalCompositeOperation = "source-atop";
+        this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
+    };
+    //下位レイヤの透明なところにのみコマを重ねる。
+    //下位レイヤの半透明部分に対しても、透明度が高い部分ほど強くコマを合成する。
+    //interpolateで重なる部分はベースより上位（手前）側になければならない
+    //（interpolateのコマが描画している部分に、上位のレイヤで不透明な部分が重なると反映されなくなる）。
+    //着せ替え・elementでも使用できる。
+    SurfaceRenderer.prototype.interpolate = function (part, x, y) {
+        this.prepareOverlay(part, x, y);
+        this.ctx.globalCompositeOperation = "destination-over";
+        this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
+    };
+    //下位レイヤにコマを重ねるが、コマの透過部分について下位レイヤにも反映する（reduce + overlayに近い）。
+    //着せ替え・elementでも使用できる。
+    SurfaceRenderer.prototype.replace = function (part, x, y) {
+        this.prepareOverlay(part, x, y);
+        this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv.width, part.cnv.height);
+        this.overlay(part, x, y);
+    };
+    SurfaceRenderer.prototype.prepareOverlay = function (part, x, y) {
+        // パーツがはみだす量
+        // もし負なら左へはみ出した量
+        var left = this.basePosX + x;
+        // もし負なら右へはみ出した量
+        var right = this.cnv.width - ((this.basePosX + x) + part.cnv.width);
+        // もし負なら上へはみ出した量
+        var top = this.basePosY + y;
+        // もし負なら↓へはみ出した量
+        var bottom = this.cnv.height - ((this.basePosY + y) + part.cnv.height);
+        if (left < 0 || right < 0 || top < 0 || bottom < 0) {
+            // はみ出し発生
+            var offsetX = 0; // ずれた量
+            var offsetY = 0;
+            console.info("SurfaceRenderer#prepareOverlay: reshape occured");
+            // 現状をtmpcnvへコピー
+            SU.fastcopy(this.cnv, this.tmpctx);
+            if (left < 0) {
+                offsetX = (-left);
+                this.cnv.width += (-left); // reshape
+                this.basePosX += (-left);
+            }
+            if (right < 0) {
+                this.cnv.width += (-right); // reshape
+            }
+            if (top < 0) {
+                offsetY = (-top);
+                this.cnv.height += (-top); // reshape
+                this.basePosY += (-top);
+            }
+            if (bottom < 0) {
+                this.cnv.height += (-bottom); // reshape
+            }
+            if (this.debug) {
+                // 基準点描画
+                this.ctx.fillStyle = "lime";
+                this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
+            }
+            this.ctx.drawImage(this.tmpctx.canvas, offsetX, offsetY); //下位レイヤ再描画
         }
-        //下位レイヤの非透過部分（半透明含む）にのみコマを重ねる。
-        //着せ替え・elementでも使用できる。
-
-    }, {
-        key: "overlayfast",
-        value: function overlayfast(part, x, y) {
-            this.prepareOverlay(part, x, y);
-            this.ctx.globalCompositeOperation = "source-atop";
-            this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
-        }
-        //下位レイヤの透明なところにのみコマを重ねる。
-        //下位レイヤの半透明部分に対しても、透明度が高い部分ほど強くコマを合成する。
-        //interpolateで重なる部分はベースより上位（手前）側になければならない
-        //（interpolateのコマが描画している部分に、上位のレイヤで不透明な部分が重なると反映されなくなる）。
-        //着せ替え・elementでも使用できる。
-
-    }, {
-        key: "interpolate",
-        value: function interpolate(part, x, y) {
-            this.prepareOverlay(part, x, y);
-            this.ctx.globalCompositeOperation = "destination-over";
-            this.ctx.drawImage(part.cnv, this.basePosX + x, this.basePosY + y);
-        }
-        //下位レイヤにコマを重ねるが、コマの透過部分について下位レイヤにも反映する（reduce + overlayに近い）。
-        //着せ替え・elementでも使用できる。
-
-    }, {
-        key: "replace",
-        value: function replace(part, x, y) {
-            this.prepareOverlay(part, x, y);
-            this.ctx.clearRect(this.basePosX + x, this.basePosY + y, part.cnv.width, part.cnv.height);
-            this.overlay(part, x, y);
-        }
-    }, {
-        key: "prepareOverlay",
-        value: function prepareOverlay(part, x, y) {
-            // パーツがはみだす量
-            // もし負なら左へはみ出した量
-            var left = this.basePosX + x;
-            // もし負なら右へはみ出した量
-            var right = this.cnv.width - (this.basePosX + x + part.cnv.width);
-            // もし負なら上へはみ出した量
-            var top = this.basePosY + y;
-            // もし負なら↓へはみ出した量
-            var bottom = this.cnv.height - (this.basePosY + y + part.cnv.height);
-            if (left < 0 || right < 0 || top < 0 || bottom < 0) {
-                // はみ出し発生
-                var offsetX = 0; // ずれた量
-                var offsetY = 0;
-                console.info("SurfaceRenderer#prepareOverlay: reshape occured");
-                // 現状をtmpcnvへコピー
-                SU.fastcopy(this.cnv, this.tmpctx);
-                if (left < 0) {
-                    offsetX = -left;
-                    this.cnv.width += -left; // reshape
-                    this.basePosX += -left;
-                }
-                if (right < 0) {
-                    this.cnv.width += -right; // reshape
-                }
-                if (top < 0) {
-                    offsetY = -top;
-                    this.cnv.height += -top; // reshape
-                    this.basePosY += -top;
-                }
-                if (bottom < 0) {
-                    this.cnv.height += -bottom; // reshape
-                }
-                if (this.debug) {
-                    // 基準点描画
-                    this.ctx.fillStyle = "lime";
-                    this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
-                }
-                this.ctx.drawImage(this.tmpctx.canvas, offsetX, offsetY); //下位レイヤ再描画
+    };
+    //下位レイヤの抜き色による透過領域に、そのコマの抜き色による透過領域を追加する。コマの抜き色で無い部分は無視される。
+    //着せ替え用に用意されたメソッドだが、着せ替えでないアニメーション・elementでも使用可能。
+    //http://usada.sakura.vg/contents/seriko.html
+    SurfaceRenderer.prototype.reduce = function (part, x, y) {
+        // はみ出しちぇっく prepareOverlay はしない
+        var width = x + part.cnv.width < this.cnv.width ? part.cnv.width : this.cnv.width - x;
+        var height = y + part.cnv.height < this.cnv.height ? part.cnv.height : this.cnv.height - y;
+        var imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
+        var dataA = imgdataA.data;
+        // partの透明領域までアクセスする必要がある
+        var ctxB = part.cnv.getContext("2d");
+        var imgdataB = ctxB.getImageData(0, 0, part.cnv.width, part.cnv.height);
+        var dataB = imgdataB.data;
+        for (var _y = 0; _y < height; _y++) {
+            for (var _x = 0; _x < width; _x++) {
+                var iA = (x + _x) * 4 + (y + _y) * this.cnv.width * 4; // baseのxy座標とインデックス
+                var iB = (_x) * 4 + (_y) * part.cnv.width * 4; // partのxy座標とインデックス
+                // もしコマが透過ならpartのalphaチャネルでbaseのを上書き
+                if (dataB[iB + 3] === 0)
+                    dataA[iA + 3] = dataB[iB + 3];
             }
         }
-        //下位レイヤの抜き色による透過領域に、そのコマの抜き色による透過領域を追加する。コマの抜き色で無い部分は無視される。
-        //着せ替え用に用意されたメソッドだが、着せ替えでないアニメーション・elementでも使用可能。
-        //http://usada.sakura.vg/contents/seriko.html
-
-    }, {
-        key: "reduce",
-        value: function reduce(part, x, y) {
-            // はみ出しちぇっく prepareOverlay はしない
-            var width = x + part.cnv.width < this.cnv.width ? part.cnv.width : this.cnv.width - x;
-            var height = y + part.cnv.height < this.cnv.height ? part.cnv.height : this.cnv.height - y;
-            var imgdataA = this.ctx.getImageData(0, 0, this.cnv.width, this.cnv.height);
-            var dataA = imgdataA.data;
-            // partの透明領域までアクセスする必要がある
-            var ctxB = part.cnv.getContext("2d");
-            var imgdataB = ctxB.getImageData(0, 0, part.cnv.width, part.cnv.height);
-            var dataB = imgdataB.data;
-            for (var _y = 0; _y < height; _y++) {
-                for (var _x = 0; _x < width; _x++) {
-                    var iA = (x + _x) * 4 + (y + _y) * this.cnv.width * 4; // baseのxy座標とインデックス
-                    var iB = _x * 4 + _y * part.cnv.width * 4; // partのxy座標とインデックス
-                    // もしコマが透過ならpartのalphaチャネルでbaseのを上書き
-                    if (dataB[iB + 3] === 0) dataA[iA + 3] = dataB[iB + 3];
+        this.ctx.putImageData(imgdataA, 0, 0);
+    };
+    SurfaceRenderer.prototype.drawRegions = function (regions, description) {
+        var _this = this;
+        if (description === void 0) { description = "notitle"; }
+        this.ctx.font = "35px";
+        this.ctx.lineWidth = 4;
+        this.ctx.strokeStyle = "white";
+        this.ctx.strokeText(description, 5, 10);
+        this.ctx.fillStyle = "black";
+        this.ctx.fillText(description, 5, 10); // surfaceIdを描画
+        regions.forEach(function (col) {
+            _this.drawRegion(col);
+        });
+    };
+    SurfaceRenderer.prototype.drawRegion = function (region) {
+        var _a = region.type, type = _a === void 0 ? "" : _a, _b = region.name, name = _b === void 0 ? "" : _b;
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = "#00FF00";
+        var left = 0, top = 0, right = 0, bottom = 0;
+        switch (type) {
+            case "rect":
+                var _c = region, _d = _c.left, left = _d === void 0 ? 0 : _d, _e = _c.top, top = _e === void 0 ? 0 : _e, _f = _c.right, right = _f === void 0 ? 0 : _f, _g = _c.bottom, bottom = _g === void 0 ? 0 : _g;
+                left += this.basePosX;
+                top += this.basePosY;
+                right += this.basePosX;
+                bottom += this.basePosY;
+                this.ctx.beginPath();
+                this.ctx.rect(left, top, right - left, bottom - top);
+                this.ctx.stroke();
+                break;
+            case "ellipse":
+                var _h = region, _j = _h.left, left = _j === void 0 ? 0 : _j, _k = _h.top, top = _k === void 0 ? 0 : _k, _l = _h.right, right = _l === void 0 ? 0 : _l, _m = _h.bottom, bottom = _m === void 0 ? 0 : _m;
+                left += this.basePosX;
+                top += this.basePosY;
+                right += this.basePosX;
+                bottom += this.basePosY;
+                // 実はctx.ellipseはfirefox対応してない
+                this.drawEllipseWithBezier(left, top, right - left, bottom - top);
+                break;
+            case "circle":
+                var _o = region, _p = _o.radius, radius = _p === void 0 ? 0 : _p, _q = _o.centerX, centerX = _q === void 0 ? 0 : _q, _r = _o.centerY, centerY = _r === void 0 ? 0 : _r;
+                centerX += this.basePosX;
+                centerY += this.basePosY;
+                left = centerX;
+                top = centerY;
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, true);
+                this.ctx.stroke();
+                break;
+            case "polygon":
+                var _s = region.coordinates, coordinates = _s === void 0 ? [] : _s;
+                if (coordinates.length <= 0)
+                    break;
+                this.ctx.beginPath();
+                var _t = coordinates[0], startX = _t.x, startY = _t.y;
+                left = startX;
+                top = startY;
+                this.ctx.moveTo(startX, startY);
+                for (var i = 1; i < coordinates.length; i++) {
+                    var _u = coordinates[i], x = _u.x, y = _u.y;
+                    this.ctx.lineTo(x, y);
                 }
-            }
-            this.ctx.putImageData(imgdataA, 0, 0);
+                this.ctx.lineTo(startX, startY);
+                this.ctx.stroke();
+                break;
+            default:
+                console.warn("SurfaceRenderer#drawRegion", "unkown collision shape:", region);
+                break;
         }
-    }, {
-        key: "drawRegions",
-        value: function drawRegions(regions) {
-            var _this3 = this;
-
-            var description = arguments.length <= 1 || arguments[1] === undefined ? "notitle" : arguments[1];
-
-            this.ctx.font = "35px";
-            this.ctx.lineWidth = 4;
-            this.ctx.strokeStyle = "white";
-            this.ctx.strokeText(description, 5, 10);
-            this.ctx.fillStyle = "black";
-            this.ctx.fillText(description, 5, 10); // surfaceIdを描画
-            regions.forEach(function (col) {
-                _this3.drawRegion(col);
-            });
-        }
-    }, {
-        key: "drawRegion",
-        value: function drawRegion(region) {
-            var _region$type = region.type;
-            var type = _region$type === undefined ? "" : _region$type;
-            var _region$name = region.name;
-            var name = _region$name === undefined ? "" : _region$name;
-
-            this.ctx.lineWidth = 1;
-            this.ctx.strokeStyle = "#00FF00";
-            var left = 0,
-                top = 0,
-                right = 0,
-                bottom = 0;
-            switch (type) {
-                case "rect":
-                    var _region$left = region.left;
-                    var left = _region$left === undefined ? 0 : _region$left;
-                    var _region$top = region.top;
-                    var top = _region$top === undefined ? 0 : _region$top;
-                    var _region$right = region.right;
-                    var right = _region$right === undefined ? 0 : _region$right;
-                    var _region$bottom = region.bottom;
-                    var bottom = _region$bottom === undefined ? 0 : _region$bottom;
-
-                    left += this.basePosX;
-                    top += this.basePosY;
-                    right += this.basePosX;
-                    bottom += this.basePosY;
-                    this.ctx.beginPath();
-                    this.ctx.rect(left, top, right - left, bottom - top);
-                    this.ctx.stroke();
-                    break;
-                case "ellipse":
-                    var _region$left2 = region.left;
-                    var left = _region$left2 === undefined ? 0 : _region$left2;
-                    var _region$top2 = region.top;
-                    var top = _region$top2 === undefined ? 0 : _region$top2;
-                    var _region$right2 = region.right;
-                    var right = _region$right2 === undefined ? 0 : _region$right2;
-                    var _region$bottom2 = region.bottom;
-                    var bottom = _region$bottom2 === undefined ? 0 : _region$bottom2;
-
-                    left += this.basePosX;
-                    top += this.basePosY;
-                    right += this.basePosX;
-                    bottom += this.basePosY;
-                    // 実はctx.ellipseはfirefox対応してない
-                    this.drawEllipseWithBezier(left, top, right - left, bottom - top);
-                    break;
-                case "circle":
-                    var _region$radius = region.radius;
-                    var radius = _region$radius === undefined ? 0 : _region$radius;
-                    var _region$centerX = region.centerX;
-                    var centerX = _region$centerX === undefined ? 0 : _region$centerX;
-                    var _region$centerY = region.centerY;
-                    var centerY = _region$centerY === undefined ? 0 : _region$centerY;
-
-                    centerX += this.basePosX;
-                    centerY += this.basePosY;
-                    left = centerX;
-                    top = centerY;
-                    this.ctx.beginPath();
-                    this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, true);
-                    this.ctx.stroke();
-                    break;
-                case "polygon":
-                    var _region$coordinates = region.coordinates;
-                    var coordinates = _region$coordinates === undefined ? [] : _region$coordinates;
-
-                    if (coordinates.length <= 0) break;
-                    this.ctx.beginPath();
-                    var _coordinates$ = coordinates[0];
-                    var startX = _coordinates$.x;
-                    var startY = _coordinates$.y;
-
-                    left = startX;
-                    top = startY;
-                    this.ctx.moveTo(startX, startY);
-                    for (var i = 1; i < coordinates.length; i++) {
-                        var _coordinates$i = coordinates[i];
-                        var x = _coordinates$i.x;
-                        var y = _coordinates$i.y;
-
-                        this.ctx.lineTo(x, y);
-                    }
-                    this.ctx.lineTo(startX, startY);
-                    this.ctx.stroke();
-                    break;
-                default:
-                    console.warn("SurfaceRenderer#drawRegion", "unkown collision shape:", region);
-                    break;
-            }
-            this.ctx.font = "35px";
-            this.ctx.lineWidth = 4;
-            this.ctx.strokeStyle = "white";
-            this.ctx.strokeText(type + ":" + name, left + 5, top + 10);
-            this.ctx.fillStyle = "black";
-            this.ctx.fillText(type + ":" + name, left + 5, top + 10);
-        }
-        // ctx.ellipseは非標準
-
-    }, {
-        key: "drawEllipseWithBezier",
-        value: function drawEllipseWithBezier(x, y, w, h) {
-            var kappa = .5522848,
-                ox = w / 2 * kappa,
-                // control point offset horizontal
-            oy = h / 2 * kappa,
-                // control point offset vertical
-            xe = x + w,
-                // x-end
-            ye = y + h,
-                // y-end
-            xm = x + w / 2,
-                // x-middle
-            ym = y + h / 2; // y-middle
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, ym);
-            this.ctx.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
-            this.ctx.bezierCurveTo(xm + ox, y, xe, ym - oy, xe, ym);
-            this.ctx.bezierCurveTo(xe, ym + oy, xm + ox, ye, xm, ye);
-            this.ctx.bezierCurveTo(xm - ox, ye, x, ym + oy, x, ym);
-            this.ctx.stroke();
-        }
-    }]);
-
+        this.ctx.font = "35px";
+        this.ctx.lineWidth = 4;
+        this.ctx.strokeStyle = "white";
+        this.ctx.strokeText(type + ":" + name, left + 5, top + 10);
+        this.ctx.fillStyle = "black";
+        this.ctx.fillText(type + ":" + name, left + 5, top + 10);
+    };
+    // ctx.ellipseは非標準
+    SurfaceRenderer.prototype.drawEllipseWithBezier = function (x, y, w, h) {
+        var kappa = .5522848, ox = (w / 2) * kappa, // control point offset horizontal
+        oy = (h / 2) * kappa, // control point offset vertical
+        xe = x + w, // x-end
+        ye = y + h, // y-end
+        xm = x + w / 2, // x-middle
+        ym = y + h / 2; // y-middle
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, ym);
+        this.ctx.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
+        this.ctx.bezierCurveTo(xm + ox, y, xe, ym - oy, xe, ym);
+        this.ctx.bezierCurveTo(xe, ym + oy, xm + ox, ye, xm, ye);
+        this.ctx.bezierCurveTo(xm - ox, ye, x, ym + oy, x, ym);
+        this.ctx.stroke();
+    };
     return SurfaceRenderer;
-}(SurfaceCanvas);
-
+}(SurfaceCanvas));
 exports.SurfaceRenderer = SurfaceRenderer;
 function isHit(srfCnv, cols, x, y) {
     var transparency = SU.isHit(this.cnv, x, y);
@@ -435,340 +332,219 @@ function copy(srfCnv) {
     return srfCnv2;
 }
 exports.copy = copy;
+
 },{"./SurfaceTree":2,"./SurfaceUtil":3}],2:[function(require,module,exports){
 /*
  * surfaces.txt の内容を構造化したもの
  */
 "use strict";
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var SurfaceDefinitionTree =
-//regions: { [scopeID: number]: {[regionName: string]: ToolTipElement}; }; // 謎
-function SurfaceDefinitionTree() {
-    var descript = arguments.length <= 0 || arguments[0] === undefined ? new SurfaceDescript() : arguments[0];
-    var surfaces = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-    var aliases = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-
-    _classCallCheck(this, SurfaceDefinitionTree);
-
-    this.descript = descript;
-    this.surfaces = surfaces;
-    this.aliases = aliases;
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-
+var SurfaceDefinitionTree = (function () {
+    //regions: { [scopeID: number]: {[regionName: string]: ToolTipElement}; }; // 謎
+    function SurfaceDefinitionTree(descript, surfaces, aliases) {
+        if (descript === void 0) { descript = new SurfaceDescript(); }
+        if (surfaces === void 0) { surfaces = []; }
+        if (aliases === void 0) { aliases = []; }
+        this.descript = descript;
+        this.surfaces = surfaces;
+        this.aliases = aliases;
+    }
+    return SurfaceDefinitionTree;
+}());
 exports.SurfaceDefinitionTree = SurfaceDefinitionTree;
-
-var SurfaceDescript = function SurfaceDescript() {
-    var collisionSort = arguments.length <= 0 || arguments[0] === undefined ? "ascend" : arguments[0];
-    var animationSort = arguments.length <= 1 || arguments[1] === undefined ? "ascend" : arguments[1];
-
-    _classCallCheck(this, SurfaceDescript);
-
-    this.collisionSort = collisionSort;
-    this.animationSort = animationSort;
-};
-
+var SurfaceDescript = (function () {
+    function SurfaceDescript(collisionSort, animationSort) {
+        if (collisionSort === void 0) { collisionSort = "ascend"; }
+        if (animationSort === void 0) { animationSort = "ascend"; }
+        this.collisionSort = collisionSort;
+        this.animationSort = animationSort;
+    }
+    return SurfaceDescript;
+}());
 exports.SurfaceDescript = SurfaceDescript;
-
-var SurfaceDefinition = function SurfaceDefinition() {
-    var elements = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
-    var collisions = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-    var animations = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-    var balloons = arguments.length <= 3 || arguments[3] === undefined ? { char: [], offsetX: 0, offsetY: 0 } : arguments[3];
-    var points = arguments.length <= 4 || arguments[4] === undefined ? { basepos: { x: 0, y: 0 } } : arguments[4];
-
-    _classCallCheck(this, SurfaceDefinition);
-
-    this.elements = elements;
-    this.collisions = collisions;
-    this.animations = animations;
-    this.points = points;
-    this.balloons = balloons;
-};
-
+var SurfaceDefinition = (function () {
+    function SurfaceDefinition(elements, collisions, animations, balloons, points) {
+        if (elements === void 0) { elements = []; }
+        if (collisions === void 0) { collisions = []; }
+        if (animations === void 0) { animations = []; }
+        if (balloons === void 0) { balloons = { char: [], offsetX: 0, offsetY: 0 }; }
+        if (points === void 0) { points = { basepos: { x: 0, y: 0 }
+        }; }
+        this.elements = elements;
+        this.collisions = collisions;
+        this.animations = animations;
+        this.points = points;
+        this.balloons = balloons;
+    }
+    return SurfaceDefinition;
+}());
 exports.SurfaceDefinition = SurfaceDefinition;
-
-var SurfaceElement = function SurfaceElement() {
-    var type = arguments.length <= 0 || arguments[0] === undefined ? "overlay" : arguments[0];
-    var file = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-    var x = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-    var y = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-
-    _classCallCheck(this, SurfaceElement);
-
-    this.type = "overlay";
-    this.file = file;
-    this.x = x;
-    this.y = y;
-};
-
+var SurfaceElement = (function () {
+    function SurfaceElement(type, file, x, y) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        this.type = "overlay";
+        this.file = file;
+        this.x = x;
+        this.y = y;
+    }
+    return SurfaceElement;
+}());
 exports.SurfaceElement = SurfaceElement;
-
-var SurfaceCollision = function SurfaceCollision() {
-    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-    var type = arguments.length <= 1 || arguments[1] === undefined ? "rect" : arguments[1];
-
-    _classCallCheck(this, SurfaceCollision);
-
-    this.name = name;
-    this.type = type;
-};
-
+var SurfaceCollision = (function () {
+    function SurfaceCollision(type, name) {
+        this.name = name;
+        this.type = type;
+    }
+    return SurfaceCollision;
+}());
 exports.SurfaceCollision = SurfaceCollision;
-
-var SurfaceCollisionRect = function (_SurfaceCollision) {
-    _inherits(SurfaceCollisionRect, _SurfaceCollision);
-
-    function SurfaceCollisionRect() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "rect" : arguments[1];
-        var left = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-        var top = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-        var right = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-        var bottom = arguments.length <= 5 || arguments[5] === undefined ? 0 : arguments[5];
-
-        _classCallCheck(this, SurfaceCollisionRect);
-
-        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionRect).call(this, name, type));
-
-        _this.left = left;
-        _this.top = top;
-        _this.right = right;
-        _this.bottom = bottom;
-        return _this;
+var SurfaceCollisionRect = (function (_super) {
+    __extends(SurfaceCollisionRect, _super);
+    function SurfaceCollisionRect(name, left, top, right, bottom) {
+        _super.call(this, "rect", name);
+        this.left = left;
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
     }
-
     return SurfaceCollisionRect;
-}(SurfaceCollision);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionRect = SurfaceCollisionRect;
-
-var SurfaceCollisionEllipse = function (_SurfaceCollisionRect) {
-    _inherits(SurfaceCollisionEllipse, _SurfaceCollisionRect);
-
-    function SurfaceCollisionEllipse() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "ellipse" : arguments[1];
-        var top = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-        var bottom = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-        var left = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-        var right = arguments.length <= 5 || arguments[5] === undefined ? 0 : arguments[5];
-
-        _classCallCheck(this, SurfaceCollisionEllipse);
-
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionEllipse).call(this, name, type, bottom, top, left, right));
+var SurfaceCollisionEllipse = (function (_super) {
+    __extends(SurfaceCollisionEllipse, _super);
+    function SurfaceCollisionEllipse(name, left, top, right, bottom) {
+        _super.call(this, "ellipse", name);
+        this.left = left;
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
     }
-
     return SurfaceCollisionEllipse;
-}(SurfaceCollisionRect);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionEllipse = SurfaceCollisionEllipse;
-
-var SurfaceCollisionCircle = function (_SurfaceCollision2) {
-    _inherits(SurfaceCollisionCircle, _SurfaceCollision2);
-
-    function SurfaceCollisionCircle() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "circle" : arguments[1];
-        var centerX = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-        var centerY = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-        var radius = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-
-        _classCallCheck(this, SurfaceCollisionCircle);
-
-        var _this3 = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionCircle).call(this, name, type));
-
-        _this3.centerX = centerX;
-        _this3.centerY = centerY;
-        _this3.radius = radius;
-        return _this3;
+var SurfaceCollisionCircle = (function (_super) {
+    __extends(SurfaceCollisionCircle, _super);
+    function SurfaceCollisionCircle(name, centerX, centerY, radius) {
+        _super.call(this, "circle", name);
+        this.centerX = centerX;
+        this.centerY = centerY;
+        this.radius = radius;
     }
-
     return SurfaceCollisionCircle;
-}(SurfaceCollision);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionCircle = SurfaceCollisionCircle;
-
-var SurfaceCollisionPolygon = function (_SurfaceCollision3) {
-    _inherits(SurfaceCollisionPolygon, _SurfaceCollision3);
-
-    function SurfaceCollisionPolygon() {
-        var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-        var type = arguments.length <= 1 || arguments[1] === undefined ? "polygon" : arguments[1];
-        var coordinates = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-
-        _classCallCheck(this, SurfaceCollisionPolygon);
-
-        var _this4 = _possibleConstructorReturn(this, Object.getPrototypeOf(SurfaceCollisionPolygon).call(this, name, type));
-
-        _this4.coordinates = coordinates;
-        return _this4;
+var SurfaceCollisionPolygon = (function (_super) {
+    __extends(SurfaceCollisionPolygon, _super);
+    function SurfaceCollisionPolygon(name, coordinates) {
+        _super.call(this, "polygon", name);
+        this.coordinates = coordinates;
     }
-
     return SurfaceCollisionPolygon;
-}(SurfaceCollision);
-
+}(SurfaceCollision));
 exports.SurfaceCollisionPolygon = SurfaceCollisionPolygon;
-
-var SurfaceAnimation = function SurfaceAnimation() {
-    var intervals = arguments.length <= 0 || arguments[0] === undefined ? [["never", []]] : arguments[0];
-    var options = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-    var collisions = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
-    var patterns = arguments.length <= 3 || arguments[3] === undefined ? [] : arguments[3];
-
-    _classCallCheck(this, SurfaceAnimation);
-
-    this.intervals = intervals;
-    this.options = options;
-    this.collisions = collisions;
-    this.patterns = patterns;
-};
-
+var SurfaceAnimation = (function () {
+    function SurfaceAnimation(intervals, options, collisions, patterns) {
+        if (intervals === void 0) { intervals = [["never", []]]; }
+        if (options === void 0) { options = []; }
+        if (collisions === void 0) { collisions = []; }
+        if (patterns === void 0) { patterns = []; }
+        this.intervals = intervals;
+        this.options = options;
+        this.collisions = collisions;
+        this.patterns = patterns;
+    }
+    return SurfaceAnimation;
+}());
 exports.SurfaceAnimation = SurfaceAnimation;
-
-var SurfaceAnimationPattern = function SurfaceAnimationPattern() {
-    var type = arguments.length <= 0 || arguments[0] === undefined ? "ovelay" : arguments[0];
-    var surface = arguments.length <= 1 || arguments[1] === undefined ? -1 : arguments[1];
-    var wait = arguments.length <= 2 || arguments[2] === undefined ? [0, 0] : arguments[2];
-    var x = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-    var y = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
-    var animation_ids = arguments.length <= 5 || arguments[5] === undefined ? [] : arguments[5];
-
-    _classCallCheck(this, SurfaceAnimationPattern);
-
-    this.type = type;
-    this.surface = surface;
-    this.wait = wait;
-    this.x = x;
-    this.y = y;
-    this.animation_ids = animation_ids;
-};
-
+var SurfaceAnimationPattern = (function () {
+    function SurfaceAnimationPattern(type, surface, wait, x, y, animation_ids) {
+        if (type === void 0) { type = "ovelay"; }
+        if (surface === void 0) { surface = -1; }
+        if (wait === void 0) { wait = [0, 0]; }
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        if (animation_ids === void 0) { animation_ids = []; }
+        this.type = type;
+        this.surface = surface;
+        this.wait = wait;
+        this.x = x;
+        this.y = y;
+        this.animation_ids = animation_ids;
+    }
+    return SurfaceAnimationPattern;
+}());
 exports.SurfaceAnimationPattern = SurfaceAnimationPattern;
 function isBack(anim) {
-    return anim.options.some(function (_ref) {
-        var _ref2 = _slicedToArray(_ref, 2);
-
-        var opt = _ref2[0];
-        var args = _ref2[1];
+    return anim.options.some(function (_a) {
+        var opt = _a[0], args = _a[1];
         return opt === "background";
     });
 }
 exports.isBack = isBack;
 function getExclusives(anim) {
-    return anim.options.filter(function (_ref3) {
-        var _ref4 = _slicedToArray(_ref3, 2);
-
-        var opt = _ref4[0];
-        var args = _ref4[1];
+    return anim.options.filter(function (_a) {
+        var opt = _a[0], args = _a[1];
         return opt === "exclusive";
-    }).reduce(function (l, _ref5) {
-        var _ref6 = _slicedToArray(_ref5, 2);
-
-        var opt = _ref6[0];
-        var args = _ref6[1];
+    }).reduce(function (l, _a) {
+        var opt = _a[0], args = _a[1];
         return l.concat(args);
     }, []);
 }
 exports.getExclusives = getExclusives;
 function getRegion(collisions, offsetX, offsetY) {
-    var _this5 = this;
-
     // このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
     // collision設定されていれば name"hoge"
     // basepos 左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べる
     // offsetX: number, offsetY: number は basepos からの相対座標である必要がある、間違ってもcanvas左上からにしてはいけない 
+    var _this = this;
     var hitCols = collisions.filter(function (collision, colId) {
-        var type = collision.type;
-        var name = collision.name;
-        var left, top, right, bottom;
-        var left, top, right, bottom;
-
-        var _ret = function () {
-            switch (collision.type) {
-                case "rect":
-                    left = collision.left;
-                    top = collision.top;
-                    right = collision.right;
-                    bottom = collision.bottom;
-
-                    return {
-                        v: left < offsetX && offsetX < right && top < offsetY && offsetY < bottom || right < offsetX && offsetX < left && bottom < offsetX && offsetX < top
-                    };
-                case "ellipse":
-                    left = collision.left;
-                    top = collision.top;
-                    right = collision.right;
-                    bottom = collision.bottom;
-
-                    var width = Math.abs(right - left);
-                    var height = Math.abs(bottom - top);
-                    return {
-                        v: Math.pow((offsetX - (left + width / 2)) / (width / 2), 2) + Math.pow((offsetY - (top + height / 2)) / (height / 2), 2) < 1
-                    };
-                case "circle":
-                    var radius = collision.radius;
-                    var centerX = collision.centerX;
-                    var centerY = collision.centerY;
-
-                    return {
-                        v: Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1
-                    };
-                case "polygon":
-                    var coordinates = collision.coordinates;
-
-                    var ptC = { x: offsetX, y: offsetY };
-                    var tuples = coordinates.reduce(function (arr, _ref7, i) {
-                        var x = _ref7.x;
-                        var y = _ref7.y;
-
-                        arr.push([coordinates[i], !!coordinates[i + 1] ? coordinates[i + 1] : coordinates[0]]);
-                        return arr;
-                    }, []);
-                    // TODO: acos使わない奴に変える
-                    var deg = tuples.reduce(function (sum, _ref8) {
-                        var _ref9 = _slicedToArray(_ref8, 2);
-
-                        var ptA = _ref9[0];
-                        var ptB = _ref9[1];
-
-                        var vctA = [ptA.x - ptC.x, ptA.y - ptC.y];
-                        var vctB = [ptB.x - ptC.x, ptB.y - ptC.y];
-                        var dotP = vctA[0] * vctB[0] + vctA[1] * vctB[1];
-                        var absA = Math.sqrt(vctA.map(function (a) {
-                            return Math.pow(a, 2);
-                        }).reduce(function (a, b) {
-                            return a + b;
-                        }));
-                        var absB = Math.sqrt(vctB.map(function (a) {
-                            return Math.pow(a, 2);
-                        }).reduce(function (a, b) {
-                            return a + b;
-                        }));
-                        var rad = Math.acos(dotP / (absA * absB));
-                        return sum + rad;
-                    }, 0);
-                    return {
-                        v: deg / (2 * Math.PI) >= 1
-                    };
-                default:
-                    console.warn("SurfaceTree.getRegion: unkown collision type:", _this5.surfaceId, colId, name, collision);
-                    return {
-                        v: false
-                    };
-            }
-        }();
-
-        if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;
+        var type = collision.type, name = collision.name;
+        switch (collision.type) {
+            case "rect":
+                var _a = collision, left = _a.left, top = _a.top, right = _a.right, bottom = _a.bottom;
+                return (left < offsetX && offsetX < right && top < offsetY && offsetY < bottom) ||
+                    (right < offsetX && offsetX < left && bottom < offsetX && offsetX < top);
+            case "ellipse":
+                var _b = collision, left = _b.left, top = _b.top, right = _b.right, bottom = _b.bottom;
+                var width = Math.abs(right - left);
+                var height = Math.abs(bottom - top);
+                return Math.pow((offsetX - (left + width / 2)) / (width / 2), 2) +
+                    Math.pow((offsetY - (top + height / 2)) / (height / 2), 2) < 1;
+            case "circle":
+                var _c = collision, radius = _c.radius, centerX = _c.centerX, centerY = _c.centerY;
+                return Math.pow((offsetX - centerX) / radius, 2) + Math.pow((offsetY - centerY) / radius, 2) < 1;
+            case "polygon":
+                var coordinates_1 = collision.coordinates;
+                var ptC_1 = { x: offsetX, y: offsetY };
+                var tuples = coordinates_1.reduce((function (arr, _a, i) {
+                    var x = _a.x, y = _a.y;
+                    arr.push([
+                        coordinates_1[i],
+                        (!!coordinates_1[i + 1] ? coordinates_1[i + 1] : coordinates_1[0])
+                    ]);
+                    return arr;
+                }), []);
+                // TODO: acos使わない奴に変える
+                var deg = tuples.reduce((function (sum, _a) {
+                    var ptA = _a[0], ptB = _a[1];
+                    var vctA = [ptA.x - ptC_1.x, ptA.y - ptC_1.y];
+                    var vctB = [ptB.x - ptC_1.x, ptB.y - ptC_1.y];
+                    var dotP = vctA[0] * vctB[0] + vctA[1] * vctB[1];
+                    var absA = Math.sqrt(vctA.map(function (a) { return Math.pow(a, 2); }).reduce(function (a, b) { return a + b; }));
+                    var absB = Math.sqrt(vctB.map(function (a) { return Math.pow(a, 2); }).reduce(function (a, b) { return a + b; }));
+                    var rad = Math.acos(dotP / (absA * absB));
+                    return sum + rad;
+                }), 0);
+                return deg / (2 * Math.PI) >= 1;
+            default:
+                console.warn("SurfaceTree.getRegion: unkown collision type:", _this.surfaceId, colId, name, collision);
+                return false;
+        }
     });
     if (hitCols.length > 0) {
         return hitCols[hitCols.length - 1].name;
@@ -776,6 +552,7 @@ function getRegion(collisions, offsetX, offsetY) {
     return "";
 }
 exports.getRegion = getRegion;
+
 },{}],3:[function(require,module,exports){
 /*
  * 可用性・抽象度の高いコードスニペット集
@@ -783,15 +560,14 @@ exports.getRegion = getRegion;
  * 歴史的経緯と変更コストを鑑みてこのままにしている
  */
 "use strict";
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
-
 var Encoding = require("encoding-japanese");
 var $ = require("jquery");
 var deep = require("deep-diff");
-exports.diff = deep.diff;
+function diff(lhs, rhs, prefilter, acc) {
+    var ret = deep.diff(lhs, rhs, prefilter, acc);
+    return ret != null ? ret : [];
+}
+exports.diff = diff;
 exports.extend = $.extend;
 function chromakey(png) {
     var cnvA = copy(png);
@@ -823,10 +599,7 @@ function png_pna(png, pna) {
 }
 exports.png_pna = png_pna;
 function chromakey_snipet(data) {
-    var r = data[0],
-        g = data[1],
-        b = data[2],
-        a = data[3];
+    var r = data[0], g = data[1], b = data[2], a = data[3];
     var i = 0;
     if (a !== 0) {
         while (i < data.length) {
@@ -838,9 +611,8 @@ function chromakey_snipet(data) {
     }
 }
 exports.chromakey_snipet = chromakey_snipet;
-function log(element) {
-    var description = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-
+function log(element, description) {
+    if (description === void 0) { description = ""; }
     if (element instanceof HTMLCanvasElement || element instanceof HTMLImageElement) {
         description += "(" + element.width + "x" + element.height + ")";
     }
@@ -858,22 +630,14 @@ function parseDescript(text) {
     text = text.replace(/(?:\r\n|\r|\n)/g, "\n"); // CRLF->LF
     while (true) {
         var match = (/(?:(?:^|\s)\/\/.*)|^\s+?$/g.exec(text) || ["", ""])[0];
-        if (match.length === 0) break;
+        if (match.length === 0)
+            break;
         text = text.replace(match, "");
     }
     var lines = text.split("\n");
-    var _lines = lines.filter(function (line) {
-        return line.length !== 0;
-    }); // remove no content line
+    var _lines = lines.filter(function (line) { return line.length !== 0; }); // remove no content line
     var dic = _lines.reduce(function (dic, line) {
-        var _line$split = line.split(",");
-
-        var _line$split2 = _toArray(_line$split);
-
-        var key = _line$split2[0];
-
-        var vals = _line$split2.slice(1);
-
+        var _a = line.split(","), key = _a[0], vals = _a.slice(1);
         var _key = key.trim();
         var val = vals.join(",").trim();
         dic[_key] = val;
@@ -886,7 +650,7 @@ exports.parseDescript = parseDescript;
 function fetchArrayBuffer(url) {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
-        var warn = function warn(msg) {
+        var warn = function (msg) {
             console.warn("SurfaceUtil.fetchArrayBuffer: error", msg, xhr);
             reject(msg);
         };
@@ -894,10 +658,12 @@ function fetchArrayBuffer(url) {
             if (200 <= xhr.status && xhr.status < 300) {
                 if (xhr.response.error == null) {
                     resolve(xhr.response);
-                } else {
+                }
+                else {
                     warn(xhr.response.error.message);
                 }
-            } else {
+            }
+            else {
                 warn("" + xhr.status);
             }
         });
@@ -921,18 +687,18 @@ exports.convert = convert;
 // filename: in surface.txt, as ./surface0.png,　surface0.PNG, .\element\element0.PNG ...
 function find(paths, filename) {
     filename = filename.split("\\").join("/");
-    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    if (filename.slice(0, 2) === "./")
+        filename = filename.slice(2);
     var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
-    var hits = paths.filter(function (key) {
-        return reg.test(key);
-    });
+    var hits = paths.filter(function (key) { return reg.test(key); });
     return hits;
 }
 exports.find = find;
 // 検索打ち切って高速化
 function fastfind(paths, filename) {
     filename = filename.split("\\").join("/");
-    if (filename.slice(0, 2) === "./") filename = filename.slice(2);
+    if (filename.slice(0, 2) === "./")
+        filename = filename.slice(2);
     var reg = new RegExp("^" + filename.replace(".", "\.") + "$", "i");
     for (var i = 0; i < paths.length; i++) {
         if (reg.test(paths[i])) {
@@ -944,7 +710,7 @@ function fastfind(paths, filename) {
 exports.fastfind = fastfind;
 // [1,2,3] -> 1 or 2 or 3 as 33% probability
 function choice(arr) {
-    return arr[(Math.random() * 100 * arr.length | 0) % arr.length];
+    return arr[(Math.random() * 100 * (arr.length) | 0) % arr.length];
 }
 exports.choice = choice;
 // copy canvas as new object
@@ -994,37 +760,38 @@ function fetchImageFromURL(url) {
 exports.fetchImageFromURL = fetchImageFromURL;
 // random(func, n) means call func 1/n per sec
 function random(callback, probability) {
-    return setTimeout(function () {
-        function nextTick() {
-            random(callback, probability);
-        }
-        if (Math.random() < 1 / probability) callback(nextTick);else nextTick();
-    }, 1000);
+    return setTimeout((function () {
+        function nextTick() { random(callback, probability); }
+        if (Math.random() < 1 / probability)
+            callback(nextTick);
+        else
+            nextTick();
+    }), 1000);
 }
 exports.random = random;
 // cron
 function periodic(callback, sec) {
-    return setTimeout(function () {
+    return setTimeout((function () {
         return callback(function () {
             return periodic(callback, sec);
         });
-    }, sec * 1000);
+    }), sec * 1000);
 }
 exports.periodic = periodic;
 // 非同期ループするだけ
 function always(callback) {
-    return setTimeout(function () {
-        return callback(function () {
-            return always(callback);
-        });
-    }, 0);
+    return setTimeout((function () {
+        return callback(function () { return always(callback); });
+    }), 0);
 }
 exports.always = always;
 // canvasの座標のアルファチャンネルが不透明ならtrue
 function isHit(cnv, x, y) {
-    if (!(x > 0 && y > 0)) return false;
+    if (!(x > 0 && y > 0))
+        return false;
     // x,yが0以下だと DOMException: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source height is 0.
-    if (!(cnv.width > 0 || cnv.height > 0)) return false;
+    if (!(cnv.width > 0 || cnv.height > 0))
+        return false;
     var ctx = cnv.getContext("2d");
     var imgdata = ctx.getImageData(0, 0, x, y);
     var data = imgdata.data;
@@ -1041,25 +808,29 @@ function createCanvas() {
 exports.createCanvas = createCanvas;
 // 0 -> sakura
 function scope(scopeId) {
-    return scopeId === 0 ? "sakura" : scopeId === 1 ? "kero" : "char" + scopeId;
+    return scopeId === 0 ? "sakura"
+        : scopeId === 1 ? "kero"
+            : "char" + scopeId;
 }
 exports.scope = scope;
 // sakura -> 0
 // parse error -> -1
 function unscope(charId) {
-    return charId === "sakura" ? 0 : charId === "kero" ? 1 : Number((/^char(\d+)/.exec(charId) || ["", "-1"])[1]);
+    return charId === "sakura" ? 0
+        : charId === "kero" ? 1
+            : Number((/^char(\d+)/.exec(charId) || ["", "-1"])[1]);
 }
 exports.unscope = unscope;
 // JQueryEventObject からタッチ・マウスを正規化して座標値を抜き出す便利関数
 function getEventPosition(ev) {
     if (/^touch/.test(ev.type) && ev.originalEvent.touches.length > 0) {
-        var _pageX = ev.originalEvent.touches[0].pageX;
-        var _pageY = ev.originalEvent.touches[0].pageY;
-        var _clientX = ev.originalEvent.touches[0].clientX;
-        var _clientY = ev.originalEvent.touches[0].clientY;
-        var _screenX = ev.originalEvent.touches[0].screenX;
-        var _screenY = ev.originalEvent.touches[0].screenY;
-        return { pageX: _pageX, pageY: _pageY, clientX: _clientX, clientY: _clientY, screenX: _screenX, screenY: _screenY };
+        var pageX_1 = ev.originalEvent.touches[0].pageX;
+        var pageY_1 = ev.originalEvent.touches[0].pageY;
+        var clientX_1 = ev.originalEvent.touches[0].clientX;
+        var clientY_1 = ev.originalEvent.touches[0].clientY;
+        var screenX_1 = ev.originalEvent.touches[0].screenX;
+        var screenY_1 = ev.originalEvent.touches[0].screenY;
+        return { pageX: pageX_1, pageY: pageY_1, clientX: clientX_1, clientY: clientY_1, screenX: screenX_1, screenY: screenY_1 };
     }
     var pageX = ev.pageX;
     var pageY = ev.pageY;
@@ -1083,10 +854,7 @@ function getScrollXY() {
 }
 exports.getScrollXY = getScrollXY;
 function findSurfacesTxt(filepaths) {
-    return filepaths.filter(function (name) {
-        return (/^surfaces.*\.txt$|^alias\.txt$/i.test(name)
-        );
-    });
+    return filepaths.filter(function (name) { return /^surfaces.*\.txt$|^alias\.txt$/i.test(name); });
 }
 exports.findSurfacesTxt = findSurfacesTxt;
 function fetchArrayBufferFromURL(url) {
@@ -1096,10 +864,12 @@ function fetchArrayBufferFromURL(url) {
             if (200 <= xhr.status && xhr.status < 300) {
                 if (xhr.response.error == null) {
                     resolve(xhr.response);
-                } else {
+                }
+                else {
                     reject(new Error("message: " + xhr.response.error.message));
                 }
-            } else {
+            }
+            else {
                 reject(new Error("status: " + xhr.status));
             }
         });
@@ -1116,14 +886,7 @@ function decolateJSONizeDescript(o, key, value) {
     var props = key.split(".");
     for (var i = 0; i < props.length; i++) {
         var prop = props[i];
-
-        var _Array$prototype$slic = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1);
-
-        var _Array$prototype$slic2 = _slicedToArray(_Array$prototype$slic, 2);
-
-        var _prop = _Array$prototype$slic2[0];
-        var num = _Array$prototype$slic2[1];
-
+        var _a = Array.prototype.slice.call(/^([^\d]+)(\d+)?$/.exec(prop) || ["", "", ""], 1), _prop = _a[0], num = _a[1];
         var _num = Number(num);
         if (isFinite(_num)) {
             if (!Array.isArray(ptr[_prop])) {
@@ -1132,7 +895,8 @@ function decolateJSONizeDescript(o, key, value) {
             ptr[_prop][_num] = ptr[_prop][_num] || {};
             if (i !== props.length - 1) {
                 ptr = ptr[_prop][_num];
-            } else {
+            }
+            else {
                 if (ptr[_prop][_num] instanceof Object && Object.keys(ptr[_prop][_num]).length > 0) {
                     // descriptではまれに（というかmenu)だけjson化できない項目がある。形式は以下の通り。
                     // menu, 0 -> menu.value
@@ -1140,18 +904,22 @@ function decolateJSONizeDescript(o, key, value) {
                     // ヤケクソ気味にmenu=hogeをmenu.value=hogeとして扱っている
                     // このifはその例外への対処である
                     ptr[_prop][_num].value = Number(value) || value;
-                } else {
+                }
+                else {
                     ptr[_prop][_num] = Number(value) || value;
                 }
             }
-        } else {
+        }
+        else {
             ptr[_prop] = ptr[_prop] || {};
             if (i !== props.length - 1) {
                 ptr = ptr[_prop];
-            } else {
+            }
+            else {
                 if (ptr[_prop] instanceof Object && Object.keys(ptr[_prop]).length > 0) {
                     ptr[_prop].value = Number(value) || value;
-                } else {
+                }
+                else {
                     ptr[_prop] = Number(value) || value;
                 }
             }
@@ -1192,9 +960,8 @@ function setPictureFrame(element, description) {
     return;
 }
 exports.setPictureFrame = setPictureFrame;
-function craetePictureFrame(description) {
-    var target = arguments.length <= 1 || arguments[1] === undefined ? document.body : arguments[1];
-
+function craetePictureFrame(description, target) {
+    if (target === void 0) { target = document.body; }
     var fieldset = document.createElement('fieldset');
     var legend = document.createElement('legend');
     legend.appendChild(document.createTextNode(description));
@@ -1202,18 +969,19 @@ function craetePictureFrame(description) {
     fieldset.style.display = 'inline-block';
     target.appendChild(fieldset);
     fieldset.style.backgroundColor = "#D2E0E6";
-    var add = function add(element) {
-        var txt = arguments.length <= 1 || arguments[1] === undefined ? "" : arguments[1];
-
+    var add = function (element, txt) {
+        if (txt === void 0) { txt = ""; }
         if (element instanceof HTMLElement) {
             var frame = craetePictureFrame(txt, fieldset);
             frame.add(element);
-        } else if (typeof element === "string") {
+        }
+        else if (typeof element === "string") {
             var txtNode = document.createTextNode(element);
             var p = document.createElement("p");
             p.appendChild(txtNode);
             fieldset.appendChild(p);
-        } else {
+        }
+        else {
             fieldset.appendChild(element);
         }
     };
@@ -1226,6 +994,7 @@ function setCanvasStyle() {
     });
 }
 exports.setCanvasStyle = setCanvasStyle;
+
 },{"deep-diff":5,"encoding-japanese":6,"jquery":7}],4:[function(require,module,exports){
 'use strict';
 var SU = require('./SurfaceUtil');
@@ -1243,20 +1012,20 @@ QUnit.test('SR.SurfaceRenderer#clear', function (assert) {
         assert.ok(assert._expr(assert._capt(assert._capt(render, 'arguments/0/left') instanceof assert._capt(assert._capt(SR, 'arguments/0/right/object').SurfaceCanvas, 'arguments/0/right'), 'arguments/0'), {
             content: 'assert.ok(render instanceof SR.SurfaceCanvas)',
             filepath: 'es5/SurfaceRenderer.test.js',
-            line: 15
+            line: 12
         }));
         srfcnvs.forEach(function (srfcnv) {
             assert.ok(assert._expr(assert._capt(assert._capt(render, 'arguments/0/left') instanceof assert._capt(assert._capt(SR, 'arguments/0/right/object').SurfaceCanvas, 'arguments/0/right'), 'arguments/0'), {
                 content: 'assert.ok(render instanceof SR.SurfaceCanvas)',
                 filepath: 'es5/SurfaceRenderer.test.js',
-                line: 17
+                line: 14
             }));
             render.init(srfcnv);
             Object.keys(srfcnv).forEach(function (key) {
                 assert.ok(assert._expr(assert._capt(assert._capt(assert._capt(srfcnv, 'arguments/0/left/object')[assert._capt(key, 'arguments/0/left/property')], 'arguments/0/left') === assert._capt(assert._capt(render, 'arguments/0/right/object')[assert._capt(key, 'arguments/0/right/property')], 'arguments/0/right'), 'arguments/0'), {
                     content: 'assert.ok(srfcnv[key] === render[key])',
                     filepath: 'es5/SurfaceRenderer.test.js',
-                    line: 20
+                    line: 17
                 }));
             });
             SU.setPictureFrame(srfcnv.cnv, 'init');

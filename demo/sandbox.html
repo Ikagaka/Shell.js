@@ -6,27 +6,26 @@ NarLoader.loadFromURL("../nar/mobilemaster.nar")
 .then(function(dir){ return dir.getDirectory("shell/master").asArrayBuffer(); })
 .then(function(dic){ return Shell.SML.load(dic); })
 .then(function(shell){
+  console.log(shell);
+  shell.config.enableRegion = true;
   var rndr = new Shell.SPR.SurfacePatternRenderer(shell);
+  rndr.debug = true;
   return rndr.preload().then(function(){
-    var shell = rndr.shell;
-    var rndr2 = new Shell.SR.SurfaceRenderer();
-    var shellState = new Shell.ShS.ShellState(shell);  
-    var ss = new Shell.SS.SurfaceState(0, 7, shellState);
-    shell.config.enableRegion = true;
+    var surface = new Shell.SM.Surface(0, 7, shell);
+    var shellState = new Shell.ShS.ShellState(shell, console.info.bind(console, "shell state update:"));
+    var srfState = new Shell.SS.SurfaceState(surface, function render(ev, surface){
+      return rndr.render(surface).then(function(srfcnv){ return rndr2.base(srfcnv); });
+    });
+    console.log(srfState);
+    srfState.debug = true;
 
     Shell.SU.setCanvasStyle();
+    var rndr2 = new Shell.SR.SurfaceRenderer();
     document.body.appendChild(rndr2.cnv);
 
-    return rndr.render(ss.surface).then(()=>{
-      // 初期描画
+    // 初回描画
+    return srfState.render().then(function(){
       rndr2.base(rndr);
-      ss.on("render", function(){
-        console.time("render");
-        rndr.render(ss.surface).then((srfcnv)=>{
-          rndr2.base(srfcnv);
-          console.timeEnd("render");
-        });
-      });
     });
   });
 }).catch(console.error.bind(console));

@@ -8,9 +8,10 @@ export declare class Surface {
     surfaceDefTree: ST.SurfaceDefinitionTree;
     surfaceNode: ST.SurfaceDefinition;
     config: SC.ShellConfig;
-    layers: Layer[];
     renderingTree: SurfaceRenderingTree;
-    seriko: boolean[];
+    serikos: {
+        [animId: number]: Seriko;
+    };
     talkCount: number;
     move: {
         x: number;
@@ -19,23 +20,13 @@ export declare class Surface {
     destructed: boolean;
     constructor(scopeId: number, surfaceId: number, shell: SH.Shell);
 }
-export declare class Layer {
-    background: boolean;
-    patterns: ST.SurfaceAnimationPattern[];
-    constructor(patterns: ST.SurfaceAnimationPattern[], background: boolean);
-}
-export declare class SerikoLayer extends Layer {
+export declare class Seriko {
     patternID: number;
-    waiting: boolean;
     paused: boolean;
     exclusive: boolean;
     canceled: boolean;
     finished: boolean;
-    constructor(patterns: ST.SurfaceAnimationPattern[], background: boolean, patternID?: number);
-}
-export declare class MayunaLayer extends Layer {
-    visible: boolean;
-    constructor(patterns: ST.SurfaceAnimationPattern[], background: boolean, visible: boolean);
+    constructor(patternID?: number);
 }
 export declare class SurfaceRenderingTree {
     base: number;

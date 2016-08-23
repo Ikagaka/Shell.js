@@ -1,8 +1,6 @@
 /// <reference path="../typings/index.d.ts" />
-export declare var diff: {
-    (): deepDiff.IDiff;
-    (lhs: Object, rhs: Object, prefilter?: deepDiff.IPrefilter | undefined, acc?: deepDiff.IAccumulator | undefined): deepDiff.IDiff[];
-};
+export declare type SUDiff = deepDiff.IDiff[];
+export declare function diff(lhs: Object, rhs: Object, prefilter?: deepDiff.IPrefilter, acc?: deepDiff.IAccumulator): SUDiff;
 export declare var extend: {
     (target: any, object1?: any, ...objectN: any[]): any;
     (deep: boolean, target: any, object1?: any, ...objectN: any[]): any;

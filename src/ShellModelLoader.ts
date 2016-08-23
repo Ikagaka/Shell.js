@@ -45,15 +45,13 @@ export function loadDescript(directory: Directory): Promise<{descript:SC.Descrip
   if (name === "") {
     console.info("ShellModelLoader.loadDescript: descript.txt is not found");
   } else {
-    let descript = SU.parseDescript(SU.convert(dir[name]));
-    let json: SC.JSONLike = {};
+    descript = SU.parseDescript(SU.convert(dir[name]));
     Object.keys(descript).forEach((key)=>{
       let _key = key
         .replace(/^sakura\./, "char0.")
         .replace(/^kero\./, "char1.");
-      SU.decolateJSONizeDescript<SC.JSONLike, string>(json, _key, descript[key]);
+      SU.decolateJSONizeDescript<SC.JSONLike, string>(descriptJSON, _key, descript[key]);
     });
-    let descriptJSON = json;
   }
   // key-valueなdescriptをconfigへ変換
   return SCL.loadFromJSONLike(descriptJSON).then((config)=>{

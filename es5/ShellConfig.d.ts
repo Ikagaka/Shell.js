@@ -57,4 +57,4 @@ export declare class BindGroupConfig {
     addid: number[];
     constructor(category: string, parts: string, thumbnail?: string, _default?: boolean);
 }
-export declare function isBind(config: ShellConfig, animId: number): boolean;
+export declare function isBind(config: ShellConfig, scopeId: number, animId: number): boolean;
