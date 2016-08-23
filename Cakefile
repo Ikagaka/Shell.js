@@ -1,6 +1,7 @@
 `
 var fs = require("fs");
 var path = require("path");
+
 fs.readdirAsync = asynchronous(fs.readdir, fs);
 fs.lstatAsync = asynchronous(fs.lstat, fs);
 fs.readFileAsync = asynchronous(fs.readFile, fs);
@@ -11,22 +12,37 @@ fs.unlinkAsync = asynchronous(fs.unlink, fs);
 task 'clean', 'rm -f demo/test*.html', (options) ->
   ls("demo")
   .then (files)-> files.filter ({stat})-> getFileType(stat) is "file"
-  .then (files)-> files.filter ({name})-> /^test(.+)\.html$/.test(name)
-  .then (files)-> Promise.all files.map ({name})-> fs.unlinkAsync("demo/"+name)
+  .then (files)-> files.filter ({name})-> /^(?:test)|(?:sandbox)(.+)\.html$/.test(name)
+  .then (files)-> files.map ({name})-> "demo/#{name}"
+  .then (names)-> Promise.all names.map (name)-> fs.unlinkAsync(name).then -> name
+  .then (names)-> console.log "clean", names
   .catch console.error.bind(console)
 
-task 'test', 'touch demo/test*.html', (options) ->
-  fs.readFileAsync("demo/placeholder.test.html", "utf8").then (html)->
+task 'sandbox', 'create demo/sandbox*.html', (options) ->
+  fs.readFileAsync("demo/placeholder.sandbox.html", "utf8")
+  .then (html)->
+    ls("es5")
+    .then (files)-> files.filter ({stat})-> getFileType(stat) is "file"
+    .then (files)-> files.filter ({name})-> /^(.+)\.sandbox\.js$/.test(name)
+    .then (files)-> files.map ({name})-> /^(.+)\.sandbox\.js$/.exec(name)[1]
+    .then (names)-> names.map (name)-> ["demo/sandbox#{name}.html", html.split("placeholder").join(name)]
+    .then (tuples)-> Promise.all tuples.map ([name, html])-> fs.writeFileAsync(name, html).then -> name
+    .then (names)-> console.log "sandbox", names
+  .catch console.error.bind(console)
+
+task 'test', 'create demo/test*.html', (options) ->
+  fs.readFileAsync("demo/placeholder.test.html", "utf8")
+  .then (html)->
     ls("dist")
     .then (files)-> files.filter ({stat})-> getFileType(stat) is "file"
     .then (files)-> files.filter ({name})-> /^(.+)\.test\.js$/.test(name)
     .then (files)-> files.map ({name})-> /^(.+)\.test\.js$/.exec(name)[1]
-    .then (names)-> names.map (name)-> [name, html.split("placeholder").join(name)]
-    .then (htmls)-> Promise.all htmls.map ([name, html])-> fs.writeFileAsync("demo/test#{name}.html", html)
-    .then (done)-> console.log "done"
+    .then (names)-> names.map (name)-> ["demo/test#{name}.html", html.split("placeholder").join(name)]
+    .then (tuples)-> Promise.all tuples.map ([name, html])-> fs.writeFileAsync(name, html).then -> name
+    .then (names)-> console.log "test", names
   .catch console.error.bind(console)
 
-task 'index', 'touch src/index.ts', (options) ->
+task 'index', 'create src/index.ts file', (options) ->
   fs.readFileAsync("tsconfig.json", "utf8")
   .then (json)->
     json.split("\n")
@@ -45,6 +61,9 @@ task 'index', 'touch src/index.ts', (options) ->
   .then (ts)-> fs.writeFileAsync("src/index.ts", ts)
   .then (done)-> console.log "done"
   .catch console.error.bind(console)
+
+
+
 `
 function asynchronous(fn, ctx){
   return function _asyncFn(){

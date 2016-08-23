@@ -1,55 +1,53 @@
 import * as React from 'react';
-export declare class Doc<P, S> extends React.Component<P, S> {
+export interface LayerProps extends React.Props<Layer> {
+    style?: {
+        [key: string]: string;
+    };
+    width: number;
+    height: number;
+    basisX: "left" | "right";
+    basisY: "top" | "bottom";
+    x: number;
+    y: number;
+    content: any;
+}
+export interface LayerState {
+}
+export declare class Layer extends React.Component<LayerProps, LayerState> {
+    style: {
+        [key: string]: string;
+    };
+    constructor(props: LayerProps);
+    render(): JSX.Element;
+}
+export interface LayerSetProps extends React.Props<LayerSet> {
+    style?: {
+        [key: string]: string;
+    };
+    layers: LayerProps[];
+}
+export interface LayerSetState {
+}
+export declare class LayerSet extends React.Component<LayerSetProps, LayerSetState> {
+    style: {
+        [key: string]: string;
+    };
+    constructor(props: LayerSetProps);
+    render(): JSX.Element;
+}
+export interface DocProps extends React.Props<Doc> {
+    style?: {
+        [key: string]: string;
+    };
+}
+export interface DocState {
+}
+export declare class Doc extends React.Component<DocProps, DocState> {
     style: {
         display: "block";
         position: "static";
         boxSizing: "border-box";
     };
-    constructor();
-    render(): JSX.Element;
-}
-export declare class Layer<P, S> extends React.Component<P, S> {
-    style: {
-        display: "inline-block";
-        position: "absolute";
-        boxSizing: "border-box";
-        margin: "0px";
-        border: "none";
-        padding: "0px";
-    };
-    render(): JSX.Element;
-}
-export declare class LayerSet<P, S> extends React.Component<P, S> {
-    style: {
-        display: "block";
-        position: "relative";
-        boxSizing: "border-box";
-        width: "100%";
-        height: "100%";
-        margin: "0px";
-        border: "none";
-        padding: "0px";
-    };
-    render(): JSX.Element;
-}
-export declare class Cuttlebone<P, S> extends React.Component<P, S> {
-    style: {
-        display: "block";
-        position: "static";
-        boxSizing: "border-box";
-    };
-    constructor();
-    render(): React.DOMElement<{
-        style: {
-            display: "block";
-            position: "static";
-            boxSizing: "border-box";
-        };
-    }, Element>;
-}
-export declare class Named<P, S> extends Layer<P, S> {
-    render(): JSX.Element;
-}
-export declare class Scope<P, S> extends Layer<P, S> {
+    constructor(props: DocProps);
     render(): JSX.Element;
 }

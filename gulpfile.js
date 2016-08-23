@@ -4,28 +4,46 @@ const browserify = require('gulp-browserify');
 const debug = require('gulp-debug');
 
 // test.ts -> dist
-gulp.task('build:es5', ()=>{
-    return gulp.src("es5/**/*.test.js")
+gulp.task('build:sandbox', ()=>{
+    gulp.src("es5/**/*.sandbox.js")
+        .pipe(debug({title: "begin"}))
+        .pipe(browserify())
+        .pipe(debug({title: "end"}))
+        .pipe(gulp.dest('dist'));
+});
+gulp.task('build:test', ()=>{
+    gulp.src("es5/**/*.test.js")
+        .pipe(debug({title: "begin"}))
         .pipe(espower())
         .pipe(browserify())
-        .pipe(debug())
+        .pipe(debug({title: "end"}))
         .pipe(gulp.dest('dist'));
 });
 
 
-gulp.task('watch:es5', ()=>{
-    return gulp.watch('es5/**/*.test.js')
+gulp.task('watch:sandbox', ()=>{
+    gulp.watch('es5/**/*.sandbox.js')
     .on("change", (file)=>{
-        console.log("espower", file.path)
-        return gulp.src(file.path)
-        .pipe(espower())
-        .pipe(browserify())
-        .pipe(debug())
-        .pipe(gulp.dest('dist'));
+        gulp.src(file.path)
+            .pipe(debug({title: "begin"}))
+            .pipe(browserify())
+            .pipe(debug({title: "end"}))
+            .pipe(gulp.dest('dist'));
+    });
+});
+gulp.task('watch:test', ()=>{
+    gulp.watch('es5/**/*.test.js')
+    .on("change", (file)=>{
+        gulp.src(file.path)
+            .pipe(debug({title: "begin"}))
+            .pipe(espower())
+            .pipe(browserify())
+            .pipe(debug({title: "end"}))
+            .pipe(gulp.dest('dist'));
     });
 });
 
 gulp.task('default', ['build']);
-gulp.task('build', ["build:es5"]);
-gulp.task('watch', ['build', "watch:es5"]);
+gulp.task('build', ["build:test", "build:sandbox"]);
+gulp.task('watch', ["watch:test", "watch:sandbox"]);
 

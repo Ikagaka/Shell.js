@@ -66,7 +66,7 @@
         "src/CanvasCache.ts",
         "src/CanvasCache.test.ts",
         "src/CuttleboneComponent.tsx",
-        "src/CuttleboneComponent.test.ts",
+        "src/CuttleboneComponent.sandbox.ts",
         "src/DiffLogger.ts",
         "src/index.ts",
         "src/ShellConfig.ts",

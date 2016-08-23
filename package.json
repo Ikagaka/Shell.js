@@ -23,7 +23,7 @@
     "browserify": "browserify es5/index.js --standalone Shell -o dist/Shell.js",
     "check": "tsc -w --noEmit",
     "replace": "npm run perl; npm run add",
-    "cake": "cake clean; cake test;",
+    "cake": "cake clean; cake test; cake sandbox;",
     "perl": "cat tsconfig.json | perl -lne 'print $1 if /^\\s+\"src\\/([A-Za-z]+)\\.ts\",/' | perl -lne 'print if /[^(index)]/' | perl -lpe 's/(.+)/import * as _$1 from \".\\/$1\"; export var $1 = _$1;/ '> src/index.ts; echo 'var _package = require(\"../package.json\"); export var version = _package.version;\nimport $ = require(\"jquery\"); window[\"$\"] = window[\"$\"] || $;' >> src/index.ts;",
     "tree": "tree -C -L 2 -I node_modules",
     "clean": "rm -rf lib/* es5/* dist/*",
