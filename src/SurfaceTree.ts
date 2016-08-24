@@ -29,12 +29,12 @@ export class SurfaceDescript {
     this.animationSort = animationSort;
   }
 }
-
+export type NULL = null;// avoid vsc syntax highlighting bugs
 export class SurfaceDefinition {
   //characters: { sakura: string; }; // 謎
   points: {
-    //centerx: number; centery: number; SakuraAPI // なにそれ
-    basepos: { x: number; y: number; };
+    //centerx: number; centery: number; // SakuraAPI なにそれ
+    basepos: { x: number|NULL, y: number|NULL };
   };
   balloons: {
     char: { offsetX: number; offsetY: number }[];
@@ -48,8 +48,14 @@ export class SurfaceDefinition {
     elements:SurfaceElement[]=[],
     collisions:SurfaceCollision[]=[],
     animations:SurfaceAnimation[]=[],
-    balloons={char: <{ offsetX: number; offsetY: number }[]>[], offsetX: 0, offsetY: 0},
-    points={basepos: { x: 0, y: 0 }
+    balloons: {
+      char: { offsetX: number; offsetY: number }[];
+      offsetX: number;
+      offsetY: number;
+    }={char: [], offsetX: 0, offsetY: 0},
+    points:{
+      basepos: { x: number|NULL, y: number|NULL }
+    }={basepos: { x: null, y: null }
   }){
     this.elements   = elements;
     this.collisions = collisions;
@@ -190,7 +196,7 @@ export function getRegion(collisions: SurfaceCollision[], offsetX: number, offse
   // このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
   // collision設定されていれば name"hoge"
   // basepos 左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べる
-  // offsetX: number, offsetY: number は basepos からの相対座標である必要がある、間違ってもcanvas左上からにしてはいけない 
+  // offsetX: number, offsetY: number は surfaceCanvas.basePosX からの相対座標である必要がある、間違ってもcanvas左上からにしてはいけない 
 
   const hitCols = collisions.filter((collision, colId)=>{
     const {type, name} = collision;

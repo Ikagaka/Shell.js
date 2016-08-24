@@ -31,6 +31,18 @@ export function loadFromJSONLike(json: SC.JSONLike): Promise<SC.ShellConfig> {
 export function loadCharConfig(char: SC.JSONLike): Promise<SC.CharConfig> {
   const that = new SC.CharConfig();
   // char1.bindgroup[20].name = "装備,飛行装備" -> {category: "装備", parts: "飛行装備", thumbnail: ""};
+  if(char["seriko"] != null && typeof char["seriko"]["alignmenttodesktop"] === "string"){
+    switch(char["seriko"]["alignmenttodesktop"]){
+      case "left":   that.seriko.alignmenttodesktop = "left";   break;
+      case "right":  that.seriko.alignmenttodesktop = "right";  break;
+      case "top":    that.seriko.alignmenttodesktop = "top";    break;
+      case "bottom": that.seriko.alignmenttodesktop = "bottom"; break;
+      case "free":   that.seriko.alignmenttodesktop = "free";   break;
+      default: console.warn("ShellConfigLoader.loadCharConfig: unkown alignmenttodesktop type: ", char["seriko"]["alignmenttodesktop"]);
+    }
+  }
+
+  
   if(Array.isArray(char["bindgroup"])){
     char["bindgroup"].forEach((bindgroup: SC.JSONLike, id: number)=>{
       if(bindgroup != null && typeof bindgroup["name"] === "string"){

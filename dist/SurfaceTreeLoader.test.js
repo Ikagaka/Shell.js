@@ -37,7 +37,7 @@ var SurfaceDefinition = (function () {
         if (collisions === void 0) { collisions = []; }
         if (animations === void 0) { animations = []; }
         if (balloons === void 0) { balloons = { char: [], offsetX: 0, offsetY: 0 }; }
-        if (points === void 0) { points = { basepos: { x: 0, y: 0 }
+        if (points === void 0) { points = { basepos: { x: null, y: null }
         }; }
         this.elements = elements;
         this.collisions = collisions;
@@ -165,7 +165,7 @@ function getRegion(collisions, offsetX, offsetY) {
     // このサーフェスの定義 surfaceNode.collision と canvas と座標を比較して
     // collision設定されていれば name"hoge"
     // basepos 左上からの座標の位置が透明かそうでないか、当たり判定領域か、名前があるかを調べる
-    // offsetX: number, offsetY: number は basepos からの相対座標である必要がある、間違ってもcanvas左上からにしてはいけない 
+    // offsetX: number, offsetY: number は surfaceCanvas.basePosX からの相対座標である必要がある、間違ってもcanvas左上からにしてはいけない 
     var _this = this;
     var hitCols = collisions.filter(function (collision, colId) {
         var type = collision.type, name = collision.name;
@@ -284,7 +284,7 @@ function loadSurfaceDefinition(srf) {
     var _collisions = srf.regions;
     var _animations = srf.animations;
     var balloons = { char: [], offsetX: 0, offsetY: 0 };
-    var points = { basepos: { x: 0, y: 0 } };
+    var points = { basepos: { x: null, y: null } };
     if (_points != null && _points.basepos != null) {
         if (typeof _points.basepos.x === "number") {
             points.basepos.x = _points.basepos.x;

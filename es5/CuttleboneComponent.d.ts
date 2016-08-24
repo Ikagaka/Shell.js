@@ -1,3 +1,4 @@
+import * as SM from "./SurfaceModel";
 import * as React from 'react';
 export interface LayerProps extends React.Props<Layer> {
     style?: {
@@ -9,14 +10,10 @@ export interface LayerProps extends React.Props<Layer> {
     basisY: "top" | "bottom";
     x: number;
     y: number;
-    content: any;
 }
 export interface LayerState {
 }
 export declare class Layer extends React.Component<LayerProps, LayerState> {
-    style: {
-        [key: string]: string;
-    };
     constructor(props: LayerProps);
     render(): JSX.Element;
 }
@@ -24,14 +21,10 @@ export interface LayerSetProps extends React.Props<LayerSet> {
     style?: {
         [key: string]: string;
     };
-    layers: LayerProps[];
 }
 export interface LayerSetState {
 }
 export declare class LayerSet extends React.Component<LayerSetProps, LayerSetState> {
-    style: {
-        [key: string]: string;
-    };
     constructor(props: LayerSetProps);
     render(): JSX.Element;
 }
@@ -43,11 +36,30 @@ export interface DocProps extends React.Props<Doc> {
 export interface DocState {
 }
 export declare class Doc extends React.Component<DocProps, DocState> {
-    style: {
-        display: "block";
-        position: "static";
-        boxSizing: "border-box";
-    };
     constructor(props: DocProps);
     render(): JSX.Element;
+}
+export interface ScopeProps extends React.Props<Scope> {
+    style?: {
+        [key: string]: string;
+    };
+    surface: SM.Surface;
+}
+export interface ScopeState {
+}
+export declare class Scope extends React.Component<ScopeProps, ScopeState> {
+    constructor(props: ScopeProps);
+    render(): JSX.Element;
+}
+export interface CuttleboneProps extends React.Props<Cuttlebone> {
+    style?: {
+        [key: string]: string;
+    };
+}
+export interface CuttleboneState {
+}
+export declare class Cuttlebone extends React.Component<CuttleboneProps, CuttleboneState> {
+    style: {
+        [key: string]: string;
+    };
 }

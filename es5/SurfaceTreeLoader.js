@@ -63,7 +63,7 @@ function loadSurfaceDefinition(srf) {
     var _collisions = srf.regions;
     var _animations = srf.animations;
     var balloons = { char: [], offsetX: 0, offsetY: 0 };
-    var points = { basepos: { x: 0, y: 0 } };
+    var points = { basepos: { x: null, y: null } };
     if (_points != null && _points.basepos != null) {
         if (typeof _points.basepos.x === "number") {
             points.basepos.x = _points.basepos.x;

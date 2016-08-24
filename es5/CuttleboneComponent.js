@@ -6,25 +6,18 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var SU = require("./SurfaceUtil");
 var React = require('react');
-var Cuttlebone = (function (_super) {
-    __extends(Cuttlebone, _super);
-    function Cuttlebone() {
-        _super.apply(this, arguments);
-    }
-    return Cuttlebone;
-}(React.Component));
 var Layer = (function (_super) {
     __extends(Layer, _super);
     function Layer(props) {
         _super.call(this, props);
-        this.style = {
+        this.props.style = SU.extend(true, {
             display: "inline-block",
             position: "absolute",
             boxSizing: "border-box",
             margin: "0px",
             border: "none",
             padding: "0px"
-        };
+        }, this.props.style);
     }
     Layer.prototype.render = function () {
         var _a = this.props, width = _a.width, height = _a.height, basisX = _a.basisX, basisY = _a.basisY, x = _a.x, y = _a.y;
@@ -34,7 +27,7 @@ var Layer = (function (_super) {
         };
         style[basisX] = x + "px";
         style[basisY] = y + "px";
-        return (React.createElement("div", {className: "layer", style: SU.extend(true, {}, this.style, this.props.style, style)}, this.props.content));
+        return (React.createElement("div", {className: "layer", style: SU.extend(true, {}, this.props.style, style)}, this.props.children));
     };
     return Layer;
 }(React.Component));
@@ -43,7 +36,7 @@ var LayerSet = (function (_super) {
     __extends(LayerSet, _super);
     function LayerSet(props) {
         _super.call(this, props);
-        this.style = {
+        this.props.style = SU.extend(true, {
             display: "block",
             position: "relative",
             boxSizing: "border-box",
@@ -52,14 +45,10 @@ var LayerSet = (function (_super) {
             margin: "0px",
             border: "none",
             padding: "0px"
-        };
+        }, this.props.style);
     }
     LayerSet.prototype.render = function () {
-        var layerNodes = this.props.layers.map(function (_a, key) {
-            var x = _a.x, y = _a.y, basisX = _a.basisX, basisY = _a.basisY, width = _a.width, height = _a.height, content = _a.content, style = _a.style;
-            return (React.createElement(Layer, {key: key, style: style, x: x, y: y, basisX: basisX, basisY: basisY, width: width, height: height, content: content}));
-        });
-        return (React.createElement("div", {className: "layerSet", style: SU.extend(true, {}, this.style, this.props.style)}, layerNodes));
+        return (React.createElement("div", {className: "layerSet", style: SU.extend(true, {}, this.props.style)}, this.props.children));
     };
     return LayerSet;
 }(React.Component));
@@ -68,13 +57,51 @@ var Doc = (function (_super) {
     __extends(Doc, _super);
     function Doc(props) {
         _super.call(this, props);
+        this.props.style = SU.extend(true, {
+            display: "block",
+            position: "static",
+            boxSizing: "border-box"
+        }, this.props.style);
     }
     Doc.prototype.render = function () {
-        return (React.createElement("div", {className: "doc", style: SU.extend(true, {}, this.style, this.props.style)}, this.props.children));
+        return (React.createElement("div", {className: "doc", style: SU.extend(true, {}, this.props.style)}, this.props.children));
     };
     return Doc;
 }(React.Component));
 exports.Doc = Doc;
+var Scope = (function (_super) {
+    __extends(Scope, _super);
+    function Scope(props) {
+        _super.call(this, props);
+    }
+    Scope.prototype.render = function () {
+        var _a = this.props.surface, config = _a.config, move = _a.move, scopeId = _a.scopeId, surfaceId = _a.surfaceId, width = _a.width, height = _a.height, basepos = _a.basepos, surfaceNode = _a.surfaceNode, alignmenttodesktop = _a.alignmenttodesktop;
+        var s = {
+            width: width,
+            height: height,
+            basisX: "left",
+            basisY: "top",
+            x: 0,
+            y: 0,
+            content: "sakura"
+        };
+        return (React.createElement(LayerSet, {style: this.props.style}, 
+            React.createElement(Layer, {key: 0, x: s.x, y: s.y, basisX: s.basisX, basisY: s.basisY, width: s.width, height: s.height}, 
+                React.createElement(Doc, null, s.content)
+            )
+        ));
+    };
+    return Scope;
+}(React.Component));
+exports.Scope = Scope;
+var Cuttlebone = (function (_super) {
+    __extends(Cuttlebone, _super);
+    function Cuttlebone() {
+        _super.apply(this, arguments);
+    }
+    return Cuttlebone;
+}(React.Component));
+exports.Cuttlebone = Cuttlebone;
 /*
 
 
@@ -109,18 +136,6 @@ export class Named<P, S> extends Layer<P, S>{
   }
 }
 
-export class Scope<P, S> extends Layer<P, S>{
-  render(){
-    this.props.children = React.createElement(LayerSet, {hover:false}, [
-      React.createElement(Layer, {key:0, top:0, left:0, width:100, height:200, style:{backgroundColor:"red"}},
-        React.createElement(Doc, {}, "shell")
-      ),
-      React.createElement(Layer, {key:1, top:0, left:-90, width:100, height:60, style:{backgroundColor:"green"}},
-        React.createElement(Doc, {}, "balloon")
-      )
-    ]);
-    return super.render();
-  }
-}
+
 
 */ 

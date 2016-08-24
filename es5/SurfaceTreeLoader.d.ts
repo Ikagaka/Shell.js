@@ -2,6 +2,7 @@ import * as ST from "./SurfaceTree";
 import * as SY from "surfaces_txt2yaml";
 export declare function loadSurfaceDefinitionTreeFromsurfacesTxt2Yaml(srfsTxt: SY.SurfacesTxt): Promise<ST.SurfaceDefinitionTree>;
 export declare function loadSurfaceDescript(descript: SY.SurfaceDescript): Promise<ST.SurfaceDescript>;
+export declare type NULL = null;
 export declare function loadSurfaceElement(elm: SY.ElementPattern): Promise<ST.SurfaceElement>;
 export declare function loadSurfaceCollision(collision: SY.SurfaceRegion): Promise<ST.SurfaceCollision>;
 export declare function loadSurfaceCollisionRect(collision: SY.SurfaceRegionRect): Promise<ST.SurfaceCollisionRect>;

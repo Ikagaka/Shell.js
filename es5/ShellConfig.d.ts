@@ -42,7 +42,7 @@ export declare class CharConfig {
         alignment: "none" | "left" | "right";
     };
     seriko: {
-        alignmenttodesktop: string;
+        alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free";
     };
     bindgroup: BindGroupConfig[];
     constructor();

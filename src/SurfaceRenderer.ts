@@ -191,12 +191,12 @@ export class SurfaceRenderer extends SurfaceCanvas {
       if(bottom<0){
         this.cnv.height += (-bottom); // reshape
       }
-      if(this.debug){
-        // 基準点描画
-        this.ctx.fillStyle = "lime";
-        this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
-      }
       this.ctx.drawImage(this.tmpctx.canvas, offsetX, offsetY); //下位レイヤ再描画
+    }
+    if(this.debug){
+      // 基準点描画
+      this.ctx.fillStyle = "lime";
+      this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
     }
   }
 

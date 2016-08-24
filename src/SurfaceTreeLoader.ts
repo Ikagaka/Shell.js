@@ -58,7 +58,7 @@ export function loadSurfaceDescript(descript: SY.SurfaceDescript): Promise<ST.Su
 }
 
 
-
+export type NULL = null;// avoid vsc syntax highlighting bugs 
 function loadSurfaceDefinition(srf: SY.SurfaceDefinition): Promise<ST.SurfaceDefinition>{
   const _points = srf.points;
   const _balloons = srf.balloons;
@@ -66,7 +66,7 @@ function loadSurfaceDefinition(srf: SY.SurfaceDefinition): Promise<ST.SurfaceDef
   const _collisions = srf.regions;
   const _animations = srf.animations;
   const balloons   = {char: <{ offsetX: number; offsetY: number }[]>[], offsetX: 0, offsetY: 0}
-  const points     = {basepos: { x: 0, y: 0 }};
+  const points: {basepos: { x: number|NULL, y: number|NULL }} = {basepos: { x: null, y: null }};
   if(_points != null && _points.basepos != null){
     if(typeof _points.basepos.x === "number"){
       points.basepos.x = _points.basepos.x;

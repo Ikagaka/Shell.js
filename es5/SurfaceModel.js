@@ -3,7 +3,7 @@
  */
 "use strict";
 var Surface = (function () {
-    function Surface(scopeId, surfaceId, shell) {
+    function Surface(scopeId, surfaceId, width, height, shell) {
         this.scopeId = scopeId;
         this.surfaceId = surfaceId;
         this.shell = shell;
@@ -14,6 +14,24 @@ var Surface = (function () {
         this.serikos = {};
         this.talkCount = 0;
         this.move = { x: 0, y: 0 };
+        if (this.config.char[surfaceId] != null && typeof this.config.char[surfaceId].seriko.alignmenttodesktop === "string") {
+            // 個別設定
+            this.alignmenttodesktop = this.config.char[surfaceId].seriko.alignmenttodesktop;
+        }
+        else {
+            // 全体設定が初期値
+            this.alignmenttodesktop = this.config.seriko.alignmenttodesktop;
+        }
+        // model は　render されないと base surface の大きさがわからない
+        this.width = width;
+        this.height = width;
+        this.basepos = { x: width / 2 | 0, y: height };
+        if (this.surfaceNode.points.basepos.x != null) {
+            this.basepos.x = this.surfaceNode.points.basepos.x;
+        }
+        if (this.surfaceNode.points.basepos.y != null) {
+            this.basepos.y = this.surfaceNode.points.basepos.y;
+        }
         this.destructed = false;
     }
     return Surface;

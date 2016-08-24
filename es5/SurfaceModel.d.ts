@@ -17,8 +17,15 @@ export declare class Surface {
         x: number;
         y: number;
     };
+    width: number;
+    height: number;
+    basepos: {
+        x: number;
+        y: number;
+    };
+    alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free";
     destructed: boolean;
-    constructor(scopeId: number, surfaceId: number, shell: SH.Shell);
+    constructor(scopeId: number, surfaceId: number, width: number, height: number, shell: SH.Shell);
 }
 export declare class Seriko {
     patternID: number;

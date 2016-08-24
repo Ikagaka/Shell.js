@@ -49,7 +49,7 @@ export class SerikoConfig {
   constructor(){
     this.use_self_alpha = false;
     this.paint_transparent_region_black = true;
-    this.alignmenttodesktop = "bottom"
+    this.alignmenttodesktop = "bottom";
     this.zorder = [];
     this.stickyWindow = [];
   }
@@ -135,7 +135,7 @@ export class CharConfig {
     alignment: "none" | "left" | "right"; // none | left | right, 自動調整、shellのY座標が画面中央より左なら右、右なら左に表示 | 常に左 | 常に右
   }
   seriko: {
-    alignmenttodesktop: string; // サーフェスのデフォルト※表示位置情報。
+    alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free"; // サーフェスのデフォルト※表示位置情報。
   };
   bindgroup: BindGroupConfig[]; 
   /*

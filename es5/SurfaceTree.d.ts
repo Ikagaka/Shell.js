@@ -13,11 +13,12 @@ export declare class SurfaceDescript {
     animationSort: string;
     constructor(collisionSort?: string, animationSort?: string);
 }
+export declare type NULL = null;
 export declare class SurfaceDefinition {
     points: {
         basepos: {
-            x: number;
-            y: number;
+            x: number | NULL;
+            y: number | NULL;
         };
     };
     balloons: {
@@ -40,8 +41,8 @@ export declare class SurfaceDefinition {
         offsetY: number;
     }, points?: {
         basepos: {
-            x: number;
-            y: number;
+            x: number | NULL;
+            y: number | NULL;
         };
     });
 }

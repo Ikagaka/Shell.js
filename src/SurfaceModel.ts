@@ -6,6 +6,7 @@ import * as ST from "./SurfaceTree";
 import * as SC from "./ShellConfig";
 import * as SH from "./ShellModel";
 
+
 export class Surface {
   scopeId: number;
   surfaceId: number;
@@ -19,10 +20,16 @@ export class Surface {
   renderingTree:   SurfaceRenderingTree; // 実際に表示されるべき再帰的なbindも含めたレイヤツリー
   serikos:          {[animId: number]: Seriko}; // interval再生が有効なアニメーションID
   talkCount:       number;
+
   move:            {x: number, y: number};
+  width:           number;
+  height:          number;
+  basepos:         {x: number, y: number};
+  alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free";
+
   destructed:      boolean;
 
-  constructor(scopeId: number, surfaceId: number, shell: SH.Shell) {
+  constructor(scopeId: number, surfaceId: number, width: number, height: number, shell: SH.Shell) {
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
     
@@ -35,7 +42,27 @@ export class Surface {
     this.renderingTree = new SurfaceRenderingTree(surfaceId);
     this.serikos = {};
     this.talkCount = 0;
+
     this.move = {x: 0, y: 0};
+
+    if(this.config.char[surfaceId] != null && typeof this.config.char[surfaceId].seriko.alignmenttodesktop === "string"){
+      // 個別設定
+      this.alignmenttodesktop = this.config.char[surfaceId].seriko.alignmenttodesktop;
+    }else{
+      // 全体設定が初期値
+      this.alignmenttodesktop = this.config.seriko.alignmenttodesktop;
+    }
+     
+    // model は　render されないと base surface の大きさがわからない
+    this.width = width;
+    this.height = width;
+    this.basepos = {x: width/2|0, y: height};
+    if(this.surfaceNode.points.basepos.x != null){
+      this.basepos.x = this.surfaceNode.points.basepos.x;
+    }
+    if(this.surfaceNode.points.basepos.y != null){
+      this.basepos.y = this.surfaceNode.points.basepos.y;
+    }
 
     this.destructed = false;
   }
