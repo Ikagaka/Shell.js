@@ -63,6 +63,7 @@
         "placeOpenBraceOnNewLineForControlBlocks": true
     },
     "files": [
+        "src/BaseComponent.tsx",
         "src/CanvasCache.ts",
         "src/CanvasCache.test.ts",
         "src/CuttleboneComponent.tsx",

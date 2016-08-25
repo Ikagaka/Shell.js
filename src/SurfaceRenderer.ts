@@ -36,8 +36,8 @@ export class SurfaceRenderer extends SurfaceCanvas {
   // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
   // nullならば1x1のCanvasをベースサーフェスとする。
   // 渡されたSurfaceCanvasは変更しない。
-  constructor() {
-    super(SU.createCanvas());
+  constructor(cnv?: HTMLCanvasElement) {
+    super(cnv == null ? SU.createCanvas() : cnv);
     this.ctx = <CanvasRenderingContext2D>this.cnv.getContext("2d");
     this.tmpcnv = SU.createCanvas();
     this.tmpctx = <CanvasRenderingContext2D>this.tmpcnv.getContext("2d");

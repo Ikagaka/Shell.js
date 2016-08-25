@@ -21,6 +21,10 @@ var SurfaceState = (function () {
         // 初回更新
         this.constructRenderingTree();
     }
+    SurfaceState.prototype.destructor = function () {
+        this.surface.destructed = true;
+        this.endAll();
+    };
     SurfaceState.prototype.render = function () {
         var _this = this;
         this.debug && console.time("render");

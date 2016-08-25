@@ -187,6 +187,7 @@ var CharConfig = (function () {
             offsetY: 0,
             alignment: "none"
         };
+        this.seriko = { alignmenttodesktop: "bottom" };
         this.bindgroup = [];
     }
     return CharConfig;
@@ -784,8 +785,8 @@ var SurfaceRenderer = (function (_super) {
     // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
     // nullならば1x1のCanvasをベースサーフェスとする。
     // 渡されたSurfaceCanvasは変更しない。
-    function SurfaceRenderer() {
-        _super.call(this, SU.createCanvas());
+    function SurfaceRenderer(cnv) {
+        _super.call(this, cnv == null ? SU.createCanvas() : cnv);
         this.ctx = this.cnv.getContext("2d");
         this.tmpcnv = SU.createCanvas();
         this.tmpctx = this.tmpcnv.getContext("2d");
@@ -1114,6 +1115,10 @@ var SurfaceState = (function () {
         // 初回更新
         this.constructRenderingTree();
     }
+    SurfaceState.prototype.destructor = function () {
+        this.surface.destructed = true;
+        this.endAll();
+    };
     SurfaceState.prototype.render = function () {
         var _this = this;
         this.debug && console.time("render");

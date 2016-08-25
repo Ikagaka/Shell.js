@@ -13,7 +13,7 @@ export declare class SurfaceRenderer extends SurfaceCanvas {
     tmpctx: CanvasRenderingContext2D;
     debug: boolean;
     use_self_alpha: boolean;
-    constructor();
+    constructor(cnv?: HTMLCanvasElement);
     init(srfCnv: SurfaceCanvas): void;
     reset(): void;
     clear(): void;

@@ -28,6 +28,11 @@ export class SurfaceState {
     // 初回更新
     this.constructRenderingTree();
   }
+  
+  destructor(){
+    this.surface.destructed = true;
+    this.endAll();
+  }
 
   render(): Promise<void>{
     this.debug && console.time("render");

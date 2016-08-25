@@ -1,65 +1,36 @@
-import * as SM from "./SurfaceModel";
+import * as SS from "./SurfaceState";
+import * as SPR from "./SurfacePatternRenderer";
+import * as SH from "./ShellModel";
 import * as React from 'react';
-export interface LayerProps extends React.Props<Layer> {
-    style?: {
-        [key: string]: string;
-    };
-    width: number;
-    height: number;
-    basisX: "left" | "right";
-    basisY: "top" | "bottom";
-    x: number;
-    y: number;
-}
-export interface LayerState {
-}
-export declare class Layer extends React.Component<LayerProps, LayerState> {
-    constructor(props: LayerProps);
-    render(): JSX.Element;
-}
-export interface LayerSetProps extends React.Props<LayerSet> {
-    style?: {
-        [key: string]: string;
-    };
-}
-export interface LayerSetState {
-}
-export declare class LayerSet extends React.Component<LayerSetProps, LayerSetState> {
-    constructor(props: LayerSetProps);
-    render(): JSX.Element;
-}
-export interface DocProps extends React.Props<Doc> {
-    style?: {
-        [key: string]: string;
-    };
-}
-export interface DocState {
-}
-export declare class Doc extends React.Component<DocProps, DocState> {
-    constructor(props: DocProps);
-    render(): JSX.Element;
-}
+export declare type NULL = null;
 export interface ScopeProps extends React.Props<Scope> {
-    style?: {
-        [key: string]: string;
-    };
-    surface: SM.Surface;
+    surfaceId: number;
+    scopeId: number;
+    shell: SH.Shell;
+    renderer: SPR.SurfacePatternRenderer;
 }
 export interface ScopeState {
+    width: number;
+    height: number;
 }
 export declare class Scope extends React.Component<ScopeProps, ScopeState> {
+    surfaceState: SS.SurfaceState | NULL;
     constructor(props: ScopeProps);
+    componentWillMount(): void;
+    componentDidMount(): void;
+    componentWillUnmount(): void;
     render(): JSX.Element;
 }
-export interface CuttleboneProps extends React.Props<Cuttlebone> {
-    style?: {
-        [key: string]: string;
-    };
+export interface NamedProps extends React.Props<Named> {
+    shell: SH.Shell;
+    renderer: SPR.SurfacePatternRenderer;
 }
-export interface CuttleboneState {
+export interface NamedState {
 }
-export declare class Cuttlebone extends React.Component<CuttleboneProps, CuttleboneState> {
-    style: {
-        [key: string]: string;
-    };
+export declare class Named extends React.Component<NamedProps, NamedState> {
+    constructor(props: NamedProps);
+    componentWillMount(): void;
+    componentDidMount(): void;
+    componentWillUnmount(): void;
+    render(): JSX.Element;
 }

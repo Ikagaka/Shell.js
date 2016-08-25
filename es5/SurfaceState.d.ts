@@ -12,6 +12,7 @@ export declare class SurfaceState {
     };
     renderer: (event: string, surface: SM.Surface) => Promise<void>;
     constructor(surface: SM.Surface, renderer: (event: string, surface: SM.Surface) => Promise<void>);
+    destructor(): void;
     render(): Promise<void>;
     private initSeriko(animId);
     updateBind(): Promise<void>;

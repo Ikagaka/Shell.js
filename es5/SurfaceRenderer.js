@@ -26,8 +26,8 @@ var SurfaceRenderer = (function (_super) {
     // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
     // nullならば1x1のCanvasをベースサーフェスとする。
     // 渡されたSurfaceCanvasは変更しない。
-    function SurfaceRenderer() {
-        _super.call(this, SU.createCanvas());
+    function SurfaceRenderer(cnv) {
+        _super.call(this, cnv == null ? SU.createCanvas() : cnv);
         this.ctx = this.cnv.getContext("2d");
         this.tmpcnv = SU.createCanvas();
         this.tmpctx = this.tmpcnv.getContext("2d");

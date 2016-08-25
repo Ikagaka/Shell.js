@@ -4,138 +4,100 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var SU = require("./SurfaceUtil");
+var BC = require("./BaseComponent");
+var SR = require("./SurfaceRenderer");
+var SS = require("./SurfaceState");
+var SM = require("./SurfaceModel");
 var React = require('react');
-var Layer = (function (_super) {
-    __extends(Layer, _super);
-    function Layer(props) {
-        _super.call(this, props);
-        this.props.style = SU.extend(true, {
-            display: "inline-block",
-            position: "absolute",
-            boxSizing: "border-box",
-            margin: "0px",
-            border: "none",
-            padding: "0px"
-        }, this.props.style);
-    }
-    Layer.prototype.render = function () {
-        var _a = this.props, width = _a.width, height = _a.height, basisX = _a.basisX, basisY = _a.basisY, x = _a.x, y = _a.y;
-        var style = {
-            width: width + "px",
-            height: height + "px"
-        };
-        style[basisX] = x + "px";
-        style[basisY] = y + "px";
-        return (React.createElement("div", {className: "layer", style: SU.extend(true, {}, this.props.style, style)}, this.props.children));
-    };
-    return Layer;
-}(React.Component));
-exports.Layer = Layer;
-var LayerSet = (function (_super) {
-    __extends(LayerSet, _super);
-    function LayerSet(props) {
-        _super.call(this, props);
-        this.props.style = SU.extend(true, {
-            display: "block",
-            position: "relative",
-            boxSizing: "border-box",
-            width: "100%",
-            height: "100%",
-            margin: "0px",
-            border: "none",
-            padding: "0px"
-        }, this.props.style);
-    }
-    LayerSet.prototype.render = function () {
-        return (React.createElement("div", {className: "layerSet", style: SU.extend(true, {}, this.props.style)}, this.props.children));
-    };
-    return LayerSet;
-}(React.Component));
-exports.LayerSet = LayerSet;
-var Doc = (function (_super) {
-    __extends(Doc, _super);
-    function Doc(props) {
-        _super.call(this, props);
-        this.props.style = SU.extend(true, {
-            display: "block",
-            position: "static",
-            boxSizing: "border-box"
-        }, this.props.style);
-    }
-    Doc.prototype.render = function () {
-        return (React.createElement("div", {className: "doc", style: SU.extend(true, {}, this.props.style)}, this.props.children));
-    };
-    return Doc;
-}(React.Component));
-exports.Doc = Doc;
+var ReactDOM = require('react-dom');
+var narloader = require("narloader");
+var NL = narloader.NarLoader;
 var Scope = (function (_super) {
     __extends(Scope, _super);
     function Scope(props) {
         _super.call(this, props);
+        this.state = { width: 0, height: 0 };
+        this.surfaceState = null;
     }
+    Scope.prototype.componentWillMount = function () {
+    };
+    Scope.prototype.componentDidMount = function () {
+        var _this = this;
+        var _a = this.props, renderer = _a.renderer, scopeId = _a.scopeId, surfaceId = _a.surfaceId;
+        var canvas = ReactDOM.findDOMNode(this.refs["surface"]);
+        var rndr = new SR.SurfaceRenderer(canvas);
+        renderer.getBaseSurfaceSize(surfaceId).then(function (_a) {
+            var width = _a.width, height = _a.height;
+            // 短形を取得
+            _this.setState({ width: width, height: height });
+            var surface = new SM.Surface(scopeId, surfaceId, width, height, renderer.shell);
+            // アニメーション開始
+            _this.surfaceState = new SS.SurfaceState(surface, function (ev, surface) {
+                return renderer.render(surface).then(function (srfcnv) { return rndr.base(srfcnv); });
+            });
+        });
+        // イベント登録
+        // window.addEventListener('resize', this.handleResize);
+    };
+    Scope.prototype.componentWillUnmount = function () {
+        // アニメーション停止
+        if (this.surfaceState instanceof SS.SurfaceState) {
+            this.surfaceState.destructor();
+        }
+        // イベント解除
+        // window.removeEventListener('resize', this.handleResize);
+    };
     Scope.prototype.render = function () {
-        var _a = this.props.surface, config = _a.config, move = _a.move, scopeId = _a.scopeId, surfaceId = _a.surfaceId, width = _a.width, height = _a.height, basepos = _a.basepos, surfaceNode = _a.surfaceNode, alignmenttodesktop = _a.alignmenttodesktop;
         var s = {
-            width: width,
-            height: height,
+            width: this.state.width,
+            height: this.state.height,
             basisX: "left",
             basisY: "top",
             x: 0,
-            y: 0,
-            content: "sakura"
+            y: 0
         };
-        return (React.createElement(LayerSet, {style: this.props.style}, 
-            React.createElement(Layer, {key: 0, x: s.x, y: s.y, basisX: s.basisX, basisY: s.basisY, width: s.width, height: s.height}, 
-                React.createElement(Doc, null, s.content)
-            )
+        if (this.surfaceState instanceof SS.SurfaceState) {
+            var _a = this.surfaceState.surface, config = _a.config, move = _a.move, scopeId = _a.scopeId, surfaceId = _a.surfaceId, width = _a.width, height = _a.height, basepos = _a.basepos, surfaceNode = _a.surfaceNode, alignmenttodesktop = _a.alignmenttodesktop;
+        }
+        return (React.createElement(BC.Layer, {basisX: "right", basisY: "bottom", x: 0, y: 0, width: s.width, height: s.height}, 
+            React.createElement(BC.LayerSet, {style: { "WebkitTapHighlightColor": "transparent" }}, 
+                React.createElement(BC.Layer, {key: 0, basisX: "left", basisY: "top", x: s.x, y: s.y, width: s.width, height: s.height, style: { "userSelect": "none" }}, 
+                    React.createElement("canvas", {ref: "surface", width: s.width, height: s.height, style: { "userSelect": "none", "pointerEvents": "auto" }})
+                ), 
+                React.createElement(BC.Layer, {key: 1, basisX: "left", basisY: "top", x: -200, y: 0, width: 200, height: 100, style: { backgroundColor: "blue" }}, "\"hi\""))
         ));
     };
     return Scope;
 }(React.Component));
 exports.Scope = Scope;
-var Cuttlebone = (function (_super) {
-    __extends(Cuttlebone, _super);
-    function Cuttlebone() {
-        _super.apply(this, arguments);
+var Named = (function (_super) {
+    __extends(Named, _super);
+    function Named(props) {
+        _super.call(this, props);
     }
-    return Cuttlebone;
+    Named.prototype.componentWillMount = function () {
+    };
+    Named.prototype.componentDidMount = function () {
+        // イベント登録
+        // window.addEventListener('resize', this.handleResize);
+    };
+    Named.prototype.componentWillUnmount = function () {
+        // イベント解除
+        // window.removeEventListener('resize', this.handleResize);
+    };
+    Named.prototype.render = function () {
+        var namedStyle = {
+            display: "block", position: "fixed",
+            boxSizing: "border-box",
+            bottom: "0px", right: "0px",
+            height: "100%", width: "100%"
+        };
+        return (React.createElement("div", {className: "named", style: namedStyle}, 
+            React.createElement(BC.LayerSet, null, 
+                React.createElement(Scope, {key: 0, surfaceId: 0, scopeId: 0, shell: this.props.shell, renderer: this.props.renderer})
+            )
+        ));
+    };
+    return Named;
 }(React.Component));
-exports.Cuttlebone = Cuttlebone;
-/*
-
-
-export class Cuttlebone<P, S> extends React.Component<P, S>{
-  style: {
-    display: "block",
-    position: "static",
-    boxSizing: "border-box"
-  };
-  constructor(){
-    super();
-  }
-  render(){
-    const nameds: number[] = [];
-    const namedElms = nameds.map((_, i)=>{
-      return React.createElement("div", {keys:i,key:i, bottom:0, right:0}, "hi");
-    });
-    return React.createElement("div", {style: this.style},
-      React.createElement(LayerSet, {}, namedElms)
-    );
-  }
-}
-
-export class Named<P, S> extends Layer<P, S>{
-  render(){
-    const scopes: number[] = [];
-    const scopeElms = scopes.map((_, i)=>{
-      return React.createElement(Scope, {key:i, bottom:0, right:10, width:100, height:200});
-    });
-    this.props.children = React.createElement(LayerSet, {hover:false}, scopeElms);
-    return super.render();
-  }
-}
-
-
-
-*/ 
+exports.Named = Named;

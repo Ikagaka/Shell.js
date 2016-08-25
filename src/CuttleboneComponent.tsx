@@ -1,172 +1,129 @@
+import * as ST from "./SurfaceTree";
+import * as SML from "./ShellModelLoader";
+import * as BC from "./BaseComponent";
+import * as SR from "./SurfaceRenderer";
+import * as SS from "./SurfaceState";
+import * as SHS from "./ShellState";
+import * as SPR from "./SurfacePatternRenderer";
 import * as SU from "./SurfaceUtil";
 import * as SM from "./SurfaceModel";
+import * as SH from "./ShellModel";
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import narloader = require("narloader");
+const NL = narloader.NarLoader;
 import $ = require("jquery");
 
-export interface LayerProps extends React.Props<Layer>{
-  style?: {[key: string]: string };
-  width: number;
-  height: number;
-  basisX: "left" | "right";
-  basisY: "top" | "bottom";
-  x: number;
-  y: number;
-}
-export interface LayerState {}
-export class Layer extends React.Component<LayerProps, LayerState >{
-  constructor(props: LayerProps) {
-    super(props);
-    this.props.style = SU.extend(true, {
-      display: "inline-block",
-      position: "absolute",
-      boxSizing: "border-box",
-      margin: "0px",
-      border: "none",
-      padding: "0px"
-    }, this.props.style);
-  }
-  render(){
-    const {width, height, basisX, basisY, x, y} = this.props;
-    const style:{[a:string]:any} = {
-      width: width+"px",
-      height: height+"px"
-    };
-    style[basisX] = x+"px";
-    style[basisY] = y+"px";
-    return (
-      <div className="layer" style={SU.extend(true, {}, this.props.style, style)}>
-        {this.props.children}
-      </div>
-    );
-  }
-}
-
-
-export interface LayerSetProps extends React.Props<LayerSet>{
-  style?: {[key: string]: string };
-}
-export interface LayerSetState {
-}
-export class LayerSet extends React.Component<LayerSetProps, LayerSetState>{
-  constructor(props: LayerSetProps) {
-    super(props);
-    this.props.style = SU.extend(true, {
-      display: "block",
-      position: "relative",
-      boxSizing: "border-box",
-      width: "100%",
-      height: "100%",
-      margin: "0px",
-      border: "none",
-      padding: "0px"
-    }, this.props.style);
-  }
-  render(){
-    return (
-      <div className="layerSet" style={SU.extend(true, {}, this.props.style)}>
-        {this.props.children}
-      </div>
-    );
-  }
-}
-
-export interface DocProps extends React.Props<Doc>{
-  style?: {[key: string]: string };
-}
-export interface DocState {}
-export class Doc extends React.Component<DocProps, DocState>{
-  constructor(props: DocProps) {
-    super(props);
-    this.props.style = SU.extend(true, {
-      display: "block",
-      position: "static",
-      boxSizing: "border-box"
-    }, this.props.style);
-  }
-  render(){
-    return (
-      <div className="doc" style={SU.extend(true, {}, this.props.style)}>
-        {this.props.children}
-      </div>
-    );
-  }
-}
+export type NULL = null; // vscode hack
 
 export interface ScopeProps extends React.Props<Scope>{
-  style?: {[key: string]: string };
-  surface: SM.Surface;
+  surfaceId: number;
+  scopeId: number;
+  shell: SH.Shell;
+  renderer: SPR.SurfacePatternRenderer;
 }
-export interface ScopeState {}
+export interface ScopeState {
+  width: number;
+  height: number;
+}
 export class Scope extends React.Component<ScopeProps, ScopeState> {
+  surfaceState: SS.SurfaceState|NULL;
   constructor(props: ScopeProps) {
     super(props);
+    this.state = { width: 0, height: 0 };
+    this.surfaceState = null;
+  }
+  componentWillMount(){
+  }
+  componentDidMount(){
+    const {renderer, scopeId, surfaceId} = this.props;
+    const canvas = ReactDOM.findDOMNode(this.refs["surface"]) as HTMLCanvasElement;
+    const rndr = new SR.SurfaceRenderer(canvas);
+    renderer.getBaseSurfaceSize(surfaceId).then(({width, height})=>{
+      // 短形を取得
+      this.setState({width, height});
+      const surface = new SM.Surface(scopeId, surfaceId, width, height, renderer.shell);
+      // アニメーション開始
+      this.surfaceState = new SS.SurfaceState(surface, (ev, surface)=>
+        renderer.render(surface).then((srfcnv)=> rndr.base(srfcnv) ) );
+    });
+    // イベント登録
+    // window.addEventListener('resize', this.handleResize);
+  }
+  componentWillUnmount(){
+    // アニメーション停止
+    if(this.surfaceState instanceof SS.SurfaceState){
+      this.surfaceState.destructor();
+    }
+    // イベント解除
+    // window.removeEventListener('resize', this.handleResize);
   }
   render(){
-    const {config, move, scopeId, surfaceId, width, height, basepos, surfaceNode, alignmenttodesktop} = this.props.surface
-    const s: LayerProps&{content:any} = {
-      width: width,
-      height: height,
+    const s: BC.LayerProps = {
+      width: this.state.width,
+      height: this.state.height,
       basisX: "left",
       basisY: "top",
       x: 0,
-      y: 0,
-      content: "sakura"
+      y: 0
+    };
+    if(this.surfaceState instanceof SS.SurfaceState){
+      const {config, move, scopeId, surfaceId, width, height, basepos, surfaceNode, alignmenttodesktop} = this.surfaceState.surface;
+    }
+    return (
+      <BC.Layer basisX={"right"} basisY={"bottom"} x={0} y={0} width={s.width} height={s.height}>
+        <BC.LayerSet style={{"WebkitTapHighlightColor": "transparent"}}>
+          <BC.Layer key={0} basisX={"left"} basisY={"top"} x={s.x} y={s.y} width={s.width} height={s.height} style={{"userSelect": "none"}}>
+            <canvas ref="surface" width={s.width} height={s.height} style={{"userSelect": "none", "pointerEvents": "auto"}}></canvas>
+          </BC.Layer>
+          <BC.Layer key={1} basisX={"left"} basisY={"top"} x={-200} y={0} width={200} height={100} style={{backgroundColor: "blue"}}>
+            "hi"
+          </BC.Layer>
+        </BC.LayerSet>
+      </BC.Layer>
+    );
+  }
+}
+
+
+export interface NamedProps extends React.Props<Named>{
+  shell: SH.Shell;
+  renderer: SPR.SurfacePatternRenderer;
+}
+export interface NamedState {}
+export class Named extends React.Component<NamedProps, NamedState> {
+  constructor(props: NamedProps) {
+    super(props);
+  }
+  componentWillMount(){
+  }
+  componentDidMount(){
+    // イベント登録
+    // window.addEventListener('resize', this.handleResize);
+  }
+  componentWillUnmount(){
+    // イベント解除
+    // window.removeEventListener('resize', this.handleResize);
+  }
+  render(){
+    const namedStyle = {
+      display: "block", position: "fixed",
+      boxSizing: "border-box",
+      bottom: "0px", right: "0px",
+      height:"100%", width: "100%"
     };
     return (
-      <LayerSet style={this.props.style}>
-        <Layer key={0} x={s.x} y={s.y} basisX={s.basisX} basisY={s.basisY} width={s.width} height={s.height}>
-          <Doc>{s.content}</Doc>
-        </Layer>
-      </LayerSet>
+      <div className="named" style={namedStyle}>
+        <BC.LayerSet>
+          <Scope key={0} surfaceId={0} scopeId={0} shell={this.props.shell} renderer={this.props.renderer}></Scope>
+        </BC.LayerSet>
+      </div>
     );
   }
 }
 
-export interface CuttleboneProps extends React.Props<Cuttlebone> {
-  style?: {[key: string]: string };
-}
-export interface CuttleboneState {}
-export class Cuttlebone extends React.Component<CuttleboneProps, CuttleboneState>{
-  style: {[key: string]: string };
-}
 
 
 
-/* 
 
 
-export class Cuttlebone<P, S> extends React.Component<P, S>{
-  style: {
-    display: "block",
-    position: "static",
-    boxSizing: "border-box"
-  };
-  constructor(){
-    super();
-  }
-  render(){
-    const nameds: number[] = [];
-    const namedElms = nameds.map((_, i)=>{
-      return React.createElement("div", {keys:i,key:i, bottom:0, right:0}, "hi");
-    });
-    return React.createElement("div", {style: this.style}, 
-      React.createElement(LayerSet, {}, namedElms)
-    );
-  }
-}
-
-export class Named<P, S> extends Layer<P, S>{
-  render(){
-    const scopes: number[] = [];
-    const scopeElms = scopes.map((_, i)=>{
-      return React.createElement(Scope, {key:i, bottom:0, right:10, width:100, height:200});
-    });
-    this.props.children = React.createElement(LayerSet, {hover:false}, scopeElms);
-    return super.render();
-  }
-}
-
-
-
-*/

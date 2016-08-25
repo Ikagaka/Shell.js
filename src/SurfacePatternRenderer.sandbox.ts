@@ -7,7 +7,6 @@ import * as SHS from "./ShellState";
 import * as SS from "./SurfaceState";
 import * as SML from "./ShellModelLoader";
 import * as SR from "./SurfaceRenderer";
-import * as CC from "./CuttleboneComponent";
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import narloader = require("narloader");

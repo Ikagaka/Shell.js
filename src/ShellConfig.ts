@@ -161,6 +161,7 @@ export class CharConfig {
       offsetY: 0,
       alignment: "none"
     };
+    this.seriko = {alignmenttodesktop: "bottom"};
     this.bindgroup = [];
   }
   

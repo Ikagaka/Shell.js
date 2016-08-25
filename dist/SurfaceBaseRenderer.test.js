@@ -742,12 +742,12 @@ var SurfaceRenderer = (function (_super) {
             if (bottom < 0) {
                 this.cnv.height += (-bottom); // reshape
             }
-            if (this.debug) {
-                // 基準点描画
-                this.ctx.fillStyle = "lime";
-                this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
-            }
             this.ctx.drawImage(this.tmpctx.canvas, offsetX, offsetY); //下位レイヤ再描画
+        }
+        if (this.debug) {
+            // 基準点描画
+            this.ctx.fillStyle = "lime";
+            this.ctx.fillRect(this.basePosX, this.basePosY, 5, 5);
         }
     };
     //下位レイヤの抜き色による透過領域に、そのコマの抜き色による透過領域を追加する。コマの抜き色で無い部分は無視される。
