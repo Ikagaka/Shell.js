@@ -16,7 +16,7 @@ import $ = require("jquery");
 
 export type NULL = null; // vscode hack
 
-export interface ScopeProps extends React.Props<Scope>{
+export interface ScopeProps extends React.Props<Scope> {
   surfaceId: number;
   scopeId: number;
   shell: SH.Shell;
@@ -25,65 +25,113 @@ export interface ScopeProps extends React.Props<Scope>{
 export interface ScopeState {
   width: number;
   height: number;
+  x: number;
+  y: number;
 }
 export class Scope extends React.Component<ScopeProps, ScopeState> {
   surfaceState: SS.SurfaceState|NULL;
+  screenX: number;
+  screenY: number;
   constructor(props: ScopeProps) {
     super(props);
-    this.state = { width: 0, height: 0 };
+    this.screenX = 0;
+    this.screenY = 0;
+    this.state = {width: 0, height: 0, x: 0, y: 0};
     this.surfaceState = null;
   }
-  componentWillMount(){
-  }
   componentDidMount(){
-    const {renderer, scopeId, surfaceId} = this.props;
-    const canvas = ReactDOM.findDOMNode(this.refs["surface"]) as HTMLCanvasElement;
-    const rndr = new SR.SurfaceRenderer(canvas);
+    const {renderer, scopeId, surfaceId, shell} = this.props;
     renderer.getBaseSurfaceSize(surfaceId).then(({width, height})=>{
-      // 短形を取得
-      this.setState({width, height});
-      const surface = new SM.Surface(scopeId, surfaceId, width, height, renderer.shell);
+      const surface = new SM.Surface(scopeId, surfaceId, width, height, shell);
       // アニメーション開始
       this.surfaceState = new SS.SurfaceState(surface, (ev, surface)=>
-        renderer.render(surface).then((srfcnv)=> rndr.base(srfcnv) ) );
+        renderer.render(surface).then((srfcnv)=>{
+          const canvas = ReactDOM.findDOMNode(this.refs["surface"]) as HTMLCanvasElement;
+          const rndr = new SR.SurfaceRenderer(canvas);
+          rndr.base(srfcnv);
+        } ) );
+      this.surfaceState.debug = true;
+      return this.surfaceState.render().then(()=>{
+        // setStateのタイミングでrenderが呼ばれるので
+        this.setState({width, height, x:this.state.x, y:this.state.y});
+      });
     });
-    // イベント登録
-    // window.addEventListener('resize', this.handleResize);
   }
-  componentWillUnmount(){
-    // アニメーション停止
+  componentDidUpdate() {
+    if(this.surfaceState instanceof SS.SurfaceState){
+      this.surfaceState.render();
+    }
+  }
+  componentWillUnmount() {
     if(this.surfaceState instanceof SS.SurfaceState){
       this.surfaceState.destructor();
     }
-    // イベント解除
-    // window.removeEventListener('resize', this.handleResize);
   }
   render(){
+    const {width, height, x, y} = this.state;
     const s: BC.LayerProps = {
-      width: this.state.width,
-      height: this.state.height,
+      width: width, height: height,
       basisX: "left",
       basisY: "top",
-      x: 0,
-      y: 0
+      x: x, y: y
     };
     if(this.surfaceState instanceof SS.SurfaceState){
       const {config, move, scopeId, surfaceId, width, height, basepos, surfaceNode, alignmenttodesktop} = this.surfaceState.surface;
+      s.x -= basepos.x;
+      s.y -= basepos.y;
+      switch (alignmenttodesktop){
+        case "top": s.y=0; break;
+        case "bottom": s.basisY="bottom"; s.y=0; break;
+        case "right": s.basisX="right"; s.x=0; break;
+        case "left": s.basisX="left"; s.x=0; break;
+        case "free": break;
+      }
+    }
+    const b: BC.LayerProps = {
+      width: 200, height: 100,
+      basisX: "left", basisY: "top",
+      x: 0, y: 0
+    };
+    switch (b.basisX){
+      case "left":  b.x -= b.width; break;
+      case "right": b.x += b.width; break;
     }
     return (
-      <BC.Layer basisX={"right"} basisY={"bottom"} x={0} y={0} width={s.width} height={s.height}>
-        <BC.LayerSet style={{"WebkitTapHighlightColor": "transparent"}}>
-          <BC.Layer key={0} basisX={"left"} basisY={"top"} x={s.x} y={s.y} width={s.width} height={s.height} style={{"userSelect": "none"}}>
-            <canvas ref="surface" width={s.width} height={s.height} style={{"userSelect": "none", "pointerEvents": "auto"}}></canvas>
+      <BC.Layer basisX={s.basisX} basisY={s.basisY} x={s.x} y={s.y} width={s.width} height={s.height}>
+        <BC.LayerSet>
+          <BC.Layer basisX={"left"} basisY={"top"} x={0} y={0} width={s.width} height={s.height}>
+            <canvas ref="surface" style={{position:"absolute", top:"0px", left:"0px"}}
+              onMouseDown={this.onSurfaceMouseDown.bind(this)} onMouseMove={this.onSurfaceMouseMove.bind(this)} onMouseUp={this.onSurfaceMouseUp.bind(this)}
+              onTouchStart={this.onSurfaceMouseDown.bind(this)} onTouchMove={this.onSurfaceMouseMove.bind(this)} onTouchEnd={this.onSurfaceMouseUp.bind(this)} onTouchCancel={this.onSurfaceMouseUp.bind(this)}></canvas>
           </BC.Layer>
-          <BC.Layer key={1} basisX={"left"} basisY={"top"} x={-200} y={0} width={200} height={100} style={{backgroundColor: "blue"}}>
-            "hi"
+          <BC.Layer basisX={b.basisX} basisY={b.basisY} x={b.x} y={b.y} width={b.width} height={b.height}>
+            <canvas width={b.width} height={b.height} ref="balloon" style={{position:"absolute", top:0+"px", left:0+"px"}}></canvas>
+            <div style={{position:"absolute", top:0+"px", left:0+"px", width:b.width+"px", height:b.height+"px"}}>
+              "hi"
+            </div>
           </BC.Layer>
         </BC.LayerSet>
       </BC.Layer>
     );
   }
+  onSurfaceMouseDown(ev: React.MouseEvent): void {
+    console.log(ev.type, ev, this);
+    this.screenX = ev.screenX;
+    this.screenY = ev.screenY;
+  }
+  onSurfaceMouseMove(ev: React.MouseEvent): void {
+    console.log(ev.type, ev, this);
+    const diffX = this.screenX - ev.screenX;
+    const diffY = this.screenY - ev.screenY;
+    this.setState({width:this.state.width, height:this.state.height, x:this.state.x+diffX, y:this.state.y+diffY});
+  }
+  onSurfaceMouseUp(ev: React.MouseEvent): void {
+    console.log(ev.type, ev, this);
+    this.screenX = 0;
+    this.screenY = 0;
+  }
 }
+
 
 
 export interface NamedProps extends React.Props<Named>{
@@ -92,32 +140,12 @@ export interface NamedProps extends React.Props<Named>{
 }
 export interface NamedState {}
 export class Named extends React.Component<NamedProps, NamedState> {
-  constructor(props: NamedProps) {
-    super(props);
-  }
-  componentWillMount(){
-  }
-  componentDidMount(){
-    // イベント登録
-    // window.addEventListener('resize', this.handleResize);
-  }
-  componentWillUnmount(){
-    // イベント解除
-    // window.removeEventListener('resize', this.handleResize);
-  }
   render(){
-    const namedStyle = {
-      display: "block", position: "fixed",
-      boxSizing: "border-box",
-      bottom: "0px", right: "0px",
-      height:"100%", width: "100%"
-    };
     return (
-      <div className="named" style={namedStyle}>
-        <BC.LayerSet>
-          <Scope key={0} surfaceId={0} scopeId={0} shell={this.props.shell} renderer={this.props.renderer}></Scope>
-        </BC.LayerSet>
-      </div>
+      <BC.LayerSet>
+        <Scope scopeId={0} surfaceId={0}  shell={this.props.shell} renderer={this.props.renderer}></Scope>
+        <Scope scopeId={1} surfaceId={10} shell={this.props.shell} renderer={this.props.renderer}></Scope>
+      </BC.LayerSet>
     );
   }
 }

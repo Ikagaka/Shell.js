@@ -12,10 +12,19 @@ NL.loadFromURL("../nar/mobilemaster.nar")
     .then(function (dic) { return SML.load(dic); })
     .then(function (shell) {
     var rndr = new SPR.SurfacePatternRenderer(shell);
+    rndr.debug = true;
     // return rndr.preload().then(function(){
     // });
     $(function () {
         var content = $("<div />").attr("id", "content").appendTo("body")[0];
-        ReactDOM.render((React.createElement(CC.Named, {shell: shell, renderer: rndr})), content);
+        var cuttleboneStyle = {
+            display: "block", position: "fixed",
+            boxSizing: "border-box",
+            bottom: "0px", right: "0px",
+            height: "100%", width: "100%"
+        };
+        ReactDOM.render((React.createElement("div", {className: "cuttlebone", style: cuttleboneStyle}, 
+            React.createElement(CC.Named, {shell: shell, renderer: rndr})
+        )), content);
     });
 }).catch(console.error.bind(console));

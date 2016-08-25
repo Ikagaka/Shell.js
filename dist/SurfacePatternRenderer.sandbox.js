@@ -526,6 +526,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var SR = require("./SurfaceRenderer");
+var SU = require("./SurfaceUtil");
 var CC = require("./CanvasCache");
 var ST = require("./SurfaceTree");
 var SurfaceBaseRenderer = (function (_super) {
@@ -580,14 +581,10 @@ var SurfaceBaseRenderer = (function (_super) {
                 .catch(function (err) {
                 console.warn("SurfaceBaseRenderer#getBaseSurface: no such a file", file, n, srf);
             });
-        })).then(function (elms) { return _this.composeElements(elms); }).then(function (srfCnv) {
-            // basesurfaceの大きさはbasesurfaceそのもの
-            srfCnv.basePosX = 0;
-            srfCnv.basePosY = 0;
-            srfCnv.baseWidth = srfCnv.cnv.width;
-            srfCnv.baseHeight = srfCnv.cnv.height;
+        })).then(function (elms) {
+            _this.composeElements(elms);
             // キャッシング
-            bases[n] = SR.copy(srfCnv);
+            bases[n] = new SR.SurfaceCanvas(SU.copy(_this.cnv));
             return bases[n];
         });
     };
@@ -603,7 +600,7 @@ var SurfaceBaseRenderer = (function (_super) {
 }(SR.SurfaceRenderer));
 exports.SurfaceBaseRenderer = SurfaceBaseRenderer;
 
-},{"./CanvasCache":1,"./SurfaceRenderer":10,"./SurfaceTree":12}],8:[function(require,module,exports){
+},{"./CanvasCache":1,"./SurfaceRenderer":10,"./SurfaceTree":12,"./SurfaceUtil":14}],8:[function(require,module,exports){
 /*
  * Surface の状態モデル
  */
@@ -630,7 +627,7 @@ var Surface = (function () {
         }
         // model は　render されないと base surface の大きさがわからない
         this.width = width;
-        this.height = width;
+        this.height = height;
         this.basepos = { x: width / 2 | 0, y: height };
         if (this.surfaceNode.points.basepos.x != null) {
             this.basepos.x = this.surfaceNode.points.basepos.x;
@@ -706,7 +703,7 @@ var SurfacePatternRenderer = (function (_super) {
             _this.init(baseSrfCnv);
             _this.clear(); // 短形を保ったまま消去
             // この this な srfCnv がreduceの単位元になる
-            return _this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+            return _this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0)); // 透明な base へ overlay する
         }).then(function () {
             // 当たり判定を描画
             if (enableRegion) {
@@ -743,14 +740,14 @@ var SurfacePatternRenderer = (function (_super) {
                 }, prm);
             }, Promise.resolve());
         };
-        return process(backgrounds)
-            .then(function () {
+        return process(backgrounds).then(function () {
             return _this.getBaseSurface(base).then(function (baseSrfCnv) {
                 // backgrounds の上に base を描画
                 // いろいろやっていても実際描画するのは それぞれのベースサーフェスだけです
                 return _this.composeElement(baseSrfCnv, type, x, y);
             }).catch(console.warn.bind(console));
-        }).then(function () { return process(foregrounds); });
+        } // 失敗してもログ出して解決
+        ).then(function () { return process(foregrounds); });
     };
     return SurfacePatternRenderer;
 }(SBR.SurfaceBaseRenderer));
@@ -831,18 +828,21 @@ var SurfaceRenderer = (function (_super) {
             return type !== "base";
         });
         // element[MAX].base > element0 > element[MIN]
-        var base = bases.slice(-1)[0]; /* last */
-        if (!(base instanceof ST.SurfaceElement)) {
+        if (bases.length === 0) {
             // element[MIN]
             // elms.length > 0なのでundefinedにはならない…はず。
             // お前がbaseになるんだよ
-            base = elms.shift();
-            console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
-            if (base == null) {
-                console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
+            var base_1 = others.shift();
+            if (base_1 != null) {
+                bases.push(base_1);
+                console.warn("SurfaceRenderer#composeElements: base surface not found. failback.", bases, others);
+            }
+            else {
+                console.error("SurfaceRenderer#composeElements: cannot decide base surface.", base_1, others);
                 return this;
             }
         }
+        var base = bases.slice(-1)[0]; /* last */
         this.base(base.canvas);
         others.forEach(function (_a) {
             var canvas = _a.canvas, type = _a.type, x = _a.x, y = _a.y;
@@ -1112,8 +1112,7 @@ var SurfaceState = (function () {
                 _this.initSeriko(animId);
             }
         });
-        // 初回更新
-        this.constructRenderingTree();
+        // debugの設定を待つため初回更新はしない
     }
     SurfaceState.prototype.destructor = function () {
         this.surface.destructed = true;
@@ -1121,10 +1120,11 @@ var SurfaceState = (function () {
     };
     SurfaceState.prototype.render = function () {
         var _this = this;
-        this.debug && console.time("render");
+        var _a = this.surface, scopeId = _a.scopeId, surfaceId = _a.surfaceId;
+        this.debug && console.time("render(" + scopeId + "," + surfaceId + ")");
         this.constructRenderingTree();
         return this.renderer("render", this.surface).then(function () {
-            _this.debug && console.timeEnd("render");
+            _this.debug && console.timeEnd("render(" + scopeId + "," + surfaceId + ")");
         });
     };
     SurfaceState.prototype.initSeriko = function (animId) {
@@ -1272,7 +1272,7 @@ var SurfaceState = (function () {
     SurfaceState.prototype.play = function (animId) {
         var _this = this;
         var _a = this, debug = _a.debug, surface = _a.surface;
-        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, config = surface.config, scopeId = surface.scopeId;
+        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, config = surface.config, scopeId = surface.scopeId, surfaceId = surface.surfaceId;
         var animations = surfaceNode.animations;
         if (!(animations[animId] instanceof ST.SurfaceAnimation)) {
             // そんなアニメーションはない
@@ -1311,7 +1311,7 @@ var SurfaceState = (function () {
                 serikos[exAnimId].exclusive = true;
             }
         });
-        debug && console.group("" + animId);
+        debug && console.group("(" + [scopeId, surfaceId, animId].join(",") + ")");
         debug && console.info("animation start", animId, anim);
         return new Promise(function (resolve, reject) {
             // pause から resume した後に帰るべき場所への継続を取り出す
@@ -1325,7 +1325,7 @@ var SurfaceState = (function () {
     SurfaceState.prototype.step = function (animId, seriko) {
         var _this = this;
         var _a = this, surface = _a.surface, debug = _a.debug;
-        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, move = surface.move;
+        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, move = surface.move, scopeId = surface.scopeId, surfaceId = surface.surfaceId;
         var _b = this.continuations[animId], resolve = _b.resolve, reject = _b.reject;
         var anim = surfaceNode.animations[animId];
         // patternをすすめる
@@ -1363,7 +1363,11 @@ var SurfaceState = (function () {
             // 初期化
             serikos[animId] = new SM.Seriko();
             delete this.continuations[animId];
-            return resolve();
+            this.render().then(function () {
+                // 最終状態を描画してから終了
+                resolve();
+            });
+            return;
         }
         var _c = anim.patterns[seriko.patternID], wait = _c.wait, type = _c.type, x = _c.x, y = _c.y, animation_ids = _c.animation_ids;
         var _surface = anim.patterns[seriko.patternID].surface;
@@ -1389,9 +1393,9 @@ var SurfaceState = (function () {
         }
         var _wait = SU.randomRange(wait[0], wait[1]);
         // waitだけ待ってからレンダリング
-        debug && console.time("waiting: " + _wait + "ms");
+        debug && console.time("waiting(" + [scopeId, surfaceId, animId].join(",") + "): " + _wait + "ms");
         setTimeout(function () {
-            debug && console.timeEnd("waiting: " + _wait + "ms");
+            debug && console.timeEnd("waiting(" + [scopeId, surfaceId, animId].join(",") + "): " + _wait + "ms");
             if (_surface < -2) {
                 // SERIKO/1.4 ?
                 console.warn("SurfaceState#step: pattern surfaceId", surface, "is not defined in SERIKO/1.4, failback to -2");
@@ -1480,7 +1484,7 @@ var SurfaceState = (function () {
         var config = shell.config, surfaceDefTree = shell.surfaceDefTree;
         var surfaces = surfaceDefTree.surfaces;
         surface.renderingTree = layersToTree(surfaces, scopeId, surfaceId, serikos, config);
-        debug && console.log("diff: ", SU.diff(renderingTree, surface.renderingTree));
+        debug && console.log("diff(" + scopeId + "," + surfaceId + "): ", SU.diff(renderingTree, surface.renderingTree), surface.renderingTree);
         // レンダリングツリーが更新された！
     };
     return SurfaceState;
@@ -1638,7 +1642,7 @@ var SurfaceElement = (function () {
     function SurfaceElement(type, file, x, y) {
         if (x === void 0) { x = 0; }
         if (y === void 0) { y = 0; }
-        this.type = "overlay";
+        this.type = type;
         this.file = file;
         this.x = x;
         this.y = y;
@@ -2547,24 +2551,23 @@ NL.loadFromURL("../nar/mobilemaster.nar")
     rndr.debug = true;
     // プリロードすると安心だけど重い
     return rndr.preload().then(function () {
-        var surfaceId = 7;
+        var scopeId = 0;
+        var surfaceId = 10;
         // まずベースサーフェスサイズを取得
         rndr.getBaseSurfaceSize(surfaceId).then(function (_a) {
             var width = _a.width, height = _a.height;
-            var surface = new SM.Surface(0, surfaceId, width, height, shell);
+            var surface = new SM.Surface(scopeId, surfaceId, width, height, shell);
             var shellState = new SHS.ShellState(shell, console.info.bind(console, "shell state update:"));
+            SU.setCanvasStyle();
+            var rndr2 = new SR.SurfaceRenderer();
+            document.body.appendChild(rndr2.cnv);
             var srfState = new SS.SurfaceState(surface, function render(ev, surface) {
                 return rndr.render(surface).then(function (srfcnv) { return rndr2.base(srfcnv); });
             });
             console.log(srfState);
             srfState.debug = true;
-            SU.setCanvasStyle();
-            var rndr2 = new SR.SurfaceRenderer();
-            document.body.appendChild(rndr2.cnv);
             // 初回描画
-            return srfState.render().then(function () {
-                rndr2.base(rndr);
-            });
+            return srfState.render();
         });
     });
 }).catch(console.error.bind(console));

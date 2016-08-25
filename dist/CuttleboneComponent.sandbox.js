@@ -162,87 +162,124 @@ var Scope = (function (_super) {
     __extends(Scope, _super);
     function Scope(props) {
         _super.call(this, props);
-        this.state = { width: 0, height: 0 };
+        this.screenX = 0;
+        this.screenY = 0;
+        this.state = { width: 0, height: 0, x: 0, y: 0 };
         this.surfaceState = null;
     }
-    Scope.prototype.componentWillMount = function () {
-    };
     Scope.prototype.componentDidMount = function () {
         var _this = this;
-        var _a = this.props, renderer = _a.renderer, scopeId = _a.scopeId, surfaceId = _a.surfaceId;
-        var canvas = ReactDOM.findDOMNode(this.refs["surface"]);
-        var rndr = new SR.SurfaceRenderer(canvas);
+        var _a = this.props, renderer = _a.renderer, scopeId = _a.scopeId, surfaceId = _a.surfaceId, shell = _a.shell;
         renderer.getBaseSurfaceSize(surfaceId).then(function (_a) {
             var width = _a.width, height = _a.height;
-            // 短形を取得
-            _this.setState({ width: width, height: height });
-            var surface = new SM.Surface(scopeId, surfaceId, width, height, renderer.shell);
+            var surface = new SM.Surface(scopeId, surfaceId, width, height, shell);
             // アニメーション開始
             _this.surfaceState = new SS.SurfaceState(surface, function (ev, surface) {
-                return renderer.render(surface).then(function (srfcnv) { return rndr.base(srfcnv); });
+                return renderer.render(surface).then(function (srfcnv) {
+                    var canvas = ReactDOM.findDOMNode(_this.refs["surface"]);
+                    var rndr = new SR.SurfaceRenderer(canvas);
+                    rndr.base(srfcnv);
+                });
+            });
+            _this.surfaceState.debug = true;
+            return _this.surfaceState.render().then(function () {
+                // setStateのタイミングでrenderが呼ばれるので
+                _this.setState({ width: width, height: height, x: _this.state.x, y: _this.state.y });
             });
         });
-        // イベント登録
-        // window.addEventListener('resize', this.handleResize);
+    };
+    Scope.prototype.componentDidUpdate = function () {
+        if (this.surfaceState instanceof SS.SurfaceState) {
+            this.surfaceState.render();
+        }
     };
     Scope.prototype.componentWillUnmount = function () {
-        // アニメーション停止
         if (this.surfaceState instanceof SS.SurfaceState) {
             this.surfaceState.destructor();
         }
-        // イベント解除
-        // window.removeEventListener('resize', this.handleResize);
     };
     Scope.prototype.render = function () {
+        var _a = this.state, width = _a.width, height = _a.height, x = _a.x, y = _a.y;
         var s = {
-            width: this.state.width,
-            height: this.state.height,
+            width: width, height: height,
             basisX: "left",
             basisY: "top",
-            x: 0,
-            y: 0
+            x: x, y: y
         };
         if (this.surfaceState instanceof SS.SurfaceState) {
-            var _a = this.surfaceState.surface, config = _a.config, move = _a.move, scopeId = _a.scopeId, surfaceId = _a.surfaceId, width = _a.width, height = _a.height, basepos = _a.basepos, surfaceNode = _a.surfaceNode, alignmenttodesktop = _a.alignmenttodesktop;
+            var _b = this.surfaceState.surface, config = _b.config, move = _b.move, scopeId = _b.scopeId, surfaceId = _b.surfaceId, width_1 = _b.width, height_1 = _b.height, basepos = _b.basepos, surfaceNode = _b.surfaceNode, alignmenttodesktop = _b.alignmenttodesktop;
+            s.x -= basepos.x;
+            s.y -= basepos.y;
+            switch (alignmenttodesktop) {
+                case "top":
+                    s.y = 0;
+                    break;
+                case "bottom":
+                    s.basisY = "bottom";
+                    s.y = 0;
+                    break;
+                case "right":
+                    s.basisX = "right";
+                    s.x = 0;
+                    break;
+                case "left":
+                    s.basisX = "left";
+                    s.x = 0;
+                    break;
+                case "free": break;
+            }
         }
-        return (React.createElement(BC.Layer, {basisX: "right", basisY: "bottom", x: 0, y: 0, width: s.width, height: s.height}, 
-            React.createElement(BC.LayerSet, {style: { "WebkitTapHighlightColor": "transparent" }}, 
-                React.createElement(BC.Layer, {key: 0, basisX: "left", basisY: "top", x: s.x, y: s.y, width: s.width, height: s.height, style: { "userSelect": "none" }}, 
-                    React.createElement("canvas", {ref: "surface", width: s.width, height: s.height, style: { "userSelect": "none", "pointerEvents": "auto" }})
+        var b = {
+            width: 200, height: 100,
+            basisX: "left", basisY: "top",
+            x: 0, y: 0
+        };
+        switch (b.basisX) {
+            case "left":
+                b.x -= b.width;
+                break;
+            case "right":
+                b.x += b.width;
+                break;
+        }
+        return (React.createElement(BC.Layer, {basisX: s.basisX, basisY: s.basisY, x: s.x, y: s.y, width: s.width, height: s.height}, 
+            React.createElement(BC.LayerSet, null, 
+                React.createElement(BC.Layer, {basisX: "left", basisY: "top", x: 0, y: 0, width: s.width, height: s.height}, 
+                    React.createElement("canvas", {ref: "surface", style: { position: "absolute", top: "0px", left: "0px" }, onMouseDown: this.onSurfaceMouseDown.bind(this), onMouseMove: this.onSurfaceMouseMove.bind(this), onMouseUp: this.onSurfaceMouseUp.bind(this), onTouchStart: this.onSurfaceMouseDown.bind(this), onTouchMove: this.onSurfaceMouseMove.bind(this), onTouchEnd: this.onSurfaceMouseUp.bind(this), onTouchCancel: this.onSurfaceMouseUp.bind(this)})
                 ), 
-                React.createElement(BC.Layer, {key: 1, basisX: "left", basisY: "top", x: -200, y: 0, width: 200, height: 100, style: { backgroundColor: "blue" }}, "\"hi\""))
+                React.createElement(BC.Layer, {basisX: b.basisX, basisY: b.basisY, x: b.x, y: b.y, width: b.width, height: b.height}, 
+                    React.createElement("canvas", {width: b.width, height: b.height, ref: "balloon", style: { position: "absolute", top: 0 + "px", left: 0 + "px" }}), 
+                    React.createElement("div", {style: { position: "absolute", top: 0 + "px", left: 0 + "px", width: b.width + "px", height: b.height + "px" }}, "\"hi\"")))
         ));
+    };
+    Scope.prototype.onSurfaceMouseDown = function (ev) {
+        console.log(ev.type, ev, this);
+        this.screenX = ev.screenX;
+        this.screenY = ev.screenY;
+    };
+    Scope.prototype.onSurfaceMouseMove = function (ev) {
+        console.log(ev.type, ev, this);
+        var diffX = this.screenX - ev.screenX;
+        var diffY = this.screenY - ev.screenY;
+        this.setState({ width: this.state.width, height: this.state.height, x: this.state.x + diffX, y: this.state.y + diffY });
+    };
+    Scope.prototype.onSurfaceMouseUp = function (ev) {
+        console.log(ev.type, ev, this);
+        this.screenX = 0;
+        this.screenY = 0;
     };
     return Scope;
 }(React.Component));
 exports.Scope = Scope;
 var Named = (function (_super) {
     __extends(Named, _super);
-    function Named(props) {
-        _super.call(this, props);
+    function Named() {
+        _super.apply(this, arguments);
     }
-    Named.prototype.componentWillMount = function () {
-    };
-    Named.prototype.componentDidMount = function () {
-        // イベント登録
-        // window.addEventListener('resize', this.handleResize);
-    };
-    Named.prototype.componentWillUnmount = function () {
-        // イベント解除
-        // window.removeEventListener('resize', this.handleResize);
-    };
     Named.prototype.render = function () {
-        var namedStyle = {
-            display: "block", position: "fixed",
-            boxSizing: "border-box",
-            bottom: "0px", right: "0px",
-            height: "100%", width: "100%"
-        };
-        return (React.createElement("div", {className: "named", style: namedStyle}, 
-            React.createElement(BC.LayerSet, null, 
-                React.createElement(Scope, {key: 0, surfaceId: 0, scopeId: 0, shell: this.props.shell, renderer: this.props.renderer})
-            )
-        ));
+        return (React.createElement(BC.LayerSet, null, 
+            React.createElement(Scope, {scopeId: 0, surfaceId: 0, shell: this.props.shell, renderer: this.props.renderer}), 
+            React.createElement(Scope, {scopeId: 1, surfaceId: 10, shell: this.props.shell, renderer: this.props.renderer})));
     };
     return Named;
 }(React.Component));
@@ -650,6 +687,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var SR = require("./SurfaceRenderer");
+var SU = require("./SurfaceUtil");
 var CC = require("./CanvasCache");
 var ST = require("./SurfaceTree");
 var SurfaceBaseRenderer = (function (_super) {
@@ -704,14 +742,10 @@ var SurfaceBaseRenderer = (function (_super) {
                 .catch(function (err) {
                 console.warn("SurfaceBaseRenderer#getBaseSurface: no such a file", file, n, srf);
             });
-        })).then(function (elms) { return _this.composeElements(elms); }).then(function (srfCnv) {
-            // basesurfaceの大きさはbasesurfaceそのもの
-            srfCnv.basePosX = 0;
-            srfCnv.basePosY = 0;
-            srfCnv.baseWidth = srfCnv.cnv.width;
-            srfCnv.baseHeight = srfCnv.cnv.height;
+        })).then(function (elms) {
+            _this.composeElements(elms);
             // キャッシング
-            bases[n] = SR.copy(srfCnv);
+            bases[n] = new SR.SurfaceCanvas(SU.copy(_this.cnv));
             return bases[n];
         });
     };
@@ -727,7 +761,7 @@ var SurfaceBaseRenderer = (function (_super) {
 }(SR.SurfaceRenderer));
 exports.SurfaceBaseRenderer = SurfaceBaseRenderer;
 
-},{"./CanvasCache":2,"./SurfaceRenderer":11,"./SurfaceTree":13}],9:[function(require,module,exports){
+},{"./CanvasCache":2,"./SurfaceRenderer":11,"./SurfaceTree":13,"./SurfaceUtil":15}],9:[function(require,module,exports){
 /*
  * Surface の状態モデル
  */
@@ -754,7 +788,7 @@ var Surface = (function () {
         }
         // model は　render されないと base surface の大きさがわからない
         this.width = width;
-        this.height = width;
+        this.height = height;
         this.basepos = { x: width / 2 | 0, y: height };
         if (this.surfaceNode.points.basepos.x != null) {
             this.basepos.x = this.surfaceNode.points.basepos.x;
@@ -830,7 +864,7 @@ var SurfacePatternRenderer = (function (_super) {
             _this.init(baseSrfCnv);
             _this.clear(); // 短形を保ったまま消去
             // この this な srfCnv がreduceの単位元になる
-            return _this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+            return _this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0)); // 透明な base へ overlay する
         }).then(function () {
             // 当たり判定を描画
             if (enableRegion) {
@@ -867,14 +901,14 @@ var SurfacePatternRenderer = (function (_super) {
                 }, prm);
             }, Promise.resolve());
         };
-        return process(backgrounds)
-            .then(function () {
+        return process(backgrounds).then(function () {
             return _this.getBaseSurface(base).then(function (baseSrfCnv) {
                 // backgrounds の上に base を描画
                 // いろいろやっていても実際描画するのは それぞれのベースサーフェスだけです
                 return _this.composeElement(baseSrfCnv, type, x, y);
             }).catch(console.warn.bind(console));
-        }).then(function () { return process(foregrounds); });
+        } // 失敗してもログ出して解決
+        ).then(function () { return process(foregrounds); });
     };
     return SurfacePatternRenderer;
 }(SBR.SurfaceBaseRenderer));
@@ -955,18 +989,21 @@ var SurfaceRenderer = (function (_super) {
             return type !== "base";
         });
         // element[MAX].base > element0 > element[MIN]
-        var base = bases.slice(-1)[0]; /* last */
-        if (!(base instanceof ST.SurfaceElement)) {
+        if (bases.length === 0) {
             // element[MIN]
             // elms.length > 0なのでundefinedにはならない…はず。
             // お前がbaseになるんだよ
-            base = elms.shift();
-            console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
-            if (base == null) {
-                console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
+            var base_1 = others.shift();
+            if (base_1 != null) {
+                bases.push(base_1);
+                console.warn("SurfaceRenderer#composeElements: base surface not found. failback.", bases, others);
+            }
+            else {
+                console.error("SurfaceRenderer#composeElements: cannot decide base surface.", base_1, others);
                 return this;
             }
         }
+        var base = bases.slice(-1)[0]; /* last */
         this.base(base.canvas);
         others.forEach(function (_a) {
             var canvas = _a.canvas, type = _a.type, x = _a.x, y = _a.y;
@@ -1236,8 +1273,7 @@ var SurfaceState = (function () {
                 _this.initSeriko(animId);
             }
         });
-        // 初回更新
-        this.constructRenderingTree();
+        // debugの設定を待つため初回更新はしない
     }
     SurfaceState.prototype.destructor = function () {
         this.surface.destructed = true;
@@ -1245,10 +1281,11 @@ var SurfaceState = (function () {
     };
     SurfaceState.prototype.render = function () {
         var _this = this;
-        this.debug && console.time("render");
+        var _a = this.surface, scopeId = _a.scopeId, surfaceId = _a.surfaceId;
+        this.debug && console.time("render(" + scopeId + "," + surfaceId + ")");
         this.constructRenderingTree();
         return this.renderer("render", this.surface).then(function () {
-            _this.debug && console.timeEnd("render");
+            _this.debug && console.timeEnd("render(" + scopeId + "," + surfaceId + ")");
         });
     };
     SurfaceState.prototype.initSeriko = function (animId) {
@@ -1396,7 +1433,7 @@ var SurfaceState = (function () {
     SurfaceState.prototype.play = function (animId) {
         var _this = this;
         var _a = this, debug = _a.debug, surface = _a.surface;
-        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, config = surface.config, scopeId = surface.scopeId;
+        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, config = surface.config, scopeId = surface.scopeId, surfaceId = surface.surfaceId;
         var animations = surfaceNode.animations;
         if (!(animations[animId] instanceof ST.SurfaceAnimation)) {
             // そんなアニメーションはない
@@ -1435,7 +1472,7 @@ var SurfaceState = (function () {
                 serikos[exAnimId].exclusive = true;
             }
         });
-        debug && console.group("" + animId);
+        debug && console.group("(" + [scopeId, surfaceId, animId].join(",") + ")");
         debug && console.info("animation start", animId, anim);
         return new Promise(function (resolve, reject) {
             // pause から resume した後に帰るべき場所への継続を取り出す
@@ -1449,7 +1486,7 @@ var SurfaceState = (function () {
     SurfaceState.prototype.step = function (animId, seriko) {
         var _this = this;
         var _a = this, surface = _a.surface, debug = _a.debug;
-        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, move = surface.move;
+        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, move = surface.move, scopeId = surface.scopeId, surfaceId = surface.surfaceId;
         var _b = this.continuations[animId], resolve = _b.resolve, reject = _b.reject;
         var anim = surfaceNode.animations[animId];
         // patternをすすめる
@@ -1487,7 +1524,11 @@ var SurfaceState = (function () {
             // 初期化
             serikos[animId] = new SM.Seriko();
             delete this.continuations[animId];
-            return resolve();
+            this.render().then(function () {
+                // 最終状態を描画してから終了
+                resolve();
+            });
+            return;
         }
         var _c = anim.patterns[seriko.patternID], wait = _c.wait, type = _c.type, x = _c.x, y = _c.y, animation_ids = _c.animation_ids;
         var _surface = anim.patterns[seriko.patternID].surface;
@@ -1513,9 +1554,9 @@ var SurfaceState = (function () {
         }
         var _wait = SU.randomRange(wait[0], wait[1]);
         // waitだけ待ってからレンダリング
-        debug && console.time("waiting: " + _wait + "ms");
+        debug && console.time("waiting(" + [scopeId, surfaceId, animId].join(",") + "): " + _wait + "ms");
         setTimeout(function () {
-            debug && console.timeEnd("waiting: " + _wait + "ms");
+            debug && console.timeEnd("waiting(" + [scopeId, surfaceId, animId].join(",") + "): " + _wait + "ms");
             if (_surface < -2) {
                 // SERIKO/1.4 ?
                 console.warn("SurfaceState#step: pattern surfaceId", surface, "is not defined in SERIKO/1.4, failback to -2");
@@ -1604,7 +1645,7 @@ var SurfaceState = (function () {
         var config = shell.config, surfaceDefTree = shell.surfaceDefTree;
         var surfaces = surfaceDefTree.surfaces;
         surface.renderingTree = layersToTree(surfaces, scopeId, surfaceId, serikos, config);
-        debug && console.log("diff: ", SU.diff(renderingTree, surface.renderingTree));
+        debug && console.log("diff(" + scopeId + "," + surfaceId + "): ", SU.diff(renderingTree, surface.renderingTree), surface.renderingTree);
         // レンダリングツリーが更新された！
     };
     return SurfaceState;
@@ -1762,7 +1803,7 @@ var SurfaceElement = (function () {
     function SurfaceElement(type, file, x, y) {
         if (x === void 0) { x = 0; }
         if (y === void 0) { y = 0; }
-        this.type = "overlay";
+        this.type = type;
         this.file = file;
         this.x = x;
         this.y = y;
@@ -2663,11 +2704,20 @@ NL.loadFromURL("../nar/mobilemaster.nar")
     .then(function (dic) { return SML.load(dic); })
     .then(function (shell) {
     var rndr = new SPR.SurfacePatternRenderer(shell);
+    rndr.debug = true;
     // return rndr.preload().then(function(){
     // });
     $(function () {
         var content = $("<div />").attr("id", "content").appendTo("body")[0];
-        ReactDOM.render((React.createElement(CC.Named, {shell: shell, renderer: rndr})), content);
+        var cuttleboneStyle = {
+            display: "block", position: "fixed",
+            boxSizing: "border-box",
+            bottom: "0px", right: "0px",
+            height: "100%", width: "100%"
+        };
+        ReactDOM.render((React.createElement("div", {className: "cuttlebone", style: cuttleboneStyle}, 
+            React.createElement(CC.Named, {shell: shell, renderer: rndr})
+        )), content);
     });
 }).catch(console.error.bind(console));
 

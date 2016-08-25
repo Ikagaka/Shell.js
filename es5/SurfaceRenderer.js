@@ -72,18 +72,21 @@ var SurfaceRenderer = (function (_super) {
             return type !== "base";
         });
         // element[MAX].base > element0 > element[MIN]
-        var base = bases.slice(-1)[0]; /* last */
-        if (!(base instanceof ST.SurfaceElement)) {
+        if (bases.length === 0) {
             // element[MIN]
             // elms.length > 0なのでundefinedにはならない…はず。
             // お前がbaseになるんだよ
-            base = elms.shift();
-            console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
-            if (base == null) {
-                console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
+            var base_1 = others.shift();
+            if (base_1 != null) {
+                bases.push(base_1);
+                console.warn("SurfaceRenderer#composeElements: base surface not found. failback.", bases, others);
+            }
+            else {
+                console.error("SurfaceRenderer#composeElements: cannot decide base surface.", base_1, others);
                 return this;
             }
         }
+        var base = bases.slice(-1)[0]; /* last */
         this.base(base.canvas);
         others.forEach(function (_a) {
             var canvas = _a.canvas, type = _a.type, x = _a.x, y = _a.y;

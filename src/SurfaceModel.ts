@@ -55,7 +55,7 @@ export class Surface {
      
     // model は　render されないと base surface の大きさがわからない
     this.width = width;
-    this.height = width;
+    this.height = height;
     this.basepos = {x: width/2|0, y: height};
     if(this.surfaceNode.points.basepos.x != null){
       this.basepos.x = this.surfaceNode.points.basepos.x;

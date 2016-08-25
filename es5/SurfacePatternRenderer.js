@@ -27,7 +27,7 @@ var SurfacePatternRenderer = (function (_super) {
             _this.init(baseSrfCnv);
             _this.clear(); // 短形を保ったまま消去
             // この this な srfCnv がreduceの単位元になる
-            return _this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+            return _this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0)); // 透明な base へ overlay する
         }).then(function () {
             // 当たり判定を描画
             if (enableRegion) {
@@ -64,14 +64,14 @@ var SurfacePatternRenderer = (function (_super) {
                 }, prm);
             }, Promise.resolve());
         };
-        return process(backgrounds)
-            .then(function () {
+        return process(backgrounds).then(function () {
             return _this.getBaseSurface(base).then(function (baseSrfCnv) {
                 // backgrounds の上に base を描画
                 // いろいろやっていても実際描画するのは それぞれのベースサーフェスだけです
                 return _this.composeElement(baseSrfCnv, type, x, y);
             }).catch(console.warn.bind(console));
-        }).then(function () { return process(foregrounds); });
+        } // 失敗してもログ出して解決
+        ).then(function () { return process(foregrounds); });
     };
     return SurfacePatternRenderer;
 }(SBR.SurfaceBaseRenderer));

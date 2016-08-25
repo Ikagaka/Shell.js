@@ -26,7 +26,7 @@ export class SurfacePatternRenderer extends SBR.SurfaceBaseRenderer {
       this.init(baseSrfCnv);
       this.clear(); // 短形を保ったまま消去
       // この this な srfCnv がreduceの単位元になる
-      return this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0));
+      return this.convoluteTree(new SM.SurfaceRenderingLayer("overlay", renderingTree, 0, 0)); // 透明な base へ overlay する
     }).then(()=>{
       // 当たり判定を描画
       if (enableRegion) {
@@ -60,13 +60,12 @@ export class SurfacePatternRenderer extends SBR.SurfaceBaseRenderer {
           prm.then(()=>
             this.convoluteTree(layer)
           ), prm) , Promise.resolve());
-    return process(backgrounds)
-    .then(()=>
+    return process(backgrounds).then(()=>
       this.getBaseSurface(base).then((baseSrfCnv)=>
         // backgrounds の上に base を描画
         // いろいろやっていても実際描画するのは それぞれのベースサーフェスだけです
         this.composeElement(baseSrfCnv, type, x, y)
-      ).catch(console.warn.bind(console))
+      ).catch(console.warn.bind(console)) // 失敗してもログ出して解決
     ).then(()=> process(foregrounds) );
   }
 }

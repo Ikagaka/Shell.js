@@ -187,6 +187,7 @@ var CharConfig = (function () {
             offsetY: 0,
             alignment: "none"
         };
+        this.seriko = { alignmenttodesktop: "bottom" };
         this.bindgroup = [];
     }
     return CharConfig;
@@ -473,6 +474,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var SR = require("./SurfaceRenderer");
+var SU = require("./SurfaceUtil");
 var CC = require("./CanvasCache");
 var ST = require("./SurfaceTree");
 var SurfaceBaseRenderer = (function (_super) {
@@ -527,14 +529,9 @@ var SurfaceBaseRenderer = (function (_super) {
                 .catch(function (err) {
                 console.warn("SurfaceBaseRenderer#getBaseSurface: no such a file", file, n, srf);
             });
-        })).then(function (elms) { return _this.composeElements(elms); }).then(function (srfCnv) {
-            // basesurfaceの大きさはbasesurfaceそのもの
-            srfCnv.basePosX = 0;
-            srfCnv.basePosY = 0;
-            srfCnv.baseWidth = srfCnv.cnv.width;
-            srfCnv.baseHeight = srfCnv.cnv.height;
+        })).then(function (elms) { return _this.composeElements(elms); }).then(function (rndr) {
             // キャッシング
-            bases[n] = SR.copy(srfCnv);
+            bases[n] = new SR.SurfaceCanvas(SU.copy(rndr.cnv));
             return bases[n];
         });
     };
@@ -550,7 +547,7 @@ var SurfaceBaseRenderer = (function (_super) {
 }(SR.SurfaceRenderer));
 exports.SurfaceBaseRenderer = SurfaceBaseRenderer;
 
-},{"./CanvasCache":1,"./SurfaceRenderer":7,"./SurfaceTree":8}],7:[function(require,module,exports){
+},{"./CanvasCache":1,"./SurfaceRenderer":7,"./SurfaceTree":8,"./SurfaceUtil":10}],7:[function(require,module,exports){
 /*
  * surface -> canvas なレンダラ。
  * HTMLCanvasElement もこの層で抽象化する
@@ -579,8 +576,8 @@ var SurfaceRenderer = (function (_super) {
     // 渡されたSurfaceCanvasをベースサーフェスとしてレイヤー合成を開始する。
     // nullならば1x1のCanvasをベースサーフェスとする。
     // 渡されたSurfaceCanvasは変更しない。
-    function SurfaceRenderer() {
-        _super.call(this, SU.createCanvas());
+    function SurfaceRenderer(cnv) {
+        _super.call(this, cnv == null ? SU.createCanvas() : cnv);
         this.ctx = this.cnv.getContext("2d");
         this.tmpcnv = SU.createCanvas();
         this.tmpctx = this.tmpcnv.getContext("2d");
@@ -625,18 +622,21 @@ var SurfaceRenderer = (function (_super) {
             return type !== "base";
         });
         // element[MAX].base > element0 > element[MIN]
-        var base = bases.slice(-1)[0]; /* last */
-        if (!(base instanceof ST.SurfaceElement)) {
+        if (bases.length === 0) {
             // element[MIN]
             // elms.length > 0なのでundefinedにはならない…はず。
             // お前がbaseになるんだよ
-            base = elms.shift();
-            console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
-            if (base == null) {
-                console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
+            var base_1 = others.shift();
+            if (base_1 != null) {
+                bases.push(base_1);
+                console.warn("SurfaceRenderer#composeElements: base surface not found. failback.", bases, others);
+            }
+            else {
+                console.error("SurfaceRenderer#composeElements: cannot decide base surface.", base_1, others);
                 return this;
             }
         }
+        var base = bases.slice(-1)[0]; /* last */
         this.base(base.canvas);
         others.forEach(function (_a) {
             var canvas = _a.canvas, type = _a.type, x = _a.x, y = _a.y;

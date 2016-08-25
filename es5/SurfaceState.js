@@ -18,8 +18,7 @@ var SurfaceState = (function () {
                 _this.initSeriko(animId);
             }
         });
-        // 初回更新
-        this.constructRenderingTree();
+        // debugの設定を待つため初回更新はしない
     }
     SurfaceState.prototype.destructor = function () {
         this.surface.destructed = true;
@@ -27,10 +26,11 @@ var SurfaceState = (function () {
     };
     SurfaceState.prototype.render = function () {
         var _this = this;
-        this.debug && console.time("render");
+        var _a = this.surface, scopeId = _a.scopeId, surfaceId = _a.surfaceId;
+        this.debug && console.time("render(" + scopeId + "," + surfaceId + ")");
         this.constructRenderingTree();
         return this.renderer("render", this.surface).then(function () {
-            _this.debug && console.timeEnd("render");
+            _this.debug && console.timeEnd("render(" + scopeId + "," + surfaceId + ")");
         });
     };
     SurfaceState.prototype.initSeriko = function (animId) {
@@ -178,7 +178,7 @@ var SurfaceState = (function () {
     SurfaceState.prototype.play = function (animId) {
         var _this = this;
         var _a = this, debug = _a.debug, surface = _a.surface;
-        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, config = surface.config, scopeId = surface.scopeId;
+        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, config = surface.config, scopeId = surface.scopeId, surfaceId = surface.surfaceId;
         var animations = surfaceNode.animations;
         if (!(animations[animId] instanceof ST.SurfaceAnimation)) {
             // そんなアニメーションはない
@@ -217,7 +217,7 @@ var SurfaceState = (function () {
                 serikos[exAnimId].exclusive = true;
             }
         });
-        debug && console.group("" + animId);
+        debug && console.group("(" + [scopeId, surfaceId, animId].join(",") + ")");
         debug && console.info("animation start", animId, anim);
         return new Promise(function (resolve, reject) {
             // pause から resume した後に帰るべき場所への継続を取り出す
@@ -231,7 +231,7 @@ var SurfaceState = (function () {
     SurfaceState.prototype.step = function (animId, seriko) {
         var _this = this;
         var _a = this, surface = _a.surface, debug = _a.debug;
-        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, move = surface.move;
+        var surfaceNode = surface.surfaceNode, serikos = surface.serikos, destructed = surface.destructed, move = surface.move, scopeId = surface.scopeId, surfaceId = surface.surfaceId;
         var _b = this.continuations[animId], resolve = _b.resolve, reject = _b.reject;
         var anim = surfaceNode.animations[animId];
         // patternをすすめる
@@ -269,7 +269,11 @@ var SurfaceState = (function () {
             // 初期化
             serikos[animId] = new SM.Seriko();
             delete this.continuations[animId];
-            return resolve();
+            this.render().then(function () {
+                // 最終状態を描画してから終了
+                resolve();
+            });
+            return;
         }
         var _c = anim.patterns[seriko.patternID], wait = _c.wait, type = _c.type, x = _c.x, y = _c.y, animation_ids = _c.animation_ids;
         var _surface = anim.patterns[seriko.patternID].surface;
@@ -295,9 +299,9 @@ var SurfaceState = (function () {
         }
         var _wait = SU.randomRange(wait[0], wait[1]);
         // waitだけ待ってからレンダリング
-        debug && console.time("waiting: " + _wait + "ms");
+        debug && console.time("waiting(" + [scopeId, surfaceId, animId].join(",") + "): " + _wait + "ms");
         setTimeout(function () {
-            debug && console.timeEnd("waiting: " + _wait + "ms");
+            debug && console.timeEnd("waiting(" + [scopeId, surfaceId, animId].join(",") + "): " + _wait + "ms");
             if (_surface < -2) {
                 // SERIKO/1.4 ?
                 console.warn("SurfaceState#step: pattern surfaceId", surface, "is not defined in SERIKO/1.4, failback to -2");
@@ -386,7 +390,7 @@ var SurfaceState = (function () {
         var config = shell.config, surfaceDefTree = shell.surfaceDefTree;
         var surfaces = surfaceDefTree.surfaces;
         surface.renderingTree = layersToTree(surfaces, scopeId, surfaceId, serikos, config);
-        debug && console.log("diff: ", SU.diff(renderingTree, surface.renderingTree));
+        debug && console.log("diff(" + scopeId + "," + surfaceId + "): ", SU.diff(renderingTree, surface.renderingTree), surface.renderingTree);
         // レンダリングツリーが更新された！
     };
     return SurfaceState;

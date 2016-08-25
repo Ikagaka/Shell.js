@@ -20,24 +20,23 @@ NL.loadFromURL("../nar/mobilemaster.nar")
     rndr.debug = true;
     // プリロードすると安心だけど重い
     return rndr.preload().then(function () {
-        var surfaceId = 7;
+        var scopeId = 0;
+        var surfaceId = 10;
         // まずベースサーフェスサイズを取得
         rndr.getBaseSurfaceSize(surfaceId).then(function (_a) {
             var width = _a.width, height = _a.height;
-            var surface = new SM.Surface(0, surfaceId, width, height, shell);
+            var surface = new SM.Surface(scopeId, surfaceId, width, height, shell);
             var shellState = new SHS.ShellState(shell, console.info.bind(console, "shell state update:"));
+            SU.setCanvasStyle();
+            var rndr2 = new SR.SurfaceRenderer();
+            document.body.appendChild(rndr2.cnv);
             var srfState = new SS.SurfaceState(surface, function render(ev, surface) {
                 return rndr.render(surface).then(function (srfcnv) { return rndr2.base(srfcnv); });
             });
             console.log(srfState);
             srfState.debug = true;
-            SU.setCanvasStyle();
-            var rndr2 = new SR.SurfaceRenderer();
-            document.body.appendChild(rndr2.cnv);
             // 初回描画
-            return srfState.render().then(function () {
-                rndr2.base(rndr);
-            });
+            return srfState.render();
         });
     });
 }).catch(console.error.bind(console));

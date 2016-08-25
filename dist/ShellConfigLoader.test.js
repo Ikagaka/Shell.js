@@ -113,6 +113,7 @@ var CharConfig = (function () {
             offsetY: 0,
             alignment: "none"
         };
+        this.seriko = { alignmenttodesktop: "bottom" };
         this.bindgroup = [];
     }
     return CharConfig;

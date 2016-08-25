@@ -69,15 +69,10 @@ export class SurfaceBaseRenderer extends SR.SurfaceRenderer{
           console.warn("SurfaceBaseRenderer#getBaseSurface: no such a file", file, n, srf);
         });
       })
-    ).then((elms)=> this.composeElements(elms)
-    ).then((srfCnv)=>{
-      // basesurfaceの大きさはbasesurfaceそのもの
-      srfCnv.basePosX = 0;
-      srfCnv.basePosY = 0;
-      srfCnv.baseWidth = srfCnv.cnv.width;
-      srfCnv.baseHeight = srfCnv.cnv.height;
+    ).then((elms)=>{ 
+      this.composeElements(elms);
       // キャッシング
-      bases[n] = SR.copy(srfCnv);
+      bases[n] = new SR.SurfaceCanvas(SU.copy(this.cnv));
       return bases[n];
     });
   }

@@ -71,7 +71,7 @@ export class SurfaceElement {
   x: number;
   y: number;
   constructor(type: string, file: string, x=0, y=0){
-    this.type = "overlay";
+    this.type = type;
     this.file = file;
     this.x = x;
     this.y = y;

@@ -51,7 +51,7 @@ var SurfaceElement = (function () {
     function SurfaceElement(type, file, x, y) {
         if (x === void 0) { x = 0; }
         if (y === void 0) { y = 0; }
-        this.type = "overlay";
+        this.type = type;
         this.file = file;
         this.x = x;
         this.y = y;

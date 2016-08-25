@@ -22,7 +22,7 @@ export declare class SurfaceRenderer extends SurfaceCanvas {
         x: number;
         y: number;
         canvas: SurfaceCanvas;
-    }[]): SurfaceCanvas;
+    }[]): this;
     composeElement(canvas: SurfaceCanvas, type: string, x?: number, y?: number): void;
     base(part: SurfaceCanvas): void;
     overlay(part: SurfaceCanvas, x: number, y: number): void;

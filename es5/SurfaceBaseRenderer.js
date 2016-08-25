@@ -10,6 +10,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var SR = require("./SurfaceRenderer");
+var SU = require("./SurfaceUtil");
 var CC = require("./CanvasCache");
 var ST = require("./SurfaceTree");
 var SurfaceBaseRenderer = (function (_super) {
@@ -64,14 +65,10 @@ var SurfaceBaseRenderer = (function (_super) {
                 .catch(function (err) {
                 console.warn("SurfaceBaseRenderer#getBaseSurface: no such a file", file, n, srf);
             });
-        })).then(function (elms) { return _this.composeElements(elms); }).then(function (srfCnv) {
-            // basesurfaceの大きさはbasesurfaceそのもの
-            srfCnv.basePosX = 0;
-            srfCnv.basePosY = 0;
-            srfCnv.baseWidth = srfCnv.cnv.width;
-            srfCnv.baseHeight = srfCnv.cnv.height;
+        })).then(function (elms) {
+            _this.composeElements(elms);
             // キャッシング
-            bases[n] = SR.copy(srfCnv);
+            bases[n] = new SR.SurfaceCanvas(SU.copy(_this.cnv));
             return bases[n];
         });
     };

@@ -12,14 +12,21 @@ export interface ScopeProps extends React.Props<Scope> {
 export interface ScopeState {
     width: number;
     height: number;
+    x: number;
+    y: number;
 }
 export declare class Scope extends React.Component<ScopeProps, ScopeState> {
     surfaceState: SS.SurfaceState | NULL;
+    screenX: number;
+    screenY: number;
     constructor(props: ScopeProps);
-    componentWillMount(): void;
     componentDidMount(): void;
+    componentDidUpdate(): void;
     componentWillUnmount(): void;
     render(): JSX.Element;
+    onSurfaceMouseDown(ev: React.MouseEvent): void;
+    onSurfaceMouseMove(ev: React.MouseEvent): void;
+    onSurfaceMouseUp(ev: React.MouseEvent): void;
 }
 export interface NamedProps extends React.Props<Named> {
     shell: SH.Shell;
@@ -28,9 +35,5 @@ export interface NamedProps extends React.Props<Named> {
 export interface NamedState {
 }
 export declare class Named extends React.Component<NamedProps, NamedState> {
-    constructor(props: NamedProps);
-    componentWillMount(): void;
-    componentDidMount(): void;
-    componentWillUnmount(): void;
     render(): JSX.Element;
 }

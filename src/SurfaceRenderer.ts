@@ -75,23 +75,25 @@ export class SurfaceRenderer extends SurfaceCanvas {
   //  {canvas: srfCnv1, type: "base",    x: 0,  y: 0}
   //  {canvas: srfCnv2, type: "overlay", x: 50, y: 50}
   // ]
-  composeElements(elms: {type: string, x: number, y: number, canvas: SurfaceCanvas}[]): SurfaceCanvas {
+  composeElements(elms: {type: string, x: number, y: number, canvas: SurfaceCanvas}[]): this {
     // baseを決定
     const bases = elms.filter(({type})=> type === "base"); 
     const others = elms.filter(({type})=> type !== "base");
     // element[MAX].base > element0 > element[MIN]
-    let base = bases.slice(-1)[0]; /* last */
-    if(!(base instanceof ST.SurfaceElement)){
+    if(bases.length === 0){
       // element[MIN]
       // elms.length > 0なのでundefinedにはならない…はず。
       // お前がbaseになるんだよ
-      base = <ST.SurfaceElement&{canvas:SurfaceCanvas}>elms.shift();
-      console.warn("SurfaceRenderer#composeElements: base surface not found. failback. base");
-      if(base == null){
-        console.warn("SurfaceRenderer#composeElements: cannot decide base surface base");
+      const base = <ST.SurfaceElement&{canvas:SurfaceCanvas}>others.shift();
+      if(base != null){
+        bases.push(base);
+        console.warn("SurfaceRenderer#composeElements: base surface not found. failback.", bases, others);
+      }else{
+        console.error("SurfaceRenderer#composeElements: cannot decide base surface.", base, others);
         return this;
       }
     }
+    let base = bases.slice(-1)[0]; /* last */
     this.base(base.canvas);
     others.forEach(({canvas, type, x, y})=>{
       this.composeElement(canvas, type, x, y);

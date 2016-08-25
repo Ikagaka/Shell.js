@@ -16,87 +16,124 @@ var Scope = (function (_super) {
     __extends(Scope, _super);
     function Scope(props) {
         _super.call(this, props);
-        this.state = { width: 0, height: 0 };
+        this.screenX = 0;
+        this.screenY = 0;
+        this.state = { width: 0, height: 0, x: 0, y: 0 };
         this.surfaceState = null;
     }
-    Scope.prototype.componentWillMount = function () {
-    };
     Scope.prototype.componentDidMount = function () {
         var _this = this;
-        var _a = this.props, renderer = _a.renderer, scopeId = _a.scopeId, surfaceId = _a.surfaceId;
-        var canvas = ReactDOM.findDOMNode(this.refs["surface"]);
-        var rndr = new SR.SurfaceRenderer(canvas);
+        var _a = this.props, renderer = _a.renderer, scopeId = _a.scopeId, surfaceId = _a.surfaceId, shell = _a.shell;
         renderer.getBaseSurfaceSize(surfaceId).then(function (_a) {
             var width = _a.width, height = _a.height;
-            // 短形を取得
-            _this.setState({ width: width, height: height });
-            var surface = new SM.Surface(scopeId, surfaceId, width, height, renderer.shell);
+            var surface = new SM.Surface(scopeId, surfaceId, width, height, shell);
             // アニメーション開始
             _this.surfaceState = new SS.SurfaceState(surface, function (ev, surface) {
-                return renderer.render(surface).then(function (srfcnv) { return rndr.base(srfcnv); });
+                return renderer.render(surface).then(function (srfcnv) {
+                    var canvas = ReactDOM.findDOMNode(_this.refs["surface"]);
+                    var rndr = new SR.SurfaceRenderer(canvas);
+                    rndr.base(srfcnv);
+                });
+            });
+            _this.surfaceState.debug = true;
+            return _this.surfaceState.render().then(function () {
+                // setStateのタイミングでrenderが呼ばれるので
+                _this.setState({ width: width, height: height, x: _this.state.x, y: _this.state.y });
             });
         });
-        // イベント登録
-        // window.addEventListener('resize', this.handleResize);
+    };
+    Scope.prototype.componentDidUpdate = function () {
+        if (this.surfaceState instanceof SS.SurfaceState) {
+            this.surfaceState.render();
+        }
     };
     Scope.prototype.componentWillUnmount = function () {
-        // アニメーション停止
         if (this.surfaceState instanceof SS.SurfaceState) {
             this.surfaceState.destructor();
         }
-        // イベント解除
-        // window.removeEventListener('resize', this.handleResize);
     };
     Scope.prototype.render = function () {
+        var _a = this.state, width = _a.width, height = _a.height, x = _a.x, y = _a.y;
         var s = {
-            width: this.state.width,
-            height: this.state.height,
+            width: width, height: height,
             basisX: "left",
             basisY: "top",
-            x: 0,
-            y: 0
+            x: x, y: y
         };
         if (this.surfaceState instanceof SS.SurfaceState) {
-            var _a = this.surfaceState.surface, config = _a.config, move = _a.move, scopeId = _a.scopeId, surfaceId = _a.surfaceId, width = _a.width, height = _a.height, basepos = _a.basepos, surfaceNode = _a.surfaceNode, alignmenttodesktop = _a.alignmenttodesktop;
+            var _b = this.surfaceState.surface, config = _b.config, move = _b.move, scopeId = _b.scopeId, surfaceId = _b.surfaceId, width_1 = _b.width, height_1 = _b.height, basepos = _b.basepos, surfaceNode = _b.surfaceNode, alignmenttodesktop = _b.alignmenttodesktop;
+            s.x -= basepos.x;
+            s.y -= basepos.y;
+            switch (alignmenttodesktop) {
+                case "top":
+                    s.y = 0;
+                    break;
+                case "bottom":
+                    s.basisY = "bottom";
+                    s.y = 0;
+                    break;
+                case "right":
+                    s.basisX = "right";
+                    s.x = 0;
+                    break;
+                case "left":
+                    s.basisX = "left";
+                    s.x = 0;
+                    break;
+                case "free": break;
+            }
         }
-        return (React.createElement(BC.Layer, {basisX: "right", basisY: "bottom", x: 0, y: 0, width: s.width, height: s.height}, 
-            React.createElement(BC.LayerSet, {style: { "WebkitTapHighlightColor": "transparent" }}, 
-                React.createElement(BC.Layer, {key: 0, basisX: "left", basisY: "top", x: s.x, y: s.y, width: s.width, height: s.height, style: { "userSelect": "none" }}, 
-                    React.createElement("canvas", {ref: "surface", width: s.width, height: s.height, style: { "userSelect": "none", "pointerEvents": "auto" }})
+        var b = {
+            width: 200, height: 100,
+            basisX: "left", basisY: "top",
+            x: 0, y: 0
+        };
+        switch (b.basisX) {
+            case "left":
+                b.x -= b.width;
+                break;
+            case "right":
+                b.x += b.width;
+                break;
+        }
+        return (React.createElement(BC.Layer, {basisX: s.basisX, basisY: s.basisY, x: s.x, y: s.y, width: s.width, height: s.height}, 
+            React.createElement(BC.LayerSet, null, 
+                React.createElement(BC.Layer, {basisX: "left", basisY: "top", x: 0, y: 0, width: s.width, height: s.height}, 
+                    React.createElement("canvas", {ref: "surface", style: { position: "absolute", top: "0px", left: "0px" }, onMouseDown: this.onSurfaceMouseDown.bind(this), onMouseMove: this.onSurfaceMouseMove.bind(this), onMouseUp: this.onSurfaceMouseUp.bind(this), onTouchStart: this.onSurfaceMouseDown.bind(this), onTouchMove: this.onSurfaceMouseMove.bind(this), onTouchEnd: this.onSurfaceMouseUp.bind(this), onTouchCancel: this.onSurfaceMouseUp.bind(this)})
                 ), 
-                React.createElement(BC.Layer, {key: 1, basisX: "left", basisY: "top", x: -200, y: 0, width: 200, height: 100, style: { backgroundColor: "blue" }}, "\"hi\""))
+                React.createElement(BC.Layer, {basisX: b.basisX, basisY: b.basisY, x: b.x, y: b.y, width: b.width, height: b.height}, 
+                    React.createElement("canvas", {width: b.width, height: b.height, ref: "balloon", style: { position: "absolute", top: 0 + "px", left: 0 + "px" }}), 
+                    React.createElement("div", {style: { position: "absolute", top: 0 + "px", left: 0 + "px", width: b.width + "px", height: b.height + "px" }}, "\"hi\"")))
         ));
+    };
+    Scope.prototype.onSurfaceMouseDown = function (ev) {
+        console.log(ev.type, ev, this);
+        this.screenX = ev.screenX;
+        this.screenY = ev.screenY;
+    };
+    Scope.prototype.onSurfaceMouseMove = function (ev) {
+        console.log(ev.type, ev, this);
+        var diffX = this.screenX - ev.screenX;
+        var diffY = this.screenY - ev.screenY;
+        this.setState({ width: this.state.width, height: this.state.height, x: this.state.x + diffX, y: this.state.y + diffY });
+    };
+    Scope.prototype.onSurfaceMouseUp = function (ev) {
+        console.log(ev.type, ev, this);
+        this.screenX = 0;
+        this.screenY = 0;
     };
     return Scope;
 }(React.Component));
 exports.Scope = Scope;
 var Named = (function (_super) {
     __extends(Named, _super);
-    function Named(props) {
-        _super.call(this, props);
+    function Named() {
+        _super.apply(this, arguments);
     }
-    Named.prototype.componentWillMount = function () {
-    };
-    Named.prototype.componentDidMount = function () {
-        // イベント登録
-        // window.addEventListener('resize', this.handleResize);
-    };
-    Named.prototype.componentWillUnmount = function () {
-        // イベント解除
-        // window.removeEventListener('resize', this.handleResize);
-    };
     Named.prototype.render = function () {
-        var namedStyle = {
-            display: "block", position: "fixed",
-            boxSizing: "border-box",
-            bottom: "0px", right: "0px",
-            height: "100%", width: "100%"
-        };
-        return (React.createElement("div", {className: "named", style: namedStyle}, 
-            React.createElement(BC.LayerSet, null, 
-                React.createElement(Scope, {key: 0, surfaceId: 0, scopeId: 0, shell: this.props.shell, renderer: this.props.renderer})
-            )
-        ));
+        return (React.createElement(BC.LayerSet, null, 
+            React.createElement(Scope, {scopeId: 0, surfaceId: 0, shell: this.props.shell, renderer: this.props.renderer}), 
+            React.createElement(Scope, {scopeId: 1, surfaceId: 10, shell: this.props.shell, renderer: this.props.renderer})));
     };
     return Named;
 }(React.Component));
