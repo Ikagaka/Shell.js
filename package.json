@@ -73,6 +73,8 @@
   "main": "./es5/index.js",
   "author": "Ikagaka",
   "contributors": [
-    "legokichi"
+    "legokichi",
+    "narazaka",
+    "wiz-stargazer"
   ]
 }

@@ -1,11 +1,12 @@
 
 
-import {SurfaceUtil} from "ikagaka.shell.js";
-import {BAL, Descript, Surface} from "Interfaces";
+import * as SurfaceUtil from "../Util/index";
+import {BAL, Descript, Surface} from "./Interfaces";
 import $ = require("jquery");
+import {EventEmitter} from "events";
 
-
-export default class BalloonSurface {
+export type NULL = null;
+export default class BalloonSurface extends EventEmitter {
   element: HTMLDivElement;
   scopeId: number;
   balloonId: number;
@@ -35,6 +36,7 @@ export default class BalloonSurface {
   currentSurface: Surface;
 
   constructor(element: HTMLDivElement, scopeId: number, balloonId: number, balloon: any){
+    super();
     this.element = element;
     this.scopeId = scopeId;
     this.balloonId = balloonId;
@@ -177,7 +179,7 @@ export default class BalloonSurface {
       "font.strike":    descript["font.strike"],
       "font.underline": descript["font.underline"]
     };
-    let clickable_element_style = (prefix:string, style_default:string|null, descript:{[a:string]:string}, can_ignore=false):{[a:string]:string}=>{
+    let clickable_element_style = (prefix:string, style_default:string|NULL, descript:{[a:string]:string}, can_ignore=false):{[a:string]:string}=>{
       return {
         "style":       {square: true, underline: true, 'square+underline': true, none: true}[descript[`${prefix}.style`]] ? descript[`${prefix}.style`] : style_default,
         "font.color":  this._getFontColor(descript[`${prefix}.font.color.`],   descript[`${prefix}.font.color.g`],  descript[`${prefix}.font.color.b`],  can_ignore),
@@ -367,7 +369,7 @@ export default class BalloonSurface {
     let baseCanvas = this.balloon.balloons[this.type][balloonId].canvas;
     this.descript  = this.balloon.balloons[this.type][balloonId].descript || {};
     let cnv = <HTMLCanvasElement>this.$blimpCanvas[0];
-    SurfaceUtil.init(cnv, cnv.getContext("2d"), baseCanvas);
+    SurfaceUtil.fastcopy(baseCanvas, cnv.getContext("2d"));
     // 大きさ調整
     this.$blimp.width(this.width = cnv.width);
     this.$blimp.height(this.height = cnv.height);
@@ -490,7 +492,8 @@ export default class BalloonSurface {
     this.$blimpText.find(".blink").hide();
     let _text = $(document.createElement("div")).text(text).html();
     if(!!this.currentSurface){
-      this.currentSurface.talk();
+      this.emit("talk");
+      //this.currentSurface.talk();
     }
     this.$blimp.show();
     this.insertPoint.append(_text);
@@ -501,7 +504,8 @@ export default class BalloonSurface {
   public talkraw(text:string): void{
     this.$blimpText.find(".blink").hide();
     if(!!this.currentSurface){
-      this.currentSurface.talk();
+      this.emit("talk");
+      //this.currentSurface.talk();
     }
     this.$blimp.show();
     this.insertPoint.append(text);

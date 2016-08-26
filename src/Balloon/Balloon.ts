@@ -1,7 +1,8 @@
-
-import {Surface, SurfaceUtil, ShellConfig} from "ikagaka.shell.js";
+import * as SurfaceUtil from "../Util/index";
+import {Descript} from '../Model/Config';
+import {Surface} from '../Model/Surface';
 import BalloonSurface from "./BalloonSurface";
-import {BAL, Descript} from "Interfaces";
+import {BAL} from "./Interfaces";
 import {EventEmitter} from "events";
 import $ = require("jquery");
 
@@ -89,7 +90,7 @@ export default class Balloon extends EventEmitter {
       let buffer = directory[filepath];
       return SurfaceUtil.fetchImageFromArrayBuffer(buffer)
       .then((png)=>{
-        let cnv = SurfaceUtil.pna({cnv: null, png, pna: null}).cnv;
+        let cnv = SurfaceUtil.chromakey(png);
         if(/^balloon([ksc])(\d+)\.png$/.test(filepath)){
           let [__, type, n] = /^balloon([ksc])(\d+)\.png$/.exec(filepath);
           switch (type){
