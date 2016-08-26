@@ -49,6 +49,6 @@ gulp.task('watch:test', ()=>{
 });
 
 gulp.task('default', ['build']);
+
 gulp.task('build', ["build:test", "build:sandbox"]);
 gulp.task('watch', ["watch:test", "watch:sandbox"]);
-

@@ -1,0 +1,92 @@
+<script src="../bower_components/encoding-japanese/encoding.js"></script>
+<script src="../bower_components/jszip/dist/jszip.min.js"></script>
+<script src="../bower_components/narloader/NarLoader.js"></script>
+<script src="../dist/Balloon.js"></script>
+<script>
+NarLoader
+.loadFromURL("../nar/origin.nar")
+.then(function(nanikaDir){
+  console.log(nanikaDir.files);
+  var balloonDir = nanikaDir.asArrayBuffer();
+  var balloon = new Balloon.Balloon(balloonDir);
+  return balloon.load();
+}).then(function(balloon){
+  console.log(balloon);
+  balloon.on("mouse", function(ev){console.log(ev);});
+  balloon.on("select", function(ev){console.log(ev);});
+
+  var div = document.createElement("div");
+  var scopeId = 0;
+  var surfaceId = 0;
+  var blimp = balloon.attachBlimp(div, scopeId, surfaceId);
+  console.log(blimp);
+
+  document.body.appendChild(div);
+
+  talk(blimp);
+}).catch(function(err){
+  console.error(err, err.stack);
+});
+function talk(blimp){
+  Promise.resolve(blimp)
+  .then(wait(0, function(blimp) { blimp.clear(); }))
+  .then(wait(0, function(blimp) { blimp.clear(); }))
+  .then(wait(0, function(blimp) { blimp.surface(0); }))
+  .then(wait(80, function(blimp) { blimp.talk("H"); }))
+  .then(wait(80, function(blimp) { blimp.talk("e"); }))
+  .then(wait(80, function(blimp) { blimp.talk("l"); }))
+  .then(wait(80, function(blimp) { blimp.talk("l"); }))
+  .then(wait(80, function(blimp) { blimp.talk("o"); }))
+  .then(wait(80, function(blimp) { blimp.talk(","); }))
+  .then(wait(80, function(blimp) { blimp.talk("w"); }))
+  .then(wait(80, function(blimp) { blimp.talk("o"); }))
+  .then(wait(80, function(blimp) { blimp.talk("r"); }))
+  .then(wait(80, function(blimp) { blimp.talk("l"); }))
+  .then(wait(80, function(blimp) { blimp.talk("d"); }))
+  .then(wait(80, function(blimp) { blimp.talk("!"); }))
+  .then(wait(0, function(blimp) { blimp.clear(); }))
+  .then(wait(0, function(blimp) { blimp.talk("cleared"); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+  .then(wait(0, function(blimp) { blimp.anchorBegin("AnchorID"); }))
+  .then(wait(0, function(blimp) { blimp.talk("this is anchor"); }))
+  .then(wait(0, function(blimp) { blimp.anchorEnd(); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+  .then(wait(0, function(blimp) { blimp.choiceBegin("choiceID2"); }))
+  .then(wait(0, function(blimp) { blimp.talk("this is __q"); }))
+  .then(wait(0, function(blimp) { blimp.choiceEnd(); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+  .then(wait(0, function(blimp) { blimp.talk("<" + "script>alert(1);<" + "/script>"); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+  .then(wait(0, function(blimp) { blimp.choice("this is q[]", "ChoceID"); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+  .then(wait(0, function(blimp) { blimp.br(0.5); }))
+  .then(wait(0, function(blimp) { blimp.talk("b[half]"); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+  .then(wait(0, function(blimp) { blimp.left(); }))
+  .then(wait(0, function(blimp) { blimp.talk("balloon is left"); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+  .then(wait(0, function(blimp) { blimp.right(); }))
+  .then(wait(0, function(blimp) { blimp.talk("balloon is right"); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+  .then(wait(0, function(blimp) { blimp.location(100, 100); }))
+  .then(wait(0, function(blimp) { blimp.talk("this text located (100,100)"); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+  .then(wait(0, function(blimp) { blimp.marker(); }))
+  .then(wait(0, function(blimp) { blimp.talk("marker"); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+  .then(wait(0, function(blimp) { blimp.talk("showWait"); }))
+  .then(wait(0, function(blimp) { blimp.showWait(); }))
+  .then(wait(1000, function(blimp) { blimp.br(); }))
+
+}
+function wait(ms, callback) {
+  return function(ctx) {
+    return new Promise(function(resolve) {
+      setTimeout((function() {
+        if (callback instanceof Function) callback(ctx);
+        return resolve(ctx);
+      }), ms);
+    });
+  };
+}
+</script>
