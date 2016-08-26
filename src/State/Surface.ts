@@ -9,24 +9,32 @@ import {SurfaceRenderingTree, SurfaceRenderingLayerSet, SurfaceRenderingLayer} f
 import {Config, isBind} from "../Model/Config";
 import {Surface, Seriko} from "../Model/Surface";
 import {Canvas} from "../Model/Canvas";
+import {Renderer} from "../Renderer/Renderer";
+import {EventEmitter} from "events";
 
-export class SurfaceState {
+export class SurfaceState extends EventEmitter {
   surface: Surface;
+  srfCnv: Canvas;
   shell: Shell;
   config: Config;
   surfaceNode: SurfaceDefinition;
   debug: boolean;
-
+  rndr: Renderer;
   continuations: {[animId: number]: {resolve:Function, reject:Function}};
   // アニメーション終了時に呼び出す手はずになっているプロミス値への継続
   // 本来は surface モデルに入れるべきだがクロージャを表現できないので
 
-  renderer: (event: string, surface: Surface)=>Promise<Canvas>;
+  renderer: (surface: Surface)=>Promise<Canvas>;
+  mover: (x: number, y: number, wait: number)=>Promise<void>;
 
-  constructor(surface: Surface, shell: Shell, renderer: (event: string, surface: Surface)=>Promise<Canvas>) {
+  constructor(surface: Surface, shell: Shell, renderer: (surface: Surface)=>Promise<Canvas>, mover: (x: number, y: number, wait: number)=>Promise<void>) {
+    super();
     this.surface = surface;
+    this.srfCnv = surface.srfCnv
+    this.rndr = new Renderer(this.srfCnv);
     this.shell = shell
     this.renderer = renderer;
+    this.mover = mover;
     this.continuations = {};
     this.debug = false;
     this.surfaceNode = this.shell.surfaceDefTree.surfaces[surface.surfaceId];
@@ -45,7 +53,9 @@ export class SurfaceState {
     const {scopeId, surfaceId} = this.surface;
     this.debug && console.time("render("+scopeId+","+surfaceId+")");
     this.constructRenderingTree();
-    return this.renderer("render", this.surface).then((srfcnv)=>{
+    return this.renderer(this.surface).then((srfcnv)=>{
+      // surface model の canvas へ反映
+      this.rndr.base(srfcnv);
       this.debug && console.timeEnd("render("+scopeId+","+surfaceId+")");
       return srfcnv;
     });
@@ -232,7 +242,7 @@ export class SurfaceState {
 
   private step(animId: number, seriko: Seriko): void {
     const {surface, debug, surfaceNode} = this;
-    const {serikos, destructed, scopeId, surfaceId, move} = surface;
+    const {serikos, destructed, scopeId, surfaceId} = surface;
     const {resolve, reject} = this.continuations[animId];
     const anim = surfaceNode.animations[animId];
     // exclusive がうまく動いていないのでコメントアウトしている
@@ -285,6 +295,7 @@ export class SurfaceState {
     }
     const {wait, type, x, y, animation_ids} = anim.patterns[seriko.patternID];
     let _surface = anim.patterns[seriko.patternID].surface;
+    const _wait = Util.randomRange(wait[0], wait[1]);
     switch(type){
       // 付随再生であってこのアニメの再生終了は待たない・・・はず？
       case "start":            this.play(animation_ids[0]); return;
@@ -292,12 +303,15 @@ export class SurfaceState {
       case "alternativestart": this.play(Util.choice<number>(animation_ids)); return;
       case "alternativestop":  this.stop(Util.choice<number>(animation_ids)); return;
       case "move":
-        move.x = x;
-        move.y = y;
-        this.renderer("move", surface);
+        // 動き終わるのを待つ
+        this.mover(x, y, _wait)
+        .catch(console.warn.bind(console)) // 何らかの理由で move がキャンセルされようが続行
+        .then(()=>{
+          // 次のパターン処理へ
+          this.step(animId, seriko);
+        });
         return; 
     }
-    const _wait = Util.randomRange(wait[0], wait[1]);
     // waitだけ待ってからレンダリング
     debug && console.time("waiting("+[scopeId,surfaceId,animId].join(",")+"): "+_wait+"ms");
     setTimeout(()=>{

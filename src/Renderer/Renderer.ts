@@ -314,12 +314,3 @@ export function isHit(srfCnv: Canvas, cols: SDT.SurfaceCollision[], x: number, y
   return {transparency, name};
 }
 
-export function copy(srfCnv: Canvas): Canvas{
-  // Canvas を元に新しい Canvas をつくる
-  const srfCnv2 = new Canvas(Util.copy(srfCnv.cnv));
-  srfCnv2.basePosX = srfCnv.basePosX;
-  srfCnv2.basePosY = srfCnv.basePosY;
-  srfCnv2.baseWidth = srfCnv.baseWidth;
-  srfCnv2.baseHeight = srfCnv.baseHeight;
-  return srfCnv2;
-}

@@ -201,3 +201,16 @@ export function isBind(config: Config, scopeId: number, animId: number): boolean
   if (bindgroup[scopeId][animId] === false) return false;
   return true;
 }
+
+
+
+export function getAlignmenttodesktop(config: Config, scopeId: number){
+  // config.char[surfaceId] は任意設定なので存在確認しないといけない
+  if(config.char[scopeId] != null && typeof config.char[scopeId].seriko.alignmenttodesktop === "string"){
+    // 個別設定
+    return config.char[scopeId].seriko.alignmenttodesktop;
+  }else{
+    // 全体設定が初期値
+    return config.seriko.alignmenttodesktop;
+  }
+}

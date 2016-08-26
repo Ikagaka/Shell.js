@@ -29,8 +29,8 @@ export class Cuttlebone extends React.Component<CuttleboneProps, CuttleboneState
       height:"100%", width: "100%"
     };
     const emitter = this.props.emitter;
-    const namedElms = this.props.namedies.map(({shell, scopes})=>{
-      return(<Named shell={shell} scopes={scopes} emitter={emitter}></Named>);
+    const namedElms = this.props.namedies.map((named)=>{
+      return(<Named named={named} emitter={emitter}></Named>);
     });
     return (
       <div className="cuttlebone" style={cuttleboneStyle}>

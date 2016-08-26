@@ -20,7 +20,7 @@ export class SurfacePatternRenderer extends SurfaceBaseRenderer {
   render(surface: Surface): Promise<Canvas> {
     // この this へ現在のサーフェス画像を書き込む
     const {surfaceId, renderingTree} = surface;
-    const surfaceNode = this.shell.surfaceDefTree[surfaceId];
+    const surfaceNode = this.shell.surfaceDefTree.surfaces[surfaceId];
     const {base, foregrounds, backgrounds} = renderingTree;
     const {enableRegion} = this.shell.config;
     const {collisions, animations} = surfaceNode;

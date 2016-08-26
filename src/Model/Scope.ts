@@ -10,35 +10,35 @@ import {Canvas} from "./Canvas";
 export class Scope {
   scopeId:         number;
   surfaceId:       number;
-  srfCnv:          Canvas;
+  
   surface:         Surface;
   position:        {x: number, y: number};
   size:            {width: number, height: number};
   basepos:         {x: number, y: number};
   alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free";
+  // あるべき姿
+  // structor(scopeId: number, surfaceId: number, srfCnv: Canvas, basepos: {x: number, y: number}, alignmenttodesktop: string)
+  constructor(scopeId: number, surfaceId: number, srfCnv: Canvas, alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free", basepos?: {x?: number, y?: number}){
+    // これエラーで落ちたら呼んだ人が悪い
 
-  constructor(scopeId: number, surfaceId: number, width: number, height:number, shell: Shell){
-    const config = shell.config;
-    const surfaceNode = shell.surfaceDefTree[surfaceId];
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
-    if(config.char[surfaceId] != null && typeof config.char[surfaceId].seriko.alignmenttodesktop === "string"){
-      // 個別設定
-      this.alignmenttodesktop = config.char[surfaceId].seriko.alignmenttodesktop;
-    }else{
-      // 全体設定が初期値
-      this.alignmenttodesktop = config.seriko.alignmenttodesktop;
-    }
-     
-    // model は　render されないと base surface の大きさがわからない
-    this.size    = {width, height}
-    this.basepos = {x: width/2|0, y: height};
-    if(surfaceNode.points.basepos.x != null){
-      this.basepos.x = surfaceNode.points.basepos.x;
-    }
-    if(surfaceNode.points.basepos.y != null){
-      this.basepos.y = surfaceNode.points.basepos.y;
-    }
+    this.surface = new Surface(scopeId, surfaceId, srfCnv);
 
+    this.position = {x: 0, y: 0}; // defaultxとか？
+    // model は render されないと base surface の大きさがわからない
+    this.size    = { width: srfCnv.baseWidth, height: srfCnv.baseHeight };
+
+    // デフォルト値
+    this.basepos = { x: srfCnv.baseWidth/2|0, y: srfCnv.baseHeight };
+    // 引数省略時の処理
+    if(basepos != null && basepos.x != null){
+      this.basepos.x = basepos.x;
+    }
+    if(basepos != null && basepos.y != null){
+      this.basepos.y = basepos.y;
+    }
+    this.alignmenttodesktop = alignmenttodesktop;
   }
 }
+

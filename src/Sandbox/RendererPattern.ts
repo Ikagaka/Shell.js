@@ -10,7 +10,7 @@ import * as SR from "../Renderer/Renderer";
 
 import $ = require("jquery");
 
-Util.NarLoader.loadFromURL("../nar/mobilemaster.nar")
+Util.NarLoader.loadFromURL("/nar/mobilemaster.nar")
 .then((dir)=>{ return dir.getDirectory("shell/master").asArrayBuffer(); })
 .then((dic)=>{ return SML.load(dic); })
 .then((shell)=>{
@@ -21,26 +21,26 @@ Util.NarLoader.loadFromURL("../nar/mobilemaster.nar")
   // 
   rndr.debug = true;
   // プリロードすると安心だけど重い
-  return rndr.preload().then(()=>{
+  //return rndr.preload().then(()=>{
     const scopeId = 0;
     const surfaceId = 10;
     // まずベースサーフェスサイズを取得
-    rndr.getBaseSurfaceSize(surfaceId).then(({width, height})=>{
-      const surface = new SM.Surface(scopeId, surfaceId);
+    rndr.getBaseSurface(surfaceId).then((srfcnv)=>{
+      const surface = new SM.Surface(scopeId, surfaceId, srfcnv);
       const shellState = new SHS.ShellState(shell, console.info.bind(console, "shell state update:"));
 
       Util.setCanvasStyle();
       const rndr2 = new SR.Renderer();
       document.body.appendChild(rndr2.cnv);
 
-      const srfState = new SS.SurfaceState(surface, shell, (ev, surface)=>{
+      const srfState = new SS.SurfaceState(surface, shell, (surface)=>{
         return rndr.render(surface).then((srfcnv)=>{ rndr2.base(srfcnv); return srfcnv;});
-      });
+      }, ()=> Promise.resolve() );
       console.log(srfState);
       srfState.debug = true;
 
       // 初回描画
       return srfState.render();
     });
-  });
+  //});
 }).catch(console.error.bind(console));

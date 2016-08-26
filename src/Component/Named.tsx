@@ -5,7 +5,7 @@ import * as MN from "../Model/Named";
 import {Shell} from "../Model/Shell";
 
 import {Layer, LayerSet, LayerProps} from "./Layer";
-import {Scope} from "./Scope";
+import {Scope, SurfaceMouseDownEvent} from "./Scope";
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -13,19 +13,29 @@ import $ = require("jquery");
 import {EventEmitter} from "events";
 
  
-export type NamedProps = MN.Named & {emitter: EventEmitter} & React.Props<Named>;
+export interface NamedProps extends React.Props<Named>{
+  named: MN.Named;
+  emitter: EventEmitter;
+}
 export interface NamedState {}
 export class Named extends React.Component<NamedProps, NamedState> {
   constructor(props: NamedProps) {
     super(props);
   }
   render(){
-    const {shell, scopes, emitter} = this.props; 
+    const {named, emitter} = this.props;
+    const {shell, scopes} = named; 
     const scopeElms = scopes.map((scope, key)=>{
-      const {srfCnv, surface} = scope;
+      const {surface} = scope;
+      const _emitter  = new EventEmitter();
+      _emitter.on("onSurfaceMouseDown", (ev: SurfaceMouseDownEvent)=>{
+        emitter.emit("onSurfaceMouseDown", Util.extend(true, ev, {named: this.props.named}))
+      });
       return (
-        <div onMouseDown={this.onNamedMouseDown.bind(this)}>
-          <Scope key={key} shell={shell} scope={scope} emitter={emitter}></Scope>
+        <div key={key}
+          onTouchStart={this.onNamedMouseDown.bind(this)}
+          onMouseDown={this.onNamedMouseDown.bind(this)}>
+          <Scope shell={shell} scope={scope} emitter={emitter}></Scope>
         </div>
       );
     });
@@ -35,9 +45,17 @@ export class Named extends React.Component<NamedProps, NamedState> {
       </LayerSet>
     );
   }
-  onNamedMouseDown(ev: React.MouseEvent): void {
+  onNamedMouseDown(event: React.MouseEvent|React.TouchEvent): void {
     // todo: eventemitter
-    const {emitter} = this.props;
-    emitter.emit("onNamedMouseDown", ev);
+    this.props.emitter.emit("onNamedMouseDown", { type: "onNamedMouseDown", event, named: this.props.named });
   }
+}
+
+export interface NamedMouseDownEvent {
+  type: "onNamedMouseDown";
+  event: React.MouseEvent|React.TouchEvent;
+  named: MN.Named;
+}
+export interface SurfaceMouseDownEvent extends SurfaceMouseDownEvent {
+  named: MN.Named;
 }

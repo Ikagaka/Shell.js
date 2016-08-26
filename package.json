@@ -21,7 +21,7 @@
     "babel": "babel lib -d es5",
     "espower": "gulp build",
     "browserify": "browserify es5/index.js --standalone Shell -o dist/Shell.js",
-    "watchify":     "watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
+    "watchify": "watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
     "check": "tsc -w --noEmit",
     "replace": "npm run perl; npm run add",
     "cake": "cake clean; cake test; cake sandbox;",
@@ -56,6 +56,7 @@
     "gulp-coffee": "^2.3.2",
     "gulp-debug": "^2.1.2",
     "gulp-espower": "^1.0.2",
+    "gulp-rename": "^1.2.2",
     "narloader": "github:ikagaka/NarLoader#jszip3",
     "typescript": "^2.0.0",
     "watchify": "^3.7.0"

@@ -10,7 +10,11 @@ import $ = require("jquery");
 import deep = require("deep-diff");
 import narloader = require("narloader");
 
-export var NarLoader = {loadFromURL: narloader.NarLoader.loadFromURL};
+export namespace NarLoader {
+  export function loadFromURL(src: string){
+    return narloader.NarLoader.loadFromURL(src);
+  }
+}
 
 export type SUDiff = deepDiff.IDiff[];
 export function diff(lhs: Object, rhs: Object, prefilter?: deepDiff.IPrefilter, acc?: deepDiff.IAccumulator): SUDiff {

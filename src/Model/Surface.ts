@@ -2,25 +2,24 @@
  * Surface のアニメーション状態およびレイヤ状態を表すモデル
  */
 import {SurfaceRenderingTree} from "./SurfaceRenderingTree";
+import {Canvas} from "./Canvas";
 
 export class Surface {
   scopeId: number;
   surfaceId: number;
-
+  srfCnv:          Canvas;  // 現在のピクセル
   renderingTree:   SurfaceRenderingTree; // 実際に表示されるべき再帰的なbindも含めたレイヤツリー
   serikos:          {[animId: number]: Seriko}; // interval再生が有効なアニメーションID
   talkCount:       number;
-  move:             {x: number, y: number};
   destructed:      boolean;
 
-  constructor(scopeId: number, surfaceId: number) {
+  constructor(scopeId: number, surfaceId: number, srfCnv: Canvas) {
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
-    
+    this.srfCnv = srfCnv;
     this.renderingTree = new SurfaceRenderingTree(surfaceId);
     this.serikos = {};
     this.talkCount = 0;
-    this.move =             {x: 0, y: 0};
     this.destructed = false;
   }
 }

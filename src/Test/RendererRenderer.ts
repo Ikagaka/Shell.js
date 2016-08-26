@@ -14,17 +14,15 @@ QUnit.module('Shell.SR.SurfaceRenderer');
 
 QUnit.test('SR.SurfaceRenderer#clear', function(assert) {
   const done = assert.async();
-  return Promise.all([SU.fetchImageFromURL("src/surface0730.png")])
+  return Promise.all([SU.fetchImageFromURL("/nar/img/surface0730.png")])
   .then((cnvs)=> cnvs.map((cnv)=> new Canvas(SU.copy(cnv))) )
   .then((srfcnvs)=>{
     const render = new SR.Renderer();
-    assert.ok(render instanceof Canvas);
+    assert.ok(render.srfCnv instanceof Canvas);
     srfcnvs.forEach((srfcnv)=>{
-      assert.ok(render instanceof Canvas);
       render.init(srfcnv);
-      Object.keys(srfcnv).forEach((key)=>{
-        assert.ok(srfcnv[key] === render[key]);
-      });
+      assert.ok(srfcnv.cnv.width === render.srfCnv.cnv.width);
+      assert.ok(srfcnv.cnv.height === render.srfCnv.cnv.height);
       SU.setPictureFrame(srfcnv.cnv, "init");
     });
   });

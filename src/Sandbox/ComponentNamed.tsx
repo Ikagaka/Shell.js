@@ -1,8 +1,13 @@
 import * as SU from "../Util/index";
-import {Scope} from "../Model/Scope";
+import * as MS from "../Model/Scope";
+import * as MN from "../Model/Named";
+import {copy} from "../Model/Canvas";
+import {getAlignmenttodesktop} from "../Model/Config";
+import {ScopeState} from "../State/Scope";
 import * as SML from "../Loader/Shell";
 import * as SPR from "../Renderer/Pattern";
 import {Named} from "../Component/Named";
+
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {EventEmitter} from "events";
@@ -18,9 +23,15 @@ SU.NarLoader.loadFromURL("../nar/mobilemaster.nar")
   // return rndr.preload().then(function(){
   // });
   const emitter = new EventEmitter();
+  emitter.on("onNamedMouseDown", console.info.bind(console));
+  emitter.on("onSurfaceMouseDown", console.info.bind(console));
+  const scopeId = 0;
   const surfaceId = 0;
-  return rndr.getBaseSurfaceSize(surfaceId).then(({width, height})=>{
-    const scope = new Scope(0, surfaceId, width, height, shell);
+  return rndr.getBaseSurface(surfaceId).then((srfCnv)=>{
+    const scope = new MS.Scope(scopeId, surfaceId, copy(srfCnv), getAlignmenttodesktop(shell.config, scopeId));
+    const named = new MN.Named(shell);
+    const scopeState = new ScopeState(scope, shell, (surface)=> rndr.render(surface) );
+    named.scopes.push(scope);
     $(()=>{
       const content = $("<div />").attr("id", "content").appendTo("body")[0];
       const cuttleboneStyle = {
@@ -32,7 +43,7 @@ SU.NarLoader.loadFromURL("../nar/mobilemaster.nar")
       
       ReactDOM.render((
         <div className="cuttlebone" style={cuttleboneStyle}>
-          <Named scopes={[scope]} shell={shell} emitter={emitter}></Named>
+          <Named named={named} emitter={emitter}></Named>
         </div>
       ), content);
     });

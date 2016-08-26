@@ -25,7 +25,8 @@ export class Scope extends React.Component<ScopeProps, ScopeStatte> {
   draw() {
     const canvas = this.refs["surface"] as HTMLCanvasElement;
     const rndr = new Renderer(new Canvas(canvas));
-    rndr.base(this.props.scope.srfCnv);
+    // model の canvas から実 DOM の canvas へ描画 
+    rndr.base(this.props.scope.surface.srfCnv);
   }
   componentDidMount(){
     this.draw();
@@ -34,8 +35,8 @@ export class Scope extends React.Component<ScopeProps, ScopeStatte> {
     this.draw();
   }
   render(){
-    const {surface, srfCnv, position, alignmenttodesktop, basepos, scopeId} = this.props.scope;
-    const {baseWidth, baseHeight, basePosX, basePosY} = srfCnv;
+    const {surface, position, alignmenttodesktop, basepos, scopeId} = this.props.scope;
+    const {baseWidth, baseHeight, basePosX, basePosY} = surface.srfCnv;
     const {x,y} = position;
     const config = this.props.shell;
     const surfaceNode = this.props.shell.surfaceDefTree.surfaces[scopeId]
@@ -45,7 +46,7 @@ export class Scope extends React.Component<ScopeProps, ScopeStatte> {
       basisY: "top",
       x: x, y: y
     };
-    const {move, surfaceId } = surface;
+    const { surfaceId } = surface;
     s.x -= basepos.x;
     s.y -= basepos.y;
     switch (alignmenttodesktop){
@@ -85,9 +86,15 @@ export class Scope extends React.Component<ScopeProps, ScopeStatte> {
       </Layer>
     );
   }
-  onSurfaceMouseDown(ev: React.MouseEvent): void {
+  onSurfaceMouseDown(ev: React.MouseEvent|React.TouchEvent): void {
     // canvas に紐付けるのはこいつだけ
     // todo: eventemitter
-    this.props.emitter.emit("onSurfaceMouseDown", ev);
+    this.props.emitter.emit("onSurfaceMouseDown", { type: "onSurfaceMouseDown", event, scope: this.props.scope });
   }
+}
+
+export interface SurfaceMouseDownEvent {
+  type: "onSurfaceMouseDown";
+  event: React.MouseEvent|React.TouchEvent;
+  scope: MS.Scope;
 }

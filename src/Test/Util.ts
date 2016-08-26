@@ -32,7 +32,7 @@ QUnit.test('SurfaceUtil.parseDescript', (assert)=>{
 QUnit.test("SurfaceUtil.convert, SurfaceUtil.fetchArrayBuffer", (assert)=>{
   assert.expect(1);
   const done = assert.async();
-  return SU.fetchArrayBuffer("./src/readme.txt").then((buffer)=>{
+  return SU.fetchArrayBuffer("/nar/img/readme.txt").then((buffer)=>{
     const txt = SU.convert(buffer);
     assert.ok(txt.match(/フリーシェル 「窗子」（MADOKO）を改変の上使用しています。/) !== null);
     done();
@@ -84,7 +84,7 @@ QUnit.test("SurfaceUtil.copy", (assert)=>{
 QUnit.test("SurfaceUtil.fetchImageFromURL, SurfaceUtil.fetchImageFromArrayBuffer", (assert)=>{
   const done = assert.async();
   assert.expect(2);
-  return SU.fetchArrayBuffer("src/surface0.png")
+  return SU.fetchArrayBuffer("/nar/img/surface0.png")
   .then((buffer)=> SU.fetchImageFromArrayBuffer(buffer) )
   .then((img)=>{
     assert.ok(img.width === 182);
