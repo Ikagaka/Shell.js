@@ -2,7 +2,11 @@ node_modules
 bower_components
 typings
 npm-debug.log
-
+dist
+demo
+es5
+.vscode
+.python-version
 #################
 ## Eclipse
 #################
