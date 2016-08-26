@@ -21,7 +21,7 @@ task 'clean', 'rm -f demo/test*.html', (options) ->
 task 'sandbox', 'create demo/sandbox*.html', (options) ->
   fs.readFileAsync("demo/placeholder.sandbox.html", "utf8")
   .then (html)->
-    ls("es5")
+    ls("dist")
     .then (files)-> files.filter ({stat})-> getFileType(stat) is "file"
     .then (files)-> files.filter ({name})-> /^(.+)\.sandbox\.js$/.test(name)
     .then (files)-> files.map ({name})-> /^(.+)\.sandbox\.js$/.exec(name)[1]
@@ -46,15 +46,17 @@ task 'index', 'create src/index.ts file', (options) ->
   fs.readFileAsync("tsconfig.json", "utf8")
   .then (json)->
     json.split("\n")
-    .filter (line)-> /^\s+"src\/([A-Za-z]+)\.ts",/.test(line)
-    .map (line)-> /^\s+"src\/([A-Za-z]+)\.ts",/.exec(line)[1]
+    .filter (line)-> /^\s+"src\/([A-Za-z/]+)\.ts",/.test(line)
+    .map (line)-> /^\s+"src\/([A-Za-z/]+)\.ts",/.exec(line)[1]
     .filter (name)-> name isnt "index"
-    .map (name)-> [name, Array.from(name).filter((char)=> /[A-Z]/.test(char) ).join("")]
-    .reverse()
-    .reduce ((o, [name, initial])-> o.concat [[name, (if o.some(([_,init])-> init is initial) then (a=Array.from(initial)).splice(1, 0, name[1]); a.join("") else initial)]] ), []
-    .map ([name, initial])-> "import * as _#{initial} from \"./#{name}\"; export var #{initial} = _#{initial};"
+    .map (name)-> console.log name; name
+    .map (name)-> name.split("/")
+    .map (name)-> [name[0], name[1], name.join("."), name.join("/")]
+    #.reduce ((o, [sufix, prefix, objpath, path])-> o.concat 
+    #.reduce ((o, [name, initial])-> o.concat [[name, (if o.some(([_,init])-> init is initial) then (a=Array.from(initial)).splice(1, 0, name[1]); a.join("") else initial)]] ), []
+    #.map ([name, initial])-> "import * as _#{initial} from \"./#{name}\"; export var #{initial} = _#{initial};"
+    .map (name)-> console.log name; name
     .join("\n") + """
-    
     var _package = require("../package.json"); export var version = _package.version;
     import $ = require("jquery"); window["$"] = window["$"] || $;
     """
