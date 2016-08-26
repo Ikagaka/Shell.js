@@ -64,6 +64,9 @@
         "placeOpenBraceOnNewLineForControlBlocks": true
     },
     "files": [
+        "src/Balloon/Balloon.ts",
+        "src/Balloon/BalloonSurface.ts",
+        "src/Balloon/Interfaces.ts",
         "src/Component/Cuttlebone.tsx",
         "src/Component/Layer.tsx",
         "src/Component/Named.tsx",

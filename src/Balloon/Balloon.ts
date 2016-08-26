@@ -6,7 +6,7 @@ import {BAL} from "./Interfaces";
 import {EventEmitter} from "events";
 import $ = require("jquery");
 
-
+export type NULL = null;
 export default class Balloon extends EventEmitter {
   public directory: { [key: string]: ArrayBuffer };
   public descript: Descript;
@@ -16,8 +16,8 @@ export default class Balloon extends EventEmitter {
     communicate: BAL[],
     online: BAL[],
     arrow: BAL[],
-    sstp: BAL,
-    thumbnail: BAL
+    sstp: BAL|NULL,
+    thumbnail: BAL|NULL
   };
   private attachedBlimp: {
     div: HTMLDivElement,
@@ -49,7 +49,7 @@ export default class Balloon extends EventEmitter {
 
   private loadDescript(){
     let dir = this.directory;
-    let getName = (dic, reg)=> Object.keys(dic).filter((name)=> reg.test(name))[0] || "";
+    let getName = (dic:any, reg:any)=> Object.keys(dic).filter((name)=> reg.test(name))[0] || "";
     let descript_name = getName(dir, /^descript\.txt$/i);
     if(descript_name === ""){
       console.info("descript.txt is not found");
@@ -70,7 +70,7 @@ export default class Balloon extends EventEmitter {
       hits.forEach((filepath)=>{
         let buffer = directory[filepath];
         let _descript = SurfaceUtil.parseDescript(SurfaceUtil.convert(buffer));
-        let [__, type, n] = /balloon([sk])(\d+)s\.txt$/.exec(filepath);
+        let [__, type, n]:any = /balloon([sk])(\d+)s\.txt$/.exec(filepath);
         $.extend(true, _descript, descript);
         switch (type){
           case "s": balloons.sakura[Number(n)].descript = _descript; break;
@@ -92,17 +92,17 @@ export default class Balloon extends EventEmitter {
       .then((png)=>{
         let cnv = SurfaceUtil.chromakey(png);
         if(/^balloon([ksc])(\d+)\.png$/.test(filepath)){
-          let [__, type, n] = /^balloon([ksc])(\d+)\.png$/.exec(filepath);
+          let [__, type, n]:any = /^balloon([ksc])(\d+)\.png$/.exec(filepath);
           switch (type){
             case "s": balloons.sakura[Number(n)] = {canvas: cnv, descript:{}}; break;
             case "k": balloons.kero[Number(n)] = {canvas: cnv, descript:{}}; break;
             case "c": balloons.communicate[Number(n)] = {canvas: cnv, descript:{}}; break;
           }
         }else if( /^online(\d+)\.png$/.test(filepath)){
-          let [__, n] = /^online(\d+)\.png$/.exec(filepath);
+          let [__, n]:any = /^online(\d+)\.png$/.exec(filepath);
           balloons.online[Number(n)] = {canvas: cnv, descript:{}};
         }else if( /^arrow(\d+)\.png$/.test(filepath)){
-          let [__, n] = /^arrow(\d+)\.png$/.exec(filepath);
+          let [__, n]:any = /^arrow(\d+)\.png$/.exec(filepath);
           balloons.arrow[Number(n)] = {canvas: cnv, descript:{}};
         }else if( /^sstp\.png$/.test(filepath)){
           balloons.sstp = {canvas: cnv, descript:{}};
@@ -123,7 +123,7 @@ export default class Balloon extends EventEmitter {
     return;
   }
 
-  public attachBlimp(element, scopeId, balloonId){
+  public attachBlimp(element: HTMLDivElement, scopeId: number, balloonId: number){
     let type = scopeId === 0 ? "sakura" : "kero";
     if(!(this.balloons[type] != null && this.balloons[type][balloonId] != null)){
       console.warn("balloon id:", balloonId, "is not defined");
@@ -134,7 +134,7 @@ export default class Balloon extends EventEmitter {
     return blimp;
   }
 
-  public detachBlimp(element){
+  public detachBlimp(element: HTMLDivElement){
     let hits = this.attachedBlimp.filter((a)=> a.div === element);
     if (hits.length === 0){
       return;

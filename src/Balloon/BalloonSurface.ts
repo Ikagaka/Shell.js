@@ -24,13 +24,13 @@ export default class BalloonSurface extends EventEmitter {
   $blimpCanvas: JQuery;
   $blimpText: JQuery;
   _text_style: { [cssprop: string]: string };
-  _choice_style: { [cssprop: string]: string };
-  _choice_notselect_style: { [cssprop: string]: string };
-  _anchor_style: { [cssprop: string]: string };
-  _anchor_notselect_style: { [cssprop: string]: string };
+  _choice_style: { [cssprop: string]: any };
+  _choice_notselect_style: { [cssprop: string]: any };
+  _anchor_style: { [cssprop: string]: any };
+  _anchor_notselect_style: { [cssprop: string]: any };
   _current_text_style: { [cssprop: string]: string };
-  _current_choice_style: { [cssprop: string]: string };
-  _current_choice_notselect_style: { [cssprop: string]: string };
+  _current_choice_style: { [cssprop: string]: any };
+  _current_choice_notselect_style: { [cssprop: string]: any };
   _current_anchor_style: { [cssprop: string]: string };
   _current_anchor_notselect_style: { [cssprop: string]: string };
   currentSurface: Surface;
@@ -57,13 +57,13 @@ export default class BalloonSurface extends EventEmitter {
     }
     this.destructed = false;
     this.destructors = [];
-    this.insertPoint = null;
+    //this.insertPoint = null;
     this.width = 0;
     this.height = 0;
     this.destructors = [];
-    this.$blimp = null;
-    this.$blimpCanvas = null;
-    this.$blimpText = null;
+    //this.$blimp = null;
+    //this.$blimpCanvas = null;
+    //this.$blimpText = null;
 
     this.initDOMStructure()
     this.initEventListener()
@@ -113,7 +113,7 @@ export default class BalloonSurface extends EventEmitter {
   }
 
   private initEventListener(): void{
-    let mouselistener = (ev)=>{
+    let mouselistener = (ev: JQueryEventObject)=>{
       let custom = {
         type: ev.type,
         scopeId: this.scopeId,
@@ -122,17 +122,19 @@ export default class BalloonSurface extends EventEmitter {
       };
       this.balloon.emit("mouse", custom);
     };
+
     this.$blimp.on("click", mouselistener);
     this.$blimp.on("dblclick", mouselistener);
     this.$blimp.on("mousemove", mouselistener);
     this.$blimp.on("mousedown", mouselistener);
     this.$blimp.on("mouseup", mouselistener);
-    let onchoiceclick = (ev)=>{
+  
+    let onchoiceclick = (ev: JQueryEventObject)=>{
       let dataset = <{[a:string]:string}>ev.target["dataset"];
       let event = {
         type: "choiceselect",
         id:   dataset["id"],
-        args: [],
+        args: <string[]>[],
         text: ev.target.textContent
       }
       let argc = Number(dataset["argc"]);
@@ -147,7 +149,7 @@ export default class BalloonSurface extends EventEmitter {
       let event = {
         type: "anchorselect",
         id:   dataset["id"],
-        args: [],
+        args: <string[]>[],
         text: ev.target.textContent
       }
       let argc = Number(dataset["argc"])
@@ -179,7 +181,7 @@ export default class BalloonSurface extends EventEmitter {
       "font.strike":    descript["font.strike"],
       "font.underline": descript["font.underline"]
     };
-    let clickable_element_style = (prefix:string, style_default:string|NULL, descript:{[a:string]:string}, can_ignore=false):{[a:string]:string}=>{
+    let clickable_element_style = (prefix:string, style_default:string, descript:{[a:string]:string}, can_ignore=false):{[a:string]:any} =>{
       return {
         "style":       {square: true, underline: true, 'square+underline': true, none: true}[descript[`${prefix}.style`]] ? descript[`${prefix}.style`] : style_default,
         "font.color":  this._getFontColor(descript[`${prefix}.font.color.`],   descript[`${prefix}.font.color.g`],  descript[`${prefix}.font.color.b`],  can_ignore),
@@ -188,9 +190,9 @@ export default class BalloonSurface extends EventEmitter {
       };
     };
     this._choice_style =           clickable_element_style("cursor",           "square",    descript);
-    this._choice_notselect_style = clickable_element_style("cursor.notselect", undefined,   descript, true);
+    this._choice_notselect_style = clickable_element_style("cursor.notselect", "",          descript, true);
     this._anchor_style =           clickable_element_style("anchor",           "underline", descript);
-    this._anchor_notselect_style = clickable_element_style("anchor.notselect", undefined,   descript, true);
+    this._anchor_notselect_style = clickable_element_style("anchor.notselect", "",          descript, true);
     this.$blimpText.css(this._blimpTextCSS(this._text_style));
     this._initializeCurrentStyle();
     return;
@@ -208,7 +210,7 @@ export default class BalloonSurface extends EventEmitter {
     css["text-shadow"] = styles["font.shadowcolor"] ? `1px 1px 0 ${styles["font.shadowcolor"]}` : "none";
     css["font-weight"] = styles["font.bold"] ? "bold" : "normal";
     css["font-style"] = styles["font.italic"] ? "italic" : "normal";
-    let text_decoration = [];
+    let text_decoration:string[] = [];
     if (styles["font.strike"]){    text_decoration.push('line-through'); }
     if (styles["font.underline"]){ text_decoration.push('underline');    }
     css["text-decoration"] = text_decoration.length ? text_decoration.join(' ') : "none";
@@ -302,12 +304,12 @@ export default class BalloonSurface extends EventEmitter {
 
   public location(x:string, y:string): void{
     let re = /^(@)?(-?\d*\.?\d*e?\d*)(em|%)?$/;
-    let toparam = (r:string):{relative:boolean,value:string}=>{
+    let toparam = (r:string):{relative:boolean,value:string}|void=>{
       r = r + ""
       if(!r.length){
         return { relative: true, value: "0em"};
       }
-      let rp:string[] = r.match(re);
+      let rp:any = r.match(re);
       if(rp == null) { return void 0; } // avoid "Not all code paths return a value"
       if(isNaN(Number(rp[2]))){ return void 0; } // avoid "Not all code paths return a value"
       if(rp[3] == '%'){
@@ -315,13 +317,15 @@ export default class BalloonSurface extends EventEmitter {
         var unit = 'em';
       }else{
         var value = Number(rp[2]);
-        var unit = rp[3] || 'px';
+        var unit:string = rp[3] || 'px';
       }
       return {
         relative: !!rp[1],
         value: value + unit
       };
     };
+    var offsetx = 0;
+    var offsety = 0;
     let xp = toparam(x);
     let yp = toparam(y);
     if(!( xp != null && yp !=null)){ return; }
@@ -331,11 +335,11 @@ export default class BalloonSurface extends EventEmitter {
       let offset = $imp_position_checker.offset();
       let baseoffset = this.$blimpText.offset();
       var offsetx = offset.left - baseoffset.left;
-      var offsety = offset.top - baseoffset.top + this.$blimpText.scrollTop();
+      offsety = offset.top - baseoffset.top + this.$blimpText.scrollTop();
       $imp_position_checker.remove();
     }
-    if (! xp.relative ){ var offsetx = 0; }
-    if (! yp.relative ){ var offsety = 0; }
+    if (! xp.relative ){ offsetx = 0; }
+    if (! yp.relative ){ offsety = 0; }
     let $newimp_container_top = $('<div />')
       .addClass("newimp_container_top")
       .css({'position': 'absolute', 'pointer-events': 'none', 'top': yp.value});
@@ -369,7 +373,7 @@ export default class BalloonSurface extends EventEmitter {
     let baseCanvas = this.balloon.balloons[this.type][balloonId].canvas;
     this.descript  = this.balloon.balloons[this.type][balloonId].descript || {};
     let cnv = <HTMLCanvasElement>this.$blimpCanvas[0];
-    SurfaceUtil.fastcopy(baseCanvas, cnv.getContext("2d"));
+    SurfaceUtil.fastcopy(baseCanvas, <CanvasRenderingContext2D>cnv.getContext("2d"));
     // 大きさ調整
     this.$blimp.width(this.width = cnv.width);
     this.$blimp.height(this.height = cnv.height);
@@ -543,13 +547,13 @@ export default class BalloonSurface extends EventEmitter {
     return;
   }
 
-  public font(name:string, ...values): void{
+  public font(name:string, ...values:string[]): void{
     let value = values[0];
-    let treat_bool = (name, value)=>{
+    let treat_bool = (name: string, value: string)=>{
       if(value === 'default'){
         this._current_text_style[`font.${name}`] = this._text_style[`font.${name}`];
       }else{
-        this._current_text_style[`font.${name}`] = ""+!((value === 'false') || ((value - 0) === 0));
+        this._current_text_style[`font.${name}`] = ""+!((value === 'false') || ((Number(value) - 0) === 0));
       }
     };
     let treat_clickable_styles = (treat_name:string, name:string, value:string, values:string[], _current_style:{[a:string]:string}, _style:{[a:string]:string})=>{
@@ -590,13 +594,14 @@ export default class BalloonSurface extends EventEmitter {
           break;
       }
     };
+    var is_text_style = false;
     switch(name){
       case 'name':
-        var is_text_style = true;
+        is_text_style = true;
         this._current_text_style["font.name"] = values.map((name)=> '"'+name+'"').join(',');
         break;
       case 'height':
-        var is_text_style = true;
+        is_text_style = true;
         if (value === 'default'){
           this._current_text_style["font.height"] = this._text_style["font.height"];
         }else if( /^[+-]/.test(value)){
@@ -612,7 +617,7 @@ export default class BalloonSurface extends EventEmitter {
         }
         break;
       case 'color':
-        var is_text_style = true;
+        is_text_style = true;
         if (value === 'default'){
           this._current_text_style["font.color"] = this._text_style["font.color"];
         }else if(values[0]!=null && values[1]!=null && values[2]!=null){
@@ -622,11 +627,11 @@ export default class BalloonSurface extends EventEmitter {
         }
         break;
       case 'shadowcolor':
-        var is_text_style = true;
+        is_text_style = true;
         if (value === 'default'){
           this._current_text_style["font.shadowcolor"] = this._text_style["font.shadowcolor"];
         }else if (value === 'none'){
-          this._current_text_style["font.shadowcolor"] = undefined;
+          this._current_text_style["font.shadowcolor"] = "";// = undefined
         }else if(values[0]!=null && values[1]!=null && values[2]!=null){
           this._current_text_style["font.shadowcolor"] = this._getFontColor(values[0], values[1], values[2]);
         }else{
@@ -634,23 +639,23 @@ export default class BalloonSurface extends EventEmitter {
         }
         break;
       case 'bold':
-        var is_text_style = true;
+        is_text_style = true;
         treat_bool('bold', value);
         break;
       case 'italic':
-        var is_text_style = true;
+        is_text_style = true;
         treat_bool('italic', value);
         break;
       case 'strike':
-        var is_text_style = true;
+        is_text_style = true;
         treat_bool('strike', value);
         break;
       case 'underline':
-        var is_text_style = true;
+        is_text_style = true;
         treat_bool('underline', value);
         break;
       case 'default':
-        var is_text_style = true;
+        is_text_style = true;
         this._initializeCurrentStyle();
         break;
       case 'cursorstyle', 'cursorfontcolor', 'cursorpencolor', 'cursorcolor', 'cursorbrushcolor':
