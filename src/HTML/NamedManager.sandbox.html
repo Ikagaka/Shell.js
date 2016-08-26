@@ -1,0 +1,340 @@
+<script src="../bower_components/narloader/dist/NarLoader.js"></script>
+<script src="../bower_components/ikagaka.shell.js/dist/Shell.js"></script>
+<script src="../bower_components/ikagaka.balloon.js/dist/Balloon.js"></script>
+<script src="../dist/NamedManager.js"></script>
+<script>
+var NarLoader = NarLoader.NarLoader;
+var _NamedManager = NamedManager;
+var _Shell = Shell;
+var _Balloon = Balloon;
+var Shell = Shell.Shell;
+var Balloon = Balloon.Balloon;
+var NamedManager = NamedManager.NamedManager;
+Promise.all([
+  NarLoader.loadFromURL("../nar/origin.nar"),
+  NarLoader.loadFromURL("../nar/mobilemaster.nar")
+  //NarLoader.loadFromURL("../nar/ku-ver06.1.nar")
+  //NarLoader.loadFromURL("../nar/toromi-nuru.nar")
+]).then(function(tmp){
+  var balloonNDir = tmp[0];
+  var shellNDir = tmp[1];
+  var balloonDir = balloonNDir.asArrayBuffer();
+  var shellDir = shellNDir.getDirectory("shell/master").asArrayBuffer();
+  var shell = new Shell(shellDir);
+  var shell2 = new Shell(shellDir);
+  var shell3 = new Shell(shellDir);
+  var balloon = new Balloon(balloonDir);
+  var balloon2 = new Balloon(balloonDir);
+  var balloon3 = new Balloon(balloonDir);
+  return Promise.all([
+    shell.load(),
+    balloon.load(),
+    shell2.load(),
+    balloon2.load(),
+    shell3.load(),
+    balloon3.load()
+  ]).then(function(tmp){
+    var shell = tmp[0];
+    var balloon = tmp[1];
+    var shell2 = tmp[2];
+    var balloon2 = tmp[3];
+    var shell3 = tmp[4];
+    var balloon3 = tmp[5];
+    var nmdmgr = new NamedManager();
+    document.body.appendChild(nmdmgr.element);
+
+    shell2.config.bindgroup.forEach(function (arr, i){
+      arr.forEach(function(_, j){
+        shell2.config.bindgroup[i][j] = false});});
+    shell3.config.bindgroup[0][30] = false
+    shell3.config.bindgroup[0][31] = false
+
+    init(nmdmgr, shell, balloon, 1, shellNDir);
+    init(nmdmgr, shell2, balloon2, 2, shellNDir);
+    init(nmdmgr, shell3, balloon3, 3, shellNDir);
+  });
+});
+
+
+function wait(ms, callback) {
+  return function(ctx) {
+    return new Promise(function(resolve) {
+      setTimeout((function() {
+        if (callback instanceof Function) callback(ctx);
+        return resolve(ctx);
+      }), ms);
+    });
+  };
+}
+
+
+function init(nmdmgr, shell, balloon, id, shellNDir){
+  var hwnd = nmdmgr.materialize(shell, balloon);
+  var named = nmdmgr.named(hwnd);
+  console.log(nmdmgr, hwnd, named, shell, balloon);
+  named.contextmenu(function(ev){
+    // ここで動的に生成
+    var scopeId = ev.scopeId;
+    return {
+      items: {
+        testTalk: {
+          name: 'テストトーク',
+          callback: function(){
+            talk(named, id);
+          }
+        },
+        showRegion: { name: '当たり判定表示', callback: function(){ named.shell.showRegion(); } },
+        hideRegion: { name: '当たり判定非表示', callback: function(){ named.shell.hideRegion(); } },
+        sep1: "---------",
+        installNar: {
+          name: "narをインストール",
+          callback: function(){
+            $('#install_field').remove();
+            var $install_field = $('<input type="file" />').attr('id', 'install_field').css("display", 'none');
+            $install_field.change(function(ev){
+              $install_field.remove();
+              Array.prototype.slice.call(ev.target.files).forEach(function(file){
+                NarLoader.loadFromBlob(file).then(function(shellNDir){
+                  var shellDir = shellNDir.getDirectory("shell/master").asArrayBuffer();
+                  var shell = new Shell(shellDir);
+                  console.log(shell, shellDir, shellNDir);
+                  shell.load().then(function(){
+                    named.changeShell(shell);
+                  });
+                });
+              });
+            }).appendTo("body").click();
+          }
+        },
+        changeShell: {
+          name: 'シェル変更',
+          items: (function(){
+            var shelllist = shellNDir.getDirectory("shell").listChildren();
+            return shelllist.reduce(function(a, b, i){
+              a["changeShell"+i] = {
+                name: b,
+                callback: function(){
+                  var shellDir = shellNDir.getDirectory("shell/"+shelllist[i]).asArrayBuffer();
+                  var shell = new Shell(shellDir);
+                  console.log(shell, shellDir, shellNDir);
+                  shell.load().then(function(){
+                    named.changeShell(shell);
+                  });
+                }
+              };
+              return a;
+            }, {});
+          }())
+        },
+        changeBalloon: {
+          name: 'バルーン変更',
+          callback: function(){
+            $('#install_field').remove();
+            var $install_field = $('<input type="file" />').attr('id', 'install_field').css("display", 'none');
+            $install_field.change(function(ev){
+              $install_field.remove();
+              Array.prototype.slice.call(ev.target.files).forEach(function(file){
+                NarLoader.loadFromBlob(file).then(function(balloonNDir){
+                  var balloonDir = balloonNDir.asArrayBuffer();
+                  var balloon = new Balloon(balloonDir);
+                  balloon.load().then(function(){
+                    named.changeBalloon(balloon);
+                  });
+                });
+              });
+            }).appendTo("body").click();
+          }
+        },
+        sep2: "---------",
+        bindGroups: {
+          name: "着せ替えオン",
+          items: (function(){
+            var bindgroups = named.shell.getBindGroups(scopeId);
+            return bindgroups.reduce((function(a, b, i){
+              a["bindGroups"+i] = {
+                name: i + ":" + b.category+ " " + b.parts,
+                callback: function(){
+                  named.shell.bind(b.category, b.parts);
+                }
+              };
+              return a;
+            }), {});
+          }())
+        },
+        unbindGroups: {
+          name: "着せ替えオフ",
+          items: (function(){
+            var bindgroups = named.shell.getBindGroups(scopeId);
+            return bindgroups.reduce((function(a, b, i){
+              a["unbindGroups"+i] = {
+                name: i + ":" + b.category+ " " + b.parts,
+                callback: function(){
+                  named.shell.unbind(b.category, b.parts);
+                }
+              };
+              return a;
+            }), {});
+          }())
+        }
+      }
+    };
+  });
+  //named.on("mousemove", function(ev){ console.log(ev.type, ev); });
+  named.on("mousedown", function(ev){ console.log(ev.type, ev); });
+  named.on("mouseup", function(ev){ console.log(ev.type, ev); });
+  named.on("mouseclick", function(ev){ console.log(ev.type, ev); });
+  named.on("mousedblclick", function(ev){ console.log(ev.type, ev); });
+  named.on("balloonclick", function(ev){ console.log(ev.type, ev); });
+  named.on("balloondblclick", function(ev){ console.log(ev.type, ev); });
+  named.on("anchorselect", function(ev){ console.log(ev.type, ev); });
+  named.on("choiceselect", function(ev){ console.log(ev.type, ev); });
+  named.on("userinput", function(ev){ console.log(ev.type, ev); });
+  named.on("communicateinput", function(ev){ console.log(ev.type, ev); });
+  named.on("filedrop", function(ev){ console.log(ev.type, ev); });
+  console.log(named.scope(1).position(), id);
+  talk(named, id);
+}
+function talk(named, id){
+  Promise.resolve(named)
+  .then(wait(0, function(named) { named.scope(0); }))
+  .then(wait(0, function(named) { named.scope().surface(0); }))
+  .then(wait(0, function(named) { named.scope().blimp().clear(); }))
+  .then(wait(0, function(named) { named.scope(1); }))
+  .then(wait(0, function(named) { named.scope().surface(10); }))
+  .then(wait(0, function(named) { named.scope().blimp().clear(); }))
+  .then(wait(0, function(named) { named.scope(0); }))
+  .then(wait(0, function(named) { named.scope().blimp(0); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("H"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("e"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("l"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("l"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("o"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk(","); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("w"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("o"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("r"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("l"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("d"); }))
+  .then(wait(80, function(named) { named.scope().blimp().talk("!"); }))
+  .then(wait(160, function(named) { named.scope(1); }))
+  .then(wait(0, function(named) { named.scope().blimp().anchorBegin("AnchorID"); }))
+  .then(wait(0, function(named) { named.scope().blimp().talk("anchor"); }))
+  .then(wait(0, function(named) { named.scope().blimp().anchorEnd(); }))
+  .then(wait(0, function(named) { named.scope().blimp().br(); }))
+  .then(wait(0, function(named) { named.scope().blimp().talk("<" + "script>alert("+id+");<" + "/script>"); }))
+  .then(wait(0, function(named) { named.scope().blimp().br(); }))
+  .then(wait(0, function(named) { named.scope().blimp().choice("choice", "ChoceID"); }))
+  .then(wait(0, function(named) { named.scope().blimp().br(); }))
+  .then(wait(0, function(named) { named.scope().blimp().talk("hi."); }))
+  .then(wait(0, function(named) { named.scope().blimp().showWait(); }))
+  .then(wait(3000, function(named) { named.scope().blimp().talk("stop wait"); }));
+}
+</script>
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
+hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge hoge
