@@ -5,7 +5,7 @@
 
 import * as Util from "../Util/index";
 import * as SDT from "../Model/SurfaceDefinitionTree";
-import {Canvas} from "../Model/Canvas";
+import {Canvas, copy} from "../Model/Canvas";
 
 
 export class Renderer {
@@ -15,7 +15,7 @@ export class Renderer {
   ctx: CanvasRenderingContext2D;
   tmpcnv: HTMLCanvasElement
   tmpctx: CanvasRenderingContext2D;
-  debug: boolean;
+  debug: boolean; // 基準点描画
   use_self_alpha: boolean;
 
   // 渡されたCanvasをベースサーフェスとしてレイヤー合成を開始する。
@@ -30,16 +30,6 @@ export class Renderer {
     this.use_self_alpha = false;
     this.debug = false;
   }
-
-  init(srfCnv: Canvas){
-    // this を srfCnv の値で置き換え
-    this.base(srfCnv);
-    this.srfCnv.basePosX = srfCnv.basePosX;
-    this.srfCnv.basePosY = srfCnv.basePosY;
-    this.srfCnv.baseWidth = srfCnv.baseWidth;
-    this.srfCnv.baseHeight = srfCnv.baseHeight;
-  }
-
 
   // バッファを使いまわすためのリセット
   // clearは短形を保つがリセットは1x1になる
@@ -97,6 +87,21 @@ export class Renderer {
       default:
         console.warn("SurfaceRenderer#composeElement:", "unkown compose method", canvas, type, x, y);
     }
+  }
+
+  rebase(srfCnv: Canvas){
+    this.srfCnv = srfCnv; // 描画対象を変える
+    this.cnv = this.srfCnv.cnv;
+    this.ctx = <CanvasRenderingContext2D>this.cnv.getContext("2d");
+  }
+
+  init(srfCnv: Canvas){
+    // this を srfCnv の値で置き換え
+    this.base(srfCnv);
+    this.srfCnv.basePosX = srfCnv.basePosX;
+    this.srfCnv.basePosY = srfCnv.basePosY;
+    this.srfCnv.baseWidth = srfCnv.baseWidth;
+    this.srfCnv.baseHeight = srfCnv.baseHeight;
   }
 
   //下位レイヤをコマで完全に置き換える。collisionもコマのサーフェスに定義されたものに更新される。

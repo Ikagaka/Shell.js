@@ -1,8 +1,15 @@
 import * as Util from "../Util/index";
+
 import {Canvas} from "../Model/Canvas"
 import * as MS from "../Model/Scope";
 import {Shell} from "../Model/Shell";
+
+import {MoveEvent} from "../State/Surface";
+import * as SS from "../State/Scope";
+
 import {Renderer} from "../Renderer/Renderer";
+import {SurfacePatternRenderer} from "../Renderer/Pattern";
+
 import {Layer, LayerSet, LayerProps} from "./Layer";
 
 import * as React from 'react';
@@ -12,21 +19,25 @@ import {EventEmitter} from "events";
 
 
 export interface ScopeProps extends React.Props<Scope>{
-  scope: MS.Scope;
-  shell: Shell;
-  emitter: EventEmitter;
+  scopeState: SS.ScopeState;
 }
-export interface ScopeStatte {}
-export class Scope extends React.Component<ScopeProps, ScopeStatte> {
+export interface ScopeState {}
+export class Scope extends React.Component<ScopeProps, ScopeState> {
   constructor(props: ScopeProps) {
     super(props);
-    this.state = {x: 0, y: 0};
+    const {scopeState} = this.props;
+    const {surfaceState} = scopeState;
+    surfaceState.on("onMove", (ev: MoveEvent)=>{
+      this.setState({});
+    });
   }
   draw() {
+    const {scopeState} = this.props;
+    const {scope} = scopeState;
     const canvas = this.refs["surface"] as HTMLCanvasElement;
-    const rndr = new Renderer(new Canvas(canvas));
-    // model の canvas から実 DOM の canvas へ描画 
-    rndr.base(this.props.scope.surface.srfCnv);
+    // このタイミングでこの canvas を　patternrenderer に attach して draw して欲しい
+    // patRndr.attachCanvas(canvas); して
+    scopeState.emit("onSurfaceDraw", { type: "onSurfaceDraw", canvas, scope });
   }
   componentDidMount(){
     this.draw();
@@ -35,18 +46,20 @@ export class Scope extends React.Component<ScopeProps, ScopeStatte> {
     this.draw();
   }
   render(){
-    const {surface, position, alignmenttodesktop, basepos, scopeId} = this.props.scope;
+    const {scopeState} = this.props;
+    const {shell, scope, position, alignmenttodesktop, basepos, surface} = scopeState;
+    const {scopeId, surfaceId} = scope;
+    const {move} = surface;
     const {baseWidth, baseHeight, basePosX, basePosY} = surface.srfCnv;
     const {x,y} = position;
-    const config = this.props.shell;
-    const surfaceNode = this.props.shell.surfaceDefTree.surfaces[scopeId]
+    const config = shell;
+    const surfaceNode = shell.surfaceDefTree.surfaces[scopeId]
     const s: LayerProps = {
       width: baseWidth, height: baseHeight,
       basisX: "left",
       basisY: "top",
-      x: x, y: y
+      x, y
     };
-    const { surfaceId } = surface;
     s.x -= basepos.x;
     s.y -= basepos.y;
     switch (alignmenttodesktop){
@@ -68,7 +81,7 @@ export class Scope extends React.Component<ScopeProps, ScopeStatte> {
     return (
       <Layer basisX={s.basisX} basisY={s.basisY} x={s.x} y={s.y} width={s.width} height={s.height}>
         <LayerSet>
-          <Layer basisX={"left"} basisY={"top"} x={0} y={0} width={s.width} height={s.height}>
+          <Layer basisX={"left"} basisY={"top"} x={move.x} y={move.y} width={s.width} height={s.height}>
             <canvas ref="surface" style={{
               position: "absolute", top: "0px", left: "0px",
               marginLeft: -basePosX+"px", marginTop :-basePosY+"px"}}
@@ -87,10 +100,18 @@ export class Scope extends React.Component<ScopeProps, ScopeStatte> {
     );
   }
   onSurfaceMouseDown(ev: React.MouseEvent|React.TouchEvent): void {
+    const {scopeState} = this.props;
+    const {scope} = scopeState;
     // canvas に紐付けるのはこいつだけ
-    // todo: eventemitter
-    this.props.emitter.emit("onSurfaceMouseDown", { type: "onSurfaceMouseDown", event, scope: this.props.scope });
+    // namesState.hover() してほしい
+    scopeState.emit("onSurfaceMouseDown", { type: "onSurfaceMouseDown", event, scope });
   }
+}
+
+export interface SurfaceDrawEvent {
+  type: "onSurfaceDraw";
+  canvas: HTMLCanvasElement;
+  scope: MS.Scope;
 }
 
 export interface SurfaceMouseDownEvent {

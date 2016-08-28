@@ -18,28 +18,28 @@ export class SurfaceState extends EventEmitter {
   config: Config;
   surfaceNode: SurfaceDefinition;
   debug: boolean;
-  rndr: Renderer;
+  rndr: Renderer; // 実 DOM 上の canvas への参照をもつレンダラ
   continuations: {[animId: number]: {resolve:Function, reject:Function}};
   // アニメーション終了時に呼び出す手はずになっているプロミス値への継続
   // 本来は surface モデルに入れるべきだがクロージャを表現できないので
 
   renderer: (surface: Surface)=>Promise<Canvas>;
-  mover: (x: number, y: number, wait: number)=>Promise<void>;
 
-  constructor(surface: Surface, shell: Shell, renderer: (surface: Surface)=>Promise<Canvas>, mover: (x: number, y: number, wait: number)=>Promise<void>) {
+  constructor(surface: Surface, shell: Shell, renderer: (surface: Surface)=>Promise<Canvas>) {
     super();
     this.surface = surface;
-    this.rndr = new Renderer(surface.srfCnv);
+    this.rndr = new Renderer(); // 初回はメモリ上の canvas への参照もっとく
     this.shell = shell
     this.renderer = renderer;
-    this.mover = mover;
+
     this.continuations = {};
     this.debug = false;
     this.surfaceNode = this.shell.surfaceDefTree.surfaces[surface.surfaceId];
     this.surfaceNode.animations.forEach((anim, animId)=>{
       if(anim != null){ this.initSeriko(animId); }
     });
-    // debugの設定を待つため初回更新はしない
+    this.constructRenderingTree();
+    // debugの設定を待つため初回 render はしない
   }
   
   destructor(){
@@ -47,18 +47,22 @@ export class SurfaceState extends EventEmitter {
     this.endAll();
   }
 
-  render(): Promise<Canvas>{
+  render(): Promise<void>{
     const {scopeId, surfaceId} = this.surface;
     this.debug && console.time("render("+scopeId+","+surfaceId+")");
     this.constructRenderingTree();
     return this.renderer(this.surface).then((srfcnv)=>{
       // srfcnv は合成されたもの
-      // surface model の canvas へ反映
+      // 実 DOM の canvas へ反映
       this.rndr.base(srfcnv);
       this.debug && console.timeEnd("render("+scopeId+","+surfaceId+")");
-      // surface model の canvas を返す
-      return this.surface.srfCnv;
     });
+  }
+
+  attachRealDOMCanvas(cnv: HTMLCanvasElement): Promise<void> {
+    // 書き込み先を実DOMへ
+    this.rndr = new Renderer(new Canvas(cnv));
+    return this.render();
   }
 
   private initSeriko(animId: number): void {
@@ -298,10 +302,15 @@ export class SurfaceState extends EventEmitter {
       case "alternativestart": this.play(Util.choice<number>(animation_ids)); return;
       case "alternativestop":  this.stop(Util.choice<number>(animation_ids)); return;
       case "move":
-        // 動き終わるのを待つ
-        this.mover(x, y, _wait)
+        surface.move.x = x;
+        surface.move.y = y;
+        debug && console.time("move("+scopeId+","+surfaceId+")");
+        new Promise((resolve)=> setTimeout(resolve, _wait))
         .catch(console.warn.bind(console)) // 何らかの理由で move がキャンセルされようが続行
         .then(()=>{
+          debug && console.timeEnd("move("+scopeId+","+surfaceId+")");
+          this.emit("onMove", {type: "onMove", scopeId, surfaceId});
+          // 動き終わるのを待つ
           // 次のパターン処理へ
           this.step(animId, seriko);
         });
@@ -487,3 +496,10 @@ export function layersToTree(surfaces: SurfaceDefinition[], scopeId: number, n: 
     return tree;
   }
 }
+
+export interface MoveEvent {
+  type: "onMove";
+  scopeId: number;
+  surfaceId: number;
+}
+

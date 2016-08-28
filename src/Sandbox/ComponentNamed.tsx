@@ -1,11 +1,15 @@
 import * as SU from "../Util/index";
+
 import * as MS from "../Model/Scope";
 import * as MN from "../Model/Named";
-import {copy} from "../Model/Canvas";
+import {Canvas, copy} from "../Model/Canvas";
 import {getAlignmenttodesktop} from "../Model/Config";
-import {ScopeState} from "../State/Scope";
+
 import * as SML from "../Loader/Shell";
-import * as SPR from "../Renderer/Pattern";
+
+import {ScopeState} from "../State/Scope";
+import {NamedState} from "../State/Named";
+
 import {Named} from "../Component/Named";
 
 import * as React from 'react';
@@ -14,24 +18,17 @@ import {EventEmitter} from "events";
 import $ = require("jquery");
 
 
-SU.NarLoader.loadFromURL("../nar/mobilemaster.nar")
+//SU.NarLoader.loadFromURL("../nar/mobilemaster.nar")
+SU.NarLoader.loadFromURL("../nar/ku-ver06.1.nar")
 .then((dir)=> dir.getDirectory("shell/master").asArrayBuffer() )
 .then((dic)=> SML.load(dic) )
 .then((shell)=>{
-  const rndr = new SPR.SurfacePatternRenderer(shell);
-  //rndr.debug = true;
-  // return rndr.preload().then(function(){
-  // });
-  const emitter = new EventEmitter();
-  emitter.on("onNamedMouseDown", console.info.bind(console));
-  emitter.on("onSurfaceMouseDown", console.info.bind(console));
-  const scopeId = 0;
-  const surfaceId = 0;
-  return rndr.getBaseSurfaceSize(surfaceId).then(({width, height})=>{
-    const scope = new MS.Scope(scopeId, surfaceId, width, height, getAlignmenttodesktop(shell.config, scopeId));
-    const named = new MN.Named(shell);
-    const scopeState = new ScopeState(scope, shell, (surface)=> rndr.render(surface) );
-    named.scopes.push(scope);
+  const named = new MN.Named(shell);
+  const namedState = new NamedState(named);
+  Promise.all([
+    namedState.addScope(0, 0),
+    namedState.addScope(0, 2010)
+  ]).then(()=>{
     $(()=>{
       const content = $("<div />").attr("id", "content").appendTo("body")[0];
       const cuttleboneStyle = {
@@ -43,7 +40,7 @@ SU.NarLoader.loadFromURL("../nar/mobilemaster.nar")
       
       ReactDOM.render((
         <div className="cuttlebone" style={cuttleboneStyle}>
-          <Named named={named} emitter={emitter}></Named>
+          <Named namedState={namedState}></Named>
         </div>
       ), content);
     });

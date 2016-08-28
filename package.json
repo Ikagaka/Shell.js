@@ -21,7 +21,7 @@
     "babel": "babel lib -d es5",
     "espower": "gulp build",
     "browserify": "browserify es5/index.js --standalone Shell -o dist/Shell.js",
-    "watchify": "watchify es5/index.js --standalone Shell -o dist/Shell.js -v",
+    "watchify": "watchify es5/Sandbox/ComponentNamed.js -o dist/ComponentNamed.sandbox.js -v",
     "check": "tsc -w --noEmit",
     "replace": "npm run perl; npm run add",
     "cake": "cake clean; cake test; cake sandbox;",

@@ -1,6 +1,7 @@
 /*
  * CacheCanvas は ディレクトリアクセスをフックし
  * 比較的重い処理である surface*.png の色抜き処理をキャッシングする
+ * baseCache
  */
 
 import * as Util from "../Util/index";

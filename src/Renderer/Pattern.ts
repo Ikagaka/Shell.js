@@ -12,28 +12,33 @@ import {Canvas} from "../Model/Canvas";
 import {SurfaceBaseRenderer} from "./BaseSurface";
 import {Renderer} from "./Renderer";
 
-export class SurfacePatternRenderer extends SurfaceBaseRenderer {
-  rndr: Renderer;
-  // this.rndr.srfCnv は pattern が描画され
-  // this.srfCnv は　base が描画される
-  // 使い分け注意
-  // 本当は継承したくないのだけれど・・・？
-  constructor(shell: Shell){
-    super(shell);
-    this.rndr = new Renderer();
+export class SurfacePatternRenderer extends Renderer{
+  baseRndr: SurfaceBaseRenderer
+  realRndr: Renderer; // 実 DOM へのレンダラ
+
+  constructor(baseRndr: SurfaceBaseRenderer, srfCnv?: Canvas){
+    super();
+    // this.cnv は ダブルバッファリング 用の オフスクリーン canvas
+    this.realRndr = new Renderer(srfCnv);
+    this.baseRndr = baseRndr;
+  }
+
+  attachCanvas(srfCnv: Canvas){
+    this.realRndr.rebase(srfCnv);
   }
 
   render(surface: Surface): Promise<Canvas> {
     // この this へ現在のサーフェス画像を書き込む
+    const {shell} = this.baseRndr;
     const {surfaceId, renderingTree} = surface;
-    const surfaceNode = this.shell.surfaceDefTree.surfaces[surfaceId];
+    const surfaceNode = shell.surfaceDefTree.surfaces[surfaceId];
     const {base, foregrounds, backgrounds} = renderingTree;
-    const {enableRegion} = this.shell.config;
+    const {enableRegion} = shell.config;
     const {collisions, animations} = surfaceNode;
-    return this.getBaseSurface(base).then((baseSrfCnv)=>{
+    return this.baseRndr.getBaseSurface(base).then((baseSrfCnv)=>{
       // この baseSrfCnv は cache そのものなのでいじるわけにはいかないのでコピーする
-      this.rndr.init(baseSrfCnv);
-      this.rndr.clear(); // 短形を保ったまま消去
+      this.init(baseSrfCnv);
+      this.clear(); // 短形を保ったまま消去
       // この this な srfCnv がreduceの単位元になる
       return this.convoluteTree(new SurfaceRenderingLayer("overlay", renderingTree, 0, 0)); // 透明な base へ overlay する
     }).then(()=>{
@@ -41,13 +46,13 @@ export class SurfacePatternRenderer extends SurfaceBaseRenderer {
       if (enableRegion) {
         backgrounds.forEach((layerSet)=>{
           layerSet.forEach((layer)=>{
-            this.rndr.drawRegions(layer.surface.collisions, ""+surfaceId);
+            this.drawRegions(layer.surface.collisions, ""+surfaceId);
           });
         });
-        this.rndr.drawRegions((collisions), ""+surfaceId);
+        this.drawRegions((collisions), ""+surfaceId);
         foregrounds.forEach((layerSet)=>{
           layerSet.forEach((layer)=>{
-            this.rndr.drawRegions(layer.surface.collisions, ""+surfaceId);
+            this.drawRegions(layer.surface.collisions, ""+surfaceId);
           });
         });
       }
@@ -56,7 +61,8 @@ export class SurfacePatternRenderer extends SurfaceBaseRenderer {
       //SurfaceUtil.log(SurfaceUtil.copy(this.bufferRender.cnv));
       //document.body.scrollTop = 99999;
       //this.endAll();
-      return this.rndr.srfCnv;
+      this.realRndr.init(this.srfCnv);// オフスクリーン canvas を real dom canvas へ書き込み
+      return this.realRndr.srfCnv;
     })
   }
 
@@ -72,12 +78,12 @@ export class SurfacePatternRenderer extends SurfaceBaseRenderer {
             this.convoluteTree(layer)
           ), prm) , Promise.resolve());
     return process(backgrounds).then(()=>
-      this.getBaseSurface(base).then((baseSrfCnv)=>{
+      this.baseRndr.getBaseSurface(base).then((baseSrfCnv)=>{
         // backgrounds の上に base を描画
         // いろいろやっていても実際描画するのは それぞれのベースサーフェスだけです
         // a.add(Util.copy(this.rndr.srfCnv.cnv), "current");
         // a.add(Util.copy(baseSrfCnv.cnv), "base");
-        this.rndr.composeElement(baseSrfCnv, type, x, y);
+        this.composeElement(baseSrfCnv, type, x, y);
         // a.add(Util.copy(this.rndr.srfCnv.cnv), "result");
       }).catch(console.warn.bind(console)) // 失敗してもログ出して解決
     ).then(()=> process(foregrounds) );

@@ -10,12 +10,13 @@ export class Surface {
   surfaceId: number;
   width: number;
   height: number; // ベースサーフェスのサイズ
-  srfCnv:          Canvas;  // 現在のピクセル
+
   renderingTree:   SurfaceRenderingTree; // 実際に表示されるべき再帰的なbindも含めたレイヤツリー
   serikos:          {[animId: number]: Seriko}; // interval再生が有効なアニメーションID
   talkCount:       number;
   destructed:      boolean;
-
+  srfCnv:          Canvas; // 現在の base* と cnv.width 中身の canvas が実DOMかどうかは問わない
+  move: {x: number, y: number};
   constructor(scopeId: number, surfaceId: number, width: number, height: number) {
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
@@ -26,6 +27,7 @@ export class Surface {
     this.serikos = {};
     this.talkCount = 0;
     this.destructed = false;
+    this.move = {x: 0, y: 0};
   }
 }
 
