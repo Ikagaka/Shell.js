@@ -59,7 +59,9 @@
     "gulp-rename": "^1.2.2",
     "narloader": "github:ikagaka/NarLoader#jszip3",
     "typescript": "^2.0.0",
-    "watchify": "^3.7.0"
+    "watchify": "^3.7.0",
+    "@types/node": "^4.0.27-alpha",
+    "tslint": "^3.13.0-dev.0"
   },
   "babel": {
     "presets": [

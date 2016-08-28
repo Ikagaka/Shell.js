@@ -619,3 +619,19 @@ interface FileDropEvent {
 * 指定した座標に移動します。
 * 基準は画面右下です。
 * 引数を省略すると現在の座標が返ります。
+
+
+# ghost-urn
+https://gist.github.com/Narazaka/036b30ea9e1bbe2cc86ed81c61e0bca0
+
+```javascript
+import {NamedManager, NamedManagerPhaserRenderer} from "ghost-urn";
+
+const element = document.getElementById("#named-manager");
+const renderer = new NamedManagerPhaserRenderer(element);
+
+await renderer.initializeGame();
+
+const namedManager = new NamedManager(renderer);
+namedManager.materialize(...);
+```
