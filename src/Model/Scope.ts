@@ -18,19 +18,19 @@ export class Scope {
   alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free";
   // あるべき姿
   // structor(scopeId: number, surfaceId: number, srfCnv: Canvas, basepos: {x: number, y: number}, alignmenttodesktop: string)
-  constructor(scopeId: number, surfaceId: number, srfCnv: Canvas, alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free", basepos?: {x?: number, y?: number}){
+  constructor(scopeId: number, surfaceId: number, width: number, height: number, alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free", basepos?: {x?: number, y?: number}){
     // これエラーで落ちたら呼んだ人が悪い
 
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
-    this.surface = new Surface(scopeId, surfaceId, srfCnv);
+    this.surface = new Surface(scopeId, surfaceId, width, height);
 
     this.position = {x: 0, y: 0}; // defaultxとか？
     // model は render されないと base surface の大きさがわからない
-    this.size    = { width: srfCnv.baseWidth, height: srfCnv.baseHeight };
+    this.size    = { width, height };
 
     // デフォルト値
-    this.basepos = { x: srfCnv.baseWidth/2|0, y: srfCnv.baseHeight };
+    this.basepos = { x: width/2|0, y: height };
     // 引数省略時の処理
     if(basepos != null && basepos.x != null){
       this.basepos.x = basepos.x;

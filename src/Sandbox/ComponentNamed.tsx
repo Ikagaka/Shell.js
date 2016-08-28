@@ -27,8 +27,8 @@ SU.NarLoader.loadFromURL("../nar/mobilemaster.nar")
   emitter.on("onSurfaceMouseDown", console.info.bind(console));
   const scopeId = 0;
   const surfaceId = 0;
-  return rndr.getBaseSurface(surfaceId).then((srfCnv)=>{
-    const scope = new MS.Scope(scopeId, surfaceId, copy(srfCnv), getAlignmenttodesktop(shell.config, scopeId));
+  return rndr.getBaseSurfaceSize(surfaceId).then(({width, height})=>{
+    const scope = new MS.Scope(scopeId, surfaceId, width, height, getAlignmenttodesktop(shell.config, scopeId));
     const named = new MN.Named(shell);
     const scopeState = new ScopeState(scope, shell, (surface)=> rndr.render(surface) );
     named.scopes.push(scope);

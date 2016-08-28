@@ -14,7 +14,6 @@ import {EventEmitter} from "events";
 
 export class SurfaceState extends EventEmitter {
   surface: Surface;
-  srfCnv: Canvas;
   shell: Shell;
   config: Config;
   surfaceNode: SurfaceDefinition;
@@ -30,8 +29,7 @@ export class SurfaceState extends EventEmitter {
   constructor(surface: Surface, shell: Shell, renderer: (surface: Surface)=>Promise<Canvas>, mover: (x: number, y: number, wait: number)=>Promise<void>) {
     super();
     this.surface = surface;
-    this.srfCnv = surface.srfCnv
-    this.rndr = new Renderer(this.srfCnv);
+    this.rndr = new Renderer(surface.srfCnv);
     this.shell = shell
     this.renderer = renderer;
     this.mover = mover;
@@ -54,10 +52,12 @@ export class SurfaceState extends EventEmitter {
     this.debug && console.time("render("+scopeId+","+surfaceId+")");
     this.constructRenderingTree();
     return this.renderer(this.surface).then((srfcnv)=>{
+      // srfcnv は合成されたもの
       // surface model の canvas へ反映
       this.rndr.base(srfcnv);
       this.debug && console.timeEnd("render("+scopeId+","+surfaceId+")");
-      return srfcnv;
+      // surface model の canvas を返す
+      return this.surface.srfCnv;
     });
   }
 
@@ -245,22 +245,17 @@ export class SurfaceState extends EventEmitter {
     const {serikos, destructed, scopeId, surfaceId} = surface;
     const {resolve, reject} = this.continuations[animId];
     const anim = surfaceNode.animations[animId];
-    // exclusive がうまく動いていないのでコメントアウトしている
     // patternをすすめる
     // exclusive中のやつら探す
-    if(!Object.keys(serikos).some((id)=>{
-      if(!(serikos[id] instanceof Seriko)){
-        return false;
+    const exclusives = Object.keys(serikos)
+      .filter((id)=> !(serikos[id] instanceof Seriko))
+      .filter((id)=> serikos[id].exclusive );
+    if(exclusives.length > 0 ){
+      // exclusiveが存在
+      if(exclusives.every((id)=> Number(id) !== animId )){
+        // exclusives の中に自分は含まれない＝排他されてしまう
+        seriko.canceled = true;
       }
-      const seriko = serikos[id];
-      if(seriko.exclusive /*&& Number(id) === animId*/){ // exclusiveが存在しなおかつ自分は含まれる
-        return true;
-      }
-      return false; // exclusive が存在しない 
-    })){
-      // exclusiveが存在しなおかつ自分は含まれないので
-      //seriko.canceled = true;
-      console.warn("exclusive option is not implemented yet")
     }
     if(seriko.canceled){
       // キャンセルされたので reject

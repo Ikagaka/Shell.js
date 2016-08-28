@@ -250,10 +250,10 @@ export function isHit(cnv: HTMLCanvasElement, x: number, y: number ): boolean {
 }
 
 // 1x1の canvas を作るだけ
-export function createCanvas(): HTMLCanvasElement {
+export function createCanvas(width=1, height=1): HTMLCanvasElement {
   const cnv = document.createElement("canvas");
-  cnv.width = 1;
-  cnv.height = 1;
+  cnv.width = width;
+  cnv.height = height;
   return cnv;
 }
 
@@ -419,12 +419,12 @@ export function craetePictureFrame(description: string, target=document.body){
   const fieldset = document.createElement('fieldset');
   const legend = document.createElement('legend');
   legend.appendChild(document.createTextNode(description));
-  fieldset.appendChild(legend);
   fieldset.style.display = 'inline-block';
-  target.appendChild(fieldset);
   fieldset.style.backgroundColor = "#D2E0E6";
+  fieldset.appendChild(legend);
+  target.appendChild(fieldset);
   const add = (element: HTMLElement|string, txt="")=>{
-      if(element instanceof HTMLElement){
+      if(element instanceof HTMLElement && txt!==""){
         const frame = craetePictureFrame(txt, fieldset);
         frame.add(element);
       }else if(typeof element === "string"){

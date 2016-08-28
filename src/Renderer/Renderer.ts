@@ -104,7 +104,6 @@ export class Renderer {
   //この描画メソッドが指定されたpattern定義では、XY座標は無視される。
   //着せ替え・elementでも使用できる。
   base(part: Canvas): void {
-    //this.reset();
     this.cnv.width  = part.cnv.width;
     this.cnv.height = part.cnv.height;
     this.ctx.globalCompositeOperation = "source-over";
