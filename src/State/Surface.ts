@@ -3,35 +3,46 @@
  */
 
 import * as Util from "../Util/index";
+
 import {Shell} from "../Model/Shell";
 import {SurfaceDefinitionTree, SurfaceDefinition, SurfaceAnimation, SurfaceAnimationPattern, SurfaceCollision, getExclusives, isBack} from "../Model/SurfaceDefinitionTree";
 import {SurfaceRenderingTree, SurfaceRenderingLayerSet, SurfaceRenderingLayer} from "../Model/SurfaceRenderingTree"
 import {Config, isBind} from "../Model/Config";
 import {Surface, Seriko} from "../Model/Surface";
 import {Canvas} from "../Model/Canvas";
+
 import {Renderer} from "../Renderer/Renderer";
+import * as SBR from "../Renderer/BaseSurface";
+import * as SPR from "../Renderer/Pattern";
+
 import {EventEmitter} from "events";
 
-export class SurfaceState extends EventEmitter {
+
+// onMove surface.move.x|y が変わった
+export interface MoveEvent {
+  type: "onMove";
+  scopeId: number;
+  surfaceId: number;
+}
+
+
+export class SurfaceState extends EventEmitter  {
   surface: Surface;
   shell: Shell;
   config: Config;
   surfaceNode: SurfaceDefinition;
   debug: boolean;
-  rndr: Renderer; // 実 DOM 上の canvas への参照をもつレンダラ
+  rndr: SPR.SurfacePatternRenderer;  // 実 DOM へ書き込んじゃうなにか
   continuations: {[animId: number]: {resolve:Function, reject:Function}};
   // アニメーション終了時に呼び出す手はずになっているプロミス値への継続
   // 本来は surface モデルに入れるべきだがクロージャを表現できないので
 
-  renderer: (surface: Surface)=>Promise<Canvas>;
-
-  constructor(surface: Surface, shell: Shell, renderer: (surface: Surface)=>Promise<Canvas>) {
+  constructor(surface: Surface, shell: Shell, rndr: SPR.SurfacePatternRenderer) {
     super();
     this.surface = surface;
-    this.rndr = new Renderer(); // 初回はメモリ上の canvas への参照もっとく
     this.shell = shell
-    this.renderer = renderer;
 
+    this.rndr = rndr;
     this.continuations = {};
     this.debug = false;
     this.surfaceNode = this.shell.surfaceDefTree.surfaces[surface.surfaceId];
@@ -47,22 +58,23 @@ export class SurfaceState extends EventEmitter {
     this.endAll();
   }
 
+  attachTo(srfCnv: Canvas){
+    // srfCnv 実 DOM への参照
+    this.rndr.attachCanvas(srfCnv);
+  }
+
   render(): Promise<void>{
     const {scopeId, surfaceId} = this.surface;
     this.debug && console.time("render("+scopeId+","+surfaceId+")");
     this.constructRenderingTree();
-    return this.renderer(this.surface).then((srfcnv)=>{
-      // srfcnv は合成されたもの
-      // 実 DOM の canvas へ反映
-      this.rndr.base(srfcnv);
-      this.debug && console.timeEnd("render("+scopeId+","+surfaceId+")");
-    });
-  }
-
-  attachRealDOMCanvas(cnv: HTMLCanvasElement): Promise<void> {
-    // 書き込み先を実DOMへ
-    this.rndr = new Renderer(new Canvas(cnv));
-    return this.render();
+    // 実 DOM の canvas へ反映
+    if(this.rndr instanceof SPR.SurfacePatternRenderer){
+      return this.rndr.render(this.surface).then(()=>{
+        this.debug && console.timeEnd("render("+scopeId+","+surfaceId+")");
+      });
+    }else{
+      return Promise.reject("renderer have not been attached yet")
+    }
   }
 
   private initSeriko(animId: number): void {
@@ -305,12 +317,12 @@ export class SurfaceState extends EventEmitter {
         surface.move.x = x;
         surface.move.y = y;
         debug && console.time("move("+scopeId+","+surfaceId+")");
+        // 動き終わるのを待つ
         new Promise((resolve)=> setTimeout(resolve, _wait))
         .catch(console.warn.bind(console)) // 何らかの理由で move がキャンセルされようが続行
         .then(()=>{
           debug && console.timeEnd("move("+scopeId+","+surfaceId+")");
           this.emit("onMove", {type: "onMove", scopeId, surfaceId});
-          // 動き終わるのを待つ
           // 次のパターン処理へ
           this.step(animId, seriko);
         });
@@ -390,13 +402,13 @@ export class SurfaceState extends EventEmitter {
     });
   }
 
-  yenE(): void {
+  yenE(): Promise<void> {
     const anims = this.surfaceNode.animations;
-    anims.forEach((anim, animId)=>{
-      if (anim.intervals.some(([interval, args])=> interval === "yen-e") ) {
-        this.play(animId);
-      }
-    });
+    return Promise.all([
+      anims
+      .filter((anim, animId)=> anim.intervals.some(([interval, args])=> interval === "yen-e") )
+      .map((anim, animId)=> this.play(animId) )
+    ]).then(()=>{ return; });
   }
 
   constructRenderingTree(): void {
@@ -495,11 +507,5 @@ export function layersToTree(surfaces: SurfaceDefinition[], scopeId: number, n: 
     });
     return tree;
   }
-}
-
-export interface MoveEvent {
-  type: "onMove";
-  scopeId: number;
-  surfaceId: number;
 }
 

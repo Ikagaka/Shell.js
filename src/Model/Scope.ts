@@ -9,28 +9,33 @@ import {Canvas} from "./Canvas";
 
 export class Scope {
   scopeId:         number;
-  surfaceId:       number;
   
   surface:         Surface;
   position:        {x: number, y: number};
-  size:            {width: number, height: number};
-  basepos:         {x: number, y: number};
+
+  basepos:         {x?: number, y?: number};
   alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free";
+  show:            boolean; // \s[-1] で false
   // あるべき姿
   // structor(scopeId: number, surfaceId: number, srfCnv: Canvas, basepos: {x: number, y: number}, alignmenttodesktop: string)
-  constructor(scopeId: number, surfaceId: number, width: number, height: number, alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free", basepos?: {x?: number, y?: number}){
+  constructor(scopeId: number, surfaceId: number, alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free", basepos?: {x?: number, y?: number}){
     // これエラーで落ちたら呼んだ人が悪い
 
     this.scopeId = scopeId;
-    this.surfaceId = surfaceId;
-    this.surface = new Surface(scopeId, surfaceId, width, height);
+    if(surfaceId < 0){
+      this.show = false;
+      surfaceId = 0;
+    }else{
+      this.show = true;
+    }
+    this.surface = new Surface(scopeId, surfaceId);
 
-    this.position = {x: 0, y: 0}; // defaultxとか？
-    // model は render されないと base surface の大きさがわからない
-    this.size    = { width, height };
+    this.position = {x: 0, y: 0}; // defaultxとか？のディスプレイ上の座標
+    
+    this.alignmenttodesktop = alignmenttodesktop;
 
     // デフォルト値
-    this.basepos = { x: width/2|0, y: height };
+    this.basepos = {};
     // 引数省略時の処理
     if(basepos != null && basepos.x != null){
       this.basepos.x = basepos.x;
@@ -38,7 +43,6 @@ export class Scope {
     if(basepos != null && basepos.y != null){
       this.basepos.y = basepos.y;
     }
-    this.alignmenttodesktop = alignmenttodesktop;
   }
 }
 

@@ -8,8 +8,6 @@ import {Canvas} from "./Canvas";
 export class Surface {
   scopeId: number;
   surfaceId: number;
-  width: number;
-  height: number; // ベースサーフェスのサイズ
 
   renderingTree:   SurfaceRenderingTree; // 実際に表示されるべき再帰的なbindも含めたレイヤツリー
   serikos:          {[animId: number]: Seriko}; // interval再生が有効なアニメーションID
@@ -17,12 +15,9 @@ export class Surface {
   destructed:      boolean;
   srfCnv:          Canvas; // 現在の base* と cnv.width 中身の canvas が実DOMかどうかは問わない
   move: {x: number, y: number};
-  constructor(scopeId: number, surfaceId: number, width: number, height: number) {
+  constructor(scopeId: number, surfaceId: number) {
     this.scopeId = scopeId;
     this.surfaceId = surfaceId;
-    this.width = width;
-    this.height = height;
-    this.srfCnv = new Canvas(Util.createCanvas(width, height));
     this.renderingTree = new SurfaceRenderingTree(surfaceId);
     this.serikos = {};
     this.talkCount = 0;

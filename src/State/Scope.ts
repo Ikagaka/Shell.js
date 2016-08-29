@@ -4,10 +4,11 @@
 
 import * as Util from "../Util/index";
 
-import {SurfaceDrawEvent} from "../Component/Scope";
+//import {SurfaceDrawEvent} from "../Component/Scope";
 
 import {Canvas} from "../Model/Canvas";
-import {Shell} from "../Model/Shell";
+import {Shell, getSurfaceAlias} from "../Model/Shell";
+import {Balloon} from "../Model/Balloon";
 import {Scope} from "../Model/Scope";
 import {Surface} from "../Model/Surface";
 import {SurfaceDefinition} from "../Model/SurfaceDefinitionTree";
@@ -15,61 +16,89 @@ import {Config} from "../Model/Config";
 
 import * as SBR from "../Renderer/BaseSurface";
 import * as SPR from "../Renderer/Pattern";
+import {ScopeRenderer} from "../Renderer/Scope";
 
 import {SurfaceState, MoveEvent} from "./Surface";
+import {BalloonSurfaceState} from "./BalloonSurface";
 
 import {EventEmitter} from "events";
 
+// \![move] でモデルが更新されたので実DOMに変化してほしい
+export interface UpdatePositionEvent {
+  type: "onUpdatePosition";
+  scope: Scope;
+}
+
+
 export class ScopeState extends EventEmitter {
   scope: Scope;
-
-  position: {x: number, y: number};
-  basepos:  {x: number, y: number};
-  alignmenttodesktop: "top" | "bottom" | "left" | "right" | "free";
-
   shell: Shell;
-  surface: Surface
   surfaceState: SurfaceState;
-
+  scopeRenderer: ScopeRenderer;
   baseCache: SBR.SurfaceBaseRenderer;
-  rndr: SPR.SurfacePatternRenderer;
 
-  constructor(scope: Scope, shell: Shell, baseCache: SBR.SurfaceBaseRenderer) {
+  constructor(scope: Scope, shell: Shell, nalloon: Balloon, baseCache: SBR.SurfaceBaseRenderer, scopeRenderer: ScopeRenderer) {
     super();
     this.scope = scope;
-    this.position = scope.position;
-    this.basepos  = scope.basepos;
-    this.alignmenttodesktop = scope.alignmenttodesktop;
     this.shell = shell;
-    this.surface = scope.surface;
-    this.surfaceState = new SurfaceState(scope.surface, shell, (surface)=> this.rndr.render(surface));
-    
-    //this.surfaceState.debug = true;
-    
     this.baseCache = baseCache;
-    this.rndr = new SPR.SurfacePatternRenderer(this.baseCache);
+    this.surfaceState = new SurfaceState(scope.surface, shell, new SPR.SurfacePatternRenderer(baseCache));
+    //this.surfaceState.debug = true;
+    // debug したかったら 外からプロパティアクセスして
+    this.scopeRenderer = scopeRenderer;
+  }
 
-    
-    this.on("onSurfaceDraw", (ev: SurfaceDrawEvent)=>{
-      // Real DOM が 更新された
-      // React が再描画しろと言っている
-      this.attachCanvas(new Canvas(ev.canvas));
-    });
+  destructor(){
+    this.surfaceState.destructor();
+  }
+
+  attachTo(scopeRenderer: ScopeRenderer): void {
+    // 実 DOM への書き込み器と結びつける？
+    this.scopeRenderer = scopeRenderer;
+    const srfCnv = scopeRenderer.getSurfaceCanvas();
+    this.surfaceState.rndr.attachCanvas(srfCnv);
+  }
+
+  render(): Promise<void> {
+    return this.scopeRenderer.render(this.scope);
+  }
+
+  surface(surfaceId?: number|string): Promise<SurfaceState>{
+    const {shell, scope, surfaceState} = this;
+    const {scopeId, surface} = scope; 
+    if(surfaceId != null){
+      return getSurfaceAlias(shell, scopeId, surfaceId)
+      .then((id)=>{
+        if(id === surfaceId){
+          return surfaceState;
+        }
+        const rndr = surfaceState.rndr;
+        surfaceState.destructor();
+        const srf = new Surface(scopeId, id);
+        return this.surfaceState = new SurfaceState(srf, shell, rndr);
+      });
+    }else{
+      return Promise.resolve(this.surfaceState);
+    }
+  }
+
+  balloon(blimpId?: number): Promise<BalloonSurfaceState> {
+    return Promise.resolve(new BalloonSurfaceState());
   }
 
   move(x: number, y: number, ms: number): Promise<void>
-  /*
   move(x: number, y: number, ms: number, args: {                 scopeId: number, x: "left"|"base",                  y: "top"|"base"                  }): Promise<void>
   move(x: number, y: number, ms: number, args: {ghostId: number, scioeId: number, x: "left"|"base",                  y: "top"|"base"                  }): Promise<void>
   move(x: number, y: number, ms: number, args: {basis: "screen",                  x: "left"|"right"|"center",        y: "top"|"bottom"|"center"       }): Promise<void>
   move(x: number, y: number, ms: number, args: {basis: "me",                      x: "left"|"right"|"base"|"center", y: "top"|"bottom"|"base"|"center"}): Promise<void>
   move(x: number, y: number, ms: number, args: {basis: "primaryscreen"|"global",  x: "left"|"base",                  y: "top"|"base"                  }): Promise<void>
-  */
   move(x: number, y: number, ms: number, ...args: any[]): Promise<void>
   {
+    // me の実装しかしてない
     // setTimeout とかで pos 動かす
     // alignmenttodesktop にも注意
-    const {position, scope, alignmenttodesktop} = this;
+    const {scope} = this;
+    const {position, alignmenttodesktop} = scope;
     const destinationX = (position.x+x);
     const destinationY = (position.y+y);
     const stopTime = Date.now() + ms;
@@ -99,13 +128,4 @@ export class ScopeState extends EventEmitter {
     };
     return recur();
   }
-
-  moveCancel(){
-  }
-
-  attachCanvas(cnv: Canvas){
-    this.rndr.attachCanvas(cnv);
-    this.rndr.render(this.surface);
-  }
-  
 }

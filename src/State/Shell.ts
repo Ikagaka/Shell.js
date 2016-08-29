@@ -3,35 +3,60 @@
  */
 import {Shell} from "../Model/Shell";
 import {Config} from "../Model/Config";
-
-export class ShellState {
+import {EventEmitter} from "events";
+export class ShellState extends EventEmitter {
   shell: Shell;
-  listener: (event: string, shell: Shell)=>Promise<void>
-  // on("update_bindgroup")
-  //   config の bindgroup が書き換わったので 全ての surface の状態を変更するように上位存在へお伺いを立てている
 
-  constructor(shell: Shell, listener: (event: string, shell: Shell)=>Promise<void>){
+  constructor(shell: Shell){
+    super();
     this.shell = shell;
-    this.listener = listener;
+  }
+
+
+  showRegion(): void {
+    const {shell} = this;
+    const {config} = shell;
+    config.enableRegion = true;
+    // do render
+    this.emit("onUpdateBindgroup", {type: "onUpdateBindgroup", shell});
+  }
+
+  hideRegion(): void {
+    const {shell} = this;
+    const {config} = shell;
+    config.enableRegion = false;
+    // do render
+    this.emit("onUpdateBindgroup", {type: "onUpdateBindgroup", shell});
   }
 
   bind(category: string, parts: string): void
   bind(scopeId: number, bindgroupId: number): void
   bind(a: number|string, b: number|string): void {
-    const {config} = this.shell;
+    const {shell} = this;
+    const {config} = shell;
     bind_value(config, a, b, true);
-    this.listener("update_bindgroup", this.shell);
+    this.emit("onUpdateBindgroup", {type: "onUpdateBindgroup", shell});
   }
 
   // 着せ替えオフ
   unbind(category: string, parts: string): void
   unbind(scopeId: number, bindgroupId: number): void
   unbind(a: number|string, b: number|string): void {
-    const {config} = this.shell;
+    const {shell} = this;
+    const {config} = shell;
     bind_value(config, a, b, false);
-    this.listener("update_bindgroup", this.shell);
+    this.emit("onUpdateBindgroup", {type: "onUpdateBindgroup", shell});
   }
 }
+
+
+// on("onUpdateBindgroup", (event: UpdateBindgroupEvent)=>);
+//   config の bindgroup が書き換わったので 全ての surface の状態を変更するように上位存在へお伺いを立てている
+export interface UpdateBindgroupEvent {
+  type: "onUpdateBindgroup";
+  shell: Shell;
+}
+
 
 // 着せ替えオンオフ
 export function bind_value(config: Config, a: number|string, b: number|string, flag: boolean): void {
