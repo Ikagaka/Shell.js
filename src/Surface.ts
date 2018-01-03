@@ -297,7 +297,7 @@ export default class Surface extends EventEmitter {
     const anim = this.surfaceNode.animations[animationId];
     if(anim == null){
       console.warn("Surface#play", "animation", animationId, "is not defined");
-      return void setTimeout(callback); // そんなアニメーションはない
+      return void setTimeout(callback || function() {}); // そんなアニメーションはない
     }
     const {is:animId, patterns, options} = anim;
     this.animationsQueue[animationId] = patterns.map((pattern, i)=> ()=>{
@@ -356,7 +356,7 @@ export default class Surface extends EventEmitter {
         // stop pattern animation.
         this.animationsQueue[animationId] = [];
         this.exclusives = [];
-        setTimeout(callback);
+        setTimeout(callback || function() {});
       }else{
         next();
       }
