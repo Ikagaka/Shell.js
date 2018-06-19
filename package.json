@@ -42,7 +42,7 @@
     "jquery": "^3.1.0",
     "react": "^15.3.1",
     "react-dom": "^15.3.1",
-    "surfaces_txt2yaml": "github:legokichi/surfaces_txt2yaml#master"
+    "surfaces_txt2yaml": "^2.2.0"
   },
   "devDependencies": {
     "babel-cli": "^6.11.4",
