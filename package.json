@@ -30,7 +30,7 @@
     "encoding-japanese": "*",
     "eventemitter3": "*",
     "jquery": "*",
-    "surfaces_txt2yaml": "legokichi/surfaces_txt2yaml#master",
+    "surfaces_txt2yaml": "^2.2.0",
     "text-encoding": "*",
     "typescript": "^1.6.2"
   },
